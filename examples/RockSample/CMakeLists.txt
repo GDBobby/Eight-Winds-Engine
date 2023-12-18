@@ -33,11 +33,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC EightWindsEngine)
 # Create source groups to maintain file structure in Visual Studio
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES} ${HEADER_FILES} ${HEADER_FILES_PP})
 
-
 # Set the working directory for the executable
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}"
-    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     DEBUG_POSTFIX "-debug"  # Appends "-d" in Debug mode
     RELEASE_POSTFIX ""   # No postfix in Release mode
 )
