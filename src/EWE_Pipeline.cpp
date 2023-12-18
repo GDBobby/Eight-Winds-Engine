@@ -1,9 +1,9 @@
-#include "graphics/EWE_pipeline.h"
+#include "EWEngine/graphics/EWE_pipeline.h"
 
 
-#include "EWE_model.h"
-#include "graphics/EWE_Renderer.h"
-#include "graphics/PushConstants.h"
+#include "EWEngine/EWE_model.h"
+#include "EWEngine/graphics/EWE_Renderer.h"
+#include "EWEngine/graphics/PushConstants.h"
 
 
 #include <fstream>

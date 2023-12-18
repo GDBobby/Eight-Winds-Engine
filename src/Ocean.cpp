@@ -1,5 +1,5 @@
-#include "systems/Graphics/ocean.h"
-#include "Data/TransformInclude.h"
+#include "EWEngine/systems/Graphics/ocean.h"
+#include "EWEngine/Data/TransformInclude.h"
 
 namespace EWE {
 	namespace Ocean {

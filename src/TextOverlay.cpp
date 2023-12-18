@@ -1,12 +1,12 @@
 
-#include "graphics/TextOverlay.h"
+#include "EWEngine/graphics/EWE_Renderer.h"
+#include "EWEngine/graphics/TextOverlay.h"
 
 #include <stdexcept>
 //#include <iostream>
 #include <sstream>
 #include <iomanip>
 
-#include "graphics/EWE_Renderer.h"
 
 namespace EWE {
 

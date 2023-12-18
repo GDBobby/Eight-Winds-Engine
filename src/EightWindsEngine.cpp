@@ -1,8 +1,8 @@
-#include "EightWindsEngine.h"
+#include "EWEngine/EightWindsEngine.h"
 
 //#include "keyboard_movement_controller.h" //this is for a free camera, which is currently not utilized
-#include "graphics/EWE_buffer.h"
-#include "graphics/EWE_camera.h"
+#include "EWEngine/graphics/EWE_buffer.h"
+#include "EWEngine/graphics/EWE_camera.h"
 
 
 #define GLM_FORCE_RADIANS

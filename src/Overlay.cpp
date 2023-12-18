@@ -1,4 +1,4 @@
-#include "GUI/Overlay.h"
+#include "EWEngine/GUI/Overlay.h"
 
 namespace EWE {
 	OverlayBase::OverlayBase(std::shared_ptr<TextOverlay> textOverlay, float screenWidth, float screenHeight) : textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{screenHeight} {

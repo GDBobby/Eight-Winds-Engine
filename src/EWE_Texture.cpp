@@ -1,4 +1,4 @@
-#include "graphics/EWE_texture.h"
+#include "EWEngine/graphics/EWE_texture.h"
 
 #include <string>
 #include <iostream>

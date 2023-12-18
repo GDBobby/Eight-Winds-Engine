@@ -1,10 +1,9 @@
-#include "SkeletonHandlerBase.h"
-
-#include "graphics/EWE_texture.h"
+#include "EWEngine/SkeletonHandlerBase.h"
+#include "EWEngine/Systems/SkinRendering/SkinRenderSystem.h"
+#include "EWEngine/graphics/EWE_texture.h"
 
 #include <thread>
 
-#include "Systems/SkinRendering/SkinRenderSystem.h"
 
 #define TEST_NO_MESH false
 

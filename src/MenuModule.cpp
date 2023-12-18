@@ -1,4 +1,4 @@
-#include "GUI/MenuModule.h"
+#include "EWEngine/GUI/MenuModule.h"
 
 namespace EWE {
 

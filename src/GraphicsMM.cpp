@@ -1,4 +1,4 @@
-#include "gui/GraphicsMM.h"
+#include "EWEngine/gui/GraphicsMM.h"
 
 namespace EWE {
 	GraphicsMM::GraphicsMM(float screenWidth, float screenHeight) {

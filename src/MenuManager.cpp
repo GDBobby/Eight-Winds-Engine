@@ -1,4 +1,4 @@
-#include "GUI/MenuManager.h"
+#include "EWEngine/GUI/MenuManager.h"
 
 namespace EWE {
 	MenuManager* MenuManager::menuManagerPtr = nullptr;

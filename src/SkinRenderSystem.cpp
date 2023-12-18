@@ -1,4 +1,4 @@
-#include "systems/SkinRendering/SkinRenderSystem.h"
+#include "EWEngine/systems/SkinRendering/SkinRenderSystem.h"
 
 namespace EWE {
 	SkinRenderSystem* SkinRenderSystem::skinnedMainObject = nullptr;

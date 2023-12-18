@@ -1,7 +1,7 @@
 #pragma once
 #include "MenuModule.h"
 #include "../SoundEngine.h"
-#include "SettingsJson.h"
+#include "../SettingsJson.h"
 
 namespace EWE {
 	class AudioMM : public MenuModule {

@@ -1,5 +1,5 @@
-#include "graphics/EWE_Object.h"
-#include "systems/SkinRendering/SkinRenderSystem.h"
+#include "EWEngine/graphics/EWE_Object.h"
+#include "EWEngine/systems/SkinRendering/SkinRenderSystem.h"
 
 namespace EWE {
     EweObject::EweObject(std::string objectPath, EWEDevice& device, bool globalTextures) {

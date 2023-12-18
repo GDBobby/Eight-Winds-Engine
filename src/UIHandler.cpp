@@ -1,9 +1,9 @@
-#include "GUI/UIHandler.h"
+#include "EWEngine/GUI/UIHandler.h"
 
 
 #define USING_IMGUI false
 #if USING_IMGUI
-#include "../graphics/imGuiHandler.h"
+#include "EWEngine/graphics/imGuiHandler.h"
 #endif
 
 //#include <sstream>

@@ -1,4 +1,4 @@
-#include "graphics/EWE_buffer.h"
+#include "EWEngine/graphics/EWE_buffer.h"
 
 // std
 #include <cassert>

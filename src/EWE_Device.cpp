@@ -1,4 +1,4 @@
-#include "graphics/EWE_device.hpp"
+#include "EWEngine/graphics/EWE_device.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>

@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+#include "EWEngine/MainWindow.h"
 
 #include <stdexcept>
 

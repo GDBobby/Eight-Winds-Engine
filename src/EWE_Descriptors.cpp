@@ -1,4 +1,4 @@
-#include "graphics/EWE_descriptors.h"
+#include "EWEngine/graphics/EWE_descriptors.h"
 
 // std
 #include <cassert>
