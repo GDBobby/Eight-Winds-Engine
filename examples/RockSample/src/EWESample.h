@@ -22,13 +22,14 @@ namespace EWE {
 		std::unordered_map<Scene_Enum, std::unique_ptr<Scene>> scenes;
 		Scene* currentScenePtr{ nullptr };
 		bool swappingScenes = false;
+		std::shared_ptr<SoundEngine> soundEngine;
 
 		bool gameRunning = true;
 		double renderRefreshRate = 0.0;
 
 		void mainThread();
 		void addModulesToMenuManager(float screenWidth, float screenHeight);
-
+		
 		void loadGlobalObjects();
 		bool processClick();
 	};

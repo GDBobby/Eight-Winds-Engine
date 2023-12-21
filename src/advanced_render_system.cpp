@@ -53,7 +53,7 @@ namespace EWE {
 #endif
 	}
 	void AdvancedRenderSystem::updateLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
-		PipelineManager::initPipelines(pipeRenderInfo, Pipe_loading, eweDevice);
+		PipelineManager::createLoadingPipeline(eweDevice, pipeRenderInfo);
 	}
 	void AdvancedRenderSystem::updatePipelines(ObjectManager& objectManager, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 
@@ -125,10 +125,6 @@ namespace EWE {
 		
 		renderTexturedGameObjects(frameInfo);
 
-#if RENDERING_EIGHT_WINDS
-		RenderSpikyball(frameInfo);
-#endif
-
 		RenderDynamicMaterials(frameInfo);
 #if DEBUGGING_PIPELINES
 		printf("after rendering dynamic \n");
@@ -142,26 +138,7 @@ namespace EWE {
 #if DRAWING_POINTS
 			renderPointLights(frameInfo);
 #endif
-			//printf("rendering points \n");
 		}
-
-
-		//transparency always needs to be last
-		//renderSprites(frameInfo);
-#if RENDERING_EIGHT_WINDS
-		if (PlayerObject::poVector.size() > 0) {
-			bool playerTransparent = false;
-			for (int i = 0; i < PlayerObject::poVector.size(); i++) {
-				if (PlayerObject::poVector[i].DrawBorD()) {
-					playerTransparent = true;
-					break;
-				}
-			}
-			if (playerTransparent) {
-				renderTransparentGameObjects(frameInfo);
-			}
-		}
-#endif
 
 #if DEBUGGING_PIPELINES
 		printf("end of rendering \n");
@@ -363,213 +340,35 @@ namespace EWE {
 #if DEBUGGING_DYNAMIC_PIPE
 			printf("after binding global \n");
 #endif
-			/*
-			if (flags & 128) { //if has bones
-#if DEBUGGING_DYNAMIC_PIPE
-				printf("after binding bones \n");
-#endif
-				int32_t bindedTexture = -1;
+			
+			int32_t bindedTexture = -1;
+			for (auto iterTexID = iter->second.begin(); iterTexID != iter->second.end(); iterTexID++) {
+				if (bindedTexture != iterTexID->first) {
+					vkCmdBindDescriptorSets(
+						frameInfo.cmdIndexPair.first,
+						VK_PIPELINE_BIND_POINT_GRAPHICS,
+						PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex],
+						1, 1,
+						EWETexture::getDescriptorSets(iterTexID->first, frameInfo.cmdIndexPair.second),
+						0, nullptr
+					);
+					bindedTexture = iterTexID->first;
+				}
 
-				//experiment with shifting the bone descriptor set index ahead of the texture set index,
-				//i.e. bonedescriptor 2 -> 1, texturedescriptor 1->2
-				//for (int i = 0; i < iter->second.size(); i++) {
-				for(auto iterTexID = iter->second.begin(); iterTexID != iter->second.end(); iterTexID++){
-#ifdef _DEBUG
-					if(iterTexID->second.size() == 0){
-						printf("SHOULD NOT HAVE A 0 SIZE VECTOR THATS STILL MAPPED \n");
-						continue;
-					}
-#endif
-					if (iterTexID->second[0].actorType != Actor_None) {
-						if (bindedTexture != iterTexID->first) {
-							vkCmdBindDescriptorSets(
-								frameInfo.cmdIndexPair.first,
-								VK_PIPELINE_BIND_POINT_GRAPHICS,
-								PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex],
-								2, 1,
-								EWETexture::getDescriptorSets(iterTexID->first, frameInfo.cmdIndexPair.second),
-								0, nullptr
-							);
-							bindedTexture = iterTexID->first;
-						}
-					}
-					else {
-						if (bindedTexture != iterTexID->first) {
-							vkCmdBindDescriptorSets(
-								frameInfo.cmdIndexPair.first,
-								VK_PIPELINE_BIND_POINT_GRAPHICS,
-								PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex],
-								1, 1,
-								EWETexture::getDescriptorSets(iterTexID->first, frameInfo.cmdIndexPair.second),
-								0, nullptr
-							);
-							bindedTexture = iterTexID->first;
-						}
-					}
 
-					Actor_Type boneDescriptorBinded = Actor_None;
-					for (int i = 0; i < iterTexID->second.size(); i++) {
-						if (iterTexID->second[i].actorType != Actor_None) {
-#if DEBUGGING_DYNAMIC_PIPE
-							printf("!MOI NONE \n");
-							printf("before binding texture : %d \n", iterTexID->first);
-#endif
 
-#if DEBUGGING_DYNAMIC_PIPE
-							printf("after binding texture \n");
-#endif
+				for (int i = 0; i < iterTexID->second.size(); i++) {
 
-#if DEBUGGING_DYNAMIC_PIPE
-							printf("before binding player mesh \n");
-#endif
-							*
-							for (int j = 0; j < PlayerObject::poVector.size(); j++) {
-								if (iterTexID->second[i].actorType == Player_character) {
-#if DEBUGGING_DYNAMIC_PIPE
-									printf("pushing and drawing player \n");
-#endif
-									vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PlayerPushConstantData), &playerPush[j]);
-									iterTexID->second[i].meshPtr->draw(frameInfo.cmdIndexPair.first);
-								}
-								else if (iterTexID->second[i].actorType == Player_weapon) {
-#if DEBUGGING_DYNAMIC_PIPE
-									printf("pushing and drawing player weapon \n");
-#endif
+					if (!(*iterTexID->second[i].drawable)) { continue; }
+					SimplePushConstantData push{ iterTexID->second[i].ownerTransform->mat4(), iterTexID->second[i].ownerTransform->normalMatrix() };
 
-									vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PlayerPushConstantData), &weaponPush[j]);
-									iterTexID->second[i].meshPtr->draw(frameInfo.cmdIndexPair.first);
-								}
-							}
-							*
-							if (iterTexID->second[i].actorType == Player_character) {
-								iterTexID->second[i].meshPtr->bind(frameInfo.cmdIndexPair.first);
-#if DEBUGGING_DYNAMIC_PIPE
-								printf("pushing and drawing player \n");
-#endif
-
-								if (boneDescriptorBinded != Player_character) {
-									vkCmdBindDescriptorSets(
-										frameInfo.cmdIndexPair.first,
-										VK_PIPELINE_BIND_POINT_GRAPHICS,
-										PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex],
-										1, 1,
-										//&bonedDescriptorSet[frameInfo.cmdIndexPair.second * 2 + j],
-										DescriptorHandler::getDescSet(DS_boned, frameInfo.cmdIndexPair.second),
-										0,
-										nullptr
-									);
-
-									boneDescriptorBinded = Player_character;
-								}
-								vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PlayerPushConstantData), &playerPush);
-								iterTexID->second[i].meshPtr->draw(frameInfo.cmdIndexPair.first);
-
-							}
-							else if (iterTexID->second[i].actorType == Player_weapon) {
-								iterTexID->second[i].meshPtr->bind(frameInfo.cmdIndexPair.first);
-#if DEBUGGING_DYNAMIC_PIPE
-								printf("pushing and drawing player weapon \n");
-#endif
-#if RENDERING_EIGHT_WINDS
-								if (!playerBoneDescriptorBinded) {
-									vkCmdBindDescriptorSets(
-										frameInfo.cmdIndexPair.first,
-										VK_PIPELINE_BIND_POINT_GRAPHICS,
-										PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex],
-										1, 1,
-										//&bonedDescriptorSet[frameInfo.cmdIndexPair.second * 2 + j],
-										DescriptorHandler::getDescSet(DS_boned, frameInfo.cmdIndexPair.second),
-										0,
-										nullptr
-									);
-								}
-
-								vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PlayerPushConstantData), &weaponPush);
-								iterTexID->second[i].meshPtr->draw(frameInfo.cmdIndexPair.first);
-#else
-								if (boneDescriptorBinded != Player_character) {
-									vkCmdBindDescriptorSets(
-										frameInfo.cmdIndexPair.first,
-										VK_PIPELINE_BIND_POINT_GRAPHICS,
-										PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex],
-										1, 1,
-										//&bonedDescriptorSet[frameInfo.cmdIndexPair.second * 2 + j],
-										DescriptorHandler::getDescSet(DS_boned, frameInfo.cmdIndexPair.second),
-										0,
-										nullptr
-									);
-									boneDescriptorBinded = Player_character;
-								}
-								vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PlayerPushConstantData), &weaponPush);
-								iterTexID->second[i].meshPtr->draw(frameInfo.cmdIndexPair.first);
-#endif
-							}
-							else if (iterTexID->second[i].actorType > Player_weapon) {
-
-								if (flags & 64) {
-									bool renderedActorType = levelManager->drawActorTypeWithMesh(
-										frameInfo.cmdIndexPair.first, 
-										iterTexID->second[i].actorType, 
-										iterTexID->second[i].meshPtr, 
-										iterTexID->second[i].actorType == boneDescriptorBinded, 
-										frameInfo.cmdIndexPair.second, pipeLayoutIndex);
-
-									if (renderedActorType) {
-										boneDescriptorBinded = iterTexID->second[i].actorType;
-									}
-								}
-								else {
-									printf("Drawing monster without it being instaced \n");
-									throw std::exception("invalid draw, monster no instance");
-								}
-							}
-						}
-						else {
-
-							SimplePushConstantData push{};
-							push.modelMatrix = iterTexID->second[i].ownerTransform->mat4();
-							push.normalMatrix = iterTexID->second[i].ownerTransform->normalMatrix();
-
-							vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SimplePushConstantData), &push);
-							iterTexID->second[i].meshPtr->bind(frameInfo.cmdIndexPair.first);
-							//printf("assimpNT post-bind : %d \n", j);
-							iterTexID->second[i].meshPtr->draw(frameInfo.cmdIndexPair.first);
-						}
-					}
+					vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SimplePushConstantData), &push);
+					iterTexID->second[i].meshPtr->bind(frameInfo.cmdIndexPair.first);
+					//printf("assimpNT post-bind : %d \n", j);
+					iterTexID->second[i].meshPtr->draw(frameInfo.cmdIndexPair.first);
 				}
 			}
-			else {
-				//no bone
-				//printf("rrendering non-boned, pipeLayoutIndex : %d \n", pipeLayoutIndex);
-				*/
-				int32_t bindedTexture = -1;
-				for (auto iterTexID = iter->second.begin(); iterTexID != iter->second.end(); iterTexID++) {
-					if (bindedTexture != iterTexID->first) {
-						vkCmdBindDescriptorSets(
-							frameInfo.cmdIndexPair.first,
-							VK_PIPELINE_BIND_POINT_GRAPHICS,
-							PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex],
-							1, 1,
-							EWETexture::getDescriptorSets(iterTexID->first, frameInfo.cmdIndexPair.second),
-							0, nullptr
-						);
-						bindedTexture = iterTexID->first;
-					}
-
-
-
-					for (int i = 0; i < iterTexID->second.size(); i++) {
-
-						if (!(*iterTexID->second[i].drawable)) { continue; }
-						SimplePushConstantData push{ iterTexID->second[i].ownerTransform->mat4(), iterTexID->second[i].ownerTransform->normalMatrix() };
-
-						vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::dynamicMaterialPipeLayout[pipeLayoutIndex], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SimplePushConstantData), &push);
-						iterTexID->second[i].meshPtr->bind(frameInfo.cmdIndexPair.first);
-						//printf("assimpNT post-bind : %d \n", j);
-						iterTexID->second[i].meshPtr->draw(frameInfo.cmdIndexPair.first);
-					}
-				}
-			//}
+			
 
 #if DEBUGGING_DYNAMIC_PIPE
 			printf("finished drawing dynamic material flag : %d \n", flags);
@@ -1048,7 +847,7 @@ namespace EWE {
 #endif
 	
 	void AdvancedRenderSystem::renderLoadingScreen(FrameInfoLoading& frameInfo) {
-		PipelineManager::pipelines[Pipe_loading]->bind(frameInfo.cmdIndexPair.first);
+		PipelineManager::loadingPipeline->bind(frameInfo.cmdIndexPair.first);
 
 		//printf("before binding descriptor set 0 \n");
 		vkCmdBindDescriptorSets(

@@ -14,8 +14,6 @@
 #include <memory>
 #include <vector>
 
-#define RENDERING_EIGHT_WINDS false
-
 namespace EWE {
 	class AdvancedRenderSystem {
 	public:
@@ -74,9 +72,7 @@ namespace EWE {
 		void renderPointLights(FrameInfo& frameInfo);
 #endif
 		void RenderLightning(FrameInfo& frameInfo);
-#if RENDERING_EIGHT_WINDS
-		void RenderSpikyball(FrameInfo& frameInfo);
-#endif
+
 		void RenderGrass(FrameInfo& frameInfo);
 
 		void RenderDynamicMaterials(FrameInfo& frameInfo);

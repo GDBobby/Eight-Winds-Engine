@@ -64,7 +64,7 @@ namespace EWE {
 
 // ~~~~~~~~~~~~~~~ static portion ~~~~~~~~~~~~~~~~~~~~~~
 	private:
-		static std::string fileNames[6];
+		static std::array<std::string, 6> fileNames;
 
 		//static std::vector<uint32_t> globalIDs; //shouldnt need to keep track of global IDs, so not necessary
 		static std::vector<TextureID> sceneIDs; //keeping track so i can remove them later
@@ -90,8 +90,6 @@ namespace EWE {
 
 		static std::vector<std::unique_ptr<EWEDescriptorSetLayout>> dynamicDescSetLayout;
 
-		static std::string materialNames[3];
-		static std::string metalRoughNames[4];
 		static std::vector<std::vector<std::string>> smartTextureTypes;
 
 		static TextureID skyboxID;

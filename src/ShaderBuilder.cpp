@@ -1,5 +1,6 @@
 #include "EWEngine/data/ShaderBuilder.h"
 #include "EWEngine/data/ShaderText.h"
+#include "EWEngine/resources/LoadingString.h"
 
 #include <chrono>
 
@@ -29,6 +30,91 @@ void ShaderBlock::BatchCreateFragmentShader(std::vector<ShaderFlags> flagVector)
 		file.close();
 	}
 	*/
+}
+
+std::vector<uint32_t> ShaderBlock::getLoadingVertShader() {
+
+
+	std::string subPath = SHADER_DYNAMIC_PATH;
+
+	subPath += "loading.vert.spv";
+	printf("subPath : %s \n", subPath.c_str());
+	if (std::filesystem::exists(subPath)) {
+		printf("reading loading vertex shader from file\n");
+		std::ifstream inShader{ subPath, std::ios::binary };
+		if (!inShader.is_open()) {
+			printf("failed to open an existing file? \n");
+			return {};
+		}
+		// Get the file size
+		inShader.seekg(0, std::ios::end);
+		std::streampos fileSize = inShader.tellg();
+		inShader.seekg(0, std::ios::beg);
+
+		// Calculate the number of uint32_t elements in the file
+		std::size_t numElements = fileSize / sizeof(uint32_t);
+
+		// Create a vector to store the file contents
+		std::vector<uint32_t> shaderCodeSpirV(numElements);
+
+		// Read the file data into the vector
+		inShader.read(reinterpret_cast<char*>(shaderCodeSpirV.data()), fileSize);
+
+		inShader.close();
+		return shaderCodeSpirV;
+	}
+	std::vector<uint32_t> shaderCodeSpirV;
+	if (SpirvHelper::LoadingVertSPV(shaderCodeSpirV)) {
+		//printf("compiled shader to spv successfully \n");
+	}
+	else {
+		printf("failed to compile loading vertex shader\n");
+		//throw std run time error
+	}
+
+	return shaderCodeSpirV;
+}
+std::vector<uint32_t> ShaderBlock::getLoadingFragShader() {
+	std::string subPath = SHADER_DYNAMIC_PATH;
+	subPath += "loading.frag.spv";
+	printf("subPath : %s \n", subPath.c_str());
+	if (std::filesystem::exists(subPath)) {
+		printf("reading loading frag shader from file\n");
+		std::ifstream inShader{ subPath, std::ios::binary };
+		if (!inShader.is_open()) {
+			printf("failed to open an existing file? \n");
+			return {};
+		}
+		// Get the file size
+		inShader.seekg(0, std::ios::end);
+		std::streampos fileSize = inShader.tellg();
+		inShader.seekg(0, std::ios::beg);
+
+		// Calculate the number of uint32_t elements in the file
+		std::size_t numElements = fileSize / sizeof(uint32_t);
+
+		// Create a vector to store the file contents
+		std::vector<uint32_t> shaderCodeSpirV(numElements);
+
+		// Read the file data into the vector
+		inShader.read(reinterpret_cast<char*>(shaderCodeSpirV.data()), fileSize);
+
+		inShader.close();
+		return shaderCodeSpirV;
+	}
+	std::vector<uint32_t> shaderCodeSpirV;
+	if (SpirvHelper::LoadingFragSPV(shaderCodeSpirV)) {
+		//printf("compiled shader to spv successfully \n");
+	}
+	else {
+		printf("failed to compile loading frag shader \n");
+		throw std::exception("failed to compile shader");
+		//throw std run time error
+	}
+
+	return shaderCodeSpirV;
+
+
 }
 
 std::vector<uint32_t> ShaderBlock::getFragmentShader(ShaderFlags flags, bool hasBones) {
@@ -72,7 +158,7 @@ std::vector<uint32_t> ShaderBlock::getFragmentShader(ShaderFlags flags, bool has
 		return shaderCodeSpirV;
 	}
 	std::vector<uint32_t> shaderCodeSpirV;
-	if (SpirvHelper::GLSLtoSPVFrag(flags, hasBones, shaderCodeSpirV)) {
+	if (SpirvHelper::BuildFlaggedFrag(flags, hasBones, shaderCodeSpirV)) {
 		//printf("compiled shader to spv successfully \n");
 	}
 	else {
@@ -128,7 +214,7 @@ std::vector<uint32_t> ShaderBlock::getVertexShader(bool hasNormal, uint16_t bone
 		return shaderCodeSpirV;
 	}
 	std::vector<uint32_t> shaderCodeSpirV;
-	if (SpirvHelper::GLSLtoSPVVert(hasNormal, boneCount, instanced, shaderCodeSpirV, largeInstance)) {
+	if (SpirvHelper::BuildFlaggedVert(hasNormal, boneCount, instanced, shaderCodeSpirV, largeInstance)) {
 		//printf("compiled shader to spv successfully \n");
 	}
 	else {
@@ -147,7 +233,7 @@ std::vector<uint32_t> ShaderBlock::getVertexShader(bool hasNormal, uint16_t bone
 
 
 }
-bool ShaderBlock::SpirvHelper::GLSLtoSPVFrag(ShaderFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
+bool ShaderBlock::SpirvHelper::BuildFlaggedFrag(ShaderFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
 	glslang::TShader shader(EShLangFragment);
 	glslang::TProgram program;
 	const char* shaderStrings[1];
@@ -202,7 +288,125 @@ bool ShaderBlock::SpirvHelper::GLSLtoSPVFrag(ShaderFlags flags, bool hasBones, s
 	return true;
 }
 
-bool ShaderBlock::SpirvHelper::GLSLtoSPVVert(bool hasNormal, uint16_t boneCount, bool instanced, std::vector<unsigned int>& spirv, bool largeInstance) { //shader stage ALWAYS frag?
+bool ShaderBlock::SpirvHelper::LoadingVertSPV(std::vector<unsigned int>& spirv) {
+	glslang::TShader shader(EShLangVertex);
+	glslang::TProgram program;
+	const char* shaderStrings[1];
+	TBuiltInResource Resources{};
+	InitResources(Resources);
+
+	// Enable SPIR-V and Vulkan rules when parsing GLSL
+	EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDebugInfo | EShMsgEnhanced);
+	std::string tempString;
+	for (auto& line : EWE::LoadingVertString) {
+		printf("line of loading vert : %s \n", line.c_str());
+		tempString += line;
+	}
+	shaderStrings[0] = tempString.c_str();
+	shader.setStrings(shaderStrings, 1);
+
+	printf("parsing shader \n");
+	try {
+		if (!shader.parse(&Resources, 450, false, messages)) {
+			puts(shader.getInfoLog());
+			puts(shader.getInfoDebugLog());
+			printf("shader parse failed \n");
+			return false;  // something didn't work
+		}
+	}
+	catch (const std::exception& except) {
+		printf("error on parse : %s \n", except.what());
+		return false;
+	}
+	printf("adding shader to program? \n");
+	program.addShader(&shader);
+
+	//
+	// Program-level processing...
+	//
+	printf("linking program \n"); //what is this doing? just processing? processing what?
+	if (!program.link(messages)) {
+		puts(shader.getInfoLog());
+		puts(shader.getInfoDebugLog());
+		fflush(stdout);
+		return false;
+	}
+	//printf("compiling \n");
+	glslang::GlslangToSpv(*program.getIntermediate(EShLangVertex), spirv);
+	std::string shaderFileName = SHADER_DYNAMIC_PATH;
+	shaderFileName += "loading.vert.spv";
+
+
+	std::ofstream outShader{ shaderFileName, std::ios::binary };
+
+	if (outShader.is_open()) {
+		printf("writing to shader location : %s \n", shaderFileName.c_str());
+		outShader.write((char*)spirv.data(), spirv.size() * sizeof(unsigned int));
+		outShader.close();
+	}
+	else {
+		printf("failed to save shader \n");
+	}
+
+	return true;
+}
+bool ShaderBlock::SpirvHelper::LoadingFragSPV(std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
+	glslang::TShader shader(EShLangFragment);
+	glslang::TProgram program;
+	const char* shaderStrings[1];
+	TBuiltInResource Resources{};
+	InitResources(Resources);
+
+	// Enable SPIR-V and Vulkan rules when parsing GLSL
+	EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDebugInfo | EShMsgEnhanced);
+	std::string tempString;
+	for (auto& line : EWE::LoadingFragString) {
+		tempString += line;
+	}
+	shaderStrings[0] = tempString.c_str();
+	shader.setStrings(shaderStrings, 1);
+
+	// printf("parsing shader \n");
+	try {
+		if (!shader.parse(&Resources, 450, false, messages)) {
+			puts(shader.getInfoLog());
+			puts(shader.getInfoDebugLog());
+			printf("shader parse failed \n");
+			return false;  // something didn't work
+		}
+	}
+	catch (const std::exception& except) {
+		printf("error on parse : %s \n", except.what());
+		return false;
+	}
+
+	program.addShader(&shader);
+
+	if (!program.link(messages)) {
+		puts(shader.getInfoLog());
+		puts(shader.getInfoDebugLog());
+		fflush(stdout);
+		return false;
+	}
+	//printf("compiling \n");
+	glslang::GlslangToSpv(*program.getIntermediate(EShLangFragment), spirv);
+	std::string shaderFileName = SHADER_DYNAMIC_PATH;
+	shaderFileName = "loading.frag.spv";
+	std::ofstream outShader{ shaderFileName, std::ios::binary };
+
+	if (outShader.is_open()) {
+		printf("writing to shader location : %s \n", shaderFileName.c_str());
+		outShader.write((char*)spirv.data(), spirv.size() * sizeof(unsigned int));
+		outShader.close();
+	}
+	else {
+		printf("failed to save shader \n");
+	}
+
+	return true;
+}
+
+bool ShaderBlock::SpirvHelper::BuildFlaggedVert(bool hasNormal, uint16_t boneCount, bool instanced, std::vector<unsigned int>& spirv, bool largeInstance) { //shader stage ALWAYS frag?
 	glslang::TShader shader(EShLangVertex);
 	glslang::TProgram program;
 	const char* shaderStrings[1];

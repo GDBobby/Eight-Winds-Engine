@@ -5,11 +5,11 @@
 #include "EWE_descriptors.h"
 #include "DescriptorHandler.h"
 #include "../Data/ShaderBuilder.h"
+#include "../Data/EngineDataTypes.h"
 
 #include <glm/glm.hpp>
 #include <map>
 
-#include "../Data/EngineDataTypes.h"
 
 
 #define PIPELINE_DERIVATIVES 0 //pipeline derivatives are not currently recommended by hardware vendors
@@ -37,7 +37,6 @@ namespace EWE {
 		Pipe_spikyBall,
 		Pipe_visualEffect,
 		Pipe_grass,
-		Pipe_loading,
 
 		Pipe_orbOverlay,
 		Pipe_ExpBar,
@@ -86,6 +85,12 @@ namespace EWE {
 	namespace Pipeline_Helper_Functions {
 		void createShaderModule(EWEDevice& device, std::string const& file_path, VkShaderModule* shaderModule);
 		std::vector<char> readFile(const std::string& filepath);
+
+		void createShaderModule(EWEDevice& device, const std::vector<uint32_t>& data, VkShaderModule* shaderModule);
+		void createShaderModule(EWEDevice& device, const char* data, size_t dataSize, VkShaderModule* shaderModule);
+
+		template <typename T>
+		void createShaderModule(EWEDevice& device, const std::vector<T>& data, VkShaderModule* shaderModule);
 	}
 
 	class EWE_Compute_Pipeline {
@@ -142,6 +147,7 @@ namespace EWE {
 		};
 
 		EWEPipeline(EWEDevice& device, const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo);
+		EWEPipeline(EWEDevice& device, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo);
 		EWEPipeline(EWEDevice& device, const std::string& vertFilePath, ShaderFlags flags, const PipelineConfigInfo& configInfo, bool hasBones);
 		EWEPipeline(EWEDevice& device, uint16_t boneCount, ShaderFlags flags, const PipelineConfigInfo& configInfo);
 
@@ -172,10 +178,6 @@ namespace EWE {
 		VkShaderModule fragShaderModule;
 
 		void createGraphicsPipeline(const PipelineConfigInfo& configInfo);
-		void createShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule);
-
-		template <typename T>
-		void createShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule);
 
 	};
 
@@ -198,6 +200,12 @@ namespace EWE {
 		static std::vector<std::pair<uint16_t, ShaderFlags>> dynamicInstancedPipeTracker;
 #endif
 		static VkPipelineLayout dynamicMaterialPipeLayout[DYNAMIC_PIPE_LAYOUT_COUNT];
+
+		static VkShaderModule loadingVertShaderModule;
+		static VkShaderModule loadingFragShaderModule;
+		static std::unique_ptr<EWEPipeline> loadingPipeline;
+
+		static void createLoadingPipeline(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 
 		static VkPipelineLayout getPipelineLayout(PipeLayout_Enum ple, EWEDevice& eweDevice);
 

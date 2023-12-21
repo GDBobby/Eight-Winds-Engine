@@ -27,8 +27,6 @@
 #define BENCHMARKING_GPU true
 #define THROTTLED true
 
-#define EIGHT_WINDS_GAME true
-
 
 
 namespace EWE {

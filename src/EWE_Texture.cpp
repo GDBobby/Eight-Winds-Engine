@@ -22,12 +22,22 @@ namespace EWE {
     std::unordered_map<TextureID, EWETexture> EWETexture::textureMap;
     std::unordered_map<TextureID, EWETexture> EWETexture::uiMap;
 
-    TextureID EWETexture::returnID;
-    TextureID EWETexture::uiID;
+    TextureID EWETexture::returnID = 0;
+    TextureID EWETexture::uiID = 0;
     TextureID EWETexture::skyboxID;
     std::vector<TextureID> EWETexture::sceneIDs;
-    std::string EWETexture::fileNames[6];
-    std::vector<std::vector<std::string>> EWETexture::smartTextureTypes;
+    std::array<std::string, 6> EWETexture::fileNames = {
+        "px", "nx", "py", "ny", "pz", "nz"
+    };
+
+    std::vector<std::vector<std::string>> EWETexture::smartTextureTypes = {
+            {"_Diffuse", "_albedo", "_diffuse", "_Albedo", "_BaseColor", "_Base_Color", ""},
+            { "_Normal", "_normal" },
+            { "_roughness", "_rough", "_Rough", "_Roughness"},
+            { "_metallic", "_metal", "_Metallic", "_Metal"},
+            { "_ao", "_ambientOcclusion", "_AO", "_AmbientOcclusion", "_Ao"},
+            { "_bump", "_height", "_parallax"},
+    };
 
     std::unique_ptr<EWEDescriptorSetLayout> EWETexture::simpleDescSetLayout;
     std::unique_ptr<EWEDescriptorSetLayout> EWETexture::spriteDescSetLayout;
@@ -39,13 +49,14 @@ namespace EWE {
     std::shared_ptr<EWEDescriptorPool> EWETexture::globalPool;
 
 
-    uint32_t EWETexture::spriteFrameCounter;
+    uint32_t EWETexture::spriteFrameCounter = 0;
 
     TextureID EWETexture::addUITexture(EWEDevice& eweDevice, std::string texPath, texture_type tType) {
 
         if (tType == tType_orbOverlay) {
             std::vector<PixelPeek> pixelPeek(2);
             std::string enginePath = TEXTURE_DIR + texPath + "globeComponent.png";
+            stbi_loadf_from_memory();
             pixelPeek[0].pixels = stbi_load(enginePath.c_str(), &pixelPeek[0].width, &pixelPeek[0].height, &pixelPeek[0].channels, STBI_rgb_alpha);
             if ((!pixelPeek[0].pixels) || ((pixelPeek[0].width * pixelPeek[0].height) <= 0)) {
                 printf("failed to load orb: %s \n", texPath.c_str());
@@ -936,24 +947,7 @@ namespace EWE {
     }
     void EWETexture::initStaticVariables() {
         //printf("initting EWEtexture static variables \n");
-        returnID = 0;
-        spriteFrameCounter = 0;
 
-        fileNames[0] = "px";
-        fileNames[1] = "nx";
-        fileNames[2] = "py";
-        fileNames[3] = "ny";
-        fileNames[4] = "pz";
-        fileNames[5] = "nz";
-
-        smartTextureTypes = {
-            {"_Diffuse", "_albedo", "_diffuse", "_Albedo", "_BaseColor", "_Base_Color", ""},
-            { "_Normal", "_normal" },
-            { "_roughness", "_rough", "_Rough", "_Roughness"},
-            { "_metallic", "_metal", "_Metallic", "_Metal"},
-            { "_ao", "_ambientOcclusion", "_AO", "_AmbientOcclusion", "_Ao"},
-            { "_bump", "_height", "_parallax"},
-        };
         assert(smartTextureTypes.size() == MAX_SMART_TEXTURE_COUNT);
     }
 

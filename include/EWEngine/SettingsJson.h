@@ -20,13 +20,13 @@
 #define SETTINGS_LOCATION "settings.json"
 
 
-enum SoundVolume {
-	master_volume,
-	effect_volume,
-	music_volume,
-	voice_volume,
+enum class SoundVolume {
+	master,
+	effect,
+	music,
+	voice,
 
-	overflow_volume,
+	overflow,
 };
 
 namespace SettingsInfo {

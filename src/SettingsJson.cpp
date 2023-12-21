@@ -222,33 +222,33 @@ namespace SettingsInfo {
 } //namespace SettingsInfo
 
 void SettingsJSON::SettingsData::setVolume(int8_t whichVolume, uint8_t value) {
-	//ma_device_set_master_volume(&device, volume[whichVolume]);
+	//ma_device_set_SoundVolume::master(&device, volume[whichVolume]);
 	//printf("setting volume %d : %.2f \n", whichVolume, value);
 
-	if (whichVolume == master_volume) {
+	if (whichVolume == (uint8_t)SoundVolume::master) {
 		masterVolume = value;
 	}
-	else if (whichVolume == effect_volume) {
+	else if (whichVolume == (uint8_t)SoundVolume::effect) {
 		effectsVolume = value;
 	}
-	else if (whichVolume == music_volume) {
+	else if (whichVolume == (uint8_t)SoundVolume::music) {
 		musicVolume = value;
 	}
-	else if (whichVolume == voice_volume) {
+	else if (whichVolume == (uint8_t)SoundVolume::voice) {
 		voiceVolume = value;
 	}
 }
 const uint8_t& SettingsJSON::SettingsData::getVolume(int8_t whichVolume) {
-	if (whichVolume == master_volume) {
+	if (whichVolume == (uint8_t)SoundVolume::master) {
 		return masterVolume;
 	}
-	else if (whichVolume == effect_volume) {
+	else if (whichVolume == (uint8_t)SoundVolume::effect) {
 		return effectsVolume;
 	}
-	else if (whichVolume == music_volume) {
+	else if (whichVolume == (uint8_t)SoundVolume::music) {
 		return musicVolume;
 	}
-	else if (whichVolume == voice_volume) {
+	else if (whichVolume == (uint8_t)SoundVolume::voice) {
 		return voiceVolume;
 	}
 	std::cout << "invalid volumne type " << std::endl;

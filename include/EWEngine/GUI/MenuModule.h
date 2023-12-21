@@ -1,7 +1,5 @@
 #pragma once
 
-#define USING_STEAM true //needs to match playerrobject.h USING_STEAM
-
 #include "UIComponents.h"
 //#include "../../Game/InputHandler.h"
 
@@ -25,15 +23,6 @@ namespace EWE {
 		MCR_ObstacleReset,
 		MCR_SaveReturn,
 		MCR_DiscardReturn,
-
-		MCR_ConLevel,
-		MCR_WisLevel,
-		MCR_IntelLevel,
-
-		MCR_FireLevelRadius,
-		MCR_FireLevelDamage,
-		MCR_LightningLevelChain,
-		MCR_LightningLevelDamage,
 
 		MCR_EscapePressed,
 		MCR_SpearSelect,
@@ -60,13 +49,7 @@ namespace EWE {
 		menu_level_builder,
 
 		menu_controls,
-		/*
-		menu_controls_temp,
-		menu_level_up,
-		menu_level_fire,
-		menu_level_lightning,
-		menu_endless_result,
-		*/
+
 		menu_character_select,
 
 		menu_size, //oversize check? idk if i need this

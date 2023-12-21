@@ -9,9 +9,16 @@
 namespace EWE {
 	EWESample::EWESample(EightWindsEngine& ewEngine) :
 		ewEngine{ ewEngine },
-		menuManager{ ewEngine.menuManager } {
+		menuManager{ ewEngine.menuManager },
+		soundEngine{SoundEngine::getSoundEngineInstance()}
+ {
 		float screenWidth = ewEngine.uiHandler.getScreenWidth();
 		float screenHeight = ewEngine.uiHandler.getScreenHeight();
+
+		std::unordered_map<uint16_t, std::string> effectsMap{};
+		effectsMap.emplace(0, "sounds/effects/click.mp3");
+		printf("loading effects \n");
+		soundEngine->loadSoundMap(effectsMap, SoundEngine::SoundType::Effect);
 
 		addModulesToMenuManager(screenWidth, screenHeight);
 		loadGlobalObjects();
@@ -150,6 +157,7 @@ namespace EWE {
 		if (clickReturns.size() == 0) {
 			return false;
 		}
+		soundEngine->playEffect(0);
 		MenuClickReturn processMCR = clickReturns.front();
 		while (clickReturns.size() > 0) {
 			clickReturns.pop();

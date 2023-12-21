@@ -64,7 +64,7 @@ namespace EWE {
 	void AudioMM::processClick(double xpos, double ypos) {
 		std::pair<UIComponentTypes, int8_t> returnValues = MenuModule::checkClick(xpos, ypos);
 		if (returnValues.first > 0) {
-			soundEngine->playClickEffect();
+			soundEngine->playEffect(0);
 		}
 		if (returnValues.first == UIT_Slider) {
 			if (returnValues.second % 3 == 1) {
@@ -83,7 +83,7 @@ namespace EWE {
 		}
 		else if (returnValues.first == UIT_Combobox) {
 			printf("returnValues.first, UIT_Combobox, returnValues.second = %d \n", returnValues.second);
-			if (selectedComboBox == 0) { //only works if wsound devices are in combobox[0]
+			if (selectedComboBox == 0 && (returnValues.second >= 0)) { //only works if wsound devices are in combobox[0]
 				//printf("which device switching to? %s \n",)
 				soundEngine->switchDevices(returnValues.second);
 				//menuStructs[menu_audio_settings].second[0].string = comboMenuStructs[0][returnValues.second].string;
@@ -150,10 +150,10 @@ namespace EWE {
 				comboBoxes[0].pushOption(soundEngine->deviceNames[i], screenWidth, screenHeight);
 			}
 			//printf("device name : i ~ %s : i \n", comboMenuStructs[0].back().string.c_str(), i);
-			if (SettingsJSON::settingsData.selectedDevice.compare(comboBoxes[0].comboOptions.back().textStruct.string) == 0) {
+			if (i == soundEngine->getSelectedDevice()) {
 				foundSavedDevice = true;
-				soundEngine->switchDevices(i);
-				//printf("yo wtf is music volume here? %.2f \n", soundEngine->getVolume(music_volume));
+				//soundEngine->switchDevices(i);
+				//printf("yo wtf is music volume here? %.2f \n", soundEngine->getVolume(SoundVolume::music));
 				//menuStructs[menu_audio_settings].second[0].string = comboMenuStructs[0].back().string;
 
 				comboBoxes[0].setSelection(static_cast<int8_t>(comboBoxes[0].comboOptions.size() - 1));
@@ -162,15 +162,13 @@ namespace EWE {
 			//printf("after : % s \n", comboMenuStructs[0].back().string.c_str());
 			//printf("compare? : %d \n", SettingsJSON::settingsData.selectedDevice.compare(comboMenuStructs[0].back().string));
 		}
-		if (!foundSavedDevice) {
-			//menuStructs[menu_audio_settings].second[0].string = soundEngine->deviceNames[0];
-			comboBoxes[0].setSelection(0);
+		if (foundSavedDevice) {
+			soundEngine->setVolume(SoundVolume::master, SettingsJSON::settingsData.masterVolume);
+			soundEngine->setVolume(SoundVolume::music, SettingsJSON::settingsData.musicVolume);
+			soundEngine->setVolume(SoundVolume::effect, SettingsJSON::settingsData.effectsVolume);
 		}
-		soundEngine->setVolume(master_volume, SettingsJSON::settingsData.masterVolume);
-		soundEngine->setVolume(music_volume, SettingsJSON::settingsData.musicVolume);
-		soundEngine->setVolume(effect_volume, SettingsJSON::settingsData.effectsVolume);
 
-		initVolumes(soundEngine->getVolume(master_volume), soundEngine->getVolume(music_volume), soundEngine->getVolume(effect_volume), screenWidth, screenHeight);
+		initVolumes(soundEngine->getVolume(SoundVolume::master), soundEngine->getVolume(SoundVolume::music), soundEngine->getVolume(SoundVolume::effect), screenWidth, screenHeight);
 	}
 
 	void AudioMM::resetSounds(float master, float music, float sfx) {
