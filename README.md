@@ -2,7 +2,6 @@
 
 First public release!
 The engine still needs quite a few things and I'll be working on it for the forseeable future. 
-* The main pressing issue is I'm currently replacing irrklang with miniaudio and only halfway through. The code for irrklang support included if a user would like to revert the miniaudio rebase.
 * an Editor with GUI will be added at some point
 
 
