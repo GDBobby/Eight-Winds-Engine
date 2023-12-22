@@ -417,6 +417,172 @@ namespace EWE {
 	std::map<Pipeline_Enum, std::unique_ptr<EWEPipeline>> PipelineManager::pipelines;
 
 	VkPipelineLayout PipelineManager::dynamicMaterialPipeLayout[DYNAMIC_PIPE_LAYOUT_COUNT];
+
+	std::vector<VkVertexInputAttributeDescription> simpleVertex::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+		attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(simpleVertex, position) });
+
+		return attributeDescriptions;
+	}
+
+	std::vector<VkVertexInputBindingDescription> GrassVertex::getBindingDescriptions() { //still here because instanced
+		std::vector<VkVertexInputBindingDescription> bindingDescriptions(2);
+		bindingDescriptions[0].binding = 0;
+		bindingDescriptions[0].stride = sizeof(GrassVertex);
+		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		bindingDescriptions[1].binding = 1;
+		bindingDescriptions[1].stride = sizeof(GrassInstance);
+		bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+		return bindingDescriptions;
+	}
+
+	std::vector<VkVertexInputAttributeDescription> GrassVertex::getAttributeDescriptions() {
+
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
+			{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(GrassVertex, position) },
+			{ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(GrassVertex, color) },
+			//{ 1, 0, VK_FORMAT_R32_SFLOAT, sizeof(glm::vec3) * 3 },
+
+			//instance
+			{ 2, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+			{ 3, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4)},
+			{ 4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 2},
+			{ 5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 3},
+			{6, 1, VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec4) * 4}
+		};
+		return attributeDescriptions;
+	}
+	std::vector<VkVertexInputBindingDescription> LeafVertex::getBindingDescriptions() { //still here because instanced
+		std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
+		bindingDescriptions[0].binding = 0;
+		bindingDescriptions[0].stride = sizeof(LeafVertex);
+		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		/*
+		bindingDescriptions[1].binding = 1;
+		bindingDescriptions[1].stride = sizeof(LeafInstance);
+		bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+		*/
+		return bindingDescriptions;
+	}
+
+	std::vector<VkVertexInputAttributeDescription> LeafVertex::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
+			{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LeafVertex, position) },
+			{ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LeafVertex, normal) },
+			{ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(LeafVertex, uv) },
+
+			//instance
+			/*
+			{ 3, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+			{ 4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4)},
+			{ 5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 2},
+			{ 6, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 3},
+			*/
+		};
+
+		return attributeDescriptions;
+	}
+
+	std::vector<VkVertexInputAttributeDescription> EffectVertex::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+		attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(EffectVertex, position) });
+		attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(EffectVertex, uv) });
+
+		return attributeDescriptions;
+	}
+
+
+	std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+		attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position) });
+		attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
+		attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) });
+		attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) });
+
+		return attributeDescriptions;
+	}
+	std::vector<VkVertexInputAttributeDescription> skyVertex::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+		attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(skyVertex, position) });
+
+		return attributeDescriptions;
+	}
+
+	std::vector<VkVertexInputAttributeDescription> boneVertex::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+		attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertex, position) });
+		attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertex, normal) });
+		attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(boneVertex, uv) });
+		attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertex, tangent) });
+		attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertex, m_BoneIDs) });
+		attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(boneVertex, m_Weights) });
+
+		return attributeDescriptions;
+	}
+	std::vector<VkVertexInputAttributeDescription> glmVertexNoTangent::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+		attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(glmVertexNoTangent, position) });
+		attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(glmVertexNoTangent, normal) });
+		attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(glmVertexNoTangent, uv) });
+		attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(glmVertexNoTangent, m_BoneIDs) });
+		attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(glmVertexNoTangent, m_Weights) });
+
+		return attributeDescriptions;
+	}
+
+	std::vector<VkVertexInputAttributeDescription> AVertex::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+		attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertex, position) });
+		attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertex, normal) });
+		attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(AVertex, uv) });
+		attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertex, tangent) });
+
+		return attributeDescriptions;
+	}
+	std::vector<VkVertexInputAttributeDescription> AVertexNT::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+		attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertexNT, position) });
+		attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertexNT, normal) });
+		attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(AVertexNT, uv) });
+
+		return attributeDescriptions;
+	}
+	std::vector<VkVertexInputAttributeDescription> bobVertex::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+		attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, position) });
+		attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, normal) });
+		attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(bobVertex, uv) });
+		attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, tangent) });
+		attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(bobVertex, m_BoneIDs) });
+		attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(bobVertex, m_Weights) });
+
+		return attributeDescriptions;
+	}
+
+	std::vector<VkVertexInputAttributeDescription> VertexUI::getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(1);
+		attributeDescriptions[0].binding = 0;
+		attributeDescriptions[0].location = 0;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[0].offset = offsetof(VertexUI, position);
+
+		attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexUI, uv) });
+
+		return attributeDescriptions;
+	}
+	VkShaderModule PipelineManager::loadingVertShaderModule{ VK_NULL_HANDLE };
+	VkShaderModule PipelineManager::loadingFragShaderModule{ VK_NULL_HANDLE };
 	std::unique_ptr<EWEPipeline> PipelineManager::loadingPipeline{ nullptr };
 #ifdef _DEBUG
 	std::vector<uint8_t> PipelineManager::dynamicBonePipeTracker;
@@ -540,21 +706,21 @@ namespace EWE {
 
 			pipelineConfig.cache = materialPipelineCache;
 			if (hasBumps) {
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::AVertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::AVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
+				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
 
 				dynamicMaterialPipeline.emplace(flags, std::make_unique<EWEPipeline>(device, "material_bump.vert.spv", flags, pipelineConfig, false));
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::AVertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::AVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
+				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
 				dynamicMaterialPipeline.emplace(flags, std::make_unique<EWEPipeline>(device, "material_Tangent.vert.spv", flags, pipelineConfig, false));
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::AVertexNT>();
-				pipelineConfig.attributeDescriptions = EWEModel::AVertexNT::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertexNT>();
+				pipelineConfig.attributeDescriptions = AVertexNT::getAttributeDescriptions();
 				dynamicMaterialPipeline.emplace(flags, std::make_unique<EWEPipeline>(device, "material_nn.vert.spv", flags, pipelineConfig, false));
 			}
 			
@@ -613,8 +779,8 @@ namespace EWE {
 		pipelineConfig.cache = instanceMaterialPipelineCache;
 
 		//printf("boneVertex, flags:%d \n", newFlags);
-		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::boneVertex>();
-		pipelineConfig.attributeDescriptions = EWEModel::boneVertex::getAttributeDescriptions();
+		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
+		pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
 		glslang::InitializeProcess();
 		return std::make_unique<EWEPipeline>(device, boneCount, flags, pipelineConfig);
 		glslang::FinalizeProcess();
@@ -673,14 +839,14 @@ namespace EWE {
 		glslang::InitializeProcess();
 		if (hasNormal) {
 			//printf("boneVertex, flags:%d \n", newFlags);
-			pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::boneVertex>();
-			pipelineConfig.attributeDescriptions = EWEModel::boneVertex::getAttributeDescriptions();
+			pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
+			pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
 			return std::make_unique<EWEPipeline>(device, "bone_Tangent.vert.spv", flags, pipelineConfig, true);
 		}
 		else {
 			//printf("boneVertexNT, flags:%d \n", newFlags);
-			pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::boneVertexNoTangent>();
-			pipelineConfig.attributeDescriptions = EWEModel::boneVertexNoTangent::getAttributeDescriptions();
+			pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertexNoTangent>();
+			pipelineConfig.attributeDescriptions = boneVertexNoTangent::getAttributeDescriptions();
 			return std::make_unique<EWEPipeline>(device, "bone_NT.vert.spv", flags, pipelineConfig, true);
 		}
 		glslang::FinalizeProcess();
@@ -697,8 +863,8 @@ namespace EWE {
 
 		pipelineConfig.pipelineRenderingInfo = pipeRenderInfo;
 		pipelineConfig.pipelineLayout = getPipelineLayout(PL_loading, device);
-		pipelineConfig.bindingDescriptions = EWEModel::LeafVertex::getBindingDescriptions();
-		pipelineConfig.attributeDescriptions = EWEModel::LeafVertex::getAttributeDescriptions();
+		pipelineConfig.bindingDescriptions = LeafVertex::getBindingDescriptions();
+		pipelineConfig.attributeDescriptions = LeafVertex::getAttributeDescriptions();
 
 		printf("before loading vert shader \n");
 		glslang::InitializeProcess();
@@ -1002,8 +1168,8 @@ namespace EWE {
 			case Pipe_spikyBall: {
 
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_spikyBall, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::simpleVertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::simpleVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<simpleVertex>();
+				pipelineConfig.attributeDescriptions = simpleVertex::getAttributeDescriptions();
 
 				vertString = "spikyball.vert.spv";
 				fragString = "spikyball.frag.spv";
@@ -1012,8 +1178,8 @@ namespace EWE {
 			}
 			case Pipe_grass: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_grass, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::GrassVertex::getBindingDescriptions();
-				pipelineConfig.attributeDescriptions = EWEModel::GrassVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = GrassVertex::getBindingDescriptions();
+				pipelineConfig.attributeDescriptions = GrassVertex::getAttributeDescriptions();
 
 				vertString = "grassField.vert.spv";
 				fragString = "grassField.frag.spv";
@@ -1030,8 +1196,8 @@ namespace EWE {
 			}
 			case Pipe_skybox: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_skybox, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::skyVertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::skyVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<skyVertex>();
+				pipelineConfig.attributeDescriptions = skyVertex::getAttributeDescriptions();
 
 				vertString = "skybox.vert.spv";
 				fragString = "skybox.frag.spv";
@@ -1040,8 +1206,8 @@ namespace EWE {
 			}
 			case Pipe_textured: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_textured, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::Vertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::Vertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
+				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
 
 				vertString = "texture_shader.vert.spv";
 				fragString = "texture_shader.frag.spv";
@@ -1050,8 +1216,8 @@ namespace EWE {
 			/*
 			case Pipe_material: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_material, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::Vertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::Vertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
+				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
 				pipelines[Pipe_material] = std::make_unique<EWEPipeline>(eweDevice, "texture_shader.vert.spv", "texture_shader.frag.spv", pipelineConfig);
 
 				break;
@@ -1061,7 +1227,7 @@ namespace EWE {
 			case Pipe_boneWeapon: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_boneWeapon, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::AVertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::AVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
 				pipelines[Pipe_boneWeapon] = std::make_unique<EWEPipeline>(eweDevice, "bone_weapon.vert.spv", "bob_shader.frag.spv", pipelineConfig);
 				break;
 			}
@@ -1069,8 +1235,8 @@ namespace EWE {
 			/*
 			case Pipe_fbx: { //thiis pipeline is out of date, need to replace in dynamic material pipeline
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_fbx, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::AVertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::AVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
+				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
 
 				pipelines[Pipe_fbx] = std::make_unique<EWEPipeline>(eweDevice, "fbx_shader.vert.spv", "bob_shader.frag.spv", pipelineConfig);
 				break;
@@ -1080,8 +1246,8 @@ namespace EWE {
 
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_2d, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::VertexUI>();
-				pipelineConfig.attributeDescriptions = EWEModel::VertexUI::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
+				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
 				vertString = "2d.vert.spv";
 				fragString = "2d.frag.spv";
 				break;
@@ -1089,8 +1255,8 @@ namespace EWE {
 			case Pipe_NineUI: {
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_nineUI, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::VertexUI>();
-				pipelineConfig.attributeDescriptions = EWEModel::VertexUI::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
+				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
 				//maybe i should cache UI into here
 				//printf("before nineui pipe \n");
 				vertString = "NineUI.vert.spv";
@@ -1100,8 +1266,8 @@ namespace EWE {
 			}
 			case Pipe_alpha: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_textured, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::Vertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::Vertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
+				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				vertString = "texture_alpha.vert.spv";
 				fragString = "texture_alpha.frag.spv";
@@ -1110,8 +1276,8 @@ namespace EWE {
 			case Pipe_sprite: {
 
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_sprite, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::AVertexNT>();
-				pipelineConfig.attributeDescriptions = EWEModel::AVertexNT::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertexNT>();
+				pipelineConfig.attributeDescriptions = AVertexNT::getAttributeDescriptions();
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				vertString = "sprite.vert.spv";
 				fragString = "sprite.frag.spv";
@@ -1120,8 +1286,8 @@ namespace EWE {
 			case Pipe_orbOverlay: {
 
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_orbOverlay, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::VertexUI>();
-				pipelineConfig.attributeDescriptions = EWEModel::VertexUI::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
+				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				//printf("before orb pipe \n");
 				vertString = "HPContainer.vert.spv";
@@ -1133,8 +1299,8 @@ namespace EWE {
 			case Pipe_ExpBar: {
 
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_ExpBar, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::VertexUI>();
-				pipelineConfig.attributeDescriptions = EWEModel::VertexUI::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
+				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				//printf("before orb pipe \n");
 				vertString = "ExpContainer.vert.spv";
@@ -1144,8 +1310,8 @@ namespace EWE {
 			}
 			case Pipe_castleHealth: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_castleHealth, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::VertexUI>();
-				pipelineConfig.attributeDescriptions = EWEModel::VertexUI::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
+				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				//printf("before orb pipe \n");
 				vertString = "CastleHealth.vert.spv";
@@ -1156,8 +1322,8 @@ namespace EWE {
 
 			case Pipe_visualEffect: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_visualEffect, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::EffectVertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::EffectVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EffectVertex>();
+				pipelineConfig.attributeDescriptions = EffectVertex::getAttributeDescriptions();
 				vertString = "visualEffect.vert.spv";
 				fragString = "visualEffect.frag.spv";
 				break;
@@ -1165,8 +1331,8 @@ namespace EWE {
 			/*
 			case Pipe_bobTrans: { //this fragment shader is out of date, need to replace in dynamic material pipeline
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_fbx, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::AVertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::AVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
+				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
 				pipelines[Pipe_bobTrans] = std::make_unique<EWEPipeline>(eweDevice, "fbx_shader.vert.spv", "bob_transparency.frag.spv", pipelineConfig);
 				break;
 			}
@@ -1178,8 +1344,8 @@ namespace EWE {
 				pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 				pipelineConfig.depthStencilInfo.depthWriteEnable = VK_FALSE;
 
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::Vertex>();
-				pipelineConfig.attributeDescriptions = EWEModel::Vertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
+				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
 				vertString = "texture_alpha.vert.spv";
 				fragString = "texture_alpha.frag.spv";
 				break;

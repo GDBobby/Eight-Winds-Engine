@@ -56,8 +56,8 @@ public:
     };
     struct meshNTEData {
         std::string versionTracker = "";
-        std::vector<std::pair<std::vector<EWE::EWEModel::boneVertexNoTangent>, std::vector<uint32_t>>> meshesNT;
-        meshNTEData(std::vector<EWE::EWEModel::boneVertexNoTangent>& vertex, std::vector<uint32_t>& index) {
+        std::vector<std::pair<std::vector<EWE::boneVertexNoTangent>, std::vector<uint32_t>>> meshesNT;
+        meshNTEData(std::vector<EWE::boneVertexNoTangent>& vertex, std::vector<uint32_t>& index) {
             meshesNT.push_back(std::make_pair(vertex, index));
         }
         meshNTEData() {}
@@ -80,8 +80,8 @@ public:
         }
     };
     struct meshNTSimpleData {
-        std::vector<std::pair<std::vector<EWE::EWEModel::LeafVertex>, std::vector<uint32_t>>> meshesNTSimple;
-        meshNTSimpleData(std::vector<EWE::EWEModel::LeafVertex>& vertex, std::vector<uint32_t>& index) {
+        std::vector<std::pair<std::vector<EWE::LeafVertex>, std::vector<uint32_t>>> meshesNTSimple;
+        meshNTSimpleData(std::vector<EWE::LeafVertex>& vertex, std::vector<uint32_t>& index) {
             meshesNTSimple.push_back(std::make_pair(vertex, index));
         }
         meshNTSimpleData() {}

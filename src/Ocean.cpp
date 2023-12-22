@@ -325,8 +325,8 @@ namespace EWE {
 			EWEPipeline::PipelineConfigInfo pipeConfigInfo{};
 			EWEPipeline::defaultPipelineConfigInfo(pipeConfigInfo);
 
-			pipeConfigInfo.attributeDescriptions = EWEModel::simpleVertex::getAttributeDescriptions();
-			pipeConfigInfo.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::simpleVertex>();
+			pipeConfigInfo.attributeDescriptions = simpleVertex::getAttributeDescriptions();
+			pipeConfigInfo.bindingDescriptions = EWEModel::getBindingDescriptions<simpleVertex>();
 			pipeConfigInfo.pipelineLayout = renderPipeLayout;
 			pipeConfigInfo.pipelineRenderingInfo = pipeRenderInfo;
 

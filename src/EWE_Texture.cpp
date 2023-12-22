@@ -56,7 +56,7 @@ namespace EWE {
         if (tType == tType_orbOverlay) {
             std::vector<PixelPeek> pixelPeek(2);
             std::string enginePath = TEXTURE_DIR + texPath + "globeComponent.png";
-            stbi_loadf_from_memory();
+            //stbi_loadf_from_memory();
             pixelPeek[0].pixels = stbi_load(enginePath.c_str(), &pixelPeek[0].width, &pixelPeek[0].height, &pixelPeek[0].channels, STBI_rgb_alpha);
             if ((!pixelPeek[0].pixels) || ((pixelPeek[0].width * pixelPeek[0].height) <= 0)) {
                 printf("failed to load orb: %s \n", texPath.c_str());

@@ -9,11 +9,6 @@ namespace EWE {
     enum DescSet_Enum {
         DS_global,
         DS_pointLight,
-        //DS_spotLight,
-        //DS_boned,
-        //DS_bonePIndex,
-        //DS_skybox,
-        //DS_boneWeapon,
         DS_loading,
 
         DS_MAX_COUNT,
@@ -26,10 +21,6 @@ namespace EWE {
         PDSL_textured,
         PDSL_boned,
         PDSL_2d,
-        //PDSL_skybox,
-        //PDSL_sprite,
-        //PDSL_boneWeapon,
-        //PDSL_bonedPlayerIndex,
         PDSL_visualEffect,
         PDSL_grass,
         PDSL_loading,
@@ -43,8 +34,6 @@ namespace EWE {
 		LDSL_boned,
         LDSL_smallInstance,
         LDSL_largeInstance,
-		//LDSL_boneWeapon,
-		//LDSL_bonePIndex,
 	};
 	enum Buffer_Enum {
 		Buff_ubo,
@@ -56,9 +45,9 @@ namespace EWE {
     private:
         DescriptorHandler() {}
 
-        static std::map<LDSL_Enum, std::unique_ptr<EWEDescriptorSetLayout>> descriptorSetLayouts;
-        static std::map<DescSet_Enum, std::vector<VkDescriptorSet>> descriptorSets;
-        static std::map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> pipeDescSetLayouts;
+        static std::unordered_map<LDSL_Enum, std::unique_ptr<EWEDescriptorSetLayout>> descriptorSetLayouts;
+        static std::unordered_map<DescSet_Enum, std::vector<VkDescriptorSet>> descriptorSets;
+        static std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> pipeDescSetLayouts;
         static std::vector<VkDescriptorSetLayout> dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
     public:
         static void cleanup(EWEDevice& device, std::shared_ptr<EWEDescriptorPool> globalPool) {

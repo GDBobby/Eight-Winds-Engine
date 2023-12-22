@@ -127,22 +127,5 @@ namespace EWE {
             }
             return returnVector;
         }
-        /*
-        void removeTexture(int32_t remID) {
-            printf("removing texture from material handler : %d \n", remID);
-            for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
-                for (auto iterTexID = iter->second.begin(); iterTexID != iter->second.end(); iterTexID++) {
-
-                }
-
-                for (int i = 0; i < iter->second.size(); i++) {
-                    if (iter->second[i].sameTextureID(remID)) {
-                        iter->second.erase(iter->second.begin() + i);
-                        i--;
-                    }
-                }
-            }
-        }
-        */
     };
 }

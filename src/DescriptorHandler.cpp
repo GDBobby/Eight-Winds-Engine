@@ -5,10 +5,10 @@ namespace EWE {
 
 
 
-	std::map<LDSL_Enum, std::unique_ptr<EWEDescriptorSetLayout>> DescriptorHandler::descriptorSetLayouts;
+	std::unordered_map<LDSL_Enum, std::unique_ptr<EWEDescriptorSetLayout>> DescriptorHandler::descriptorSetLayouts;
 
-	std::map<DescSet_Enum, std::vector<VkDescriptorSet>> DescriptorHandler::descriptorSets;
-	std::map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> DescriptorHandler::pipeDescSetLayouts;
+	std::unordered_map<DescSet_Enum, std::vector<VkDescriptorSet>> DescriptorHandler::descriptorSets;
+	std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> DescriptorHandler::pipeDescSetLayouts;
 
     std::vector<VkDescriptorSetLayout> DescriptorHandler::dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
 
@@ -25,14 +25,6 @@ namespace EWE {
                 .build();
             break;
         }
-        /*
-        case DSL_pointLight: {
-            descriptorSetLayouts[DSL_pointLight] = EWEDescriptorSetLayout::Builder(device)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
-                .build();
-            break;
-        }
-        */
         case LDSL_boned: {
             //printf("CREATING LDSL_boned \n");
             descriptorSetLayouts[LDSL_boned] = EWEDescriptorSetLayout::Builder(device)
@@ -54,22 +46,6 @@ namespace EWE {
                 .build();
             break;
         }
-        /*
-        case LDSL_bonePIndex: {
-            descriptorSetLayouts[LDSL_bonePIndex] = EWEDescriptorSetLayout::Builder(device)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .build();
-            break;
-        }
-        */
-        /*
-        case LDSL_boneWeapon: {
-            descriptorSetLayouts[LDSL_boneWeapon] = EWEDescriptorSetLayout::Builder(device)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .build();
-            break;
-        }
-        */
         default: {
             printf("TRYING TO CREATE A LAYOUT THAT DOES NOT HAVE SUPPORT : %d \n", whichDescSet);
             //throw std::

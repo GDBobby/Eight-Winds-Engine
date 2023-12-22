@@ -30,8 +30,6 @@ namespace EWE {
 		//this will get strange with transparent objects
 		//std::unordered_map<uint8_t, std::pair<std::function<void(FrameInfo frameInfo)>, std::vector<EweObject>>> renderObjects;
 
-		//std::vector<RockTrack> rockField;
-
 		std::vector<PointLight> pointLights;
 
 		// not currently active
