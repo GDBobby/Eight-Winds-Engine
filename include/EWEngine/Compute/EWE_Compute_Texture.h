@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../graphics/EWE_Texture.h"
+#include "EWEngine/graphics/EWE_Texture.h"
 
 
 #include <cmath>

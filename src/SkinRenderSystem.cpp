@@ -126,7 +126,7 @@ namespace EWE {
 		globalPool.reset();
 	}
 
-	void SkinRenderSystem::render(std::pair<VkCommandBuffer, int> cmdIndexPair) {
+	void SkinRenderSystem::render(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
 		//printf("skin render? \n");
 		/*
 		if (enemyData->actorCount[actorType - 3] == 0) {

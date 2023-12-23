@@ -1,6 +1,6 @@
 #pragma once
 #include "EWE_camera.h"
-#include "../LoadingScreen/LeafSystem.h"
+#include "EWEngine/LoadingScreen/LeafSystem.h"
 
 namespace EWE {
 
@@ -44,18 +44,18 @@ namespace EWE {
 	};
 
 	struct FrameInfo {
-		std::pair<VkCommandBuffer, int> cmdIndexPair{};
+		std::pair<VkCommandBuffer, uint8_t> cmdIndexPair{};
 		float time{0.f};
 		//std::vector<glm::mat4> playerMats;
 		//std::vector<SpotLight>& spotLights;
 	};
 	struct FrameInfo2D {
-		std::pair<VkCommandBuffer, int> cmdIndexPair{};
+		std::pair<VkCommandBuffer, uint8_t> cmdIndexPair{};
 		//std::vector<std::vector<GameObject2D>>& uiObjects;
 		bool menuActive{};
 	};
 	struct FrameInfoLoading {
-		std::pair<VkCommandBuffer, int> cmdIndexPair{};
+		std::pair<VkCommandBuffer, uint8_t> cmdIndexPair{};
 		LeafSystem* leafSystem{nullptr};
 	};
 }

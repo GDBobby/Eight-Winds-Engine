@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Data/EWEImport.h"
-#include "../EWE_GameObject.h"
+#include "EWEngine/data/EWEImport.h"
+#include "EWEngine/EWE_GameObject.h"
 #include "EWE_Texture.h"
-#include "../systems/RigidRendering/RigidRenderSystem.h"
+#include "EWEngine/systems/RigidRendering/RigidRenderSystem.h"
 
 namespace EWE {
     struct TextureMapping {

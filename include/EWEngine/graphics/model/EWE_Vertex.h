@@ -1,8 +1,8 @@
 #pragma once
 
 
-#include "EWE_Device.hpp"
-#include "../Data/TransformInclude.h"
+#include "EWEngine/graphics/EWE_Device.hpp"
+#include "EWEngine/data/TransformInclude.h"
 
 #include <vector>
 #include <map>

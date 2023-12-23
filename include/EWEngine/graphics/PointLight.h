@@ -1,5 +1,5 @@
 #pragma once
-#include "../EWE_GameObject.h"
+#include "EWEngine/EWE_GameObject.h"
 
 namespace EWE {
 

@@ -239,9 +239,9 @@ namespace EWE {
 		finishedLoadingScreen = true;
 		printf(" ~~~~ END OF LOADING SCREEN FUNCTION \n");
 	}
-	std::pair<VkCommandBuffer, int> EightWindsEngine::beginRender() {
+	std::pair<VkCommandBuffer, uint8_t> EightWindsEngine::beginRender() {
 		//printf("begin render \n");
-		std::pair<VkCommandBuffer, int> cmdBufIndex = eweRenderer.beginFrame();
+		std::pair<VkCommandBuffer, uint8_t> cmdBufIndex = eweRenderer.beginFrame();
 		if (cmdBufIndex.first) {
 			if (displayingRenderInfo) {
 #if BENCHMARKING_GPU
@@ -292,7 +292,7 @@ namespace EWE {
 
 		return cmdBufIndex;
 	}
-	void EightWindsEngine::drawObjects(std::pair<VkCommandBuffer, int> cmdIndexPair, double dt) {
+	void EightWindsEngine::drawObjects(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair, double dt) {
 		FrameInfo2D frameInfo2D{ cmdIndexPair, menuManager.getMenuActive() };
 		timeTracker = glm::mod(timeTracker + dt, glm::two_pi<double>());
 		FrameInfo frameInfo{ cmdIndexPair, static_cast<float>(timeTracker) };
@@ -308,7 +308,7 @@ namespace EWE {
 			bufferMap[Buff_gpu][cmdIndexPair.second]->flush();
 		}
 
-		camera.bindUBO(cmdIndexPair.second);
+		camera.ViewTargetDirect(cmdIndexPair.second);
 #ifdef RENDER_OBJECT_DEBUG
 		std::cout << "before rendering game objects \n";
 #endif
@@ -345,7 +345,7 @@ namespace EWE {
 
 	}
 
-	void EightWindsEngine::endRender(std::pair<VkCommandBuffer, int> cmdIndexPair) {
+	void EightWindsEngine::endRender(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
 		//printf("end render \n");
 
 

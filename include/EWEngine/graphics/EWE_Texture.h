@@ -7,7 +7,7 @@
 
 #include <unordered_map>
 #include <map>
-#include "../Data/enginedatatypes.h"	
+#include "EWEngine/data/enginedatatypes.h"	
 
 /*
 ~EWETexture() {

@@ -2,6 +2,7 @@
 
 #include "GUI/MainMenuMM.h"
 //#include "GUI/ControlsMM.h"
+#include <EWEngine/systems/StaticRendering/staticRenderingSystem.h>
 
 
 #include <chrono>
@@ -27,7 +28,10 @@ namespace EWE {
 		//scenes.emplace(scene_)
 		currentScenePtr = scenes.at(currentScene).get();
 		currentScenePtr->load();
-		
+
+		StaticRenderSystem::initStaticRS(ewEngine.eweDevice, 1, 1);
+		StaticRenderSystem::destructStaticRS();
+
 		ewEngine.endEngineLoadScreen();
 	}
 	EWESample::~EWESample() {
@@ -115,7 +119,7 @@ namespace EWE {
 		TextureID skyboxID = EWETexture::addGlobalTexture(ewEngine.eweDevice, "nasa/", EWETexture::tType_cube);
 
 		//i dont even know if the engine will work if this isnt constructed
-		ewEngine.objectManager.skybox = { EWEModel::createSkyBox(ewEngine.eweDevice, 100.f), skyboxID };
+		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(ewEngine.eweDevice, 100.f), skyboxID };
 
 		//point lights are off by default
 		std::vector<glm::vec3> lightColors{

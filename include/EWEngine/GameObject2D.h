@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EWE_model.h"
-#include "graphics/PushConstants.h"
+#include "EWEngine/graphics/model/EWE_model.h"
+#include "EWEngine/graphics/PushConstants.h"
 // std
 #include <memory>
 

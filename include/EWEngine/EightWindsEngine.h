@@ -1,19 +1,19 @@
 #pragma once
 
 #include "MainWindow.h"
-#include "graphics/EWE_device.hpp"
-#include "graphics/EWE_renderer.h"
-#include "graphics/EWE_descriptors.h"
+#include "EWEngine/graphics/EWE_device.hpp"
+#include "EWEngine/graphics/EWE_renderer.h"
+#include "EWEngine/graphics/EWE_descriptors.h"
 
-#include "Systems/SkinRendering/SkinRenderSystem.h"
+#include "EWEngine/systems/SkinRendering/SkinRenderSystem.h"
 
-#include "systems/advanced_render_system.h"
+#include "EWEngine/systems/advanced_render_system.h"
 #include "ObjectManager.h"
 //#include "LevelBuilder/LevelBuilder.h"
-#include "GUI/UIHandler.h"
-//#include "graphics/imGuiHandler.h"
+#include "EWEngine/GUI/UIHandler.h"
+//#include "EWEngine/graphicsimGuiHandler.h"
 #include "loadingscreen/leafsystem.h"
-#include "GUI/MenuManager.h"
+#include "EWEngine/GUI/MenuManager.h"
 
 #include <functional>
 #include <memory>
@@ -109,12 +109,12 @@ namespace EWE {
 			advancedRS.updatePipelines(objectManager, eweRenderer.getPipelineInfo());
 		}
 
-		std::pair<VkCommandBuffer, int> beginRender();
+		std::pair<VkCommandBuffer, uint8_t> beginRender();
 //#define RENDER_OBJECT_DEBUG
 
-		void drawObjects(std::pair<VkCommandBuffer, int> cmdIndexPair, double dt);
+		void drawObjects(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair, double dt);
 
-		void endRender(std::pair<VkCommandBuffer, int> cmdIndexPair);
+		void endRender(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
 
 		void loadingScreen();
 

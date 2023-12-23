@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../MainWindow.h"
-#include "../systems/SyncHub.h"
+#include "EWEngine/MainWindow.h"
+#include "EWEngine/systems/SyncHub.h"
 
 // std lib headers
 

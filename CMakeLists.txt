@@ -176,4 +176,4 @@ set_target_properties(${PROJECT_NAME}
 )
 
 # Create source groups to maintain file structure in Visual Studio
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES} ${SOURCES_C} ${HEADER_FILES} ${HEADER_FILES_PP})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${SOURCES_C} ${HEADER_FILES} ${HEADER_FILES_PP})

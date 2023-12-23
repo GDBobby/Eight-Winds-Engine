@@ -4,8 +4,8 @@
 #include "EWE_device.hpp"
 #include "EWE_descriptors.h"
 #include "DescriptorHandler.h"
-#include "../Data/ShaderBuilder.h"
-#include "../Data/EngineDataTypes.h"
+#include "EWEngine/data/ShaderBuilder.h"
+#include "EWEngine/data/EngineDataTypes.h"
 
 #include <glm/glm.hpp>
 #include <map>

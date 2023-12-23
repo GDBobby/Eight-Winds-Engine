@@ -1,9 +1,9 @@
 #pragma once
-#include "../../graphics/EWE_Device.hpp"
-#include "../../graphics/EWE_Descriptors.h"
-#include "../../graphics/EWE_Buffer.h"
-#include "../../graphics/EWE_Pipeline.h"
-#include "../../Compute/EWE_Compute_Texture.h"
+#include "EWEngine/graphics/EWE_Device.hpp"
+#include "EWEngine/graphics/EWE_Descriptors.h"
+#include "EWEngine/graphics/EWE_Buffer.h"
+#include "EWEngine/graphics/EWE_Pipeline.h"
+#include "EWEngine/Compute/EWE_Compute_Texture.h"
 
 #include "OceanStructs.h"
 

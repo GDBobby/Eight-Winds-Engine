@@ -51,7 +51,7 @@ namespace EWE {
 		ubo.cameraPos.z = position.z;
 	}
 
-	void EWECamera::newViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 cameraUp) {
+	void EWECamera::newViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp) {
 
 		//ubo.view = glm::lookAt(position, target, cameraUp);
 		//inverseubo.view = glm::inverse(ubo.view);
@@ -78,6 +78,46 @@ namespace EWE {
 		ubo.cameraPos.y = position.y;
 		ubo.cameraPos.z = position.z;
 		//printf("camera pos : %.2f:%.2f:%.2f \n", ubo.cameraPos.x, ubo.cameraPos.y, ubo.cameraPos.z);
+	}
+
+	void EWECamera::ViewTargetDirect(uint8_t currentFrame) {
+
+
+		if (dataHasBeenUpdated == 0) {
+			return;
+		}
+		dataHasBeenUpdated--;
+		printf("view target direct, sizeof globalubo : %llu \n", sizeof(GlobalUbo));
+
+		glm::vec3 f = glm::normalize(target - position);
+		glm::vec3 s = glm::normalize(glm::cross(f, cameraUp));
+		glm::vec3 u = glm::cross(s, f);
+
+		float* mem = reinterpret_cast<float*>(uniformBuffers->at(currentFrame)->getMappedMemory());
+		constexpr size_t viewOffset = offsetof(GlobalUbo, view) / sizeof(float);
+		mem[viewOffset + 0] = s.x;
+		mem[viewOffset + 4] = s.y;
+		mem[viewOffset + 8] = s.z;
+
+		mem[viewOffset + 1] = u.x;
+		mem[viewOffset + 5] = u.y;
+		mem[viewOffset + 9] = u.z;
+
+		mem[viewOffset + 2] = -f.x;
+		mem[viewOffset + 6] = -f.y;
+		mem[viewOffset + 10] = -f.z;
+
+		mem[viewOffset + 12] = -dot(s, position);
+		mem[viewOffset + 13] = -dot(u, position);
+		mem[viewOffset + 14] = dot(f, position);
+
+		constexpr size_t camPosOffset = offsetof(GlobalUbo, cameraPos) / sizeof(float);
+		mem[camPosOffset + 0] = position.x;
+		mem[camPosOffset + 1] = position.y;
+		mem[camPosOffset + 2] = position.z;
+
+		//printf("view target direct, currentFrmae : %d \n", currentFrame);
+		uniformBuffers->at(currentFrame)->flush();
 	}
 
 	void EWECamera::setViewYXZ(glm::vec3 position, glm::vec3 rotation) {

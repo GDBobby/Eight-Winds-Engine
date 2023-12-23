@@ -2,7 +2,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "../EWE_model.h"
+#include "EWEngine/graphics/model/EWE_model.h"
 
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>

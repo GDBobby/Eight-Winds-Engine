@@ -9,6 +9,8 @@
 #include <functional>
 
 namespace EWE {
+
+
 	class EWESample {
 	public:
 		EWESample(EightWindsEngine& ewEngine);

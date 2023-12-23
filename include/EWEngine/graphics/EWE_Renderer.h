@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../MainWindow.h"
+#include "EWEngine/MainWindow.h"
 #include "EWE_device.hpp"
 #include "EWE_SwapChain.hpp"
 #include "TextOverlay.h"
@@ -57,7 +57,7 @@ namespace EWE {
 			return currentFrameIndex;
 		}
 
-		std::pair<VkCommandBuffer, int> beginFrame();
+		std::pair<VkCommandBuffer, uint8_t> beginFrame();
 		bool endFrame();
 
 		void beginSecondarySwapChainRenderPass(std::pair<VkCommandBuffer, VkCommandBuffer> commandBufferPair);
@@ -99,7 +99,7 @@ namespace EWE {
 		std::unique_ptr<EWESwapChain> eweSwapChain;
 
 		uint32_t currentImageIndex;
-		int currentFrameIndex{0};
+		uint8_t currentFrameIndex{0};
 		bool isFrameStarted{false};
 
 		std::shared_ptr<SyncHub> syncHub;

@@ -1,25 +1,52 @@
 #pragma once
-#include "../../EWE_Model.h"
-#include "../../graphics/EWE_pipeline.h"
+#include "EWEngine/graphics/model/EWE_Model.h"
+#include "EWEngine/graphics/EWE_pipeline.h"
 
 namespace EWE {
 	class StaticRenderSystem {
+	private:
 		static StaticRenderSystem* skinnedMainObject;
-
 		struct GPUStruct {
-			glm::mat4 transform;
-			glm::mat3 normalTransform;
-			EWEModel* modelData;
-			std::vector<glm::mat4> transforms;
-			std::vector<glm::mat3> normalTransforms;
+			std::unique_ptr<EWEModel> modelData;
+			TextureID textureIDs;
+			std::vector<TransformID> transformIDs{};
 		};
-
 		struct PipelineStruct {
-			std::unique_ptr<EWEPipeline> pipeline;
+			PipelineID pipeline;
 			uint16_t pipeLayoutIndex; //a lot of work to find this value, might as well just store it
-			std::unordered_map<TextureID, std::vector<EWEModel*>> skeletonData; //key is skeletonID
+			std::vector<GPUStruct> objectData{};
+			std::vector<uint32_t> freedTransformIDs{};
+			/*
+			PipelineStruct(std::unique_ptr<EWEPipeline> pipeline, GPUStruct& objectData)
+				: pipeline{std::move(pipeline)}, objectData{std::move(objectData)}
+			{}
+			void addObject(std::unique_ptr<EWEModel> modelData, TextureID textureID) {
 
-
+			}
+			*/
 		};
+		std::vector<PipelineStruct> pipelineStructs{};
+		std::unique_ptr<EWEBuffer> transformBuffer;
+		uint32_t modelLimit;
+
+		StaticRenderSystem(EWEDevice& device, uint32_t pipelineCount, uint32_t modelLimit);
+
+	public:
+		static void initStaticRS(EWEDevice& device, uint32_t pipelineCount, uint32_t modelLimit);
+		static void destructStaticRS() {
+			delete skinnedMainObject;
+		}
+
+		static bool addStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureID textureIDs, TransformComponent& transform) {
+
+			return false;
+		}
+		static bool addStaticToBack() {
+
+			return false;
+		}
+
+
+
 	};
 }

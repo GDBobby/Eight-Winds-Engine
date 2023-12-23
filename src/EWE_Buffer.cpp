@@ -17,15 +17,29 @@ namespace EWE {
      */
     VkDeviceSize EWEBuffer::getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment) {
         if (minOffsetAlignment > 0) {
+            printf("get alignment size : %llu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
             return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
         }
         return instanceSize;
     }
 
-    EWEBuffer::EWEBuffer(EWEDevice& device,  VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment)
-        : eweDevice{ device }, instanceSize{ instanceSize }, instanceCount{ instanceCount }, usageFlags{ usageFlags }, memoryPropertyFlags{ memoryPropertyFlags } {
+    EWEBuffer::EWEBuffer(EWEDevice& device,  VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
+        : eweDevice{ device }, usageFlags{ usageFlags }, memoryPropertyFlags{ memoryPropertyFlags } {
 
         //buffer_info.buffer = VK_NULL_HANDLE; //not sure if necessary??
+        VkDeviceSize minOffsetAlignment = 1;
+        if (((usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) == VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) ||
+            ((usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) == VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
+            ) {
+            minOffsetAlignment = 1;
+        }
+        else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
+            minOffsetAlignment = device.getProperties().limits.minUniformBufferOffsetAlignment;
+        }
+        else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
+            minOffsetAlignment = device.getProperties().limits.minStorageBufferOffsetAlignment;
+        }
+
         alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
         bufferSize = alignmentSize * instanceCount;
         device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
@@ -145,17 +159,6 @@ namespace EWE {
         buffer_info.range = size;
         return &buffer_info;
         //return &VkDescriptorBufferInfo{ buffer, offset, size, };
-    }
-
-    /**
-     * Copies "instanceSize" bytes of data to the mapped buffer at an offset of index * alignmentSize
-     *
-     * @param data Pointer to the data to copy
-     * @param index Used in offset calculation
-     *
-     */
-    void EWEBuffer::writeToIndex(void* data, int index) {
-        writeToBuffer(data, instanceSize, index * alignmentSize);
     }
 
     /**

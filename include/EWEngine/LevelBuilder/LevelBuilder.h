@@ -1,14 +1,14 @@
 /*
 #pragma once
 
-#include "../graphics/imGuiHandler.h"
+#include "EWEngine/graphics/imGuiHandler.h"
 //#include "EWE_model.h"
 #include "../freeCameraController.h"
 #include "../ObjectManager.h"
-#include "../graphics/EWE_camera.h"
+#include "EWEngine/graphics/EWE_camera.h"
 #include "EweLevelLoader.h"
 
-#include "../graphics/EWE_frame_info.h"
+#include "EWEngine/graphics/EWE_frame_info.h"
 
 namespace EWE {
 	class BuilderObjects {

@@ -2,8 +2,8 @@
 
 #include "SkinBufferHandler.h"
 
-#include "../../EWE_Model.h"
-#include "../../graphics/EWE_pipeline.h"
+#include "EWEngine/graphics/model/EWE_Model.h"
+#include "EWEngine/graphics/EWE_pipeline.h"
 
 #include <algorithm>
 
@@ -94,7 +94,7 @@ namespace EWE {
 
 		void flushBuffers(uint8_t frameIndex);
 
-		void render(std::pair<VkCommandBuffer, int> cmdIndexPair);
+		void render(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
 
 		static SkeletonID getSkinID() {
 			return skinnedMainObject->skinID++;

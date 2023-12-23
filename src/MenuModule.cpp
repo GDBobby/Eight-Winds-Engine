@@ -27,8 +27,8 @@ namespace EWE {
 			textureIDs.emplace(MT_Base, EWETexture::addUITexture(eweDevice, "UI/menuBase.png"));
 		}
 
-		model2D = EWEModel::generate2DQuad(eweDevice);
-		nineUIModel = EWEModel::generateNineUIQuad(eweDevice);
+		model2D = Basic_Model::generate2DQuad(eweDevice);
+		nineUIModel = Basic_Model::generateNineUIQuad(eweDevice);
 	}
 	/*
 	MenuModule::MenuModule(MenuStates menuState, float screenWidth, float screenHeight) {

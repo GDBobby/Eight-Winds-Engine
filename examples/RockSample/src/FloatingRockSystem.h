@@ -2,7 +2,7 @@
 
 #include <EWEngine/graphics/EWE_FrameInfo.h>
 #include <EWEngine/graphics/PushConstants.h>
-#include <EWEngine/EWE_Model.h>
+#include <EWEngine/graphics/model/EWE_Model.h>
 #include <EWEngine/graphics/EWE_Pipeline.h>
 #include <EWEngine/systems/SkinRendering/SkinRenderSystem.h>
 

@@ -1,4 +1,4 @@
-#include "EWEngine/EWE_Model.h"
+#include "EWEngine/graphics/model/EWE_Model.h"
 
 #include "EWEngine/EWE_utils.h"
 
@@ -62,41 +62,6 @@ namespace EWE {
         GrassBuilder builder{};
         builder.loadModel(filePath);
         return std::make_unique<EWEModel>(device, builder.vertices, builder.indices);
-    }
-
-    std::unique_ptr<EWEModel> EWEModel::generateCircle(EWEDevice& device, uint16_t const points, float radius) {
-        //utilizing a triangle fan
-        if (points < 5) {
-            std::cout << "yo wyd? making a circle with too few points : " << points << std::endl;
-        }
-
-        glm::vec3 color = { 1.f,1.f,1.f };
-        glm::vec3 normal = { 0.f, -1.f, 0.f };
-        std::vector<Vertex> vertices;
-        vertices.push_back({ { 0.0f,0.0f,0.0f }, normal, { 0.5f,0.5f }, color });
-
-        float angle = glm::two_pi<float>() / points;
-
-        for (uint16_t i = 0; i < points; i++) {
-            //gonna have to fuck with UV for a while
-            // 
-            //i dont have a better name
-            float theSin = glm::sin(angle * i);
-            float theCos = glm::cos(angle * i);
-            //std::cout << "theSin:theCos ~ " << theSin << " : " << theCos << std::endl; //shit is tiling when i want it to stretch
-            vertices.push_back({ {radius * theSin, 0.f, radius * theCos}, normal, {(theSin + 1.f) / 2.f, (theCos + 1.f) /2.f}, color });
-        }
-        std::vector<uint32_t> indices;
-
-        for (uint16_t i = 2; i < points; i++) {
-            indices.push_back(0);
-            indices.push_back(i - 1);
-            indices.push_back(i);
-        }
-        indices.push_back(0);
-        indices.push_back(points - 1);
-        indices.push_back(1);
-        return std::make_unique<EWEModel>(device, vertices, indices);
     }
 
     void EWEModel::AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex) {

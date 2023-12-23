@@ -31,7 +31,7 @@ namespace EWE {
 		EWETexture::setGlobalPool(globalPool);
 		PipelineManager::initStaticVariables();
 
-		model2D = EWEModel::generate2DQuad(device);
+		model2D = Basic_Model::generate2DQuad(device);
 		materialHandlerInstance = MaterialHandler::getMaterialHandlerInstance();
 		printf("after ARS constructor finished \n");
 	}

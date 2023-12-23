@@ -1,13 +1,13 @@
 #pragma once
 #include "EWE_GameObject.h"
-#include "graphics/PointLight.h"
-#include "graphics/EWE_Texture.h"
+#include "EWEngine/graphics/PointLight.h"
+#include "EWEngine/graphics/EWE_Texture.h"
 //#include "FloatingRockSystem.h"
 #include "GameObject2D.h"
-//#include "graphics/AssimpModel.h"
-#include "graphics/EWE_Object.h"
+//#include "EWEngine/graphicsAssimpModel.h"
+#include "EWEngine/graphics/EWE_Object.h"
 #include "Collision.h"
-#include "systems/RigidRendering/RigidRenderSystem.h"
+#include "EWEngine/systems/RigidRendering/RigidRenderSystem.h"
 
 namespace EWE {
 	class ObjectManager {

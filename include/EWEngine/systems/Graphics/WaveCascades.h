@@ -2,7 +2,7 @@
 #include "OceanStructs.h"
 #include "OceanFFT.h"
 
-#include "../../graphics/EWE_Texture.h"
+#include "EWEngine/graphics/EWE_Texture.h"
 #include <array>
 
 namespace EWE {

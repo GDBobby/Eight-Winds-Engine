@@ -1,15 +1,15 @@
 #pragma once
 
-#include "../Graphics/EWE_Camera.h"
-#include "../Graphics/EWE_Pipeline.h"
-#include "../Graphics/EWE_Device.hpp"
-#include "../Graphics/EWE_FrameInfo.h"
+#include "EWEngine/graphics/EWE_Camera.h"
+#include "EWEngine/graphics/EWE_Pipeline.h"
+#include "EWEngine/graphics/EWE_Device.hpp"
+#include "EWEngine/graphics/EWE_FrameInfo.h"
 
-#include "../GUI/UIHandler.h"
+#include "EWEngine/GUI/UIHandler.h"
 
-#include "../GUI/MenuManager.h"
+#include "EWEngine/GUI/MenuManager.h"
 
-#include "../ObjectManager.h"
+#include "EWEngine/ObjectManager.h"
 
 #include <memory>
 #include <vector>

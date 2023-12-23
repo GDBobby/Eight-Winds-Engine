@@ -1,8 +1,8 @@
 #pragma once
 #include "OceanFFT.h"
 #include "WaveCascades.h"
-#include "../../graphics/EWE_Texture.h"
-#include "../../EWE_Model.h"
+#include "EWEngine/graphics/EWE_Texture.h"
+#include "EWEngine/graphics/model/EWE_Model.h"
 
 //this is largely self-contained, and builds its own systems.
 //	as i expand the engine, and these systems are needed in mroe places, 

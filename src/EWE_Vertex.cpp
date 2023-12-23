@@ -1,4 +1,4 @@
-#include "EWEngine/graphics/EWE_Vertex.h"
+#include "EWEngine/graphics/model/EWE_Vertex.h"
 
 namespace EWE {
 

@@ -77,7 +77,7 @@ namespace EWE {
 		scissor = { {0, 0}, eweSwapChain->getSwapChainExtent() };
 	}
 
-	std::pair<VkCommandBuffer, int> EWERenderer::beginFrame() {
+	std::pair<VkCommandBuffer, uint8_t> EWERenderer::beginFrame() {
 #if _DEBUG
 		if (isFrameStarted) {
 			std::cout << "frame was started, finna throw an error " << std::endl;

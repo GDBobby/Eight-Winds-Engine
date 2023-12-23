@@ -1,9 +1,9 @@
 #pragma once
 
-#include "graphics/EWE_Buffer.h"
-#include "graphics/EWE_Device.hpp"
-#include "Data/TransformInclude.h"
-#include "graphics/EWE_Vertex.h"
+#include "EWEngine/graphics/EWE_Buffer.h"
+#include "EWEngine/graphics/EWE_Device.hpp"
+#include "EWEngine/Data/TransformInclude.h"
+#include "EWE_Vertex.h"
 
 // libs
 
@@ -71,89 +71,6 @@ namespace EWE {
             return bindingDescriptions;
         }
 
-        /*
-                {{0.5f,0.0f, -0.5f}, {1.f, 1.f, 1.f}, {0.f,-1.f,0.f}, {1.0f,1.f}},
-                {{-0.5f,0.0f, -0.5f}, {1.f, 1.f, 1.f}, {0.f,-1.f,0.f}, {0.0f,1.f}},
-                {{-0.5f,0.0f, 0.5f}, {1.f, 1.f, 1.f}, {0.f,-1.f,0.f}, {0.0f,0.f}},
-                {{0.5f,0.0f, 0.5f}, {1.f, 1.f, 1.f}, {0.f,-1.f,0.f}, {1.0f,0.f}},
-
-        */
-        static std::unique_ptr<EWEModel> generateQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{1.f}) {
-            std::vector<Vertex> vertices{
-                {{0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {uvScale.x,uvScale.y}, {1.f, 1.f, 1.f}},
-                {{-0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {0.0f,uvScale.y}, {1.f, 1.f, 1.f}},
-                {{-0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {0.0f,0.f}, {1.f, 1.f, 1.f}},
-                {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}, {1.f, 1.f, 1.f}},
-            };
-            std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
-            return std::make_unique<EWEModel>(device, vertices, indices);
-        }
-        static std::unique_ptr<EWEModel> generateQuadPNU(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f }) {
-            std::vector<AVertexNT> vertices{
-                {{0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {uvScale.x,uvScale.y}},
-                {{-0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {0.0f,uvScale.y}},
-                {{-0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {0.0f,0.f}},
-                {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}},
-            };
-            std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
-            return std::make_unique<EWEModel>(device, vertices, indices);
-        }
-        static std::unique_ptr<EWEModel> generateSimple3DQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f }) {
-            std::vector<EffectVertex> vertices{
-                {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
-                {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},
-                {{-0.5f,0.0f, 0.5f}, {0.0f,0.f}},
-                {{0.5f,0.0f, 0.5f}, {uvScale.x,0.f}},
-            };
-            std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-            return std::make_unique<EWEModel>(device, vertices, indices);
-        }
-        /*
-        static std::unique_ptr<EWEModel> generateSimpleZedQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f }) {
-            std::vector<EffectVertex> vertices{
-                {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
-                {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},
-                {{-0.5f,0.0f, 0.5f}, {0.0f,0.f}},
-                {{0.5f,0.0f, 0.5f}, {uvScale.x,0.f}},
-            };
-            std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-            return std::make_unique<EWEModel>(device, vertices, indices);
-        }
-        */
-
-        static std::unique_ptr<EWEModel> generate2DQuad(EWEDevice& device, glm::vec2 scale = {1.f,1.f}) {
-            std::vector<VertexUI> vertices{
-                {{-0.5f, -0.5f}, {0.f, 0.f}},
-                {{0.5f, -0.5f}, {scale.x, 0.f}},
-                {{0.5f, 0.5f}, {scale.x, scale.y}},
-                {{-0.5f, 0.5f}, {0.f, scale.y}}
-            };
-            std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-            return std::make_unique<EWEModel>(device, vertices, indices);
-        }
-        
-        static std::unique_ptr<EWEModel> generateNineUIQuad(EWEDevice& device) {
-            std::vector<VertexUI> vertices{
-                {{-0.5f, -0.5f}, {0.f, 0.f}}, //top left corner
-                {{-.5f, -.5f}, {.0625f, .0625f}}, //inner top left corner
-
-                {{0.5f, -0.5f}, {1.f, 0.f}}, //bottom left
-                {{0.5f, -.5f}, {1.f - .0625f, .0625f}}, //inner bottom left
-
-                {{0.5f, 0.5f}, {1.f, 1.f}}, //bottom right
-                {{.5f, .5f}, {1.f - .0625f,1.f - .0625f}}, //inner bottom right
-
-                {{-0.5f, 0.5f}, {0.f, 1.f}}, //top right
-                {{-.5f, .5f}, {.0625f, 1.f - .0625f}}, //inner top right
-            };
-            std::vector<uint32_t> indices{1,0,6,1,6,7,1,7,3,1,3,2,1,2,0,5,4,2,5,2,3,5,3,7,5,7,6,5,6,4};
-            return std::make_unique<EWEModel>(device, vertices, indices);
-        }
-        
-
-        //static std::unique_ptr<EWEModel> generate3DCircle(EWEDevice& device);
-
-        static std::unique_ptr<EWEModel> generateCircle(EWEDevice& device, uint16_t const points, float radius = 0.5f);
 
         template <typename T>
         static std::unique_ptr<EWEModel> createMesh(EWEDevice& device, const std::vector<T>& vertices, const std::vector<uint32_t>& indices) {
@@ -163,43 +80,6 @@ namespace EWE {
         template <typename T>
         static std::unique_ptr<EWEModel> createMesh(EWEDevice& device, const std::vector<T>& vertices) {
             return std::make_unique<EWEModel>(device, vertices);
-        }
-
-        static std::unique_ptr<EWEModel> createSkyBox(EWEDevice& device, float scale) {
-            //hopefully never have to look at this again
-            
-            std::vector<skyVertex> vertices = {
-                {{ -1.0f, -1.0f,  1.0f}}, //0
-                {{ -1.0f,  1.0f,  1.0f}}, //1
-                {{  1.0f,  1.0f,  1.0f}}, //2
-                {{  1.0f, -1.0f,  1.0f}}, //3
-                {{ -1.0f,  1.0f, -1.0f}}, //4
-                {{ -1.0f, -1.0f, -1.0f}}, //5
-                {{  1.0f,  1.0f, -1.0f}}, //6
-                {{  1.0f, -1.0f, -1.0f}}, //7
-            };
-            
-            std::vector<uint32_t> indices = {
-                0, 1, 2,
-                2,3, 0,
-                4, 1, 0,
-                0,5,4,
-                2, 6, 7,
-                7, 3, 2,
-                4, 5, 7,
-                7, 6, 4,
-                0, 3, 7,
-                7,5, 0,
-                1, 4, 2,
-                2, 4, 6
-            };
-            
-            for (int i = 0; i < vertices.size(); i++) {
-                vertices[i].position *= scale;
-            }
-            
-            //printf("vertex size ? : %d \n", vertices.size());
-            return std::make_unique<EWEModel>(device, vertices, indices);
         }
         
         

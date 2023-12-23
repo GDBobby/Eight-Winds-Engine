@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UIComponents.h"
+#include "EWEngine/graphics/model/EWE_Basic_Model.h"
 //#include "../../Game/InputHandler.h"
 
 #include <queue>

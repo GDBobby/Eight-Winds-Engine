@@ -22,7 +22,8 @@ namespace EWE {
 
 		void setViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up = glm::vec3{0.0f,1.0f, 0.0f});
 		//void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up = glm::vec3{ 0.0f,1.0f, 0.0f });
-		void newViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 cameraUp);
+		void newViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp);
+		void ViewTargetDirect(uint8_t currentFrame);
 		void setViewYXZ(glm::vec3 position, glm::vec3 rotation);
 
 		const glm::mat4& getProjection() const { return ubo.projection; }
@@ -39,9 +40,23 @@ namespace EWE {
 			uniformBuffers = buffers;
 			assert(uniformBuffers->size() > 0);
 		}
+		void updateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp) {
+			//probably store a position, target, and camera up variable in this class, then hand out a pointer to those variables
+			//being lazy rn
+			this->position = position;
+			this->target = target;
+			this->cameraUp = cameraUp;
+			dataHasBeenUpdated = 2;
+		}
 		
 	private:
 		std::vector<std::unique_ptr<EWEBuffer>>* uniformBuffers{};
 		GlobalUbo ubo{};
+
+		uint8_t dataHasBeenUpdated = 0;
+		glm::vec3 position;
+		glm::vec3 target;
+		glm::vec3 cameraUp{ 0.f, 1.f, 0.f };
+
 	};
 }

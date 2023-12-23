@@ -1,9 +1,9 @@
 #pragma once
 
-#include "EWE_model.h"
+#include "EWEngine/graphics/model/EWE_model.h"
 #include <memory>
-#include "Data/TransformInclude.h"
-#include "Data/EngineDataTypes.h"
+#include "EWEngine/Data/TransformInclude.h"
+#include "EWEngine/Data/EngineDataTypes.h"
 
 
 namespace EWE {

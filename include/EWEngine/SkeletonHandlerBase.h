@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Data/EWEImport.h"
-#include "Data/EngineDataTypes.h"
+#include "EWEngine/Data/EWEImport.h"
+#include "EWEngine/Data/EngineDataTypes.h"
 
 
 namespace EWE {

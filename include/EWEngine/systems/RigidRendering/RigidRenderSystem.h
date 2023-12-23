@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../EWE_model.h"  
-#include "../../Data/EngineDataTypes.h"
+#include "EWEngine/graphics/model/EWE_model.h"  
+#include "EWEngine/Data/EngineDataTypes.h"
 
 //this is still a WIP
 

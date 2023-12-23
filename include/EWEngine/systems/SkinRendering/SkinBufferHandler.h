@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../graphics/DescriptorHandler.h"
+#include "EWEngine/graphics/DescriptorHandler.h"
 
 namespace EWE {
 	class InstancedSkinBufferHandler {
