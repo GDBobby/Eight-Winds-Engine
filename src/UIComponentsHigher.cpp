@@ -53,12 +53,10 @@ namespace EWE {
 			if (typeBoxes[j].Clicked(xpos, ypos)) {
 				selectedTypeBox = j;
 				variableCtrlPtr = this;
-				readyForInput = true;
-				stringSelectionIndex = static_cast<int>(typeBoxes[j].textStruct.string.length());
-				typeBoxes[j].textStruct.string += '|';
+				typeBoxes[selectedTypeBox].readyForInput = true;
+				typeBoxes[selectedTypeBox].stringSelectionIndex = static_cast<int>(typeBoxes[j].textStruct.string.length());
+				typeBoxes[selectedTypeBox].textStruct.string += '|';
 
-				readyForInput = true;
-				variableCtrlPtr = this;
 				glfwSetCharCallback(windowPtr, typeCallback);
 				glfwSetKeyCallback(windowPtr, KeyCallback);
 				glfwSetMouseButtonCallback(windowPtr, MouseCallback);
@@ -200,6 +198,9 @@ namespace EWE {
 		*/
 	}
 
+	//im moving the callbacks to typeBox
+
+	
 	void VariableControl::MouseCallback(GLFWwindow* window, int button, int action, int mods) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (action == GLFW_PRESS) {
@@ -341,18 +342,18 @@ namespace EWE {
 			return;
 		}
 		if (variableCtrlPtr->readyForInput) {
+			int lastLength = static_cast<int>(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string.length());
+
+			UIComp::InputType inputType = UIComp::InputType_none;
 			if (variableCtrlPtr->dataType == UIComp::VT_float || variableCtrlPtr->dataType == UIComp::VT_double) {
-				int lastLength = static_cast<int>(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string.length());
-				UIComp::TypeToString(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string, variableCtrlPtr->maxStringLength, codepoint, UIComp::InputType_float, variableCtrlPtr->stringSelectionIndex);
-				lastLength = static_cast<int>(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string.length()) - lastLength;
-				variableCtrlPtr->stringSelectionIndex += lastLength;
+				inputType = UIComp::InputType_float;
 			}
 			else {
-				int lastLength = static_cast<int>(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string.length());
-				UIComp::TypeToString(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string, variableCtrlPtr->maxStringLength, codepoint, UIComp::InputType_numeric, variableCtrlPtr->stringSelectionIndex);
-				lastLength = static_cast<int>(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string.length()) - lastLength;
-				variableCtrlPtr->stringSelectionIndex += lastLength;
+				inputType = UIComp::InputType_numeric;
 			}
+			UIComp::TypeToString(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string, variableCtrlPtr->maxStringLength, codepoint, inputType, variableCtrlPtr->stringSelectionIndex);
+			lastLength = static_cast<int>(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string.length()) - lastLength;
+			variableCtrlPtr->stringSelectionIndex += lastLength;
 		}
 
 	}
@@ -473,7 +474,36 @@ namespace EWE {
 			variableControls[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
 		}
 	}
-
+	void ControlBox::render(Simple2DPushConstantData& push) {
+		for (int j = 0; j < variableControls.size(); j++) { //maybe put a render function in variableControls
+			//printf("variable controls size, j - %d:%d \n", variableControls.size(), j);
+			for (int k = 0; k < variableControls[j].buttons.size(); k++) {
+				push.scaleOffset = glm::vec4(variableControls[j].buttons[k].first.transform.scale, variableControls[j].buttons[k].first.transform.translation);
+				Dimension2::pushAndDraw(push);
+				push.scaleOffset = glm::vec4(variableControls[j].buttons[k].second.transform.scale, variableControls[j].buttons[k].second.transform.translation);
+				Dimension2::pushAndDraw(push);
+			}
+		}
+	}
+	void ControlBox::render(NineUIPushConstantData& push) {
+		for (int j = 0; j < variableControls.size(); j++) {
+			for (int k = 0; k < variableControls[j].typeBoxes.size(); k++) {
+				if (variableControls[j].isSelected(k)) {
+					push.color = glm::vec3{ .6f, .5f, .4f };
+				}
+				else {
+					push.color = glm::vec3{ .5f, .35f, .25f };
+				}
+				push.offset = glm::vec4(variableControls[j].typeBoxes[k].transform.translation, 1.f, 1.f);
+				push.scale = variableControls[j].typeBoxes[k].transform.scale;
+				Dimension2::pushAndDraw(push);
+			}
+		}
+		push.color = glm::vec3{ .3f, .25f, .15f };
+		push.offset = glm::vec4(transform.translation, 1.f, 1.f);
+		push.scale = transform.scale;
+		Dimension2::pushAndDraw(push);
+	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~ MENU BAR ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -536,5 +566,26 @@ namespace EWE {
 		}
 		return -1;
 	}
-
+	void MenuBar::render(NineUIPushConstantData& push, uint8_t drawID) {
+		if (drawID == 0) {
+			if (dropBoxes.size() > 0) { //drawing these here instead of tumblingg these with the earlier drop boxes because i dont want to draw the dropper box
+				push.color = glm::vec3{ .5f, .35f, .25f };
+				for (int j = 0; j < dropBoxes.size(); j++) {
+					push.color = glm::vec3{ .5f, .35f, .25f };
+					if (dropBoxes[j].currentlyDropped) {
+						push.offset = glm::vec4(dropBoxes[j].dropBackground.translation, 0.5f, 1.f);
+						push.scale = dropBoxes[j].dropBackground.scale;
+						Dimension2::pushAndDraw(push);
+						break; //i think only 1 can be dropped
+					}
+				}
+			}
+		}
+		else {
+			push.color = glm::vec3{ .86f, .5f, .5f };
+			push.offset = glm::vec4(transform.translation, 0.1f, 1.f);
+			push.scale = transform.scale;
+			Dimension2::pushAndDraw(push);
+		}
+	}
 }

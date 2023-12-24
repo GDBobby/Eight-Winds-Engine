@@ -767,8 +767,7 @@ namespace EWE {
 			VkDeviceSize offsets = 0;
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffer, &offsets);
 			vkCmdBindVertexBuffers(commandBuffer, 1, 1, &buffer, &offsets);
-			for (uint32_t j = 0; j < numLetters; j++)
-			{
+			for (uint32_t j = 0; j < numLetters; j++) {
 				vkCmdDraw(commandBuffer, 4, 1, j * 4, 0);
 			}
 

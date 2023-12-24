@@ -3,6 +3,7 @@
 #include "EWEngine/GameObject2D.h"
 #include "EWEngine/graphics/TextOverlay.h"
 #include "UICompFunctions.h"
+#include "EWEngine/graphics/Dimension2/Dimension2.h"
 
 
 namespace EWE {
@@ -33,6 +34,8 @@ namespace EWE {
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
 		bool Clicked(double xpos, double ypos);
 
+		void render(NineUIPushConstantData& push);
+
 	};
 	struct TypeBox { //keybinds
 		TextStruct textStruct;
@@ -42,6 +45,7 @@ namespace EWE {
 		bool mouseDragging = false;
 		bool readyForInput = false;
 		uint8_t maxStringLength = 69;
+		int stringSelectionIndex = -1;
 
 		UIComp::InputType inputType = UIComp::InputType_alpha;
 
@@ -62,6 +66,8 @@ namespace EWE {
 		bool Clicked(double xpos, double ypos) { return UIComp::checkClickBox(clickBox, xpos, ypos); }
 
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
+
+		void render(NineUIPushConstantData& push);
 	};
 
 	struct Slider {
@@ -88,9 +94,11 @@ namespace EWE {
 		void giveSens(uint8_t currentSens);
 		int8_t Clicked(double xpos, double ypos);
 		void buttonClicked(bool leftFalseRightTrue);
+
+		void render(Simple2DPushConstantData& push, uint8_t drawID);
 	};
 
-	struct ComboBox { //currently scattered throughout uihandler.h as a combomenustruct, vector of textstructs
+	struct ComboBox {
 		bool isActive = false;
 		bool currentlyDropped = false;
 
@@ -109,6 +117,8 @@ namespace EWE {
 
 		bool Clicked(double xpos, double ypos);
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
+
+		void render(NineUIPushConstantData& push);
 	};
 
 	struct DropBox {
@@ -136,7 +146,10 @@ namespace EWE {
 		}
 
 		int8_t Clicked(double xpos, double ypos);
+
+		void render(NineUIPushConstantData& push);
 	};
+	/*
 	struct SideList {
 		SideList() {}
 		bool isActive = false;
@@ -163,6 +176,7 @@ namespace EWE {
 
 		int8_t Clicked(double xpos, double ypos);
 	};
+	*/
 
 	struct Button {
 		Transform2dComponent transform;
@@ -199,6 +213,8 @@ namespace EWE {
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
 
 		bool Clicked(double xpos, double ypos);
+
+		void render(Simple2DPushConstantData& push);
 	};
 
 

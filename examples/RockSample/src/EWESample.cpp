@@ -155,7 +155,7 @@ namespace EWE {
 	void EWESample::addModulesToMenuManager(float screenWidth, float screenHeight) {
 		menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>(screenWidth, screenHeight));
 		menuManager.menuModules.at(menu_main)->labels[1].string = "1.0.0";
-		menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(screenWidth, screenHeight));
+		menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(windowPtr, screenWidth, screenHeight));
 	}
 
 	bool EWESample::processClick() {

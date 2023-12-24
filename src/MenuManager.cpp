@@ -38,16 +38,22 @@ namespace EWE {
 		menuManagerPtr->screenWidth = rszWidth;
 		menuManagerPtr->screenHeight = rszHeight;
 	}
-	void MenuManager::drawMenuObjects(VkCommandBuffer cmdBuf, uint8_t frameIndex) {
+	void MenuManager::drawNewMenuObejcts() {
+		if (isActive) {
+			//printf("Drawing menu \n");
+			menuModules[currentMenuState]->drawNewObjects();//(gameState == 0));
+		}
+	}
+	void MenuManager::drawMenuObjects(FrameInfo2D& frameInfo) {
 		//printf("draw menu objects in uihandler \n");
 		if (isActive) {
 			//printf("Drawing menu \n");
-			menuModules[currentMenuState]->drawObjects(cmdBuf, frameIndex, false);//(gameState == 0));
+			menuModules[currentMenuState]->drawObjects(frameInfo);//(gameState == 0));
 		}
 
 	}
 
-	void MenuManager::changeMenuState(uint8_t nextMenu, unsigned char nextScene) { //nextScene is really just turning on mouse or not
+	void MenuManager::changeMenuState(uint8_t nextMenu, uint8_t nextScene) { //nextScene is really just turning on mouse or not
 		printf("beginning of change menu state \n");
 		//std::cout << "newcurrentScene : " << +newcurrentScene << std::endl;
 		if (nextScene != 255) {

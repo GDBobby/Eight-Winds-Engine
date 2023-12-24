@@ -1050,35 +1050,6 @@ namespace EWE {
 				fragString = "texture_shader.frag.spv";
 				break;
 			}
-			/*
-			case Pipe_material: {
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_material, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
-				pipelines[Pipe_material] = std::make_unique<EWEPipeline>(eweDevice, "texture_shader.vert.spv", "texture_shader.frag.spv", pipelineConfig);
-
-				break;
-			}
-			*/
-			/*
-			case Pipe_boneWeapon: {
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_boneWeapon, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::AVertex>();
-				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
-				pipelines[Pipe_boneWeapon] = std::make_unique<EWEPipeline>(eweDevice, "bone_weapon.vert.spv", "bob_shader.frag.spv", pipelineConfig);
-				break;
-			}
-			*/
-			/*
-			case Pipe_fbx: { //thiis pipeline is out of date, need to replace in dynamic material pipeline
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_fbx, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
-				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
-
-				pipelines[Pipe_fbx] = std::make_unique<EWEPipeline>(eweDevice, "fbx_shader.vert.spv", "bob_shader.frag.spv", pipelineConfig);
-				break;
-			}
-			*/
 			case Pipe_2d: {
 
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
@@ -1242,6 +1213,7 @@ namespace EWE {
 		}
 		vkDestroyShaderModule(device.device(), loadingVertShaderModule, nullptr);
 		vkDestroyShaderModule(device.device(), loadingFragShaderModule, nullptr);
+		loadingPipeline.reset();
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstructing pipeline manager \n");
 #endif

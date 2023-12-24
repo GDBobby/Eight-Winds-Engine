@@ -1,7 +1,9 @@
 #include "ShaderGenerationMM.h"
 
 namespace EWE {
-	ShaderGenerationMM::ShaderGenerationMM(float screenWidth, float screenHeight) {
+	ShaderGenerationMM::ShaderGenerationMM(GLFWwindow* windowPtr, float screenWidth, float screenHeight) :
+		inputBox{ windowPtr, true, 100.f, 100.f, screenWidth, screenHeight }
+	{
 		float widthRescaling = screenWidth / DEFAULT_WIDTH;
 		float heightRescaling = screenHeight / DEFAULT_HEIGHT;
 
@@ -11,6 +13,10 @@ namespace EWE {
 		menuBar.init(screenWidth, screenHeight);
 		//menuBar.dropBoxes.back().init(screenWidth, screenHeight);
 		//clickText.emplace_back("Exit", 0.f, 860.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
+
+		//benchmarking
+		
+
 	}
 
 	void ShaderGenerationMM::processClick(double xpos, double ypos) {
@@ -34,6 +40,15 @@ namespace EWE {
 
 		//return MCR_none;
 
+	}
+	void ShaderGenerationMM::drawText(TextOverlay* textOverlay) {
+		MenuModule::drawText(textOverlay);
+		textOverlay->addText(inputBox.name);
+	}
+	void ShaderGenerationMM::drawNewNine() {
+		MenuModule::drawNewNine();
+		NineUIPushConstantData push{};
+		inputBox.render(push);
 	}
 
 

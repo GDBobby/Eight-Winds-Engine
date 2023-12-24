@@ -53,7 +53,7 @@ namespace EWE {
 			return { screenWidth, screenHeight };
 		}
 
-		void changeMenuState(uint8_t newState, unsigned char newGameState = 255);
+		void changeMenuState(uint8_t newState, uint8_t newGameState = 255);
 		static void changeMenuStateFromMM(uint8_t newState, unsigned char newGameState = 255) {
 			menuManagerPtr->changeMenuState(newState, newGameState);
 		}
@@ -69,7 +69,8 @@ namespace EWE {
 
 		static void windowResize(std::pair<uint32_t, uint32_t> windowDim);
 
-		void drawMenuObjects(VkCommandBuffer cmdBuf, uint8_t frameIndex);
+		void drawNewMenuObejcts();
+		void drawMenuObjects(FrameInfo2D& frameInfo);
 
 		bool getMenuActive() {
 			return isActive;
@@ -81,7 +82,8 @@ namespace EWE {
 			}
 		}
 		bool drawingNineUI() { return menuModules[currentMenuState]->drawingNineUI(); }
-		void drawNineUI(VkCommandBuffer cmdBuf, uint8_t frameIndex) { menuModules[currentMenuState]->drawNineUI(cmdBuf, frameIndex); }
+		void drawNewNine() { menuModules[currentMenuState]->drawNewNine(); }
+		void drawNineUI(FrameInfo2D& frameInfo) { menuModules[currentMenuState]->drawNineUI(frameInfo); }
 
 		static void staticKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void staticMouseCallback(GLFWwindow* window, int button, int action, int mods);

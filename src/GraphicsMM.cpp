@@ -97,11 +97,11 @@ namespace EWE {
 		if (returnValues.first == UIT_Checkbox) {
 			switch (returnValues.second) {
 			case 0: {
-				SettingsJSON::tempSettings.pointLights = checkBoxes[1].isChecked;
+				SettingsJSON::tempSettings.pointLights = checkBoxes[0].isChecked;
 				break;
 			}
 			case 1: {
-				SettingsJSON::tempSettings.renderInfo = checkBoxes[2].isChecked;
+				SettingsJSON::tempSettings.renderInfo = checkBoxes[1].isChecked;
 			}
 			}
 			//return MCR_none;

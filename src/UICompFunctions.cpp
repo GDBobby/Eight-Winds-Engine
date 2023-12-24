@@ -65,12 +65,14 @@ namespace EWE {
 				case InputType_alphanumeric: {
 					if ((codepoint >= 48) && (codepoint <= 57)) {
 						outputString.insert(outputString.begin() + stringSelectionIndex, (char)codepoint);
+						return;
 					}
-					return;
+					//fallthrough
 				}
 				case InputType_alpha: { //fallthrough to lower as well
 					if (codepoint >= 65 && codepoint <= 90) {
-						outputString += codepoint; return;
+						outputString += codepoint; 
+						return;
 					}
 					//[[fallthrough]];
 				}
@@ -81,33 +83,36 @@ namespace EWE {
 					return;
 				}
 				case InputType_numeric: {
-					if ((codepoint >= 48) && (codepoint <= 57) || (codepoint == 45)) {
-						if (codepoint == 45) {
-							if (outputString.find_first_of("-") != outputString.npos) {
-								outputString = outputString.erase(0, 1);
-							}
-							else {
-								outputString.insert(0, "-");
-							}
-							return;
-						}
+					if ((codepoint >= 48) && (codepoint <= 57)) {
 						outputString.insert(outputString.begin() + stringSelectionIndex, (char)codepoint);
+					}
+					else if (codepoint == 45) {
+						if (outputString.find_first_of("-") != outputString.npos) {
+							outputString = outputString.erase(0, 1);
+						}
+						else {
+							outputString.insert(0, "-");
+						}
+						return;
 					}
 					return;
 				}
 				case InputType_float: {
-					if (((codepoint >= 48) && (codepoint <= 57)) || (codepoint == 46) || (codepoint == 45)) {
-						if (!((codepoint == 46) && (outputString.find_first_of(".") != outputString.npos))) {
-							if (codepoint == 45) {
-								if (outputString.find_first_of("-") != outputString.npos) {
-									outputString = outputString.erase(0, 1);
-								}
-								else {
-									outputString.insert(0, "-");
-								}
-								return;
-							}
+					if ((codepoint >= 48) && (codepoint <= 57)) {
+						outputString.insert(outputString.begin() + stringSelectionIndex, (char)codepoint);
+						
+					}
+					else if (codepoint == 46) {
+						if (outputString.find_first_of('.') == outputString.npos) {
 							outputString.insert(outputString.begin() + stringSelectionIndex, (char)codepoint);
+						}
+					}
+					else if (codepoint == 45) {
+						if (outputString.find_first_of("-") != outputString.npos) {
+							outputString = outputString.erase(0, 1);
+						}
+						else {
+							outputString.insert(0, "-");
 						}
 					}
 					return;

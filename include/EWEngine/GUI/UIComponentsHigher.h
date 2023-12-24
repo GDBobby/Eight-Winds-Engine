@@ -76,8 +76,6 @@ namespace EWE {
 		std::pair<int, int> totalMovement;
 
 		static void MouseCallback(GLFWwindow* window, int button, int action, int mods);
-
-
 		static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void typeCallback(GLFWwindow* window, unsigned int codepoint);
 
@@ -107,6 +105,10 @@ namespace EWE {
 		void giveGLFWCallbacks(GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction);
 		GLFWmousebuttonfun mouseReturnPointer;
 		GLFWkeyfun keyReturnPointer;
+
+		void render(Simple2DPushConstantData& push);
+
+		void render(NineUIPushConstantData& push);
 
 	private:
 		//UIComp::VariableType variableType;
@@ -142,5 +144,6 @@ namespace EWE {
 		}
 
 		int16_t Clicked(double xpos, double ypos);
+		void render(NineUIPushConstantData& push, uint8_t drawID);
 	};
 }

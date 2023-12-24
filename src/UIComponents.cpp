@@ -1,8 +1,6 @@
 #include "EWEngine/gui/UIComponents.h"
 namespace EWE {
 
-
-
 	
 	//end uicomp
 
@@ -21,6 +19,12 @@ namespace EWE {
 	}
 	bool ClickTextBox::Clicked(double xpos, double ypos) {
 		return UIComp::checkClickBox(clickBox, xpos, ypos);
+	}
+	void ClickTextBox::render(NineUIPushConstantData& push) {
+		push.offset.x = transform.translation.x;
+		push.offset.y = transform.translation.y;
+		push.scale = transform.scale;
+		Dimension2::pushAndDraw(push);
 	}
 	
 	// ~~~~~~~~~~~~~~~~~~~~~ TYPE BOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,7 +99,13 @@ namespace EWE {
 		textStruct.y *= rszHeight / oldHeight;
 		UIComp::TextToTransform(transform, textStruct, clickBox, rszWidth, rszHeight);
 	}
-	
+	void TypeBox::render(NineUIPushConstantData& push) {
+		push.offset = glm::vec4(transform.translation, 1.f, 1.f);
+		//need color array
+		push.scale = transform.scale;
+		Dimension2::pushAndDraw(push);
+		//printf("drawing click text \n");
+	}
 	
 	// ~~~~~~~~~~~~~~~~~~~~~ SLIDER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	void Slider::setTransform(glm::vec2 newTrans) {
@@ -233,6 +243,23 @@ namespace EWE {
 		slider.translation.x = bracket.translation.x + (spaceBetween * (slidePosition - 0.5f));
 		UIComp::convertTransformToClickBox(slider, click[1], screenWidth, screenHeight);
 	}
+	void Slider::render(Simple2DPushConstantData& push, uint8_t drawID) {
+		switch (drawID) {
+		case 0: {
+			push.scaleOffset = glm::vec4(slider.mat2(), slider.translation);
+			break;
+		}
+		case 1: {
+			push.scaleOffset = glm::vec4(bracketButtons.first.mat2(), bracketButtons.first.translation);
+			break;
+		}
+		case 2: {
+			push.scaleOffset = glm::vec4(bracket.mat2(), bracket.translation);
+			break;
+		}
+		}
+		Dimension2::pushAndDraw(push);
+	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~ COMBOBOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -307,6 +334,28 @@ namespace EWE {
 			}
 			else {
 				comboOptions[i].clickBox.z = activeOption.clickBox.z;
+			}
+		}
+	}
+	void ComboBox::render(NineUIPushConstantData& push) {
+		push.offset.x = activeOption.transform.translation.x;
+		push.offset.y = activeOption.transform.translation.y;
+		//need color array
+		push.scale = activeOption.transform.scale;
+		Dimension2::pushAndDraw(push);
+		if (currentlyDropped) {
+			for (int j = 0; j < comboOptions.size(); j++) {
+				push.offset.x = comboOptions[j].transform.translation.x;
+				push.offset.y = comboOptions[j].transform.translation.y;
+				push.scale = comboOptions[j].transform.scale;
+				if (j == currentlySelected) {
+					push.color = glm::vec3{ .4f, .4f, 1.f };
+					Dimension2::pushAndDraw(push);
+					push.color = glm::vec3{ .5f, .35f, .25f };
+				}
+				else {
+					Dimension2::pushAndDraw(push);
+				}
 			}
 		}
 	}
@@ -396,6 +445,21 @@ namespace EWE {
 		}
 		return -2;
 	}
+	void DropBox::render(NineUIPushConstantData& push) {
+		push.offset = glm::vec4(dropper.transform.translation, 1.f, 1.f);
+		//need color array
+		if (currentlyDropped) {
+			push.color = glm::vec3{ .75f, .35f, .25f };
+		}
+		push.scale = dropper.transform.scale;
+		Dimension2::pushAndDraw(push);
+		push.color = glm::vec3{ .5f, .35f, .25f };
+		if (currentlyDropped) {
+			push.offset = glm::vec4(dropBackground.translation, 0.5f, 1.f);
+			push.scale = dropBackground.scale;
+			Dimension2::pushAndDraw(push);
+		}
+	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~ BUTTON ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	Button::Button(glm::vec2 translation, float screenWidth, float screenHeight) {
@@ -451,6 +515,9 @@ namespace EWE {
 		}
 		return false;
 	}
-
+	void Checkbox::render(Simple2DPushConstantData& push) {
+		push.scaleOffset = glm::vec4(button.transform.scale, button.transform.translation);
+		Dimension2::pushAndDraw(push);
+	}
 
 }

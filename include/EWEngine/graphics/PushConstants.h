@@ -27,7 +27,6 @@ struct PointLightPushConstants {
 	glm::vec4 color{};
 	float radius;
 };
-
 struct Simple2DPushConstantData {
 	glm::vec4 scaleOffset{ 1.f }; //4 floats here, 2 x 2
 	alignas(16) glm::vec3 color; //?idk if id stuff anything else right here
@@ -37,7 +36,6 @@ struct NineUIPushConstantData {
 	alignas(16)glm::vec4 offset; //xy = translation, z = borderSize
 	alignas(16)glm::vec3 color;
 };
-
 struct ModelTimePushData {
 	glm::mat4 modelMatrix{ 1.f };
 	float sinTime;

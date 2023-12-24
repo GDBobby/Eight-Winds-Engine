@@ -10,6 +10,8 @@
 #include <stdexcept>
 #include <iostream>
 
+#include "EWEngine/graphics/Dimension2/Dimension2.h"
+
 
 #define DEBUGGING_PIPELINES false
 #define DEBUGGING_DYNAMIC_PIPE false
@@ -103,10 +105,10 @@ namespace EWE {
 		for (auto listIter = pipeList.begin(); listIter != pipeList.end(); listIter++) {
 			PipelineManager::initPipelines(pipeRenderInfo, *listIter, eweDevice);
 		}
-		if (PipelineManager::pipelines.find(Pipe_2d) == PipelineManager::pipelines.end()) {
-			PipelineManager::initPipelines(pipeRenderInfo, Pipe_2d, eweDevice);
-			PipelineManager::initPipelines(pipeRenderInfo, Pipe_NineUI, eweDevice);
-		}
+		//if (PipelineManager::pipelines.find(Pipe_2d) == PipelineManager::pipelines.end()) {
+		//	PipelineManager::initPipelines(pipeRenderInfo, Pipe_2d, eweDevice);
+		//	PipelineManager::initPipelines(pipeRenderInfo, Pipe_NineUI, eweDevice);
+		//}
 
 		updateMaterialPipelines(pipeRenderInfo);
 
@@ -466,7 +468,7 @@ namespace EWE {
 
 	void AdvancedRenderSystem::render2DGameObjects(FrameInfo2D& frameInfo) {
 
-		//printf("beginning r2d \n");
+		//printf("beginning r2d : %d \n", frameInfo.menuActive);
 		//if (frameInfo.menuActive || GameUI::GetActive()) {
 		if (!frameInfo.menuActive) {
 			
@@ -483,19 +485,28 @@ namespace EWE {
 		bool pipe2dBinded = false;
 		if (frameInfo.menuActive) {
 			if (menuManager.drawingNineUI()) {
-				PipelineManager::pipelines[Pipe_NineUI]->bind(frameInfo.cmdIndexPair.first);
-				menuManager.drawNineUI(frameInfo.cmdIndexPair.first, frameInfo.cmdIndexPair.second);
+				Dimension2::bindNineUI(frameInfo.cmdIndexPair.first, frameInfo.cmdIndexPair.second);
+				menuManager.drawNewNine();
+				//PipelineManager::pipelines[Pipe_NineUI]->bind(frameInfo.cmdIndexPair.first);
+				//frameInfo.currentlyBindedTexture = TEXTURE_UNBINDED;
+				//menuManager.drawNineUI(frameInfo);
 			}
-			PipelineManager::pipelines[Pipe_2d]->bind(frameInfo.cmdIndexPair.first);
+			
+			//PipelineManager::pipelines[Pipe_2d]->bind(frameInfo.cmdIndexPair.first);
 			pipe2dBinded = true;
-			menuManager.drawMenuObjects(frameInfo.cmdIndexPair.first, frameInfo.cmdIndexPair.second);
+			//frameInfo.currentlyBindedTexture = TEXTURE_UNBINDED;
+			//menuManager.drawMenuObjects(frameInfo);
+			Dimension2::bind2D(frameInfo.cmdIndexPair.first, frameInfo.cmdIndexPair.second);
+			menuManager.drawNewMenuObejcts();
 		}
 
 
 		//printf("binding textures from in game even if game isnt active \n");
 		if (uiHandler->overlay) {
 			if (!pipe2dBinded) {
-				PipelineManager::pipelines[Pipe_2d]->bind(frameInfo.cmdIndexPair.first);
+				Dimension2::bind2D(frameInfo.cmdIndexPair.first, frameInfo.cmdIndexPair.second);
+				//PipelineManager::pipelines[Pipe_2d]->bind(frameInfo.cmdIndexPair.first);
+				//frameInfo.currentlyBindedTexture = TEXTURE_UNBINDED;
 			}
 			uiHandler->overlay->drawObjects(frameInfo.cmdIndexPair);
 		}

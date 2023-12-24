@@ -42,7 +42,6 @@ namespace EWE {
 		SpotLightData spotLights[MAX_LIGHTS];
 		int spotNumLights{};
 	};
-
 	struct FrameInfo {
 		std::pair<VkCommandBuffer, uint8_t> cmdIndexPair{};
 		float time{0.f};
@@ -53,6 +52,7 @@ namespace EWE {
 		std::pair<VkCommandBuffer, uint8_t> cmdIndexPair{};
 		//std::vector<std::vector<GameObject2D>>& uiObjects;
 		bool menuActive{};
+		TextureID currentlyBindedTexture{ TEXTURE_UNBINDED };
 	};
 	struct FrameInfoLoading {
 		std::pair<VkCommandBuffer, uint8_t> cmdIndexPair{};

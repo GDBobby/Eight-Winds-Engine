@@ -4,6 +4,8 @@
 #include "UIComponentsHigher.h"
 #include "EWEngine/graphics/model/EWE_Basic_Model.h"
 #include "EWEngine/GUI/MenuEnums.h"
+
+#include "EWEngine/graphics/EWE_FrameInfo.h"
 //#include "../../Game/InputHandler.h"
 
 #include <queue>
@@ -23,6 +25,8 @@ namespace EWE {
 			UIImageStruct() {}
 			UIImageStruct(TextureID textureID, Transform2dComponent& transform) : textureID{ textureID }, transform{ transform } {}
 		};
+		static std::unique_ptr<EWEModel> model2D;
+		static std::unique_ptr<EWEModel> nineUIModel;
 
 
 		static void (*changeMenuStateFromMM)(uint8_t, unsigned char);
@@ -31,8 +35,6 @@ namespace EWE {
 		}
 
 		static std::map<MenuTextureEnum, uint16_t>  textureIDs;
-		static std::unique_ptr<EWEModel> model2D;
-		static std::unique_ptr<EWEModel> nineUIModel;
 
 		static std::queue<uint16_t> clickReturns;
 
@@ -176,12 +178,12 @@ namespace EWE {
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
 
 		virtual void drawText(TextOverlay* textOverlay);
-		void drawObjects(VkCommandBuffer cmdBuf, uint8_t frameIndex, bool background);
-
-		int32_t lastBindedTexture = -1;
+		void drawNewObjects();
+		void drawObjects(FrameInfo2D& frameInfo);
 
 		bool drawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0) || (menuBars.size() > 0); }
-		void drawNineUI(VkCommandBuffer cmdBuf, uint8_t frameIndex);
+		virtual void drawNewNine();
+		void drawNineUI(FrameInfo2D& frameInfo);
 
 
 		static std::string getInputName(int keycode);

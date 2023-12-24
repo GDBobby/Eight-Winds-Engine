@@ -1,13 +1,14 @@
 #include "EWEngine/GUI/MenuModule.h"
+#include "EWEngine/graphics/Dimension2/Dimension2.h"
 
 namespace EWE {
 
-
-	std::map<MenuTextureEnum, uint16_t> MenuModule::textureIDs;
 	std::unique_ptr<EWEModel> MenuModule::model2D;
 	std::unique_ptr<EWEModel> MenuModule::nineUIModel;
 
-	std::queue<uint16_t> MenuModule::clickReturns;
+	std::map<MenuTextureEnum, TextureID> MenuModule::textureIDs{};
+
+	std::queue<uint16_t> MenuModule::clickReturns{};
 
 	void (*MenuModule::changeMenuStateFromMM)(uint8_t, unsigned char);
 
@@ -114,8 +115,7 @@ namespace EWE {
 
 		return returnVal;
 	}
-
-	void MenuModule::drawObjects(VkCommandBuffer cmdBuf, uint8_t frameIndex, bool background) {
+	void MenuModule::drawObjects(FrameInfo2D& frameInfo) {
 
 		//printf("drawing objects in menu module \n");
 		/*
@@ -130,134 +130,135 @@ namespace EWE {
 		*/
 		Simple2DPushConstantData push{};
 
-		model2D->bind(cmdBuf);
+		auto& pl2d = PipelineManager::pipeLayouts[PL_2d];
+		model2D->bind(frameInfo.cmdIndexPair.first);
 
 		if (checkBoxes.size() > 0) {
 			push.color = glm::vec3{ 1.f };
 			for (int i = 0; i < checkBoxes.size(); i++) {
 				if (checkBoxes[i].isChecked) {
-					if (lastBindedTexture != textureIDs[MT_Checked]) {
+					if (frameInfo.currentlyBindedTexture != textureIDs[MT_Checked]) {
 						vkCmdBindDescriptorSets(
-							cmdBuf,
+							frameInfo.cmdIndexPair.first,
 							VK_PIPELINE_BIND_POINT_GRAPHICS,
-							PipelineManager::pipeLayouts[PL_2d],
+							pl2d,
 							0, 1,
-							//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-							EWETexture::getUIDescriptorSets(textureIDs[MT_Checked], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+							//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+							EWETexture::getUIDescriptorSets(textureIDs[MT_Checked], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 							0, nullptr
 						);
-						lastBindedTexture = textureIDs[MT_Checked];
+						frameInfo.currentlyBindedTexture = textureIDs[MT_Checked];
 					}
 					push.scaleOffset = glm::vec4(checkBoxes[i].button.transform.scale, checkBoxes[i].button.transform.translation);
-					vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-					model2D->draw(cmdBuf);
+					vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+					model2D->draw(frameInfo.cmdIndexPair.first);
 				}
 			}
 			for (int i = 0; i < checkBoxes.size(); i++) {
 				if (!checkBoxes[i].isChecked) {
-					if (lastBindedTexture != textureIDs[MT_Unchecked]) {
+					if (frameInfo.currentlyBindedTexture != textureIDs[MT_Unchecked]) {
 						vkCmdBindDescriptorSets(
-							cmdBuf,
+							frameInfo.cmdIndexPair.first,
 							VK_PIPELINE_BIND_POINT_GRAPHICS,
-							PipelineManager::pipeLayouts[PL_2d],
+							pl2d,
 							0, 1,
-							//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-							EWETexture::getUIDescriptorSets(textureIDs[MT_Unchecked], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+							//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+							EWETexture::getUIDescriptorSets(textureIDs[MT_Unchecked], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 							0, nullptr
 						);
-						lastBindedTexture = textureIDs[MT_Unchecked];
+						frameInfo.currentlyBindedTexture = textureIDs[MT_Unchecked];
 					}
 					push.scaleOffset = glm::vec4(checkBoxes[i].button.transform.scale, checkBoxes[i].button.transform.translation);
-					vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-					model2D->draw(cmdBuf);
+					vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+					model2D->draw(frameInfo.cmdIndexPair.first);
 				}
 			}
 		}
 
 		if (sliders.size() > 0) {
 			push.color = glm::vec3(1.f);
-			if (lastBindedTexture != textureIDs[MT_Slider]) {
+			if (frameInfo.currentlyBindedTexture != textureIDs[MT_Slider]) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
-					PipelineManager::pipeLayouts[PL_2d],
+					pl2d,
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_Slider], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_Slider], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = textureIDs[MT_Slider];
+				frameInfo.currentlyBindedTexture = textureIDs[MT_Slider];
 			}
 
 			for (int i = 0; i < sliders.size(); i++) {
 				push.scaleOffset = glm::vec4(sliders[i].slider.mat2(), sliders[i].slider.translation);
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-				model2D->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+				model2D->draw(frameInfo.cmdIndexPair.first);
 			}
-			if (lastBindedTexture != textureIDs[MT_BracketButton]) {
+			if (frameInfo.currentlyBindedTexture != textureIDs[MT_BracketButton]) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
-					PipelineManager::pipeLayouts[PL_2d],
+					pl2d,
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_BracketButton], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_BracketButton], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = textureIDs[MT_BracketButton];
+				frameInfo.currentlyBindedTexture = textureIDs[MT_BracketButton];
 			}
 			for (int i = 0; i < sliders.size(); i++) {
 				push.scaleOffset = glm::vec4(sliders[i].bracketButtons.first.mat2(), sliders[i].bracketButtons.first.translation);
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-				model2D->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+				model2D->draw(frameInfo.cmdIndexPair.first);
 				push.scaleOffset = glm::vec4(sliders[i].bracketButtons.second.mat2(), sliders[i].bracketButtons.second.translation);
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-				model2D->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+				model2D->draw(frameInfo.cmdIndexPair.first);
 			}
-			if (lastBindedTexture != textureIDs[MT_Bracket]) {
+			if (frameInfo.currentlyBindedTexture != textureIDs[MT_Bracket]) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
-					PipelineManager::pipeLayouts[PL_2d],
+					pl2d,
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_Bracket], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_Bracket], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = textureIDs[MT_Bracket];
+				frameInfo.currentlyBindedTexture = textureIDs[MT_Bracket];
 			}
 			for (int i = 0; i < sliders.size(); i++) {
 				push.scaleOffset = glm::vec4(sliders[i].bracket.mat2(), sliders[i].bracket.translation);
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-				model2D->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+				model2D->draw(frameInfo.cmdIndexPair.first);
 			}
 		}
 
 		if (controlBoxes.size() > 0) {
 			//printf("before draw objects control boxes \n");
 			push.color = glm::vec3(1.f);
-			if (lastBindedTexture != textureIDs[MT_Button]) {
+			if (frameInfo.currentlyBindedTexture != textureIDs[MT_Button]) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
-					PipelineManager::pipeLayouts[PL_2d],
+					pl2d,
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_Button], frameIndex), //need to change this texture to a button texture, + -
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_Button], frameInfo.cmdIndexPair.second), //need to change this texture to a button texture, + -
 					0, nullptr
 				);
-				lastBindedTexture = textureIDs[MT_Button];
+				frameInfo.currentlyBindedTexture = textureIDs[MT_Button];
 			}
 			for (int i = 0; i < controlBoxes.size(); i++) {
 				for (int j = 0; j < controlBoxes[i].variableControls.size(); j++) {
 					//printf("variable controls size, j - %d:%d \n", controlBoxes[i].variableControls.size(), j);
 					for (int k = 0; k < controlBoxes[i].variableControls[j].buttons.size(); k++) {
 						push.scaleOffset = glm::vec4(controlBoxes[i].variableControls[j].buttons[k].first.transform.scale, controlBoxes[i].variableControls[j].buttons[k].first.transform.translation);
-						vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-						model2D->draw(cmdBuf);
+						vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+						model2D->draw(frameInfo.cmdIndexPair.first);
 						push.scaleOffset = glm::vec4(controlBoxes[i].variableControls[j].buttons[k].second.transform.scale, controlBoxes[i].variableControls[j].buttons[k].second.transform.translation);
-						vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-						model2D->draw(cmdBuf);
+						vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+						model2D->draw(frameInfo.cmdIndexPair.first);
 					}
 				}
 			}
@@ -268,89 +269,162 @@ namespace EWE {
 			//not considering for texture ordering
 			push.color = glm::vec3(1.f);
 			for (int i = 0; i < images.size(); i++) {
-				if (lastBindedTexture != images[i].textureID) {
+				if (frameInfo.currentlyBindedTexture != images[i].textureID) {
 					vkCmdBindDescriptorSets(
-						cmdBuf,
+						frameInfo.cmdIndexPair.first,
 						VK_PIPELINE_BIND_POINT_GRAPHICS,
-						PipelineManager::pipeLayouts[PL_2d],
+						pl2d,
 						0, 1,
-						//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-						EWETexture::getUIDescriptorSets(images[i].textureID, frameIndex), //need to change this texture to a button texture, + -
+						//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+						EWETexture::getUIDescriptorSets(images[i].textureID, frameInfo.cmdIndexPair.second), //need to change this texture to a button texture, + -
 						0, nullptr
 					);
-					lastBindedTexture = images[i].textureID;
+					frameInfo.currentlyBindedTexture = images[i].textureID;
 				}
 				push.scaleOffset = glm::vec4(images[i].transform.scale, images[i].transform.translation);
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-				model2D->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+				model2D->draw(frameInfo.cmdIndexPair.first);
 			}
 		}
-		//? wtf is this
-		/*
-		if (hasBackground) {
-			push.color = backgroundColor;
-			vkCmdBindDescriptorSets(
-				cmdBuf,
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				PipelineManager::pipeLayouts[PL_2d],
-				0, 1,
-				//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-				EWETexture::getUIDescriptorSets(textureIDs[MT_Base], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up
-				0, nullptr
-			);
-			push.offset = glm::vec3(backgroundTransform.translation, 1.f);
-			//need color array
-			push.scale = backgroundTransform.scale;
-			vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-			model2D->draw(cmdBuf);
-		}
-		*/
-		/*
-		if (background) {
-			push.color = { 1.f,1.f,1.f };
-			vkCmdBindDescriptorSets(
-				cmdBuf,
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				PipelineManager::pipeLayouts[PL_2d],
-				0, 1,
-				//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-				EWETexture::getUIDescriptorSets(textureIDs[MT_background], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up
-				0, nullptr
-			);
-			push.offset = { 0.f,0.f, 1.f };
-			//need color array
-			push.scale = { 2.f, 2.f };
-			vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_2d], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-			model2D->draw(cmdBuf);
-		}
-		*/
-		//printf("after rendering bakground \n");
 	}
 
-	void MenuModule::drawNineUI(VkCommandBuffer cmdBuf, uint8_t frameIndex) {
-		//printf("beginning nine ui \n");
-		nineUIModel->bind(cmdBuf);
+	void MenuModule::drawNewObjects() {
+		Simple2DPushConstantData push{};
+		if (checkBoxes.size() > 0) {
+			push.color = glm::vec3{ 1.f };
+			for (auto& object : checkBoxes) {
+				if (object.isChecked) {
+					Dimension2::bindTexture2D(textureIDs[MT_Checked]);
+					object.render(push);
+				}
+			}
+			for (auto& object : checkBoxes) {
+				if (!object.isChecked) {
+					Dimension2::bindTexture2D(textureIDs[MT_Unchecked]);
+					object.render(push);
+				}
+			}
+		}
+
+		if (sliders.size() > 0) {
+			push.color = glm::vec3(1.f);
+			Dimension2::bindTexture2D(textureIDs[MT_Slider]);
+
+			for (auto& object : sliders) {
+				object.render(push, 0);
+			}
+			Dimension2::bindTexture2D(textureIDs[MT_BracketButton]);
+			for (auto& object : sliders) {
+				object.render(push, 1);
+			}
+			Dimension2::bindTexture2D(textureIDs[MT_Bracket]);
+			for (auto& object : sliders) {
+				object.render(push, 2);
+			}
+		}
+
+		if (controlBoxes.size() > 0) {
+			//printf("before draw objects control boxes \n");
+			push.color = glm::vec3(1.f);
+			Dimension2::bindTexture2D(textureIDs[MT_Button]);
+			for (auto& object : controlBoxes) {
+				object.render(push);
+			}
+
+			if (images.size() > 0) {
+				//not considering for texture ordering
+				push.color = glm::vec3(1.f);
+				for (int i = 0; i < images.size(); i++) {
+					Dimension2::bindTexture2D(images[i].textureID);
+					push.scaleOffset = glm::vec4(images[i].transform.scale, images[i].transform.translation);
+					Dimension2::pushAndDraw(push);
+				}
+			}
+			//printf("after control boxes \n");
+		}
+	}
+	void MenuModule::drawNewNine() {
 		NineUIPushConstantData push{};
 		if (comboBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			if (lastBindedTexture != MT_NineUI) {
+			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			for (auto& object : comboBoxes) {
+				object.render(push);
+			}
+		}
+
+		if (dropBoxes.size() > 0) {
+			push.color = glm::vec3{ .5f, .35f, .25f };
+			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			for (auto& object : dropBoxes) {
+				object.render(push);
+			}
+		}
+
+		if (clickText.size() > 0) {
+
+			push.offset.z = 1.f;
+			push.offset.w = 1.f;
+			push.color = glm::vec3{ .5f, .35f, .25f };
+			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			for (auto& object : clickText) {
+				object.render(push);
+			}
+		}
+
+		if (typeBoxes.size() > 0) {
+			push.color = glm::vec3{ .5f, .35f, .25f };
+			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			for (auto& object : typeBoxes) {
+				object.render(push);
+			}
+		}
+		if (controlBoxes.size() > 0) {
+			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			for (auto& object : controlBoxes) {
+				object.render(push);
+			}
+			//printf("after nine ui control boxes \n");
+		}
+
+		if (menuBars.size() > 0) {
+			push.color = glm::vec3{ .5f, .35f, .25f };
+			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			for (auto& object : menuBars) {
+				object.render(push, 0);
+			}
+
+			Dimension2::bindTexture9(textureIDs[MT_NineFade]);
+			for (auto& object : menuBars) {
+				object.render(push, 1);
+			}
+		}
+
+	}
+	void MenuModule::drawNineUI(FrameInfo2D& frameInfo) {
+		//printf("beginning nine ui \n");
+		nineUIModel->bind(frameInfo.cmdIndexPair.first);
+		NineUIPushConstantData push{};
+		if (comboBoxes.size() > 0) {
+			push.color = glm::vec3{ .5f, .35f, .25f };
+			if (frameInfo.currentlyBindedTexture != MT_NineUI) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					PipelineManager::pipeLayouts[PL_nineUI],
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = MT_NineUI;
+				frameInfo.currentlyBindedTexture = MT_NineUI;
 			}
 			for (int i = 0; i < comboBoxes.size(); i++) {
 				push.offset = glm::vec4(comboBoxes[i].activeOption.transform.translation, 1.f, 1.f);
 				//need color array
 				push.scale = comboBoxes[i].activeOption.transform.scale;
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-				nineUIModel->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+				nineUIModel->draw(frameInfo.cmdIndexPair.first);
 				if (comboBoxes[i].currentlyDropped) {
 					for (int j = 0; j < comboBoxes[i].comboOptions.size(); j++) {
 						push.offset = glm::vec4(comboBoxes[i].comboOptions[j].transform.translation, 1.f, 1.f);
@@ -358,13 +432,13 @@ namespace EWE {
 						push.scale = comboBoxes[i].comboOptions[j].transform.scale;
 						if (j == comboBoxes[i].currentlySelected) {
 							push.color = glm::vec3{ .4f, .4f, 1.f };
-							vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-							nineUIModel->draw(cmdBuf);
+							vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+							nineUIModel->draw(frameInfo.cmdIndexPair.first);
 							push.color = glm::vec3{ .5f, .35f, .25f };
 						}
 						else {
-							vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-							nineUIModel->draw(cmdBuf);
+							vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+							nineUIModel->draw(frameInfo.cmdIndexPair.first);
 						}
 					}
 				}
@@ -372,17 +446,17 @@ namespace EWE {
 		}
 		if (dropBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			if (lastBindedTexture != MT_NineUI) {
+			if (frameInfo.currentlyBindedTexture != MT_NineUI) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					PipelineManager::pipeLayouts[PL_nineUI],
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = MT_NineUI;
+				frameInfo.currentlyBindedTexture = MT_NineUI;
 			}
 			for (int i = 0; i < dropBoxes.size(); i++) {
 				push.offset = glm::vec4(dropBoxes[i].dropper.transform.translation, 1.f, 1.f);
@@ -391,79 +465,79 @@ namespace EWE {
 					push.color = glm::vec3{ .75f, .35f, .25f };
 				}
 				push.scale = dropBoxes[i].dropper.transform.scale;
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-				nineUIModel->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+				nineUIModel->draw(frameInfo.cmdIndexPair.first);
 				push.color = glm::vec3{ .5f, .35f, .25f };
 				if (dropBoxes[i].currentlyDropped) {
 					push.offset = glm::vec4(dropBoxes[i].dropBackground.translation, 0.5f, 1.f);
 					push.scale = dropBoxes[i].dropBackground.scale;
-					vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-					nineUIModel->draw(cmdBuf);
+					vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+					nineUIModel->draw(frameInfo.cmdIndexPair.first);
 				}
 			}
 		}
 
 		if (clickText.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			if (lastBindedTexture != textureIDs[MT_NineUI]) {
+			if (frameInfo.currentlyBindedTexture != textureIDs[MT_NineUI]) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					PipelineManager::pipeLayouts[PL_nineUI],
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = textureIDs[MT_NineUI];
+				frameInfo.currentlyBindedTexture = textureIDs[MT_NineUI];
 			}
 			for (int i = 0; i < clickText.size(); i++) {
 				push.offset = glm::vec4(clickText[i].transform.translation, 1.f, 1.f);
 				//need color array
 				push.scale = clickText[i].transform.scale;
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-				nineUIModel->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+				nineUIModel->draw(frameInfo.cmdIndexPair.first);
 				//printf("drawing click text \n");
 			}
 		}
 
 		if (typeBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			if (lastBindedTexture != textureIDs[MT_NineUI]) {
+			if (frameInfo.currentlyBindedTexture != textureIDs[MT_NineUI]) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					PipelineManager::pipeLayouts[PL_nineUI],
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = textureIDs[MT_NineUI];
+				frameInfo.currentlyBindedTexture = textureIDs[MT_NineUI];
 			}
 			for (int i = 0; i < typeBoxes.size(); i++) {
 				push.offset = glm::vec4(typeBoxes[i].transform.translation, 1.f, 1.f);
 				//need color array
 				push.scale = typeBoxes[i].transform.scale;
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-				nineUIModel->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+				nineUIModel->draw(frameInfo.cmdIndexPair.first);
 				//printf("drawing click text \n");
 			}
 		}
 
 		//printf("before nineui control box \n");
 		if (controlBoxes.size() > 0) {
-			if (lastBindedTexture != textureIDs[MT_NineUI]) {
+			if (frameInfo.currentlyBindedTexture != textureIDs[MT_NineUI]) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					PipelineManager::pipeLayouts[PL_nineUI],
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = textureIDs[MT_NineUI];
+				frameInfo.currentlyBindedTexture = textureIDs[MT_NineUI];
 			}
 			for (int i = 0; i < controlBoxes.size(); i++) {
 				for (int j = 0; j < controlBoxes[i].variableControls.size(); j++) {
@@ -476,32 +550,32 @@ namespace EWE {
 						}
 						push.offset = glm::vec4(controlBoxes[i].variableControls[j].typeBoxes[k].transform.translation, 1.f, 1.f);
 						push.scale = controlBoxes[i].variableControls[j].typeBoxes[k].transform.scale;
-						vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-						nineUIModel->draw(cmdBuf);
+						vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+						nineUIModel->draw(frameInfo.cmdIndexPair.first);
 					}
 				}
 				push.color = glm::vec3{ .3f, .25f, .15f };
 				push.offset = glm::vec4(controlBoxes[i].transform.translation, 1.f, 1.f);
 				push.scale = controlBoxes[i].transform.scale;
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-				nineUIModel->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+				nineUIModel->draw(frameInfo.cmdIndexPair.first);
 			}
 			//printf("after nine ui control boxes \n");
 		}
 		//printf("before drawing menu bars \n");
 		if (menuBars.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			if (lastBindedTexture != textureIDs[MT_NineUI]) {
+			if (frameInfo.currentlyBindedTexture != textureIDs[MT_NineUI]) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					PipelineManager::pipeLayouts[PL_nineUI],
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = textureIDs[MT_NineUI];
+				frameInfo.currentlyBindedTexture = textureIDs[MT_NineUI];
 			}
 			for (int i = 0; i < menuBars.size(); i++) {
 
@@ -512,36 +586,36 @@ namespace EWE {
 						if (menuBars[i].dropBoxes[j].currentlyDropped) {
 							push.offset = glm::vec4(menuBars[i].dropBoxes[j].dropBackground.translation, 0.5f, 1.f);
 							push.scale = menuBars[i].dropBoxes[j].dropBackground.scale;
-							vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-							nineUIModel->draw(cmdBuf);
+							vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+							nineUIModel->draw(frameInfo.cmdIndexPair.first);
 						}
 					}
 				}
 			}
 
-			if (lastBindedTexture != textureIDs[MT_NineFade]) {
+			if (frameInfo.currentlyBindedTexture != textureIDs[MT_NineFade]) {
 				vkCmdBindDescriptorSets(
-					cmdBuf,
+					frameInfo.cmdIndexPair.first,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					PipelineManager::pipeLayouts[PL_nineUI],
 					0, 1,
-					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
-					EWETexture::getUIDescriptorSets(textureIDs[MT_NineFade], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					//&EWETexture::globalDescriptorSets[frameInfo.frameInfo.cmdIndexPair.second + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_NineFade], frameInfo.cmdIndexPair.second), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
 					0, nullptr
 				);
-				lastBindedTexture = textureIDs[MT_NineFade];
+				frameInfo.currentlyBindedTexture = textureIDs[MT_NineFade];
 			}
 			for (int i = 0; i < menuBars.size(); i++) {
 
 				push.color = glm::vec3{ .86f, .5f, .5f };
 				push.offset = glm::vec4(menuBars[i].transform.translation, 0.1f, 1.f);
 				push.scale = menuBars[i].transform.scale;
-				vkCmdPushConstants(cmdBuf, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-				nineUIModel->draw(cmdBuf);
+				vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_nineUI], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
+				nineUIModel->draw(frameInfo.cmdIndexPair.first);
 			}
 		}
 		//printf("After drawing menu bars \n");
-		lastBindedTexture = -1;
+		frameInfo.currentlyBindedTexture = -1;
 	}
 
 	void MenuModule::resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {

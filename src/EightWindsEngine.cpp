@@ -3,6 +3,7 @@
 //#include "keyboard_movement_controller.h" //this is for a free camera, which is currently not utilized
 #include "EWEngine/graphics/EWE_buffer.h"
 #include "EWEngine/graphics/EWE_camera.h"
+#include "EWEngine/graphics/Dimension2/Dimension2.h"
 
 
 #define GLM_FORCE_RADIANS
@@ -52,7 +53,6 @@ namespace EWE {
 		skinnedRS{ eweDevice, advancedRS.globalPool, eweRenderer.getPipelineInfo() }
 	{
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
-
 		camera.setPerspectiveProjection(glm::radians(70.0f), eweRenderer.getAspectRatio(), 0.1f, 10000.0f);
 
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
@@ -64,6 +64,7 @@ namespace EWE {
 		advancedRS.updateLoadingPipeline(eweRenderer.getPipelineInfo());
 		uiHandler.isActive = false;
 		leafSystem = std::make_unique<LeafSystem>(eweDevice);
+		Dimension2::init(eweDevice, eweRenderer.getPipelineInfo());
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
 
@@ -82,6 +83,7 @@ namespace EWE {
 	}
 
 	EightWindsEngine::~EightWindsEngine() {
+		Dimension2::destruct(eweDevice);
 #if DECONSTRUCTION_DEBUG
 		printf("beginning of EightWindsEngine deconstructor \n");
 #endif
