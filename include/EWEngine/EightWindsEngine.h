@@ -112,7 +112,10 @@ namespace EWE {
 		std::pair<VkCommandBuffer, uint8_t> beginRender();
 //#define RENDER_OBJECT_DEBUG
 
-		void drawObjects(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair, double dt);
+		void draw2DObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair);
+		void draw3DObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt);
+		void drawText(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt);
+		void drawObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt);
 
 		void endRender(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
 

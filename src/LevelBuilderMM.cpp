@@ -58,7 +58,7 @@ namespace EWE {
 	}
 
 	void LevelBuilderMM::processClick(double xpos, double ypos) {
-		std::pair<UIComponentTypes, int8_t> returnValues = MenuModule::checkClick(xpos, ypos);
+		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
 		
 
 		//return MCR_none;

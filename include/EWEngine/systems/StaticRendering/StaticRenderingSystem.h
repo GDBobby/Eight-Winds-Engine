@@ -37,14 +37,8 @@ namespace EWE {
 			delete skinnedMainObject;
 		}
 
-		static bool addStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureID textureIDs, TransformComponent& transform) {
-
-			return false;
-		}
-		static bool addStaticToBack() {
-
-			return false;
-		}
+		static bool addStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureID textureIDs, TransformComponent& transform);
+		static bool addStaticToBack();
 
 
 

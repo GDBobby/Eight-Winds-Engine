@@ -2,53 +2,10 @@
 
 #include "EWEngine/GameObject2D.h"
 #include "EWEngine/graphics/TextOverlay.h"
+#include "UICompFunctions.h"
 
 
 namespace EWE {
-	namespace UIComp {
-		enum InputType {
-			InputType_none,
-			InputType_alpha,
-			InputType_alphaLower,
-			InputType_alphanumeric,
-			InputType_numeric,
-			InputType_float,
-		};
-		enum VariableType {
-			VT_int64,
-			VT_int16,
-			VT_int32,
-			VT_int8,
-			VT_float,
-			VT_double,
-
-			VT_error,
-		};
-
-		//type abstraction
-		size_t getVariableSize(VariableType vType);
-		std::string getVariableString(void* data, int offset, VariableType vType);
-		void SetVariableFromString(void* data, int offset, std::string& inString, VariableType vType);
-		void addVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType);
-		void subtractVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType);
-
-		void TypeToString(std::string& outputString, uint16_t maxStringLength, int codePoint, InputType inputType, uint8_t stringSelectionIndex);
-
-
-		//2d to screen conversions
-		void convertTransformToClickBox(Transform2dComponent& transform, glm::ivec4& clickBox, float screenWidth, float screenHeight);
-
-		bool checkClickBox(glm::ivec4& clickBox, double mouseX, double mouseY);
-
-		void TextToTransform(Transform2dComponent& transform, TextStruct& textStruct, glm::ivec4& clickBox, float screenWidth, float screenHeight);
-
-		void convertScreenTo2D(glm::ivec2 screen, glm::vec2& coord2D, float screenWidth, float screenHeight);
-		void printClickBox(glm::ivec4& clickBox);
-
-		void convertClickToTransform(glm::ivec4& clickBox, Transform2dComponent& transform, float screenWidth, float screenHeight);
-
-	}
-
 	enum UIComponentTypes {
 		UIT_Label,
 		UIT_Slider,
@@ -174,8 +131,35 @@ namespace EWE {
 
 		void init(float screenWidth, float screenHeight);
 
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) 
-			{ init(rszWidth, rszHeight); }
+		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) { 
+			init(rszWidth, rszHeight); 
+		}
+
+		int8_t Clicked(double xpos, double ypos);
+	};
+	struct SideList {
+		SideList() {}
+		bool isActive = false;
+		bool currentlyExpanded = false;
+		bool draw = false;
+
+		unsigned char align = TA_left;
+		float scale = 1.f;
+		ClickTextBox dropper; //file, new, save, load, return to main, exit
+
+		std::vector<TextStruct> listOptions;
+		std::vector<glm::ivec4> clickBoxes;
+
+		Transform2dComponent dropBackground;
+
+		void pushOption(std::string pushString);
+		void pushOption(std::string pushString, float screenWidth, float screenHeight);
+
+		void init(float screenWidth, float screenHeight);
+
+		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
+			init(rszWidth, rszHeight);
+		}
 
 		int8_t Clicked(double xpos, double ypos);
 	};
@@ -219,144 +203,5 @@ namespace EWE {
 
 
 // ~~~~~~~~~~ HIGHER LEVEL CONTROLS ~~~~~~~~~~~~~~
-	enum HigherLevelControl_ClickReturn {
-		HLC_none,
-		HLC_Clicked,
-		HLC_WantCallback,
-	};
 
-
-	class VariableControl {
-	public:
-		enum NamingConvention {
-			NC_numeric,
-			NC_xyzw,
-			NC_rgba,
-		};
-
-		TextStruct dataLabel;
-		void* dataPtr;
-		UIComp::VariableType dataType;
-		uint8_t dataCount;
-		void* steps; //small, medium, large
-		NamingConvention nameConv = NC_numeric;
-		float width = 100.f;
-
-		std::pair<float, float> position;
-		float screenWidth;
-		float screenHeight;
-
-		std::vector<std::pair<Button, Button>> buttons; //add subtract
-		std::vector<TypeBox> typeBoxes;
-
-		//VariableControl() {}
-
-		//void setPosition(float x, float y, float screenWidth, float screenHeight);
-
-		
-		VariableControl(GLFWwindow* windowPtr, float posX, float posY, float width, float screenWidth, float screenHeight, std::string dataLabelString, void* dataPointer, UIComp::VariableType dataType, uint8_t dataCount, void* steps);
-		~VariableControl()
-			{ free(steps); }
-
-		bool Clicked(double xpos, double ypos);
-		bool isSelected(int8_t checkSelection)
-			{return checkSelection == selectedTypeBox;}
-		
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
-
-		void moveBox(int freshX, int freshY);
-		void giveGLFWCallbacks(GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction);
-		void setLastPos(std::pair<int, int>& lastPos)
-			{ this->lastPos = lastPos; }
-
-
-	private:
-		static VariableControl* variableCtrlPtr;
-		int8_t selectedTypeBox = -1;
-		//bool mouseDragging = false; //variable drag not currently supported
-		uint8_t maxStringLength = 18;
-		int stringSelectionIndex = -1;
-		bool readyForInput;
-
-		GLFWmousebuttonfun mouseReturnPointer;
-		GLFWkeyfun keyReturnPointer;
-		GLFWwindow* windowPtr;
-
-		std::pair<int, int> lastPos; //xy
-		std::pair<int, int> totalMovement;
-
-		static void MouseCallback(GLFWwindow* window, int button, int action, int mods);
-
-
-		static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-		static void typeCallback(GLFWwindow* window, unsigned int codepoint);
-
-
-	};
-
-	class ControlBox {
-	public:
-
-		float width = 100.f;
-
-		TextStruct label;
-		Transform2dComponent transform; //the background box
-		glm::ivec4 dragBox; //height is about the size of the label string, width is the width of the full background box
-
-		ControlBox(GLFWwindow* windowPtr, std::string labelString, float x, float y, float width, float screenWidth, float screenHeight);
-
-		void emplaceVariableControl(std::string dataLabel, void* dataPointer, UIComp::VariableType dataType, uint8_t dataCount, void* steps);
-
-		//~ControlBox() { }
-
-		bool Clicked(double xpos, double ypos);
-
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
-
-		std::vector<VariableControl> variableControls;
-		void giveGLFWCallbacks(GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction);
-		GLFWmousebuttonfun mouseReturnPointer;
-		GLFWkeyfun keyReturnPointer;
-
-	private:
-		//UIComp::VariableType variableType;
-		static ControlBox* ctrlBoxPtr; //should be renamed to ControlPointer
-		//void* variables;
-		//size_t variableCount;
-		//void* steps; //small, medium, large
-		bool mouseDragging = false;
-		GLFWwindow* windowPtr;
-		std::pair<int, int> lastPos;
-
-		static void DragCallback(GLFWwindow* window, double xpos, double ypos);
-		float screenWidth;
-		float screenHeight;
-		float ratioWidth = 1.f; 
-		float verticalSpacing = 26.f;
-	};
-
-	class MenuBar {
-	public:
-		MenuBar(float x, float y, float width, float height, float screenWidth, float screenHeight);
-		std::pair<float, float> screenCoordinates;
-		std::pair<float, float> screenDimensions;
-		Transform2dComponent transform;
-
-		void pushDropper(std::string dropperName, std::vector<std::string>& options, float screenWidth, float screenHeight);
-		std::vector<DropBox> dropBoxes;
-
-		void init(float screenWidth, float screenHeight) {
-			for (int i = 0; i < dropBoxes.size(); i++) {
-				if (i >= 1) {
-					dropBoxes[i].dropper.textStruct.x = dropBoxes[i - 1].dropper.clickBox.z + (10.f * screenWidth / DEFAULT_WIDTH);
-				}
-				dropBoxes[i].init(screenWidth, screenHeight);
-			}
-		}
-
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) 
-			{ init(rszWidth, rszHeight); }
-
-		int16_t Clicked(double xpos, double ypos);
-	};
 }

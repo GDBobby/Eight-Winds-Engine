@@ -23,4 +23,12 @@ namespace EWE {
 
 
 	}
+	bool StaticRenderSystem::addStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureID textureIDs, TransformComponent& transform) {
+
+		return false;
+	}
+	bool StaticRenderSystem::addStaticToBack() {
+
+		return false;
+	}
 }

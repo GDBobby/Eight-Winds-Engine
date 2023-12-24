@@ -7,7 +7,7 @@ namespace EWE {
 	std::unique_ptr<EWEModel> MenuModule::model2D;
 	std::unique_ptr<EWEModel> MenuModule::nineUIModel;
 
-	std::queue<MenuClickReturn> MenuModule::clickReturns;
+	std::queue<uint16_t> MenuModule::clickReturns;
 
 	void (*MenuModule::changeMenuStateFromMM)(uint8_t, unsigned char);
 
@@ -30,283 +30,9 @@ namespace EWE {
 		model2D = Basic_Model::generate2DQuad(eweDevice);
 		nineUIModel = Basic_Model::generateNineUIQuad(eweDevice);
 	}
-	/*
-	MenuModule::MenuModule(MenuStates menuState, float screenWidth, float screenHeight) {
-		//printf("constructing \n");
-		float widthRescaling = screenWidth / DEFAULT_WIDTH;
-		float heightRescaling = screenHeight / DEFAULT_HEIGHT;
 
-		switch (menuState) {
-		case menu_main: {
-
-			labels.emplace_back("Eight Winds", 0.f, 140.f, TA_center, 6.f);
-			labels.emplace_back("GAME_VERSION", screenWidth, screenHeight * 0.1f, TA_right, 3.f);
-			//main menu clickable
-
-			clickText.emplace_back("Play", 0.f, 200.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
-			clickText.emplace_back("Controls", 0.f, 280.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
-			clickText.emplace_back("Graphics Settings", 0.f, 360.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
-			clickText.emplace_back("Audio Settings", 0.f, 440.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
-			clickText.emplace_back("Level Builder", 0.f, 520.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
-
-			clickText.emplace_back("Exit", 0.f, 620.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
-			// EXAMPLE
-			//dropBoxes.push_back({});
-			//dropBoxes[0].dropper.textStruct.string = "Tester";
-			//dropBoxes[0].dropper.textStruct.x = screenWidth * 2.f / 3.f;
-			//dropBoxes[0].dropper.textStruct.y = 400.f * heightRescaling;
-			//dropBoxes[0].dropper.textStruct.scale = 1.f;
-			//dropBoxes[0].dropper.textStruct.align = TA_left;
-			//dropBoxes[0].align = TA_left;
-			//dropBoxes[0].pushOption("test1");
-			//dropBoxes[0].pushOption("test1121Testeteststest12");
-			//dropBoxes[0].pushOption("test3");
-			//dropBoxes[0].init(screenWidth, screenHeight);
-
-			//typeBoxes.emplace_back(TextStruct{ "testBox", screenWidth / 2.f, screenHeight / 2.f, TA_left, 1.f }, screenWidth, screenHeight);
-			//
-			break;
-		}
-		case menu_controls: {
-			labels.emplace_back("Forward", screenWidth / 3.f, 140.f * heightRescaling, TA_left, 2.f);
-			labels.emplace_back("Left", screenWidth / 3.f, 180.f * heightRescaling, TA_left, 2.f);
-			labels.emplace_back("Back", screenWidth / 3.f, 220.f * heightRescaling, TA_left, 2.f);
-			labels.emplace_back("Right", screenWidth / 3.f, 260.f * heightRescaling, TA_left, 2.f);
-			labels.emplace_back("Attack", screenWidth / 3.f, 300.f * heightRescaling, TA_left, 2.f);
-			labels.emplace_back("Block", screenWidth / 3.f, 340.f * heightRescaling, TA_left, 2.f);
-			labels.emplace_back("Jump", screenWidth / 3.f, 380.f * heightRescaling, TA_left, 2.f);
-			labels.emplace_back("Special", screenWidth / 3.f, 420.f * heightRescaling, TA_left, 2.f);
-			labels.emplace_back("Sensitivity", screenWidth * .63f, 40.f * heightRescaling, TA_center, 2.f);
-
-
-			clickText.emplace_back("ForwardKey", screenWidth * 2 / 3, 140.f * heightRescaling, TA_right, 2.f, screenWidth, screenHeight); //12
-			clickText.emplace_back("LeftKey", screenWidth * 2 / 3, 180.f * heightRescaling, TA_right, 2.f, screenWidth, screenHeight);
-			clickText.emplace_back("BackKey", screenWidth * 2 / 3, 220.f * heightRescaling, TA_right, 2.f, screenWidth, screenHeight);
-			clickText.emplace_back("RightKey", screenWidth * 2 / 3, 260.f * heightRescaling, TA_right, 2.f, screenWidth, screenHeight);
-			clickText.emplace_back("AttackKey", screenWidth * 2 / 3, 300.f * heightRescaling, TA_right, 2.f, screenWidth, screenHeight);
-			clickText.emplace_back("BlockKey", screenWidth * 2 / 3, 340.f * heightRescaling, TA_right, 2.f, screenWidth, screenHeight);
-			clickText.emplace_back("JumpKey", screenWidth * 2 / 3, 380.f * heightRescaling, TA_right, 2.f, screenWidth, screenHeight);
-			clickText.emplace_back("SpecialKey", screenWidth * 2 / 3, 420.f * heightRescaling, TA_right, 2.f, screenWidth, screenHeight);
-
-
-			clickText.emplace_back("Discard Return", screenWidth * .45f, 500.f * heightRescaling, TA_right, 2.f, screenWidth, screenHeight);
-			clickText.emplace_back("Save Return", screenWidth * .55f, 500.f * heightRescaling, TA_left, 2.f, screenWidth, screenHeight);
-			break;
-		}
-		case menu_graphics_settings: {
-			labels.emplace_back("Graphics Settings", screenWidth / 2, 140, TA_center, 4.f);
-
-			labels.emplace_back("Screen Dimensions", 100.f * widthRescaling, 175.f * heightRescaling, TA_left, 2.f);
-			{ //screen dimensions, local scope
-				comboBoxes.emplace_back(TextStruct{ SettingsJSON::settingsData.getDimensionsString(), 100.f * widthRescaling, 200.f * heightRescaling, TA_left, 1.5f }, screenWidth, screenHeight);
-
-				std::vector<std::string> SDStrings = SettingsInfo::getScreenDimensionStringVector();
-				for (int i = 0; i < SDStrings.size(); i++) {
-					comboBoxes.back().pushOption(SDStrings[i], screenWidth, screenHeight);
-					if (strcmp(SDStrings[i].c_str(), comboBoxes.back().activeOption.textStruct.string.c_str()) == 0) {
-						comboBoxes.back().currentlySelected = i;
-					}
-				}
-			}
-			labels.emplace_back("Window Mode", 400.f * widthRescaling, 175.f * heightRescaling, TA_left, 2.f);
-			{ //window mode, local scope
-				comboBoxes.emplace_back(TextStruct{ getWindowModeString(SettingsJSON::settingsData.windowMode), 400.f * widthRescaling, 200.f * heightRescaling, TA_left, 1.5f }, screenWidth, screenHeight);
-				std::vector<std::string> WTStrings = SettingsInfo::getWindowModeStringVector();
-				for (int i = 0; i < WTStrings.size(); i++) {
-					comboBoxes.back().pushOption(WTStrings[i], screenWidth, screenHeight);
-					if (strcmp(WTStrings[i].c_str(), comboBoxes.back().activeOption.textStruct.string.c_str()) == 0) {
-						comboBoxes.back().currentlySelected = i;
-					}
-				}
-			}
-			labels.emplace_back("FPS", 600.f * widthRescaling, 175.f * heightRescaling, TA_left, 2.f);
-			{
-				comboBoxes.emplace_back(TextStruct{ std::to_string(SettingsJSON::settingsData.FPS), 600.f * widthRescaling, 200.f * heightRescaling, TA_left, 1.5f }, screenWidth, screenHeight);
-				std::vector<std::string> fpsStrings = SettingsInfo::getFPSStringVector();
-				comboBoxes.back().currentlySelected = -1;
-				for (int i = 0; i < fpsStrings.size(); i++) {
-					comboBoxes.back().pushOption(fpsStrings[i], screenWidth, screenHeight);
-					if (strcmp(fpsStrings[i].c_str(), SettingsJSON::settingsData.getFPSString().c_str()) == 0) {
-						comboBoxes.back().currentlySelected = i;
-					}
-				}
-				if (comboBoxes.back().currentlySelected == -1) {
-					comboBoxes.back().pushOption(SettingsJSON::settingsData.getFPSString(), screenWidth, screenHeight);
-					comboBoxes.back().currentlySelected = comboBoxes.back().comboOptions.size() - 1;
-				}
-			}
-
-			glm::vec2 translation;
-			glm::ivec2 screenCoords = { 800 * widthRescaling, 200 * heightRescaling };
-			screenCoords = { 800 * widthRescaling, 200 * heightRescaling };
-			UIComp::convertScreenTo2D(screenCoords, translation, screenWidth, screenHeight);
-			checkBoxes.emplace_back("Grass Enabled ", translation, Checkbox::DO_left, screenWidth, screenHeight);
-
-			screenCoords = { 800 * widthRescaling, 240 * heightRescaling };
-			UIComp::convertScreenTo2D(screenCoords, translation, screenWidth, screenHeight);
-			checkBoxes.emplace_back("Point Lights ", translation, Checkbox::DO_left, screenWidth, screenHeight);
-
-			screenCoords = { 800 * widthRescaling, 280 * heightRescaling };
-			UIComp::convertScreenTo2D(screenCoords, translation, screenWidth, screenHeight);
-			checkBoxes.emplace_back("Render Info ", translation, Checkbox::DO_left, screenWidth, screenHeight);
-
-
-			clickText.emplace_back(TextStruct{ "Discard Return", screenWidth * .3f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Save Return", screenWidth / 2.f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			break;
-		}
-		case menu_audio_settings: {
-			labels.emplace_back("Audio Settings", screenWidth / 2, 40.f * heightRescaling, TA_center, 3.f);
-			labels.emplace_back("Audio Devices", screenWidth * 0.49f, 460.f * heightRescaling, TA_right, 1.f);
-			labels.emplace_back("Master Volume", screenWidth / 2, 170.f * heightRescaling, TA_center, 1.f);
-			labels.emplace_back("Effects Volume", screenWidth / 2, 265.f * heightRescaling, TA_center, 1.f);
-			labels.emplace_back("Msuci Volume", screenWidth / 2, 355.f * heightRescaling, TA_center, 1.f);
-
-			//clickText.emplace_back(TextStruct{ "No Device", screenWidth * 0.51f, 460.f * heightRescaling, TA_left, 1.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Discard Return", screenWidth * .3f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Save Return", screenWidth / 2.f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-
-			comboBoxes.emplace_back(TextStruct{ "default", screenWidth * 0.51f, 460.f * heightRescaling, TA_left, 1.f }, screenWidth, screenHeight);
-
-			break;
-		}
-		case menu_main_play_selection: {
-			labels.emplace_back("Single Player", screenWidth * .25f, 180.f * heightRescaling, TA_center, 2.1f);
-			labels.emplace_back("Multiplayer", screenWidth * .75f, 180.f * heightRescaling, TA_center, 2.1f);
-			labels.emplace_back("Playfab Not Connected", screenWidth, screenHeight - 30, TA_right, 1.f);
-
-			clickText.emplace_back(TextStruct{ "Practice", screenWidth * .25f, 220.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Return", screenWidth / 2.f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Target Course", screenWidth * .25f, 300.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Host Lobby", screenWidth * .75f, 220.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Show Lobby List", screenWidth * .75f, 300.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Join Ladder", screenWidth * .75f, 380.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			break;
-		}
-		case menu_play: {
-			labels.emplace_back("Eight Winds", screenWidth / 2, 100 * heightRescaling, TA_center, 6.f);
-
-
-			clickText.emplace_back(TextStruct{ "Resume", screenWidth / 2, 240.f * heightRescaling, TA_center, 3.f }, screenWidth, screenHeight);
-			//clickText.emplace_back("Rollback 30 frames", screenWidth / 2, 310, TA_center, 3.f);
-			clickText.emplace_back(TextStruct{ "Controls", screenWidth / 2, 340.f * heightRescaling, TA_center, 3.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Graphics Settings", screenWidth / 2, 410.f * heightRescaling, TA_center, 3.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Audio Settings", screenWidth / 2, 480.f * heightRescaling, TA_center, 3.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Return To Main Menu", screenWidth / 2, 570.f * heightRescaling, TA_center, 3.f }, screenWidth, screenHeight);
-			//clickText.emplace_back(TextStruct{ "Exit", screenWidth / 2, 640.f * heightRescaling, TA_center, 3.f}, screenWidth, screenHeight);
-			break;
-		}
-		case menu_lobby: {
-			labels.emplace_back("Host's Lobby", screenWidth / 2, 100 * heightRescaling, TA_center, 4.f);
-
-
-			clickText.emplace_back(TextStruct{ "Start Game", screenWidth * .45f, 520.f * heightRescaling, TA_right, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Leave Lobby", screenWidth * .55f, 520.f * heightRescaling, TA_left, 2.f }, screenWidth, screenHeight);
-			//clickText.emplace_back(TextStruct{ "Invite through Steam", screenWidth / 2, 480.f * heightRescaling, TA_center, 2.f}, screenWidth, screenHeight);
-			break;
-		}
-		case menu_lobby_list: {
-			labels.emplace_back("Lobby List", screenWidth / 2, 100 * heightRescaling, TA_center, 2.f);
-
-			clickText.emplace_back(TextStruct{ "Refresh", screenWidth * 0.25f, 500.f * heightRescaling, TA_left, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Return", screenWidth / 2.f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			break;
-		}
-		case menu_ladder: {
-			labels.emplace_back("Searching...", screenWidth * .4f, screenHeight / 2, TA_left, 2.f);
-
-			clickText.emplace_back(TextStruct{ "Cancel", screenWidth / 2.f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			break;
-		}
-		case menu_target_selection: {
-			labels.emplace_back("Target Course Selection", screenWidth / 2.f, screenHeight * 0.2f, TA_center, 3.f);
-
-			clickText.emplace_back(TextStruct{ "Mountain", screenWidth * 0.25f, screenHeight * 0.3f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			clickText.emplace_back(TextStruct{ "Straight Away", screenWidth * 0.25f, (screenHeight * 0.3f + 80.f) * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-
-			clickText.emplace_back(TextStruct{ "Leaderboard", screenWidth * 0.75f, screenHeight * 0.3f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-
-			clickText.emplace_back(TextStruct{ "Return", screenWidth / 2.f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			break;
-		}
-		case menu_target_completion: {
-			//labels.emplace_back("completion time", screenWidth / 2.f, screenHeight * 0.2f, TA_center, 3.f);
-
-			clickText.emplace_back(TextStruct{ "Reset", screenWidth * .3f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-
-			clickText.emplace_back(TextStruct{ "Return To Main Menu", screenWidth / 2.f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-			break;
-		}
-		case menu_target_leaderboard: {
-			labels.emplace_back("Target Leaderboard", screenWidth / 2.f, screenHeight * 0.2f, TA_center, 3.f);
-			labels.emplace_back("Mountain", screenWidth * .2f, 200.f * heightRescaling, TA_center, 2.f);
-
-			clickText.emplace_back(TextStruct{ "Return", screenWidth / 2.f, 500.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-
-			hasBackground = true;
-			backgroundTransform.translation = { 0.f,0.f };
-			backgroundTransform.scale = { 1.75f,1.f };
-			break;
-		}
-		case menu_level_builder: {
-			MenuBar& backRef = menuBars.emplace_back(0.f, 0.f, screenWidth, 30.f * heightRescaling, screenWidth, screenHeight);
-
-			std::vector<std::string> options = {
-				"New",
-				"Save",
-				"Save As",
-				"Load",
-				"Return To Menu",
-				"Exit"
-			};
-			backRef.pushDropper("File", options, screenWidth, screenHeight);
-
-			options.clear();
-			options = {
-				"Undo",
-				"Redo",
-				"Copy",
-				"Paste",
-				"Settings"
-			};
-			backRef.pushDropper("Edit", options, screenWidth, screenHeight);
-
-			options.clear();
-			options = {
-				"Add Quad",
-				"Object Control",
-				"Light Settings",
-				"Reset Camera Pos"
-			};
-			backRef.pushDropper("View", options, screenWidth, screenHeight);
-			backRef.init(screenWidth, screenHeight);
-
-			printf("bug before control box construction? \n");
-			float steps[] = { 0.01f, .1f, 1.f };
-			//TypeVariableBox(void* data, size_t variableCount, VariableType vType, float x, float y, float width, float screenWidth, float screenHeight, void* stepData, NamingConvention nameConv = NC_numeric)
-
-			//i need to give this the variable after construction, then call an init function within the VariableTypeBoxes class
-			controlBoxes.emplace_back(mainWindow.getGLFWwindow(), "Player", 600.f, 300.f, 100.f, screenWidth, screenHeight);
-
-			std::string stringBuffer = "Translation";
-			controlBoxes[0].emplaceVariableControl(stringBuffer, PlayerObject::poVector[0].playerInput.liveState->translation, UIComp::VT_float, 3, (void*)steps);
-			stringBuffer = "Rotation";
-			controlBoxes[0].emplaceVariableControl(stringBuffer, &PlayerObject::poVector[0].playerInput.liveState->cameraRotation[1], UIComp::VT_float, 1, (void*)steps);
-			controlBoxes[0].giveGLFWCallbacks(uiHandler.staticMouseCallback, uiHandler.staticKeyCallback);
-
-			
-			printf("bug after control box destruciton \n");
-
-			break;
-		}
-
-
-		}
-	}
-	*/
-
-	std::pair<UIComponentTypes, int8_t> MenuModule::checkClick(double xpos, double ypos) {
-		std::pair<UIComponentTypes, int8_t> returnVal = { UIT_none, -1 };
+	std::pair<UIComponentTypes, int16_t> MenuModule::checkClick(double xpos, double ypos) {
+		std::pair<UIComponentTypes, int16_t> returnVal = { UIT_none, -1 };
 		if (selectedComboBox >= 0) {
 			printf("checking click for selected combobox : %d \n", selectedComboBox);
 			//one combo box is unraveled
@@ -376,9 +102,15 @@ namespace EWE {
 				return { UIT_VariableTypeBox, i };
 			}
 		}
+
+		printf("before checking menu bar click \n");
 		for (int i = 0; i < menuBars.size(); i++) {
-			menuBars[i].Clicked(xpos, ypos);
+			int16_t ret = menuBars[i].Clicked(xpos, ypos);
+			if (ret > -1) {
+				return { UIT_MenuBar, ret };
+			}
 		}
+		printf("after checking menu bar click \n");
 
 		return returnVal;
 	}
@@ -756,8 +488,21 @@ namespace EWE {
 			}
 			//printf("after nine ui control boxes \n");
 		}
-
+		//printf("before drawing menu bars \n");
 		if (menuBars.size() > 0) {
+			push.color = glm::vec3{ .5f, .35f, .25f };
+			if (lastBindedTexture != textureIDs[MT_NineUI]) {
+				vkCmdBindDescriptorSets(
+					cmdBuf,
+					VK_PIPELINE_BIND_POINT_GRAPHICS,
+					PipelineManager::pipeLayouts[PL_nineUI],
+					0, 1,
+					//&EWETexture::globalDescriptorSets[frameInfo.frameIndex + 2],
+					EWETexture::getUIDescriptorSets(textureIDs[MT_NineUI], frameIndex), //i % 4 only works currently because 4 is same as 0, and the rest are lined up 
+					0, nullptr
+				);
+				lastBindedTexture = textureIDs[MT_NineUI];
+			}
 			for (int i = 0; i < menuBars.size(); i++) {
 
 				if (menuBars[i].dropBoxes.size() > 0) { //drawing these here instead of tumblingg these with the earlier drop boxes because i dont want to draw the dropper box
@@ -795,6 +540,7 @@ namespace EWE {
 				nineUIModel->draw(cmdBuf);
 			}
 		}
+		//printf("After drawing menu bars \n");
 		lastBindedTexture = -1;
 	}
 
@@ -825,9 +571,11 @@ namespace EWE {
 		for (int i = 0; i < controlBoxes.size(); i++) {
 			controlBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
 		}
+		//printf("initializing menu bars \n");
 		for (int i = 0; i < menuBars.size(); i++) {
 			menuBars[i].init(rszWidth, rszHeight);
 		}
+		//printf("after initializing menu bars \n");
 	}
 
 	void MenuModule::drawText(TextOverlay* textOverlay) {
@@ -868,6 +616,7 @@ namespace EWE {
 				textOverlay->addText(controlBoxes[i].variableControls[j].dataLabel);
 			}
 		}
+		//printf("drawing menu bar text \n");
 		for (int i = 0; i < menuBars.size(); i++) {
 			for (int j = 0; j < menuBars[i].dropBoxes.size(); j++) {
 				textOverlay->addText(menuBars[i].dropBoxes[j].dropper.textStruct);
@@ -878,6 +627,7 @@ namespace EWE {
 				}
 			}
 		}
+		//printf("aftter drawing menu bar text \n");
 	}
 
 	std::string MenuModule::getInputName(int keyCode) {

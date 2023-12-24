@@ -19,7 +19,7 @@ namespace EWE {
 		std::shared_ptr<TextOverlay> textOverlay;
 	public:
 
-		std::unordered_map<uint8_t, std::unique_ptr<MenuModule>> menuModules;
+		std::unordered_map<uint16_t, std::unique_ptr<MenuModule>> menuModules;
 		float screenWidth, screenHeight;
 		GLFWwindow* windowPtr;
 		uint8_t* currentScene;

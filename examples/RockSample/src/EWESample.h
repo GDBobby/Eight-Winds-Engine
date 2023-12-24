@@ -4,6 +4,7 @@
 
 #include "Scenes/SceneEnum.h"
 #include "Scenes/MainMenuScene.h"
+#include "Scenes/ShaderGenerationScene.h"
 
 //#include "Scenes/FreeCameraScene.h"
 #include <functional>

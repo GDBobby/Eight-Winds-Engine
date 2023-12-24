@@ -3,9 +3,9 @@
 #include "MenuEnums.h"
 
 namespace EWE {
-	class MainMenuMM : public MenuModule {
+	class ShaderGenerationMM : public MenuModule {
 	public:
-		MainMenuMM(float screenWidth, float screenHeight);
+		ShaderGenerationMM(float screenWidth, float screenHeight);
 
 		void processClick(double xpos, double ypos);
 	};

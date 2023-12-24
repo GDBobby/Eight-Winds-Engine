@@ -1,8 +1,11 @@
 #include "EWESample.h"
 
 #include "GUI/MainMenuMM.h"
+#include "GUI/ShaderGenerationMM.h"
 //#include "GUI/ControlsMM.h"
 #include <EWEngine/systems/StaticRendering/staticRenderingSystem.h>
+
+#include "GUI/MenuEnums.h"
 
 
 #include <chrono>
@@ -25,6 +28,7 @@ namespace EWE {
 		loadGlobalObjects();
 		currentScene = scene_mainmenu;
 		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine));
+		scenes.emplace(scene_shaderGen, std::make_unique<ShaderGenerationScene>(ewEngine));
 		//scenes.emplace(scene_)
 		currentScenePtr = scenes.at(currentScene).get();
 		currentScenePtr->load();
@@ -149,8 +153,9 @@ namespace EWE {
 		ewEngine.advancedRS.updatePipelines(ewEngine.objectManager, ewEngine.eweRenderer.getPipelineInfo());
 	}
 	void EWESample::addModulesToMenuManager(float screenWidth, float screenHeight) {
-		menuManager.menuModules[menu_main] = std::make_unique<MainMenuMM>(screenWidth, screenHeight);
-		menuManager.menuModules[menu_main]->labels[1].string = "1.0.0";
+		menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>(screenWidth, screenHeight));
+		menuManager.menuModules.at(menu_main)->labels[1].string = "1.0.0";
+		menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(screenWidth, screenHeight));
 	}
 
 	bool EWESample::processClick() {
@@ -162,7 +167,7 @@ namespace EWE {
 			return false;
 		}
 		soundEngine->playEffect(0);
-		MenuClickReturn processMCR = clickReturns.front();
+		uint16_t processMCR = clickReturns.front();
 		while (clickReturns.size() > 0) {
 			clickReturns.pop();
 		}
@@ -221,6 +226,16 @@ namespace EWE {
 				else {
 					printf("game state on save return? : %d \n", currentScene);
 				}
+				break;
+			}
+			case MCR_swapToShaderGen: {
+				currentScene = scene_shaderGen;
+				wantsToChangeScene = true;
+				break;
+			}
+			case MCR_swapToMainMenu: {
+				currentScene = scene_mainmenu;
+				wantsToChangeScene = true;
 				break;
 			}
 			case MCR_none: {

@@ -44,7 +44,7 @@ namespace EWE{
 		bool escapePressed = false;
 
 		void Benchmarking(double time, double peakTime, double averageTime, double highTime, double avgLogic, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU);
-		void drawMenuMain(VkCommandBuffer commandBuffer, bool displayingRenderInfo);
+		void drawOverlayText(VkCommandBuffer commandBuffer, bool displayingRenderInfo);
 
 		void beginTextRender() {
 			textOverlay->beginTextUpdate();

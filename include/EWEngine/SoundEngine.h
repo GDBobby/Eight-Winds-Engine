@@ -54,7 +54,9 @@ namespace EWE {
 
 		void playNextSong() {}
 		void stopMusic() {
+			printf("stop the music pls \n");
 			if (music.at(selectedEngine).find(currentSong) != music.at(selectedEngine).end()) {
+				printf("found the song \n");
 				ma_sound_stop(&music.at(selectedEngine).at(currentSong));
 			}
 		}

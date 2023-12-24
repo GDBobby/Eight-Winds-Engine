@@ -292,8 +292,16 @@ namespace EWE {
 
 		return cmdBufIndex;
 	}
-	void EightWindsEngine::drawObjects(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair, double dt) {
+	void EightWindsEngine::draw2DObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair) {
 		FrameInfo2D frameInfo2D{ cmdIndexPair, menuManager.getMenuActive() };
+		advancedRS.render2DGameObjects(frameInfo2D);
+	}
+	void EightWindsEngine::drawObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt) {
+		draw3DObjects(cmdIndexPair, dt);
+		draw2DObjects(cmdIndexPair);
+		drawText(cmdIndexPair, dt);
+	}
+	void EightWindsEngine::draw3DObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt) {
 		timeTracker = glm::mod(timeTracker + dt, glm::two_pi<double>());
 		FrameInfo frameInfo{ cmdIndexPair, static_cast<float>(timeTracker) };
 
@@ -320,11 +328,17 @@ namespace EWE {
 #ifdef RENDER_OBJECT_DEBUG
 		std::cout << "render 2d game objects \n";
 #endif
-		advancedRS.render2DGameObjects(frameInfo2D);
 #ifdef RENDER_OBJECT_DEBUG
 		std::cout << "before text render \n";
 #endif
 
+#ifdef RENDER_OBJECT_DEBUG
+		std::cout << "after rendering game objects \n";
+#endif
+
+	}
+
+	void EightWindsEngine::drawText(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt) {
 		uiHandler.beginTextRender();
 #if BENCHMARKING
 		if (displayingRenderInfo) {
@@ -335,14 +349,9 @@ namespace EWE {
 #ifdef RENDER_OBJECT_DEBUG
 		std::cout << "before drawing menu \n";
 #endif
-		uiHandler.drawMenuMain(cmdIndexPair.first, displayingRenderInfo);
+		uiHandler.drawOverlayText(cmdIndexPair.first, displayingRenderInfo);
 		menuManager.drawText();
 		uiHandler.endTextRender(cmdIndexPair.first);
-
-#ifdef RENDER_OBJECT_DEBUG
-		std::cout << "after rendering game objects \n";
-#endif
-
 	}
 
 	void EightWindsEngine::endRender(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {

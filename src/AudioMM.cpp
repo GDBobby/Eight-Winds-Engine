@@ -62,7 +62,7 @@ namespace EWE {
 	}
 
 	void AudioMM::processClick(double xpos, double ypos) {
-		std::pair<UIComponentTypes, int8_t> returnValues = MenuModule::checkClick(xpos, ypos);
+		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
 		if (returnValues.first > 0) {
 			soundEngine->playEffect(0);
 		}

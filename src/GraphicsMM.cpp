@@ -90,7 +90,7 @@ namespace EWE {
 
 	void GraphicsMM::processClick(double xpos, double ypos) {
 		//UIComponentTypes returnValues.first, int8_t returnValues.second
-		std::pair<UIComponentTypes, int8_t> returnValues = MenuModule::checkClick(xpos, ypos);
+		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
 
 		//callbacks[returnValues.first].call(returnValues.second);
 

@@ -1,5 +1,6 @@
 #include "EWEngine/data/ShaderBuilder.h"
-#include "EWEngine/data/ShaderText.h"
+#include "EWEngine/data/FragmentShaderText.h"
+#include "EWEngine/data/VertexShaderText.h"
 #include "EWEngine/resources/LoadingString.h"
 
 #include <chrono>
