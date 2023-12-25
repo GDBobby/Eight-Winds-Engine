@@ -29,7 +29,7 @@ struct PointLightPushConstants {
 };
 struct Simple2DPushConstantData {
 	glm::vec4 scaleOffset{ 1.f }; //4 floats here, 2 x 2
-	alignas(16) glm::vec3 color; //?idk if id stuff anything else right here
+	alignas(16) glm::vec3 color{1.f}; //?idk if id stuff anything else right here
 };
 struct NineUIPushConstantData {
 	alignas(16)glm::vec2 scale;

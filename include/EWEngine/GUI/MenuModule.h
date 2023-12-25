@@ -178,7 +178,7 @@ namespace EWE {
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
 
 		virtual void drawText(TextOverlay* textOverlay);
-		void drawNewObjects();
+		virtual void drawNewObjects();
 		void drawObjects(FrameInfo2D& frameInfo);
 
 		bool drawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0) || (menuBars.size() > 0); }

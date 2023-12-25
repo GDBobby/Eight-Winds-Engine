@@ -357,7 +357,25 @@ namespace EWE {
 		}
 
 	}
-
+	void VariableControl::render(NineUIPushConstantData& push) {
+		for (int k = 0; k < typeBoxes.size(); k++) {
+			if (isSelected(k)) {
+				push.color = glm::vec3{ .6f, .5f, .4f };
+			}
+			else {
+				push.color = glm::vec3{ .5f, .35f, .25f };
+			}
+			push.offset = glm::vec4(typeBoxes[k].transform.translation, 1.f, 1.f);
+			push.scale = typeBoxes[k].transform.scale;
+			Dimension2::pushAndDraw(push);
+		}
+	}
+	void VariableControl::render(Simple2DPushConstantData& push) {
+		for (int k = 0; k < buttons.size(); k++) {
+			buttons[k].first.render(push);
+			buttons[k].second.render(push);
+		}
+	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~ CONTROL BOX (For controling other menus ~~~~~~~~~~~~~~~~~~~~~~~
 	ControlBox* ControlBox::ctrlBoxPtr;
@@ -475,29 +493,13 @@ namespace EWE {
 		}
 	}
 	void ControlBox::render(Simple2DPushConstantData& push) {
-		for (int j = 0; j < variableControls.size(); j++) { //maybe put a render function in variableControls
-			//printf("variable controls size, j - %d:%d \n", variableControls.size(), j);
-			for (int k = 0; k < variableControls[j].buttons.size(); k++) {
-				push.scaleOffset = glm::vec4(variableControls[j].buttons[k].first.transform.scale, variableControls[j].buttons[k].first.transform.translation);
-				Dimension2::pushAndDraw(push);
-				push.scaleOffset = glm::vec4(variableControls[j].buttons[k].second.transform.scale, variableControls[j].buttons[k].second.transform.translation);
-				Dimension2::pushAndDraw(push);
-			}
+		for (auto& object : variableControls) {
+			object.render(push);
 		}
 	}
 	void ControlBox::render(NineUIPushConstantData& push) {
-		for (int j = 0; j < variableControls.size(); j++) {
-			for (int k = 0; k < variableControls[j].typeBoxes.size(); k++) {
-				if (variableControls[j].isSelected(k)) {
-					push.color = glm::vec3{ .6f, .5f, .4f };
-				}
-				else {
-					push.color = glm::vec3{ .5f, .35f, .25f };
-				}
-				push.offset = glm::vec4(variableControls[j].typeBoxes[k].transform.translation, 1.f, 1.f);
-				push.scale = variableControls[j].typeBoxes[k].transform.scale;
-				Dimension2::pushAndDraw(push);
-			}
+		for (auto& object : variableControls) {
+			object.render(push);
 		}
 		push.color = glm::vec3{ .3f, .25f, .15f };
 		push.offset = glm::vec4(transform.translation, 1.f, 1.f);

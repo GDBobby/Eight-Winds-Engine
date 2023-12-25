@@ -2,7 +2,7 @@
 
 namespace EWE {
 	ShaderGenerationMM::ShaderGenerationMM(GLFWwindow* windowPtr, float screenWidth, float screenHeight) :
-		inputBox{ windowPtr, true, 100.f, 100.f, screenWidth, screenHeight }
+		shaderGraph{windowPtr, screenWidth, screenHeight}
 	{
 		float widthRescaling = screenWidth / DEFAULT_WIDTH;
 		float heightRescaling = screenHeight / DEFAULT_HEIGHT;
@@ -21,6 +21,11 @@ namespace EWE {
 
 	void ShaderGenerationMM::processClick(double xpos, double ypos) {
 		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
+		if (returnValues == std::pair<UIComponentTypes, int16_t>{UIT_none, -1}) {
+			shaderGraph.Clicked(xpos, ypos);
+			return;
+		}
+
 		printf("check click return in shader gen - %d:%d \n", returnValues.first, returnValues.second);
 
 		if (returnValues.first == UIT_VariableTypeBox) {
@@ -30,6 +35,11 @@ namespace EWE {
 		}
 		else if (returnValues.first = UIT_MenuBar) {
 			switch (returnValues.second) {
+			case 1: {
+				printf("saving the file \n");
+				shaderGraph.buildToFile("graphOutput/test.glsl");
+				break;
+			}
 			case 6: {
 				printf("return to main menu pls \n");
 				clickReturns.push(MCR_swapToMainMenu);
@@ -43,12 +53,21 @@ namespace EWE {
 	}
 	void ShaderGenerationMM::drawText(TextOverlay* textOverlay) {
 		MenuModule::drawText(textOverlay);
-		textOverlay->addText(inputBox.name);
+		shaderGraph.drawText();
 	}
+	void ShaderGenerationMM::drawNewObjects() {
+		MenuModule::drawNewObjects();
+		Simple2DPushConstantData push{};
+		Dimension2::bindTexture2D(textureIDs[MT_Button]);
+		shaderGraph.render(push, 1);
+		Dimension2::bindTexture2D(textureIDs[MT_Base]);
+		shaderGraph.render(push, 0);
+	}
+
 	void ShaderGenerationMM::drawNewNine() {
 		MenuModule::drawNewNine();
 		NineUIPushConstantData push{};
-		inputBox.render(push);
+		shaderGraph.render(push);
 	}
 
 

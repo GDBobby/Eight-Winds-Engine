@@ -60,10 +60,10 @@ namespace EWE {
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &voiceGroup);
 
 		bool foundMatchingDevice = false;
+		initVolume();
 
 		loadHowlingWind();
 
-		initVolume();
 		printf("end of soundengine constructor \n");
 		//playMusic(0, false);
 	}
@@ -186,7 +186,10 @@ namespace EWE {
 			printf("init from data source failed : HOWLING WIND \n");
 
 		}
-		ma_sound_start(&hwSound);
+		if ((volumes[(uint8_t)SoundVolume::master] > 0.f) && (volumes[(uint8_t)SoundVolume::music] > 0.f)) {
+			currentSong = 65534;
+			ma_sound_start(&hwSound);
+		}
 	}
 	void SoundEngine::initEngines(ma_device_info* deviceInfos, uint32_t deviceCount) {
 		ma_engine_config engineConfig;
@@ -355,7 +358,7 @@ namespace EWE {
 							result = ma_sound_init_from_file(&engines[selectedEngine], soundPath.second.c_str(),
 								MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE | MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC | MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM,
 								NULL, NULL, &sounds->at(soundPath.first));
-							ma_sound_set_volume(&sounds->at(soundPath.first), static_cast<float>(volume[(uint8_t)SoundVolume::effect]) / 100.f);
+							ma_sound_set_volume(&sounds->at(soundPath.first), static_cast<float>(volumes[(uint8_t)SoundVolume::effect]) / 100.f);
 
 							if (result != MA_SUCCESS) {
 								printf("WARNING: Failed to load effect \"%s\"", soundPath.second.c_str());
@@ -371,7 +374,7 @@ namespace EWE {
 					case SoundType::Music: {
 						result = ma_sound_init_from_file(&engines[selectedEngine], soundPath.second.c_str(), MA_SOUND_FLAG_STREAM, NULL, NULL, &sounds->at(soundPath.first));
 
-						ma_sound_set_volume(&sounds->at(soundPath.first), static_cast<float>(volume[(uint8_t)SoundVolume::music]) / 100.f);
+						ma_sound_set_volume(&sounds->at(soundPath.first), static_cast<float>(volumes[(uint8_t)SoundVolume::music]) / 100.f);
 						if (result != MA_SUCCESS) {
 							printf("WARNING: Failed to load music or voice \"%s\"", soundPath.second.c_str());
 							throw std::exception("failed to load sound");
@@ -406,7 +409,7 @@ namespace EWE {
 			if (currentSong == musicPath.first) {
 				ma_sound_seek_to_pcm_frame(&music.at(selectedEngine).at(musicPath.first), currentPCMFrames);
 				if (!ma_sound_at_end(&music.at(selectedEngine).at(musicPath.first))) {
-					ma_sound_set_volume(&music.at(selectedEngine).at(musicPath.first), volume[(uint8_t)SoundVolume::music]);
+					ma_sound_set_volume(&music.at(selectedEngine).at(musicPath.first), volumes[(uint8_t)SoundVolume::music]);
 					ma_sound_start(&music.at(selectedEngine).at(musicPath.first));
 				}
 			}
@@ -420,7 +423,8 @@ namespace EWE {
 		printf("after reloading music \n");
 	}
 	void SoundEngine::setVolume(SoundVolume whichVolume, uint8_t value) {
-		float volume = static_cast<float>(value) / 100.f;
+		auto& volume = this->volumes[(uint8_t)whichVolume];
+		volume = static_cast<float>(value) / 100.f;
 
 		switch (whichVolume) {
 		case SoundVolume::master: {

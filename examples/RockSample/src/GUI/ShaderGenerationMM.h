@@ -1,6 +1,6 @@
 #pragma once
 #include <EWEngine/GUI/MenuModule.h>
-#include "EWEngine/ShaderGraph/InputBox.h"
+#include "EWEngine/ShaderGraph/Graph.h"
 #include "MenuEnums.h"
 
 namespace EWE {
@@ -9,9 +9,11 @@ namespace EWE {
 		ShaderGenerationMM(GLFWwindow* windowPtr, float screenWidth, float screenHeight);
 
 		void processClick(double xpos, double ypos);
-		void drawText(TextOverlay* textOverlay);
+		void drawText(TextOverlay* textOverlay) override;
+
+		void drawNewObjects() override;
 		void drawNewNine() override;
 	private:
-		Shader::InputBox inputBox;
+		Shader::Graph shaderGraph;
 	};
 }

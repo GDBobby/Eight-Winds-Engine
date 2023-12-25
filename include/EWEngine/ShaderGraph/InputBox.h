@@ -24,6 +24,8 @@ namespace EWE {
 
 			InputOutputData(float xPos, float yPos, float screenWidth, float screenHeight);
 			InputOutputData(VariableType vType, std::string variableName, float xPos, float yPos, float screenWidth, float screenHeight);
+
+			void move(float xDiff, float yDiff, float screenWidth, float screenHeight);
 		private:
 			void populateCombo(float screenWidth, float screenHeight);
 		};
@@ -31,23 +33,23 @@ namespace EWE {
 		class InputBox {
 		private:
 			static InputBox* inputBoxPtr;
-			uint16_t selectedTypeBox;
+			static GLFWmousebuttonfun mouseReturnPointer;
+			static GLFWkeyfun keyReturnPointer;
+			int16_t selectedTypeBox = -1;
 			bool readyForInput = false;
 			int stringSelectionIndex = -1;
 			uint32_t maxStringLength = 20;
 
 			GLFWwindow* windowPtr;
 			float screenWidth, screenHeight;
-			GLFWmousebuttonfun mouseReturnPointer;
-			GLFWkeyfun keyReturnPointer;
+			glm::ivec4 backgroundScreen;
 
 		public:
-			InputBox(GLFWwindow* windpwPtr, bool inputTrueOutputFalse, float xPos, float yPos, float screenWidth, float screenHeight);
-			void setCallbackReturnPointers(GLFWmousebuttonfun mouseReturnPointer, GLFWkeyfun keyReturnPointer) {
-				this->mouseReturnPointer = mouseReturnPointer;
-				this->keyReturnPointer = keyReturnPointer;
+			InputBox(GLFWwindow* windowPtr, bool inputTrueOutputFalse, float xPos, float yPos, float screenWidth, float screenHeight);
+			static void giveGLFWCallbacks(GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction) {
+				InputBox::mouseReturnPointer = mouseReturnFunction;
+				InputBox::keyReturnPointer = keyReturnFunction;
 			}
-				
 
 			bool isActive = false;
 			bool currentlyExposed = true;
@@ -60,6 +62,8 @@ namespace EWE {
 
 			Button addVariable;
 
+			glm::ivec4 dragBox;
+
 			//DragBar, check VariableControl for this. I think i had that functionality in there.
 			void writeToString(std::string& outString) {
 				for (uint16_t i = 0; i < variables.size(); i++) {
@@ -70,31 +74,15 @@ namespace EWE {
 			//drag if selecting the top, 
 			bool Clicked(double xpos, double ypos);
 
-			void render(NineUIPushConstantData& push) {
+			void render(Simple2DPushConstantData& push, uint8_t drawID);
 
-				push.color = glm::vec3{ .5f, .35f, .25f };
-				Dimension2::bindTexture9(MenuModule::textureIDs[MT_NineUI]);
-
-				if (variables.size() > 0) {
-					push.color = glm::vec3{ .5f, .35f, .25f };
-					for (int i = 0; i < variables.size(); i++) {
-						push.color = glm::vec3{ .5f, .35f, .25f };
-
-						push.offset = glm::vec4(variables[i].variableCombo.activeOption.transform.translation, 1.f, 1.f);
-						//need color array
-						push.scale = variables[i].variableCombo.activeOption.transform.scale;
-						Dimension2::pushAndDraw(push);
-
-						variables[i].variableCombo.render(push);
-					}
-				}
-				
-			}
+			void render(NineUIPushConstantData& push);
 
 			static void MouseCallback(GLFWwindow* window, int button, int action, int mods);
 			static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 			static void typeCallback(GLFWwindow* window, unsigned int codepoint);
 
+			void drawText();
 			
 		};
 	}

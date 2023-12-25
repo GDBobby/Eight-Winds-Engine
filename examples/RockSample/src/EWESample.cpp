@@ -14,7 +14,8 @@ namespace EWE {
 	EWESample::EWESample(EightWindsEngine& ewEngine) :
 		ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
-		soundEngine{SoundEngine::getSoundEngineInstance()}
+		soundEngine{SoundEngine::getSoundEngineInstance()},
+		windowPtr{ewEngine.mainWindow.getGLFWwindow()}
  {
 		float screenWidth = ewEngine.uiHandler.getScreenWidth();
 		float screenHeight = ewEngine.uiHandler.getScreenHeight();
@@ -156,6 +157,7 @@ namespace EWE {
 		menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>(screenWidth, screenHeight));
 		menuManager.menuModules.at(menu_main)->labels[1].string = "1.0.0";
 		menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(windowPtr, screenWidth, screenHeight));
+		Shader::InputBox::giveGLFWCallbacks(MenuManager::staticMouseCallback, MenuManager::staticKeyCallback);
 	}
 
 	bool EWESample::processClick() {

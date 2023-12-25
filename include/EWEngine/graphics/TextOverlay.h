@@ -42,9 +42,10 @@ namespace EWE {
 	};
 
 
-	class TextOverlay
-	{
+	class TextOverlay {
 	private:
+		static TextOverlay* textOverlayPtr;
+
 		EWEDevice& eweDevice;
 
 		float frameBufferWidth;
@@ -94,6 +95,9 @@ namespace EWE {
 		//float addText(std::string text, float x, float y, TextAlign align, float textScale = 1.f);
 		void addText(TextStruct textStruct);
 		void addTextEx(TextStruct textStruct, float scaleX);
+
+		static void staticAddText(TextStruct textStruct);
+
 		void draw(VkCommandBuffer commandBuffer);
 		void addDefaultText(double time, double peakTime, double averageTime, double highTime);
 		VkCommandBuffer beginBuffer(int bufferIndex);

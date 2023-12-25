@@ -59,6 +59,9 @@ namespace EWE {
 			this->lastPos = lastPos;
 		}
 
+		void render(NineUIPushConstantData& push);
+		void render(Simple2DPushConstantData& push);
+
 
 	private:
 		static VariableControl* variableCtrlPtr;
@@ -78,7 +81,6 @@ namespace EWE {
 		static void MouseCallback(GLFWwindow* window, int button, int action, int mods);
 		static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void typeCallback(GLFWwindow* window, unsigned int codepoint);
-
 
 	};
 

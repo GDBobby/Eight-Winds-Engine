@@ -246,15 +246,17 @@ namespace EWE {
 	void Slider::render(Simple2DPushConstantData& push, uint8_t drawID) {
 		switch (drawID) {
 		case 0: {
-			push.scaleOffset = glm::vec4(slider.mat2(), slider.translation);
+			push.scaleOffset = glm::vec4(slider.scale, slider.translation);
 			break;
 		}
 		case 1: {
-			push.scaleOffset = glm::vec4(bracketButtons.first.mat2(), bracketButtons.first.translation);
+			push.scaleOffset = glm::vec4(bracketButtons.first.scale, bracketButtons.first.translation);
+			Dimension2::pushAndDraw(push);
+			push.scaleOffset = glm::vec4(bracketButtons.second.scale, bracketButtons.second.translation);
 			break;
 		}
 		case 2: {
-			push.scaleOffset = glm::vec4(bracket.mat2(), bracket.translation);
+			push.scaleOffset = glm::vec4(bracket.scale, bracket.translation);
 			break;
 		}
 		}
@@ -307,7 +309,7 @@ namespace EWE {
 				if (UIComp::checkClickBox(comboOptions[i].clickBox, xpos, ypos)) {
 					UIComp::printClickBox(comboOptions[i].clickBox);
 					currentlyDropped = false;
-					activeOption = comboOptions[i];
+					activeOption.textStruct.string = comboOptions[i].textStruct.string;
 					currentlySelected = i;
 					return true;
 				}
@@ -357,6 +359,25 @@ namespace EWE {
 					Dimension2::pushAndDraw(push);
 				}
 			}
+		}
+	}
+	void ComboBox::move(float xDiff, float yDiff, float screenWidth, float screenHeight) {
+		activeOption.textStruct.x += xDiff;
+		activeOption.textStruct.y += yDiff;
+		activeOption.clickBox.x += xDiff;
+		activeOption.clickBox.z += xDiff;
+		activeOption.clickBox.y += yDiff;
+		activeOption.clickBox.w += yDiff;
+		UIComp::convertClickToTransform(activeOption.clickBox, activeOption.transform, screenWidth, screenHeight);
+
+		for (auto& cOption : comboOptions) {
+			cOption.textStruct.x += xDiff;
+			cOption.textStruct.y += yDiff;
+			cOption.clickBox.x += xDiff;
+			cOption.clickBox.z += xDiff;
+			cOption.clickBox.y += yDiff;
+			cOption.clickBox.w += yDiff;
+			UIComp::convertClickToTransform(cOption.clickBox, cOption.transform, screenWidth, screenHeight);
 		}
 	}
 
@@ -467,6 +488,10 @@ namespace EWE {
 		transform.scale.y = 1.f / 20.f;
 		transform.scale.x = transform.scale.y * screenHeight / screenWidth;
 		UIComp::convertTransformToClickBox(transform, clickBox, screenWidth, screenHeight);
+	}
+	void Button::render(Simple2DPushConstantData& push) {
+		push.scaleOffset = glm::vec4(transform.scale, transform.translation);
+		Dimension2::pushAndDraw(push);
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~ CHECKBOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

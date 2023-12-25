@@ -96,7 +96,7 @@ namespace EWE {
 		ma_decoder hwDecoder;
 		ma_sound hwSound;
 
-		std::array<float, 4> volume{ 0.5f, 0.5f, 0.5f, 0.5f };
+		std::array<float, 4> volumes{ 0.5f, 0.5f, 0.5f, 0.5f };
 		
 		ma_context context;
 		ma_resource_manager_config resourceManagerConfig;
@@ -116,7 +116,7 @@ namespace EWE {
 		void initEngines(ma_device_info* deviceInfos, uint32_t deviceCount);
 		void reloadSounds();
 
-		uint16_t currentSong = 65536;
+		uint16_t currentSong = UINT16_MAX;
 		uint64_t currentPCMFrames = 0;
 
 	

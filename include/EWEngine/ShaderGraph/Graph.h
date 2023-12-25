@@ -3,53 +3,44 @@
 #include <vector>
 #include "node.h"
 #include "edge.h"
+#include "InputBox.h"
 
 namespace EWE {
-	class Graph {
-		Node inputNode;
-		Node outputNode;
+	namespace Shader {
+		class Graph {
+			Node inputNode;
+			Node outputNode;
+			InputBox inputBox;
+			InputBox outputBox;
 
-		//id liek to spell it out first, then make the systems to handle it
+		public:
+			Graph(GLFWwindow* windowPtr, float screenWidth, float screenHeight);
+			void render(Simple2DPushConstantData& push, uint8_t drawID);
+			void render(NineUIPushConstantData& push);
+			bool Clicked(double xpos, double ypos);
+			void drawText();
 
-		std::string mainEntry = "int main(){"; //this is implicit, and will be in every shader.
-		std::string mainExit = "}";
+			//id liek to spell it out first, then make the systems to handle it
 
-		void AddStructures(std::string& buildString) {
-			//buildString += necessaryStructures;
-		}
+			std::string mainEntry = "int main(){"; //this is implicit, and will be in every shader.
+			std::string mainExit = "}";
 
-		void AddInput(std::string& buildString) {
-			//inputNode.writeToString(buildString);
-			//buildString += input;
-		}
-		void AddOutput(std::string& buildString) {
-			//buildString += output;
-		}
-		void AddDescriptorInfo(std::string& buildString) {
-			//buildString += descriptorInfo;
-		}
-		void AddFunctions(std::string& buildString) {
-			//buildString += functions;
-		}
-		void AddMainFunctionWork(std::string& buildString) {
+			void AddStructures(std::string& buildString) {
+				//buildString += necessaryStructures;
+			}
 
-		}
+			void AddDescriptorInfo(std::string& buildString) {
+				//buildString += descriptorInfo;
+			}
+			void AddFunctions(std::string& buildString) {
+				//buildString += functions;
+			}
+			void AddMainFunctionWork(std::string& buildString) {
 
-		std::string build() {
-			std::string builtString;
+			}
+			bool buildToFile(std::string fileLocation);
 
-			AddStructures(builtString);
-			AddInput(builtString);
-			AddOutput(builtString);
-			AddDescriptorInfo(builtString);
-
-			AddFunctions(builtString);
-			builtString += mainEntry;
-		
-			AddMainFunctionWork(builtString);
-
-			builtString += mainExit;
-
-		}
-	};
+			std::string build(bool exporting);
+		};
+	}
 }

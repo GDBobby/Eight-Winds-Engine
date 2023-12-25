@@ -119,6 +119,7 @@ namespace EWE {
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
 
 		void render(NineUIPushConstantData& push);
+		void move(float xDiff, float yDiff, float screenWidth, float screenHeight);
 	};
 
 	struct DropBox {
@@ -189,6 +190,8 @@ namespace EWE {
 
 		bool Clicked(double xpos, double ypos) 
 			{ return UIComp::checkClickBox(clickBox, xpos, ypos); }
+
+		void render(Simple2DPushConstantData& push);
 	};
 
 	struct Checkbox {
