@@ -61,8 +61,8 @@ namespace EWE {
 			}
 		}
 
-		float getVolume(SoundVolume whichVolume) { return volume[(uint8_t)whichVolume]; }
-		float getVolume(int8_t whichVolume) { return volume[whichVolume]; }
+		float getVolume(SoundVolume whichVolume) { return volumes[(uint8_t)whichVolume]; }
+		float getVolume(int8_t whichVolume) { return volumes[whichVolume]; }
 
 		//0 is the default device
 		void switchDevices(uint16_t deviceIterator);

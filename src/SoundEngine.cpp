@@ -60,9 +60,13 @@ namespace EWE {
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &voiceGroup);
 
 		bool foundMatchingDevice = false;
-		initVolume();
 
 		loadHowlingWind();
+		initVolume();
+		if ((volumes[(uint8_t)SoundVolume::master] > 0.f) && (volumes[(uint8_t)SoundVolume::music] > 0.f)) {
+			currentSong = 65534;
+			ma_sound_start(&hwSound);
+		}
 
 		printf("end of soundengine constructor \n");
 		//playMusic(0, false);
@@ -185,10 +189,6 @@ namespace EWE {
 		if (result != MA_SUCCESS) {
 			printf("init from data source failed : HOWLING WIND \n");
 
-		}
-		if ((volumes[(uint8_t)SoundVolume::master] > 0.f) && (volumes[(uint8_t)SoundVolume::music] > 0.f)) {
-			currentSong = 65534;
-			ma_sound_start(&hwSound);
 		}
 	}
 	void SoundEngine::initEngines(ma_device_info* deviceInfos, uint32_t deviceCount) {
