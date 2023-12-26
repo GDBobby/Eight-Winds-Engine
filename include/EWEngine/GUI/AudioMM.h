@@ -16,7 +16,6 @@ namespace EWE {
 
 		void initVolumes(float master, float music, float sfx, float screenWidth, float screenHeight) {
 			sliders.emplace_back();
-			printf("volumes??? - %.2f:%.2f:%.2f \n", master, music, sfx);
 			sliders[0].Init(glm::vec2{ 0.f, -.4f }, screenHeight, screenWidth, master);
 			sliders.emplace_back();
 			sliders[1].Init(glm::vec2{ 0.f, -.4f + .25f }, screenHeight, screenWidth, sfx);

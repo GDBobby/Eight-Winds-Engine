@@ -1,4 +1,4 @@
-#include "EWEngine/gui/LevelBuilderMM.h"
+#include "EWEngine/GUI/LevelBuilderMM.h"
 
 namespace EWE {
 	LevelBuilderMM::LevelBuilderMM(float screenWidth, float screenHeight, GLFWwindow* windowPtr) {

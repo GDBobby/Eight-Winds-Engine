@@ -1,5 +1,8 @@
 #include "EWEngine/ShaderGraph/ShaderStructures.h"
 
+#include <stdexcept>
+#include <cstdint>
+
 namespace EWE {
 	namespace Shader {
 		std::vector<Shader_Structure> ShaderStructureManager::shader_structures{};
@@ -8,7 +11,7 @@ namespace EWE {
 		int32_t ShaderStructureManager::addStructure(std::string& structure_name, std::vector<Shader_Variable>& members) {
 			if (shader_structures.size() >= INT32_MAX) {
 				printf("impressive amount of shaders \n");
-				throw std::exception("shader count overflow. who has 2 billion shaders ???");
+				throw std::runtime_error("shader count overflow. who has 2 billion shaders ???");
 			}
 
 			for (auto& structure : shader_structures) {

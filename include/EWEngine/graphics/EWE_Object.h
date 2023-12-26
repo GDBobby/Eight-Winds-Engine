@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EWEngine/data/EWEImport.h"
+#include "EWEngine/Data/EWEImport.h"
 #include "EWEngine/EWE_GameObject.h"
 #include "EWE_Texture.h"
 #include "EWEngine/systems/RigidRendering/RigidRenderSystem.h"

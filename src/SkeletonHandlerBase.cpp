@@ -1,6 +1,6 @@
 #include "EWEngine/SkeletonHandlerBase.h"
-#include "EWEngine/Systems/SkinRendering/SkinRenderSystem.h"
-#include "EWEngine/graphics/EWE_texture.h"
+#include "EWEngine/systems/SkinRendering/SkinRenderSystem.h"
+#include "EWEngine/graphics/EWE_Texture.h"
 
 #include <thread>
 
@@ -149,7 +149,7 @@ namespace EWE {
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
             if (returnPair.first < 0) {
                 printf("FAILED TO FIND PIPE, NEED TO THROW AN ERROR : %d \n", returnPair.first);
-                throw std::exception("failed to load texture in skeleton");
+                throw std::runtime_error("failed to load texture in skeleton");
             }
             else {
                 textureTracker.first.push_back(returnPair);
@@ -213,7 +213,7 @@ namespace EWE {
             meshPath = importPath + "_fullAnim.ewe";
             if (!std::filesystem::exists(meshPath)) {
                 printf("skeleton full anim path doesn't exist : %s \n", meshPath.c_str());
-                throw std::exception("couldn't find either anim path for skeleton");
+                throw std::runtime_error("couldn't find either anim path for skeleton");
             }
         }
 

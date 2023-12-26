@@ -1,4 +1,3 @@
-#pragma once
 #include "EWEngine/ObjectManager.h"
 
 #include <iostream>

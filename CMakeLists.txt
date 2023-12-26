@@ -17,6 +17,8 @@ endif()
 
 option(EWE_EXAMPLES "Build examples" ${is_project_root})
 
+Message(STATUS "Cmake Generator : ${CMAKE_GENERATOR}")
+
 
 # 1. Set VULKAN_SDK_PATH in .env.cmake to target specific vulkan version
 if (DEFINED VULKAN_SDK_PATH)
@@ -55,6 +57,7 @@ if (NOT GLFW_LIB)
 else()
 	message(STATUS "Using glfw lib at: ${GLFW_LIB}")
 endif()
+
 # 3. Set BOOST_SDK_PATH in .env.cmake to target specific boost version
 if (DEFINED BOOST_SDK_PATH)
   set(BOOST_INCLUDE_DIR "${BOOST_SDK_PATH}") # 1.1 Make sure this include path is correct
@@ -70,11 +73,13 @@ if (NOT BOOST_FOUND)
 else()
 	message(STATUS "Using Boost lib at: ${BOOST_LIB}")
 endif()
+
 # 4. Set RAPIDJSON_PATH in .env.cmake to target specific rapidjson version
 if (DEFINED RAPIDJSON_PATH)
   set(RAPIDJSON_INCLUDE_DIR "${RAPIDJSON_PATH}/include") # Make sure this include path is correct
   set(RAPIDJSON_FOUND "True")
 else()
+  message(STATUS "did not define rapidjson path")
   find_package(RapidJSON REQUIRED) # throws error if could not find RAPIDJSON
   message(STATUS "Found RAPIDJSON: $ENV{RAPIDJSON_SDK}")
 endif()
@@ -112,7 +117,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	${BOOST_INCLUDE_DIR}
 	${GLFW_INCLUDE_DIR}
 	${RAPIDJSON_INCLUDE_DIR}
-    ${TINYOBJ_PATH}
+    	${TINYOBJ_PATH}
 	${STB_PATH}
 	${TINYOBJLOADER_INCLUDE_DIR}
 )
@@ -127,7 +132,6 @@ message(STATUS "linking libs")
 target_link_libraries(${PROJECT_NAME} 
 	glfw3 
 	vulkan-1
-	#lib_json
 	
 	$<$<CONFIG:Debug>:
 	 SPVRemapperd

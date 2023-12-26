@@ -73,7 +73,7 @@ namespace EWE {
         size_t nameSum = tempData.meshExport.meshes.size() + tempData.meshNTExport.meshesNT.size() + tempData.meshSimpleExport.meshesSimple.size() + tempData.meshNTSimpleExport.meshesNTSimple.size();
 
         if (nameSum != meshes.size()) {
-            std::cout << std::format("mesh to name mismatch - {}:{} \n", nameSum, meshes.size());
+            printf("mesh to name mismatch - %lu:%lu \n", nameSum, meshes.size());
             throw std::runtime_error("failed to match mesh to name");
         }
     }
@@ -81,7 +81,7 @@ namespace EWE {
     void EweObject::addToSkinHandler(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker, SkeletonID skeletonOwner) {
         if ((tempData.meshNTSimpleExport.meshesNTSimple.size() > 0) || (tempData.meshSimpleExport.meshesSimple.size() > 0)) {
             printf("weapon can not have simple meshes \n");
-            throw std::exception("object can not have both simple meshes");
+            throw std::runtime_error("object can not have both simple meshes");
         }
 
         /*
@@ -110,7 +110,7 @@ namespace EWE {
         }
         else {
             std::cout << "invalid weapon type \n";
-            throw std::exception("invalid weapon type?");
+            throw std::runtime_error("invalid weapon type?");
         }
        
     }

@@ -1,4 +1,4 @@
-#include "EWEngine/graphics/dimension2/Dimension2.h"
+#include "EWEngine/graphics/Dimension2/Dimension2.h"
 #include "EWEngine/graphics/EWE_Texture.h"
 #include "EWEngine/graphics/model/EWE_Basic_Model.h"
 
@@ -70,7 +70,7 @@ namespace EWE {
 	void Dimension2::init(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 		if (dimension2Ptr != nullptr) {
 			printf("initing twice??? \n");
-			throw std::exception("initing twice?");
+			throw std::runtime_error("initing twice?");
 			return;
 		}
 		dimension2Ptr = new Dimension2(device, pipeRenderInfo);

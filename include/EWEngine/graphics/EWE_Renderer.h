@@ -1,10 +1,10 @@
 #pragma once
 
 #include "EWEngine/MainWindow.h"
-#include "EWE_device.hpp"
+#include "EWE_Device.hpp"
 #include "EWE_SwapChain.hpp"
 #include "TextOverlay.h"
-#include "EWE_camera.h"
+#include "EWE_Camera.h"
 
 #include <cassert>
 #include <memory>

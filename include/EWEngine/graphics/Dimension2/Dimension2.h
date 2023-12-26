@@ -1,7 +1,7 @@
 #pragma once
 #include "EWEngine/graphics/EWE_Device.hpp"
 #include "EWEngine/graphics/EWE_Pipeline.h"
-#include "EWEngine/graphics/model/EWE_model.h"
+#include "EWEngine/graphics/model/EWE_Model.h"
 #include "EWEngine/graphics/PushConstants.h"
 
 namespace EWE {

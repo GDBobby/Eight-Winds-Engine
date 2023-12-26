@@ -1,4 +1,4 @@
-#include "EWEngine/graphics/EWE_device.hpp"
+#include "EWEngine/graphics/EWE_Device.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -210,7 +210,7 @@ namespace EWE {
         std::vector<VkPhysicalDevice> devices(deviceCount);
 
                             //score     //device iter in the vector
-        std::list<std::pair<uint32_t, uint32_t>> deviceScores;
+        std::list<std::pair<uint32_t, uint32_t>> deviceScores{};
 
         VkResult result = vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
         std::cout << "Device count: " << deviceCount << std::endl;
@@ -221,10 +221,10 @@ namespace EWE {
             logFile << "failed to enumerate physical devices : " << result << '\n' << std::endl;
             logFile.close();
 #endif
-            throw std::exception("failed to enumerate devices");
+            throw std::runtime_error("failed to enumerate devices");
         }
 
-        printf("enumerate devices2 result : %lld - %d \n", static_cast<int64_t>(result), deviceCount);
+        printf("enumerate devices2 result : %d - %u \n", result, deviceCount);
         if (deviceCount == 0) {
             std::cout << "failed to find GPUs with Vulkan support!" << std::endl;
 #if GPU_LOGGING
@@ -244,7 +244,7 @@ namespace EWE {
             uint32_t score = 0;
             score += (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) * 1000;
             score += properties.limits.maxImageDimension2D;
-            properties.limits.maxFramebufferWidth;
+            //properties.limits.maxFramebufferWidth;
 
             printf("Device Name:Score %s:%d \n", properties.deviceName, score);
             for (auto iter = deviceScores.begin(); iter != deviceScores.end(); iter++) {
@@ -365,7 +365,7 @@ namespace EWE {
                 logFile.close();
 
 #endif
-                throw std::exception("please");
+                throw std::runtime_error("please");
             }
 
         }
@@ -435,7 +435,7 @@ namespace EWE {
             }
 #endif
             printf("failed to create logical device \n");
-            throw std::exception("failed to create logical device!");
+            throw std::runtime_error("failed to create logical device!");
         }
 #if GPU_LOGGING
         {
@@ -1241,7 +1241,7 @@ namespace EWE {
         imageBarriers[0].image = images[0];
         if (imageBarriers[0].image == VK_NULL_HANDLE) {
             printf("transfer image stage image handle is null \n");
-            throw std::exception("EMPTY???");
+            throw std::runtime_error("EMPTY???");
         }
 
         imageBarriers[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
@@ -1283,7 +1283,7 @@ namespace EWE {
             imageBarriers[i].image = images[i];
             if (imageBarriers[i].image == VK_NULL_HANDLE) {
                 std::cout << "trying to transfer an invalid image \n";
-                throw std::exception("EMPTY???");
+                throw std::runtime_error("EMPTY???");
             }
         }
 

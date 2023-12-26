@@ -3,7 +3,7 @@
 #include "SkinBufferHandler.h"
 
 #include "EWEngine/graphics/model/EWE_Model.h"
-#include "EWEngine/graphics/EWE_pipeline.h"
+#include "EWEngine/graphics/EWE_Pipeline.h"
 
 #include <algorithm>
 
@@ -165,7 +165,7 @@ namespace EWE {
 		static void removePushData(SkeletonID skeletonID, void* pushRemoval) {
 			if (skinnedMainObject->pushConstants.find(skeletonID) == skinnedMainObject->pushConstants.end()) {
 				std::cout << "invalid push to remove \n";
-				throw std::exception("invalid push to remove");
+				throw std::runtime_error("invalid push to remove");
 			}
 			else {
 				skinnedMainObject->pushConstants.at(skeletonID).remove(pushRemoval);
@@ -189,7 +189,7 @@ namespace EWE {
 			if (buffers.find(skeletonID) != buffers.end()) {
 				return;
 				printf("creating a buffer that already exist \n");
-				throw std::exception("creating a buffer that already exist ");
+				throw std::runtime_error("creating a buffer that already exist ");
 			}
 			//buffersCreated += 2;
 			buffers.emplace(skeletonID, SkinBufferHandler{ device, boneCount, 1, globalPool });
@@ -198,7 +198,7 @@ namespace EWE {
 			if (buffers.find(skeletonID) != buffers.end()) {
 				return;
 				printf("creating a buffer that already exist \n");
-				throw std::exception("creating a buffer that already exist ");
+				throw std::runtime_error("creating a buffer that already exist ");
 			}
 			buffers.emplace(skeletonID, SkinBufferHandler{ 1, buffers.at(referenceID).getInnerPtr() });
 		}

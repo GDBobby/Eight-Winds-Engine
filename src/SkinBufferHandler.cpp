@@ -1,7 +1,7 @@
 #include "EWEngine/systems/SkinRendering/SkinBufferHandler.h"
 
 namespace EWE {
-	SkinBufferHandler::SkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint8_t maxActorCount, std::shared_ptr<EWEDescriptorPool> globalPool) : boneBlockSize{ boneCount * sizeof(glm::mat4) }, maxActorCount{ maxActorCount } {
+	SkinBufferHandler::SkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint8_t maxActorCount, std::shared_ptr<EWEDescriptorPool> globalPool) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount } {
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			gpuData.emplace_back(device, maxActorCount, boneBlockSize, globalPool);
 		}
@@ -40,7 +40,7 @@ namespace EWE {
 		currentActorCount = maxActorCount;
 		if (maxActorCount > 5) {
 			printf("currently not supporting non-instanced actor counts greater than 5 \n");
-			throw std::exception("currently not supporting non-instanced actor counts greater than 5");
+			throw std::runtime_error("currently not supporting non-instanced actor counts greater than 5");
 		}
 		bone.reset(new EWEBuffer(device, boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 		bone->map();
@@ -57,14 +57,14 @@ namespace EWE {
 			.build(descriptor)
 			) {
 			printf("monster desc failure \n");
-			throw std::exception("failed to create monster descriptor set");
+			throw std::runtime_error("failed to create monster descriptor set");
 		}
 	}
 
 
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ INSTANCING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstancedSkinBufferHandler::InstancedSkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint16_t maxActorCount, std::shared_ptr<EWEDescriptorPool> globalPool) : boneBlockSize{ boneCount * sizeof(glm::mat4) }, maxActorCount{ maxActorCount } {
+	InstancedSkinBufferHandler::InstancedSkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint16_t maxActorCount, std::shared_ptr<EWEDescriptorPool> globalPool) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount } {
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			gpuData.emplace_back(device, maxActorCount, boneBlockSize, globalPool);
 		}
@@ -141,7 +141,7 @@ namespace EWE {
 				.build(descriptor)
 				) {
 				printf("monster desc failure \n");
-				throw std::exception("failed to create monster descriptor set");
+				throw std::runtime_error("failed to create monster descriptor set");
 			}
 			/*
 		}

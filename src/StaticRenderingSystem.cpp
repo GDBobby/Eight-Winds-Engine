@@ -17,7 +17,7 @@ namespace EWE {
 	void StaticRenderSystem::initStaticRS(EWEDevice& device, uint32_t pipelineCount, uint32_t modelLimit) {
 		if (skinnedMainObject != nullptr) {
 			printf("trying to double init static RS \n");
-			throw std::exception("trying to double init StaticRenderSystem");
+			throw std::runtime_error("trying to double init StaticRenderSystem");
 		}
 		skinnedMainObject = new StaticRenderSystem(device, pipelineCount, modelLimit);
 

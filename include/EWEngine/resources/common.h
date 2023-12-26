@@ -6,6 +6,8 @@
  * Source code for file 'loading.vert.spv', last modified 1700630053.
  * Do not modify this file.
  */
+#include <cstdint>
+#include <string>
 
 namespace bin2cpp
 {

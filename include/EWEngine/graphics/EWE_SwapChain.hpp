@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EWE_device.hpp"
+#include "EWE_Device.hpp"
 
 //#if !defined (_WIN32)
 #include <vulkan/vulkan.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EWEngine/graphics/model/EWE_model.h"  
+#include "EWEngine/graphics/model/EWE_Model.h"  
 #include "EWEngine/Data/EngineDataTypes.h"
 
 //this is still a WIP
@@ -59,14 +59,14 @@ namespace EWE {
         void addMaterialObject(ShaderFlags flags, TextureID textureID, MaterialInfo& materialInfo) {
             if (materialInfo.meshPtr == nullptr) {
                 printf("NULLTPR MESH EXCEPTION \n");
-                throw std::exception("nullptr mesh");
+                throw std::runtime_error("nullptr mesh");
             }
             materialMap[flags][textureID].push_back(materialInfo);
         }
         void addMaterialObject(ShaderFlags flags, TransformComponent* ownerTransform, EWEModel* modelPtr, uint32_t textureID, bool* drawable) {
             if (modelPtr == nullptr) {
                 printf("NULLTPR MESH EXCEPTION \n");
-                throw std::exception("nullptr mesh");
+                throw std::runtime_error("nullptr mesh");
             }
             materialMap[flags][textureID].emplace_back(ownerTransform, modelPtr, drawable);
 
@@ -78,7 +78,7 @@ namespace EWE {
                     if (iterTexID->first == copyID) {
                         if (iterTexID->second.size() == 0 || iterTexID->second[0].meshPtr == nullptr) {
 							printf("NULLTPR MESH EXCEPTION or SIZE IS 0 \n");
-							throw std::exception("nullptr mesh or size is 0");
+							throw std::runtime_error("nullptr mesh or size is 0");
 						}
 
                         iterTexID->second.push_back(iterTexID->second[0]);

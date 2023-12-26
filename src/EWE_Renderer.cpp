@@ -1,4 +1,4 @@
-#include "EWEngine/graphics/EWE_renderer.h"
+#include "EWEngine/graphics/EWE_Renderer.h"
 
 #include <array>
 #include <stdexcept>

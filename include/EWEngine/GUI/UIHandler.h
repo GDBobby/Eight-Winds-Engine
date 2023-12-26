@@ -2,7 +2,7 @@
 
 #include "EWEngine/graphics/TextOverlay.h"
 #include "EWEngine/SoundEngine.h"
-#include "EWEngine/graphics/EWE_texture.h"
+#include "EWEngine/graphics/EWE_Texture.h"
 //#include "GameUI.h"
 #include "Overlay.h"
 

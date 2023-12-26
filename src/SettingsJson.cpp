@@ -252,7 +252,7 @@ const uint8_t& SettingsJSON::SettingsData::getVolume(int8_t whichVolume) {
 		return voiceVolume;
 	}
 	std::cout << "invalid volumne type " << std::endl;
-	throw std::exception("invalid volume type");
+	throw std::runtime_error("invalid volume type");
 	return masterVolume;
 }
 SettingsInfo::ScreenDimension_Enum SettingsJSON::SettingsData::setDimensions(int width, int height) {
@@ -301,14 +301,14 @@ void SettingsJSON::initializeSettings() {
 		if (document.HasParseError() || !document.IsObject()) {
 			printf("error parsing settings at : %s \n", SETTINGS_LOCATION);
 			printf("error at %d : %s \n", static_cast<int32_t>(document.GetErrorOffset()), rapidjson::GetParseError_En(document.GetParseError()));
-			throw std::exception("failed to parse");
+			throw std::runtime_error("failed to parse");
 			generateDefaultFile();
 		}
 		else {
 			if (!readFromJsonFile(document)) {
 				//failed to parse correctly
 				printf("failed to read settings correctly \n");
-				throw std::exception("failed t o read settings correctly");
+				throw std::runtime_error("failed t o read settings correctly");
 				generateDefaultFile();
 			}
 		}

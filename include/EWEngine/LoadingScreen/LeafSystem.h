@@ -1,6 +1,6 @@
 #pragma once
-#include "EWEngine/data/EWEImport.h"
-#include "EWEngine/graphics/EWE_texture.h"
+#include "EWEngine/Data/EWEImport.h"
+#include "EWEngine/graphics/EWE_Texture.h"
 
 #include <random>
 
@@ -26,8 +26,6 @@ public:
 		LF_Chaotic, //only diff between chaotic and tumbling is directrion of rotation
 		LF_Helix,
 		LF_Spiral, //no diff between helix and spiral, just variable values
-
-		LF_Count,
 	};
 
 	struct LeafStruct {

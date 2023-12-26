@@ -1,5 +1,5 @@
 #pragma once
-#include "EWE_camera.h"
+#include "EWE_Camera.h"
 #include "EWEngine/LoadingScreen/LeafSystem.h"
 
 namespace EWE {

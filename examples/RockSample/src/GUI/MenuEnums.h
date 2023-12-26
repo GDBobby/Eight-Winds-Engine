@@ -1,5 +1,5 @@
 #pragma once
-#include "EWEngine/gui/MenuEnums.h"
+#include "EWEngine/GUI/MenuEnums.h"
 
 enum MenuClickReturn : uint16_t {
 	MCR_swapToShaderGen = EWE::MCR_engine_size,

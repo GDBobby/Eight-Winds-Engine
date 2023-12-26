@@ -1,6 +1,6 @@
-#include "EWEngine/data/ShaderBuilder.h"
-#include "EWEngine/data/FragmentShaderText.h"
-#include "EWEngine/data/VertexShaderText.h"
+#include "EWEngine/Data/ShaderBuilder.h"
+#include "EWEngine/Data/FragmentShaderText.h"
+#include "EWEngine/Data/VertexShaderText.h"
 #include "EWEngine/resources/LoadingString.h"
 
 #include <chrono>
@@ -109,7 +109,7 @@ std::vector<uint32_t> ShaderBlock::getLoadingFragShader() {
 	}
 	else {
 		printf("failed to compile loading frag shader \n");
-		throw std::exception("failed to compile shader");
+		throw std::runtime_error("failed to compile shader");
 		//throw std run time error
 	}
 
@@ -164,7 +164,7 @@ std::vector<uint32_t> ShaderBlock::getFragmentShader(ShaderFlags flags, bool has
 	}
 	else {
 		printf("failed to compile shader : %d \n", flags);
-		throw std::exception("failed to compile shader");
+		throw std::runtime_error("failed to compile shader");
 		//throw std run time error
 	}
 	/*

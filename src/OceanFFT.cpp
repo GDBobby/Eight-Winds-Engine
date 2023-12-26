@@ -67,7 +67,7 @@ namespace EWE {
 				.build(twiddleDescriptorSet)
 				) {
 				printf("twiddle desc failure \n");
-				throw std::exception("failed to create twiddle descriptor set");
+				throw std::runtime_error("failed to create twiddle descriptor set");
 			}
 			
 		}

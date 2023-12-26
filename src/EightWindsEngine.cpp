@@ -1,8 +1,8 @@
 #include "EWEngine/EightWindsEngine.h"
 
 //#include "keyboard_movement_controller.h" //this is for a free camera, which is currently not utilized
-#include "EWEngine/graphics/EWE_buffer.h"
-#include "EWEngine/graphics/EWE_camera.h"
+#include "EWEngine/graphics/EWE_Buffer.h"
+#include "EWEngine/graphics/EWE_Camera.h"
 #include "EWEngine/graphics/Dimension2/Dimension2.h"
 
 

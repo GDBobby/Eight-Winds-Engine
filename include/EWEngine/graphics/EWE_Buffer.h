@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EWE_device.hpp"
+#include "EWE_Device.hpp"
 
 namespace EWE {
 

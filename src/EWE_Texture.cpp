@@ -1,4 +1,4 @@
-#include "EWEngine/graphics/EWE_texture.h"
+#include "EWEngine/graphics/EWE_Texture.h"
 
 #include <string>
 #include <iostream>
@@ -60,14 +60,14 @@ namespace EWE {
             pixelPeek[0].pixels = stbi_load(enginePath.c_str(), &pixelPeek[0].width, &pixelPeek[0].height, &pixelPeek[0].channels, STBI_rgb_alpha);
             if ((!pixelPeek[0].pixels) || ((pixelPeek[0].width * pixelPeek[0].height) <= 0)) {
                 printf("failed to load orb: %s \n", texPath.c_str());
-                throw std::exception("failed to load orb texture");
+                throw std::runtime_error("failed to load orb texture");
             }
 
             enginePath = TEXTURE_DIR + texPath + "scrollFilled.png";
             pixelPeek[1].pixels = stbi_load(enginePath.c_str(), &pixelPeek[1].width, &pixelPeek[1].height, &pixelPeek[1].channels, STBI_rgb_alpha);
             if ((!pixelPeek[1].pixels) || ((pixelPeek[1].width * pixelPeek[1].height) <= 0)) {
                 printf("failed to load orb scroll : %s \n", texPath.c_str());
-                throw std::exception("failed to load orb scroll texture");
+                throw std::runtime_error("failed to load orb scroll texture");
             }
 
             //textureMap.emplace(std::make_pair(returnID, EWETexture{ texPath, eweDevice, pixelPeek, EWETexture::tType_orbOverlay }));
@@ -85,7 +85,7 @@ namespace EWE {
             pixelPeek[0].pixels = stbi_load(enginePath.c_str(), &pixelPeek[0].width, &pixelPeek[0].height, &pixelPeek[0].channels, STBI_rgb_alpha);
             if ((!pixelPeek[0].pixels) || ((pixelPeek[0].width * pixelPeek[0].height) <= 0)) {
                 printf("failed to load UI texture: %s \n", texPath.c_str());
-                throw std::exception("faield to load UI texture");
+                throw std::runtime_error("faield to load UI texture");
                 return -1;
             }
             uiMap.emplace(std::make_pair(uiID, EWETexture{ texPath, eweDevice, pixelPeek }));
@@ -117,9 +117,9 @@ namespace EWE {
         }
         else if (tType == tType_orbOverlay) {
             printf("can't throw rob in global \n");
-            throw std::exception("cant create orb in global \n");
+            throw std::runtime_error("cant create orb in global \n");
         }
-        throw std::exception("invalid texture type??? USE THE ENUM \n");
+        throw std::runtime_error("invalid texture type??? USE THE ENUM \n");
         return 0;
     }
     TextureID EWETexture::addSceneTexture(EWEDevice& eweDevice, std::string texPath, texture_type tType) {
@@ -147,7 +147,7 @@ namespace EWE {
         }
         else if (tType == tType_orbOverlay) {
             printf("can't throw orb in mode \n");
-            throw std::exception("cant create orb in mode \n");
+            throw std::runtime_error("cant create orb in mode \n");
         }
 
         if (sceneID >= 0) {
@@ -177,7 +177,7 @@ namespace EWE {
         }
         else {
             printf("trying to add a smart texture type that is not tType_smart, no support currently \n");
-            throw std::exception("trying to add a smart texture type that is not tType_smart, no support currently");
+            throw std::runtime_error("trying to add a smart texture type that is not tType_smart, no support currently");
         }
     }
 
@@ -194,7 +194,7 @@ namespace EWE {
         }
         else {
             printf("trying to add a smart texture type that is not tType_smart, no support currently \n");
-            throw std::exception("trying to add a smart texture type that is not tType_smart, no support currently");
+            throw std::runtime_error("trying to add a smart texture type that is not tType_smart, no support currently");
         }
     }
     void EWETexture::clearSceneTextures() {
@@ -254,7 +254,7 @@ namespace EWE {
         pixelPeek[0].pixels = stbi_load(enginePath.c_str(), &pixelPeek[0].width, &pixelPeek[0].height, &pixelPeek[0].channels, STBI_rgb_alpha);
         if ((!pixelPeek[0].pixels) || ((pixelPeek[0].width * pixelPeek[0].height) <= 0)) {
             printf("failed to load simple : %s \n", texPath.c_str());
-            throw std::exception("failed to load texture");
+            throw std::runtime_error("failed to load texture");
         }
         //globalTracker.push_back(returnID);
         //printf("before constructing simple texture, tType : %d \n", tType);
@@ -274,12 +274,12 @@ namespace EWE {
             individualPath += ".png";
             pixelPeeks[i].pixels = stbi_load(individualPath.c_str(), &pixelPeeks[i].width, &pixelPeeks[i].height, &pixelPeeks[i].channels, STBI_rgb_alpha);
             if (!pixelPeeks[i].pixels) {
-                throw std::exception("failed to load cube texture");
+                throw std::runtime_error("failed to load cube texture");
                 return -1;
             }
             if (i > 0) {
                 if ((pixelPeeks[i].width != pixelPeeks[i - 1].width) || (pixelPeeks[i].height != pixelPeeks[i - 1].height)) {
-                    throw std::exception("failed to load smart texture, bad dimensions");
+                    throw std::runtime_error("failed to load smart texture, bad dimensions");
                     return -1;
                 }
             }
@@ -346,7 +346,7 @@ namespace EWE {
                     tempPeek.pixels = stbi_load(materialPath.c_str(), &tempPeek.width, &tempPeek.height, &tempPeek.channels, STBI_rgb_alpha);
                     if ((!tempPeek.pixels) || ((tempPeek.width * tempPeek.height) <= 0)) {
                         printf("failed to load smart MRO texture %d : %s \n", i, materialPath.c_str());
-                        throw std::exception("failed to load smart material");
+                        throw std::runtime_error("failed to load smart material");
                     }
                     else {
                         //printf("found texture, png - %s \n", materialPath.c_str());
@@ -361,7 +361,7 @@ namespace EWE {
                     tempPeek.pixels = stbi_load(materialPath.c_str(), &tempPeek.width, &tempPeek.height, &tempPeek.channels, STBI_rgb_alpha);
                     if ((!tempPeek.pixels) || ((tempPeek.width * tempPeek.height) <= 0)) {
                         printf("failed to load smart MRO texture %d : %s \n", i, materialPath.c_str());
-                        throw std::exception("failed to load smart material");
+                        throw std::runtime_error("failed to load smart material");
                     }
                     else {
                         //printf("found texture, jpg - %s \n", materialPath.c_str());
@@ -376,7 +376,7 @@ namespace EWE {
                     tempPeek.pixels = stbi_load(materialPath.c_str(), &tempPeek.width, &tempPeek.height, &tempPeek.channels, STBI_rgb_alpha);
                     if ((!tempPeek.pixels) || ((tempPeek.width * tempPeek.height) <= 0)) {
                         printf("failed to load smart MRO texture %d : %s \n", i, materialPath.c_str());
-                        throw std::exception("failed to load smart material");
+                        throw std::runtime_error("failed to load smart material");
                     }
                     else {
                         //printf("found texture, jpg - %s \n", materialPath.c_str());
@@ -402,7 +402,7 @@ namespace EWE {
         //printf("flag values : %d \n", flags);
         if (!foundTypes[0]) {
             printf("did not find an albedo or diffuse texture for this MRO set : %s \n", texPath.c_str());
-            throw std::exception("no albedo in dynamic material");
+            throw std::runtime_error("no albedo in dynamic material");
             //std::throw 
         }
         if (foundTypes[5]) {

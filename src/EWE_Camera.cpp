@@ -1,4 +1,4 @@
-#include "EWEngine/graphics/EWE_camera.h"
+#include "EWEngine/graphics/EWE_Camera.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

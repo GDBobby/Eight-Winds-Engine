@@ -1,4 +1,3 @@
-#pragma once
 #include "EWEngine/systems/Graphics/WaveCascades.h"
 
 namespace EWE {
@@ -57,7 +56,7 @@ namespace EWE {
 				.build(permute_descriptor)
 				) {
 				printf("permute desc failure \n");
-				throw std::exception("failed to create permute descriptor set");
+				throw std::runtime_error("failed to create permute descriptor set");
 			}
 
 
@@ -72,7 +71,7 @@ namespace EWE {
 				.build(inverse_fft_descriptor)
 				) {
 				printf("inverse fft desc failure \n");
-				throw std::exception("failed to create inverse fft descriptor set");
+				throw std::runtime_error("failed to create inverse fft descriptor set");
 			}
 
 			for (uint8_t i = 0; i < 4; i++) {
@@ -84,7 +83,7 @@ namespace EWE {
 					.build(inverse_fft_deriv_descriptor[i])
 					) {
 					printf("inverse fft desc failure \n");
-					throw std::exception("failed to create inverse fft descriptor set");
+					throw std::runtime_error("failed to create inverse fft descriptor set");
 				}
 				if (!
 					EWEDescriptorWriter(*oceanFFT.fftDSLs[2], *oceanPool)
@@ -94,7 +93,7 @@ namespace EWE {
 					.build(inverse_fft_deriv_descriptor[i + 4])
 					) {
 					printf("inverse fft desc failure \n");
-					throw std::exception("failed to create inverse fft descriptor set");
+					throw std::runtime_error("failed to create inverse fft descriptor set");
 				}
 			}
 			
@@ -111,7 +110,7 @@ namespace EWE {
 				.build(initial_spectrum_descriptor)
 				) {
 				printf("initial spectrum desc failure \n");
-				throw std::exception("failed to create initial spectrum descriptor set");
+				throw std::runtime_error("failed to create initial spectrum descriptor set");
 			}
 			//time dependent
 
@@ -128,7 +127,7 @@ namespace EWE {
 				.build(time_dependent_descriptor)
 				) {
 				printf("time dependent desc failure \n");
-				throw std::exception("failed to create time dependent descriptor set");
+				throw std::runtime_error("failed to create time dependent descriptor set");
 			}
 			//wave texture merger
 
@@ -143,7 +142,7 @@ namespace EWE {
 				.build(texture_merger_descriptor)
 				) {
 				printf("texture merger desc failure \n");
-				throw std::exception("failed to create texture merger descriptor set");
+				throw std::runtime_error("failed to create texture merger descriptor set");
 			}
 			//combined texture binding
 			if (!
@@ -154,7 +153,7 @@ namespace EWE {
 				.build(merged_texture_descriptor)
 				) {
 				printf("texture merger desc failure \n");
-				throw std::exception("failed to create texture merger descriptor set");
+				throw std::runtime_error("failed to create texture merger descriptor set");
 			}
 			/*
 			if (!
@@ -180,7 +179,7 @@ namespace EWE {
 				.build(conjugated_spectrum_descriptor)
 				) {
 				printf("conjugated spectrum desc failure \n");
-				throw std::exception("failed to create conjugated spectrum descriptor set");
+				throw std::runtime_error("failed to create conjugated spectrum descriptor set");
 			}
 			std::cout << "after descriptors " << std::endl;
 		}

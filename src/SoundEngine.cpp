@@ -32,17 +32,17 @@ namespace EWE {
 		result = ma_resource_manager_init(&resourceManagerConfig, &resourceManager);
 		if(result != MA_SUCCESS) {
 			printf("Failed to initialize resource manager.\n");
-			throw std::exception("failed to init miniaudio");
+			throw std::runtime_error("failed to init miniaudio");
 		}
 		result = ma_context_init(NULL, 0, NULL, &context);
 		if (result != MA_SUCCESS) {
 			printf("Failed to initialize context.\n");
-			throw std::exception("failed to init miniaudio");
+			throw std::runtime_error("failed to init miniaudio");
 		}
 		result = ma_context_get_devices(&context, &pPlaybackDeviceInfos, &playbackDeviceCount, NULL, NULL);
 		if (result != MA_SUCCESS) {
 			printf("failed to get devices \n");
-			throw std::exception("failed to init miniaudio");
+			throw std::runtime_error("failed to init miniaudio");
 		}
 
 
@@ -218,10 +218,10 @@ namespace EWE {
 			if (result != MA_SUCCESS) {
 				if (i == 0) {
 					printf("failed to initialize the default device \n");
-					throw std::exception("failed to init miniaudio device");
+					throw std::runtime_error("failed to init miniaudio device");
 				}
 				printf("Failed to initialize device for %s.\n", pPlaybackDeviceInfos[i - 1].name);
-				throw std::exception("failed to init miniaudio device");
+				throw std::runtime_error("failed to init miniaudio device");
 			}
 
 			// Now that we have the device we can initialize the engine. The device is passed into the engine's config
@@ -362,7 +362,7 @@ namespace EWE {
 
 							if (result != MA_SUCCESS) {
 								printf("WARNING: Failed to load effect \"%s\"", soundPath.second.c_str());
-								throw std::exception("failed to load sound");
+								throw std::runtime_error("failed to load sound");
 							}
 						}
 						else {
@@ -377,7 +377,7 @@ namespace EWE {
 						ma_sound_set_volume(&sounds->at(soundPath.first), static_cast<float>(volumes[(uint8_t)SoundVolume::music]) / 100.f);
 						if (result != MA_SUCCESS) {
 							printf("WARNING: Failed to load music or voice \"%s\"", soundPath.second.c_str());
-							throw std::exception("failed to load sound");
+							throw std::runtime_error("failed to load sound");
 						}
 					}
 				}
@@ -397,7 +397,7 @@ namespace EWE {
 
 			if (result != MA_SUCCESS) {
 				printf("WARNING: Failed to load effect \"%s\"", effectPath.second.c_str());
-				throw std::exception("failed to load sound");
+				throw std::runtime_error("failed to load sound");
 			}
 		}
 
@@ -416,7 +416,7 @@ namespace EWE {
 
 			if (result != MA_SUCCESS) {
 				printf("WARNING: Failed to load music \"%s\"", musicPath.second.c_str());
-				throw std::exception("failed to load sound");
+				throw std::runtime_error("failed to load sound");
 			}
 		}
 		initVolume();

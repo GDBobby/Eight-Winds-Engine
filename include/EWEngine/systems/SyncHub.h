@@ -7,7 +7,7 @@
 #include <array>
 
 #include <iostream>
-
+#include <stdexcept>
 
 #define DECONSTRUCTION_DEBUG true
 
@@ -167,13 +167,7 @@ namespace EWE {
 			vkEndCommandBuffer(oceanTransferBuffers[1]);
 		}
 
-		void waitOnTransferFence() {
-			VkResult vkResult = vkWaitForFences(device, 1, &singleTimeFence, VK_TRUE, UINT64_MAX);
-			if (vkResult != VK_SUCCESS) {
-				printf("failed to wait for fences : %d \n", vkResult);
-				throw std::exception("Failed to wait for fence in endSingleTimeCommands");
-			}
-		}
+		void waitOnTransferFence();
 
 	private:
 

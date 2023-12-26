@@ -2,8 +2,8 @@
 
 //#include "Settings.h"
 #include <rapidjson/document.h>
-#include "rapidjson/prettywriter.h" // for stringify JSON
-#include "rapidjson/error/en.h"
+#include <rapidjson/prettywriter.h> // for stringify JSON
+#include <rapidjson/error/en.h>
 
 
 #include <GLFW/glfw3.h>

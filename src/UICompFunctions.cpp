@@ -211,7 +211,7 @@ namespace EWE {
 			}
 			case VT_int32: {
 				//instill a max string input length
-				0;
+				
 				if (inString.length() >= 11) {
 					//doesnt care if  the length is 19, but the value is below int64_max
 					//if it has a negative sign, the max length is 18, and it doesnt care if below int64_t

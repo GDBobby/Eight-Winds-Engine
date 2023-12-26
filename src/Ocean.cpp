@@ -1,4 +1,4 @@
-#include "EWEngine/systems/Graphics/ocean.h"
+#include "EWEngine/systems/Graphics/Ocean.h"
 #include "EWEngine/Data/TransformInclude.h"
 
 namespace EWE {
@@ -8,7 +8,7 @@ namespace EWE {
 			oceanFFT{ ocean_resolution, device }
 		{
 			printf("ocean construction \n");
-			throw std::exception("ocean construction not wanted");
+			throw std::runtime_error("ocean construction not wanted");
 			oceanPool =
 				EWEDescriptorPool::Builder(device)
 				.setMaxSets(1000)
@@ -29,7 +29,7 @@ namespace EWE {
 			oceanModel = EWEModel::createSimpleModelFromFile(device, "ocean.obj");
 			foam = EWETexture::addGlobalTexture(device, "ocean/foam.jpg");
 
-			renderPipeline;
+			//renderPipeline;
 
 			initializeDSLs();
 			/*
@@ -273,7 +273,7 @@ namespace EWE {
 					.build(renderParamsDescriptorSets[i])
 					) {
 					printf("monster desc failure \n");
-					throw std::exception("failed to create monster descriptor set");
+					throw std::runtime_error("failed to create monster descriptor set");
 				}
 			}
 
@@ -290,7 +290,7 @@ namespace EWE {
 						.build(renderTextureDescriptorSets[x][i])
 						) {
 						printf("monster desc failure \n");
-						throw std::exception("failed to create monster descriptor set");
+						throw std::runtime_error("failed to create monster descriptor set");
 					}
 				}
 			}

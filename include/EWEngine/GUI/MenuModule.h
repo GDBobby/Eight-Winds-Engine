@@ -46,7 +46,7 @@ namespace EWE {
 		}
 		//MenuModule(MenuStates menuState, float screenWidth, float screenHeight);
 
-		~MenuModule() {
+		virtual ~MenuModule() {
 			printf("deconstructing menu module \n");
 			if (childWindow) { //why am i destructing???? nothing should be moving
 				childWindow->~MenuModule();

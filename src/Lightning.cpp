@@ -91,7 +91,7 @@ namespace EWE {
 
 		if (transPoints.size() == 0) {
 			printf("0 lightning points??? \n");
-			throw std::exception("0 lightning points??");
+			throw std::runtime_error("0 lightning points??");
 		}
 
 		assert(transPoints.size() > 0);

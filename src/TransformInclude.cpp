@@ -1,4 +1,6 @@
-#include "EWEngine/data/TransformInclude.h"
+#include "EWEngine/Data/TransformInclude.h"
+
+#include <cstdio>
 
 glm::mat4 TransformComponent::mat4() {
     const float c3 = glm::cos(rotation.z);

@@ -1,4 +1,4 @@
-#include "EWEngine/gui/UIComponentsHigher.h"
+#include "EWEngine/GUI/UIComponentsHigher.h"
 
 namespace EWE {
 

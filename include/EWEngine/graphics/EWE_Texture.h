@@ -1,13 +1,13 @@
 #pragma once
-#include "EWE_device.hpp"
-#include "EWE_descriptors.h"
-#include "EWE_buffer.h"
+#include "EWE_Device.hpp"
+#include "EWE_Descriptors.h"
+#include "EWE_Buffer.h"
 
 #include <stb/stb_image.h>
 
 #include <unordered_map>
 #include <map>
-#include "EWEngine/data/enginedatatypes.h"	
+#include "EWEngine/Data/EngineDataTypes.h"	
 
 /*
 ~EWETexture() {

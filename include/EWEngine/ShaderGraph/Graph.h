@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "node.h"
-#include "edge.h"
+#include "Node.h"
+#include "Edge.h"
 #include "InputBox.h"
 
 namespace EWE {

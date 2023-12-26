@@ -1,7 +1,7 @@
-#include "EWEngine/graphics/EWE_pipeline.h"
+#include "EWEngine/graphics/EWE_Pipeline.h"
 
 
-#include "EWEngine/graphics/model/EWE_model.h"
+#include "EWEngine/graphics/model/EWE_Model.h"
 #include "EWEngine/graphics/EWE_Renderer.h"
 #include "EWEngine/graphics/PushConstants.h"
 
@@ -87,7 +87,7 @@ namespace EWE {
 			createInfo.pCode = reinterpret_cast<const uint32_t*>(data);
 			VkResult vkResult = vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule);
 			if (vkResult != VK_SUCCESS) {
-				printf("vkResult : %lld \n", vkResult);
+				printf("vkResult : %d \n", vkResult);
 				throw std::runtime_error("failed to create shader module");
 			}
 		}
@@ -647,7 +647,7 @@ namespace EWE {
 
 		if (hasBumps) {
 			printf("HAS BONES AND BUMP, SHOULD NOT HAPPEN \n");
-			throw std::exception("currently not supporting skinned meshes with bump maps");
+			throw std::runtime_error("currently not supporting skinned meshes with bump maps");
 		}
 
 		uint16_t pipeLayoutIndex = textureCount + MAX_SMART_TEXTURE_COUNT;
@@ -958,7 +958,7 @@ namespace EWE {
 			}
 			default: {
 				printf("??? trying to create a pipeline layout that doesnt have support ??? \n");
-				throw std::exception("invalid pipeline layout creation");
+				throw std::runtime_error("invalid pipeline layout creation");
 				break; 
 			}
 
@@ -1160,7 +1160,7 @@ namespace EWE {
 			}
 			default: {
 				printf("trying to create a pipeline that doesnt have support??? \n");
-				throw std::exception("invalid pipeline construction");
+				throw std::runtime_error("invalid pipeline construction");
 			}
 #if false//_DEBUG
 						  printf("after creating pipe : %d \n", pipeNeeded);

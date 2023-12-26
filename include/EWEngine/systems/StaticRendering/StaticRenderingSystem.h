@@ -1,6 +1,6 @@
 #pragma once
 #include "EWEngine/graphics/model/EWE_Model.h"
-#include "EWEngine/graphics/EWE_pipeline.h"
+#include "EWEngine/graphics/EWE_Pipeline.h"
 
 namespace EWE {
 	class StaticRenderSystem {

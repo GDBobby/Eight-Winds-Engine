@@ -1,9 +1,9 @@
 #pragma once
 
 #include "MainWindow.h"
-#include "EWEngine/graphics/EWE_device.hpp"
-#include "EWEngine/graphics/EWE_renderer.h"
-#include "EWEngine/graphics/EWE_descriptors.h"
+#include "EWEngine/graphics/EWE_Device.hpp"
+#include "EWEngine/graphics/EWE_Renderer.h"
+#include "EWEngine/graphics/EWE_Descriptors.h"
 
 #include "EWEngine/systems/SkinRendering/SkinRenderSystem.h"
 
@@ -12,7 +12,7 @@
 //#include "LevelBuilder/LevelBuilder.h"
 #include "EWEngine/GUI/UIHandler.h"
 //#include "EWEngine/graphicsimGuiHandler.h"
-#include "loadingscreen/leafsystem.h"
+#include "LoadingScreen/LeafSystem.h"
 #include "EWEngine/GUI/MenuManager.h"
 
 #include <functional>

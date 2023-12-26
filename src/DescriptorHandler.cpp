@@ -1,5 +1,6 @@
 #include "EWEngine/graphics/DescriptorHandler.h"
 
+#include <stdexcept>
 
 namespace EWE {
 
@@ -144,7 +145,7 @@ namespace EWE {
             }
             else if (instanced) {
                 printf("currrently not supporting instancing without bones, THROWING ERROR \n");
-                throw std::exception("instanced but doesn't have bones? \n");
+                throw std::runtime_error("instanced but doesn't have bones?");
             }
             dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].push_back(EWETexture::getDynamicDescriptorSetLayout(textureCount));
         }

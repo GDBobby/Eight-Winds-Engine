@@ -1,4 +1,4 @@
-#include "EWEngine/gui/AudioMM.h"
+#include "EWEngine/GUI/AudioMM.h"
 
 namespace EWE {
 	AudioMM* AudioMM::audioPtr{ nullptr };
@@ -7,7 +7,7 @@ namespace EWE {
 		//controlPtr->
 		if (glfwGetMouseButton(audioPtr->windowPtr, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
 			glfwSetCursorPosCallback(audioPtr->windowPtr, nullptr);
-			return;
+			return; //works fine
 		}
 		int16_t slider_movement = (static_cast<int16_t>(xpos - audioPtr->mousePosX));
 		audioPtr->mousePosX = xpos;
@@ -32,7 +32,7 @@ namespace EWE {
 			audioPtr = this;
 		}
 		else {
-			throw std::exception("audio mm can only be created once \n");
+			throw std::runtime_error("audio mm can only be created once \n");
 		}
 
 		float widthRescaling = screenWidth / DEFAULT_WIDTH;

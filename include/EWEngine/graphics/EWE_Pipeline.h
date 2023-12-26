@@ -1,11 +1,11 @@
 #pragma once
 
 //#include "DescriptorHandler.h"
-#include "EWE_device.hpp"
-#include "EWE_descriptors.h"
+#include "EWE_Device.hpp"
+#include "EWE_Descriptors.h"
 #include "DescriptorHandler.h"
-#include "EWEngine/data/ShaderBuilder.h"
-#include "EWEngine/data/EngineDataTypes.h"
+#include "EWEngine/Data/ShaderBuilder.h"
+#include "EWEngine/Data/EngineDataTypes.h"
 
 #include <glm/glm.hpp>
 #include <map>

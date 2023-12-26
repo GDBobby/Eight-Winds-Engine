@@ -248,7 +248,7 @@ namespace EWE {
 					printf("whats this vType? : %d \n", buildModel->vType);
 				}
 			}
-			/*
+			*
 			if (iter->second == &objectManager->builderObjects) {
 				//printf("simple objects \n");
 				//if (((BuilderModel*)iter->second->at(iter->first).model.get())->simpleVertices.size() > 0) {
