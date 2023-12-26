@@ -132,22 +132,22 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 message(STATUS "linking libs")
 target_link_libraries(${PROJECT_NAME} 
 	glfw3 
-	#vulkan-1
-	vulkan
+	vulkan-1
+	#vulkan
 
-	#$<$<CONFIG:Debug>:
-	 #SPVRemapperd
-	 #GenericCodeGend
-	 #glslangd
-	 #glslang-default-resource-limitsd
-	 #MachineIndependentd
-	 #OGLCompilerd
-	 #OSDependentd
-	 #SPIRVd
-	 #SPIRV-Toolsd
-	 #SPIRV-Tools-optd
-	#>
-	#$<$<CONFIG:Release>:
+	$<$<CONFIG:Debug>:
+	 SPVRemapperd
+	 GenericCodeGend
+	 glslangd
+	 glslang-default-resource-limitsd
+	 MachineIndependentd
+	 OGLCompilerd
+	 OSDependentd
+	 SPIRVd
+	 SPIRV-Toolsd
+	 SPIRV-Tools-optd
+	>
+	$<$<CONFIG:Release>:
 	 SPVRemapper
 	 GenericCodeGen
 	 glslang
@@ -158,7 +158,7 @@ target_link_libraries(${PROJECT_NAME}
 	 SPIRV
 	 SPIRV-Tools
 	 SPIRV-Tools-opt
-	#>
+	>
 	
 )
 
