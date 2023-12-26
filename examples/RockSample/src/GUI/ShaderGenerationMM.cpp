@@ -33,7 +33,7 @@ namespace EWE {
 			//just give the returns off the jump, and let it handle it all the way
 			//menuMap[menu_main].controlBoxes[returnValues.second].giveGLFWCallbacks(staticMouseCallback, staticKeyCallback);
 		}
-		else if (returnValues.first = UIT_MenuBar) {
+		else if (returnValues.first == UIT_MenuBar) {
 			switch (returnValues.second) {
 			case 1: {
 				printf("saving the file \n");

@@ -3,7 +3,7 @@
 #include "GUI/MainMenuMM.h"
 #include "GUI/ShaderGenerationMM.h"
 //#include "GUI/ControlsMM.h"
-#include <EWEngine/systems/StaticRendering/staticRenderingSystem.h>
+#include <EWEngine/systems/StaticRendering/StaticRenderingSystem.h>
 
 #include "GUI/MenuEnums.h"
 
@@ -45,7 +45,7 @@ namespace EWE {
 	void EWESample::mainThread() {
 		auto mainThreadCurrentTime = std::chrono::high_resolution_clock::now();
 		renderRefreshRate = static_cast<double>(SettingsJSON::settingsData.FPS);
-		std::chrono::steady_clock::time_point newTime;
+		std::chrono::high_resolution_clock::time_point newTime;
 		double mainThreadTimeTracker = 0.0;
 		if (SettingsJSON::settingsData.FPS == 0) {
 			//small value, for effectively uncapped frame rate
@@ -242,7 +242,7 @@ namespace EWE {
 			}
 			case MCR_none: {
 				printf("returned MCR_Return \n");
-				throw std::exception("this should nto be returned");
+				throw std::runtime_error("this should nto be returned");
 				break;
 			}
 			default: {

@@ -17,7 +17,7 @@ namespace EWE {
      */
     VkDeviceSize EWEBuffer::getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment) {
         if (minOffsetAlignment > 0) {
-            printf("get alignment size : %llu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
+            printf("get alignment size : %lu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
             return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
         }
         return instanceSize;

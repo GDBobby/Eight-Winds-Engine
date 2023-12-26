@@ -1,5 +1,5 @@
 #include "ShaderGenerationScene.h"
-#include "../gui/MenuEnums.h"
+#include "../GUI/MenuEnums.h"
 
 namespace EWE {
 	ShaderGenerationScene::ShaderGenerationScene(EightWindsEngine& ewEngine)

@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-
+#include <cstdint>
 
 typedef uint16_t VariableType;
 

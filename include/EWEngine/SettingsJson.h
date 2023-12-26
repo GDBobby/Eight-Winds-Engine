@@ -26,7 +26,7 @@ enum class SoundVolume {
 	music,
 	voice,
 
-	overflow,
+	//overflow,
 };
 
 namespace SettingsInfo {

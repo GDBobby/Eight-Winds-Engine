@@ -87,7 +87,7 @@ namespace EWE {
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
         }
         else {
-            std::cout << std::format("instanceIndex and instanceBuffer getting KINDA STRNAGE, values - {}:{} \n", instanceIndex, instanceBuffer.size());
+            printf("instanceIndex and instanceBuffer getting KINDA STRNAGE, values - %d:%lu \n", instanceIndex, instanceBuffer.size());
             assert(instanceIndex == instanceBuffer.size());
         }
 

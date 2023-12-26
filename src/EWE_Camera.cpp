@@ -87,7 +87,7 @@ namespace EWE {
 			return;
 		}
 		dataHasBeenUpdated--;
-		printf("view target direct, sizeof globalubo : %llu \n", sizeof(GlobalUbo));
+		printf("view target direct, sizeof globalubo : %lu \n", sizeof(GlobalUbo));
 
 		glm::vec3 f = glm::normalize(target - position);
 		glm::vec3 s = glm::normalize(glm::cross(f, cameraUp));

@@ -8,7 +8,7 @@ namespace EWE {
 	public:
 		ShaderGenerationMM(GLFWwindow* windowPtr, float screenWidth, float screenHeight);
 
-		void processClick(double xpos, double ypos);
+		void processClick(double xpos, double ypos) override;
 		void drawText(TextOverlay* textOverlay) override;
 
 		void drawNewObjects() override;

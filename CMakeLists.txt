@@ -19,6 +19,13 @@ option(EWE_EXAMPLES "Build examples" ${is_project_root})
 
 Message(STATUS "Cmake Generator : ${CMAKE_GENERATOR}")
 
+file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE SOURCES_C ${PROJECT_SOURCE_DIR}/src/*.c) #literally just for miniaudio.c, im tempted to move it somewhere else but idk
+
+file(GLOB_RECURSE HEADER_FILES ${PROJECT_SOURCE_DIR}/include/*.h)
+file(GLOB_RECURSE HEADER_FILES_PP ${PROJECT_SOURCE_DIR}/include/*.hpp)
+
+add_library(${PROJECT_NAME} STATIC ${SOURCES} ${SOURCES_C} ${HEADER_FILES} ${HEADER_FILES_PP})
 
 # 1. Set VULKAN_SDK_PATH in .env.cmake to target specific vulkan version
 if (DEFINED VULKAN_SDK_PATH)
@@ -67,6 +74,8 @@ else()
   message(STATUS "boost path undefined in .env")
   find_package(Boost REQUIRED) # throws error if could not find boost
   message(STATUS "Found Boost: $ENV{BOOST_SDK}")
+  find_package(Boost COMPONENTS serialization REQUIRED)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Boost::serialization)
 endif()
 if (NOT BOOST_FOUND)
 	message(FATAL_ERROR "Could not find Boost library!")
@@ -101,14 +110,6 @@ if (NOT STB_PATH)
   set(STB_PATH external/include)
 endif()
 
-file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-file(GLOB_RECURSE SOURCES_C ${PROJECT_SOURCE_DIR}/src/*.c) #literally just for miniaudio.c, im tempted to move it somewhere else but idk
-
-file(GLOB_RECURSE HEADER_FILES ${PROJECT_SOURCE_DIR}/include/*.h)
-file(GLOB_RECURSE HEADER_FILES_PP ${PROJECT_SOURCE_DIR}/include/*.hpp)
-
-add_library(${PROJECT_NAME} STATIC ${SOURCES} ${SOURCES_C} ${HEADER_FILES} ${HEADER_FILES_PP})
-
 message(STATUS "including directories")
 target_include_directories(${PROJECT_NAME} PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -131,21 +132,22 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 message(STATUS "linking libs")
 target_link_libraries(${PROJECT_NAME} 
 	glfw3 
-	vulkan-1
-	
-	$<$<CONFIG:Debug>:
-	 SPVRemapperd
-	 GenericCodeGend
-	 glslangd
-	 glslang-default-resource-limitsd
-	 MachineIndependentd
-	 OGLCompilerd
-	 OSDependentd
-	 SPIRVd
-	 SPIRV-Toolsd
-	 SPIRV-Tools-optd
-	>
-	$<$<CONFIG:Release>:
+	#vulkan-1
+	vulkan
+
+	#$<$<CONFIG:Debug>:
+	 #SPVRemapperd
+	 #GenericCodeGend
+	 #glslangd
+	 #glslang-default-resource-limitsd
+	 #MachineIndependentd
+	 #OGLCompilerd
+	 #OSDependentd
+	 #SPIRVd
+	 #SPIRV-Toolsd
+	 #SPIRV-Tools-optd
+	#>
+	#$<$<CONFIG:Release>:
 	 SPVRemapper
 	 GenericCodeGen
 	 glslang
@@ -156,7 +158,7 @@ target_link_libraries(${PROJECT_NAME}
 	 SPIRV
 	 SPIRV-Tools
 	 SPIRV-Tools-opt
-	>
+	#>
 	
 )
 

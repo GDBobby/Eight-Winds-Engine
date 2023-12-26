@@ -3,7 +3,7 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm\glm.hpp>
+#include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
 #include <array>
@@ -199,7 +199,7 @@ namespace EWE {
 	void AdvancedRenderSystem::renderSkybox(FrameInfo& frameInfo) {
 		if (!objectManager.skybox.first) {
 			printf("skybox model null ptr? \n");
-			throw std::exception("skybox nullptr");
+			throw std::runtime_error("skybox nullptr");
 			return;
 		}
 #if DEBUGGING_PIPELINES
@@ -261,7 +261,7 @@ namespace EWE {
 				if (objectManager.texturedGameObjects[i].isTarget && (!objectManager.texturedGameObjects[i].activeTarget)) {
 					continue;
 				}
-				if ((objectManager.texturedGameObjects[i].textureID == -1) || (objectManager.texturedGameObjects[i].model == nullptr)) {
+				if ((objectManager.texturedGameObjects[i].textureID == TEXTURE_UNBINDED) || (objectManager.texturedGameObjects[i].model == nullptr)) {
 					std::cout << "why does a textured game object have no texture, or no model?? " << std::endl;
 					continue;
 				}
@@ -310,7 +310,7 @@ namespace EWE {
 #endif
 			if (flags & 128) {
 				printf("should not have bonesin static rendering \n");
-				throw std::exception("should not have boens here");
+				throw std::runtime_error("should not have boens here");
 			}
 			PipelineManager::dynamicMaterialPipeline[flags]->bind(frameInfo.cmdIndexPair.first);
 

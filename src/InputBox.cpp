@@ -191,7 +191,7 @@ namespace EWE {
 							printf("after selection index : %d \n", inputBoxPtr->stringSelectionIndex);
 							std::string& stringRef = inputBoxPtr->variables[inputBoxPtr->selectedTypeBox].name.textStruct.string;
 							size_t indexPos = stringRef.find_first_of('|');
-							printf("stringRef, indexPos - %s:%d:%llu\n", stringRef.c_str(), indexPos, stringRef.npos);
+							printf("stringRef, indexPos - %s:%lu:%lu\n", stringRef.c_str(), indexPos, stringRef.npos);
 							if ((indexPos != inputBoxPtr->stringSelectionIndex) && (indexPos != (inputBoxPtr->stringSelectionIndex + 1))) {
 								if (indexPos != stringRef.npos) {
 									stringRef.erase(indexPos, 1);

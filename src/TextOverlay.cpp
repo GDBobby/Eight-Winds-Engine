@@ -27,7 +27,7 @@ namespace EWE {
 		}
 		else {
 			printf("double initializing textoverlay \n");
-			throw std::exception("double init on textoverlay");
+			throw std::runtime_error("double init on textoverlay");
 		}
 		//printf("text overlay construction \n");
 

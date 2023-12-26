@@ -5,6 +5,8 @@
 #include "EWE_Texture.h"
 #include "EWEngine/systems/RigidRendering/RigidRenderSystem.h"
 
+#include <list>
+
 namespace EWE {
     struct TextureMapping {
         std::vector<std::pair<ShaderFlags, TextureID>> meshNames;

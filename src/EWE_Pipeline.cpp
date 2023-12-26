@@ -25,23 +25,20 @@ namespace EWE {
 
 			//printf("readFile enginePath : %s \n", enginePath.c_str());
 
-			FILE* shaderStream;
-			if (fopen_s(&shaderStream, enginePath.c_str(), "rb") != NULL) {
-				printf("failed to open file in EWEPipeline::readFile : %s \n", enginePath.c_str());
-				throw std::runtime_error("failed to open FILE");
+			std::ifstream shaderFile;
+			shaderFile.open(enginePath, std::ios::binary);
+			if(!shaderFile.is_open()){
+				throw std::runtime_error("failed to open shader file");
 			}
-			fseek(shaderStream, 0, SEEK_END);
-			size_t length = ftell(shaderStream);
-			if (length == 0) {
-				printf("shader file code length is 0 \n");
-				throw std::runtime_error("SHADER FILE LENGTH IS 0");
+			shaderFile.seekg(0, std::ios::end);
+			size_t fileSize = (size_t)shaderFile.tellg();
+			if(fileSize == 0){
+				throw std::runtime_error("shader file length is 0");
 			}
-			fseek(shaderStream, 0, SEEK_SET);
-			char* shaderCode = (char*)malloc(length);
-			fread(shaderCode, sizeof(char), length, shaderStream);
-			fclose(shaderStream);
-			std::vector<char> returnVec(shaderCode, shaderCode + length);
-			free(shaderCode);
+			shaderFile.seekg(0, std::ios::beg);
+			std::vector<char> returnVec(fileSize);
+			shaderFile.read(returnVec.data(), fileSize);
+			shaderFile.close();
 			return returnVec;
 		}
 		void createShaderModule(EWEDevice& device, std::string const& file_path, VkShaderModule* shaderModule) {

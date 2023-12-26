@@ -117,7 +117,7 @@ namespace EWE {
 		void reloadSounds();
 
 		uint16_t currentSong = UINT16_MAX;
-		uint64_t currentPCMFrames = 0;
+		ma_uint64 currentPCMFrames = 0;
 
 	
 	};

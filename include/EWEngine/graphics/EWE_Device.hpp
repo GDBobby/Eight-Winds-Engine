@@ -11,6 +11,8 @@
 #include <condition_variable>
 #include <mutex>
 
+#include <list>
+#include <utility>
 
 
 #define GPU_LOGGING true

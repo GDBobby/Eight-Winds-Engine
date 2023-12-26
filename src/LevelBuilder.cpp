@@ -167,7 +167,7 @@ namespace EWE {
 			if (ImGui::Button("Add Quad")) {
 				printf("add quad \n");
 
-				/*
+				*
 					//objectManager->texturedBuildObjects[selectedObject] = std::move(objectManager->builderObjects[selectedObject]);
 					//objectManager->builderObjects.erase(selectedObject);
 					//objectList[selectedObject] = &objectManager->texturedBuildObjects;
@@ -337,7 +337,7 @@ namespace EWE {
 								}
 								printf("adding texture to simple \n");
 							}
-							/*
+							*
 							ImGui::InputText("material location", materialLocation, texLocSize);
 							if (ImGui::SmallButton("Add material")) {
 								int32_t tempTextureID = EWETexture::addModeTexture(eweDevice, materialLocation, EWETexture::tType_material);
@@ -355,7 +355,7 @@ namespace EWE {
 							}
 							*
 						}
-						/*
+						*
 						else if (objectList[selectedObject] == &objectManager->texturedBuildObjects) {
 							ImGui::InputText("changed texture location", texLocation, texLocSize);
 							if (ImGui::SmallButton("Change Texture")) {

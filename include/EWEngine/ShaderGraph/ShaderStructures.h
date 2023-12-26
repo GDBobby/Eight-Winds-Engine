@@ -12,6 +12,8 @@ namespace EWE {
 		struct Shader_Structure {
 			std::string name{};
 			std::vector<Shader_Variable> members{};
+			Shader_Structure() = default;
+			Shader_Structure(std::string& name, std::vector<Shader_Variable>& members) : name{ std::move(name) }, members{ std::move(members) } {}
 		};
 
 		class ShaderStructureManager {

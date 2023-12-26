@@ -4,6 +4,7 @@
 
 #include "EWEngine/graphics/model/EWE_Model.h"
 
+#include <boost/serialization/base_object.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>

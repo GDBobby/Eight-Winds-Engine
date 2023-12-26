@@ -86,8 +86,8 @@ namespace EWE {
 	}
 
 	void MainWindow::createWindowSurface(VkInstance instance, VkSurfaceKHR* surface, bool gpuLogging) {
-		this->width = width;
-		this->height = height;
+		//this->width = width;
+		//this->height = height;
 		//i think glfwcreatewindow does this, and chatGPT says it does so...
 		/*
 #if defined (_WIN32)
