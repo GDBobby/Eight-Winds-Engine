@@ -392,7 +392,7 @@ bool ShaderBlock::SpirvHelper::LoadingFragSPV(std::vector<unsigned int>& spirv) 
 	//printf("compiling \n");
 	glslang::GlslangToSpv(*program.getIntermediate(EShLangFragment), spirv);
 	std::string shaderFileName = SHADER_DYNAMIC_PATH;
-	shaderFileName = "loading.frag.spv";
+	shaderFileName += "loading.frag.spv";
 	std::ofstream outShader{ shaderFileName, std::ios::binary };
 
 	if (outShader.is_open()) {

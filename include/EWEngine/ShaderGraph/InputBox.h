@@ -20,10 +20,11 @@ namespace EWE {
 			ComboBox variableCombo;
 			TypeBox name;
 			Button removeThis;
+			ShaderStructureManager& structureManager;
 
 
-			InputOutputData(float xPos, float yPos, float screenWidth, float screenHeight);
-			InputOutputData(VariableType vType, std::string variableName, float xPos, float yPos, float screenWidth, float screenHeight);
+			InputOutputData(ShaderStructureManager& structureManager, float xPos, float yPos, float screenWidth, float screenHeight);
+			InputOutputData(ShaderStructureManager& structureManager, VariableType vType, std::string variableName, float xPos, float yPos, float screenWidth, float screenHeight);
 
 			void move(float xDiff, float yDiff, float screenWidth, float screenHeight);
 		private:

@@ -19,11 +19,12 @@ namespace EWE {
 				outString += VariableTypeString[typeID] + ' ' + variableName + ';';
 			}
 		}
-		InputOutputData::InputOutputData(float xPos, float yPos, float screenWidth, float screenHeight)
+		InputOutputData::InputOutputData(ShaderStructureManager& structureManager, float xPos, float yPos, float screenWidth, float screenHeight)
 			: variable{ 0, "newVariable" },
 			variableCombo{ TextStruct{VariableTypeString[GLSL_Type_float], xPos, yPos, TA_left, 1.f}, screenWidth, screenHeight },
 			name{ variable.variableName, xPos + 100.f * screenWidth / DEFAULT_WIDTH, yPos, TA_left, 1.f, screenWidth, screenHeight },
-			removeThis{ {0.f,0.f}, screenWidth, screenHeight }
+			removeThis{ {0.f,0.f}, screenWidth, screenHeight },
+			structureManager{ structureManager }
 		{
 			glm::vec2 screen{ xPos + 400.f * screenWidth / DEFAULT_WIDTH, yPos + 18.f * screenHeight / DEFAULT_HEIGHT };
 			UIComp::convertScreenTo2D(screen, removeThis.transform.translation, screenWidth, screenHeight);
@@ -31,17 +32,18 @@ namespace EWE {
 			populateCombo(screenWidth, screenHeight);
 			variableCombo.setSelection(0);
 		}
-		InputOutputData::InputOutputData(VariableType vType, std::string variableName, float xPos, float yPos, float screenWidth, float screenHeight)
+		InputOutputData::InputOutputData(ShaderStructureManager& structureManager, VariableType vType, std::string variableName, float xPos, float yPos, float screenWidth, float screenHeight)
 			: variable{ vType, variableName },
 			variableCombo{ TextStruct{VariableTypeString[GLSL_Type_float], xPos, yPos, TA_left, 1.f}, screenWidth, screenHeight },
 			name{ variable.variableName, xPos + 100.f * screenWidth / DEFAULT_WIDTH, yPos, TA_left, 1.f, screenWidth, screenHeight },
-			removeThis{ {xPos,yPos}, screenWidth, screenHeight }
+			removeThis{ {xPos,yPos}, screenWidth, screenHeight },
+			structureManager{ structureManager }
 		{
 			populateCombo(screenWidth, screenHeight);
 		}
 
 		void InputOutputData::populateCombo(float screenWidth, float screenHeight) {
-			auto const& variableNames = ShaderStructureManager::getAllVariableNames();
+			auto const& variableNames = structureManager.getAllVariableNames();
 			for (auto name : variableNames) {
 				variableCombo.pushOption(name, screenWidth, screenHeight);
 			}

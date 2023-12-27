@@ -31,7 +31,15 @@ namespace EWE {
 
 		}
 
-		void ShaderStructureManager::writeStructure(std::string& outString, VariableType variableType) {
+		void ShaderStructureManager::writeType(std::string& outString, VariableType variableType) {
+			if (variableType >= Type_Struct) {
+				outString += shader_structures[variableType - Type_Struct].name + ' ';
+			}
+			else {
+				outString += VariableTypeString[variableType] + ' ';
+			}
+		}
+		void ShaderStructureManager::writeStructureDefinition(std::string& outString, VariableType variableType) {
 			auto& structure = shader_structures[variableType - Type_Struct];
 
 			outString += "struct " + structure.name + '{';

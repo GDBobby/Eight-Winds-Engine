@@ -3,6 +3,8 @@
 #include <vector>
 #include "Node.h"
 #include "Edge.h"
+#include "ShaderStructures.h"
+#include "FunctionManager.h"
 #include "InputBox.h"
 
 namespace EWE {
@@ -12,6 +14,8 @@ namespace EWE {
 			Node outputNode;
 			InputBox inputBox;
 			InputBox outputBox;
+			ShaderStructureManager structureManager;
+			FunctionManager functionManager;
 
 		public:
 			Graph(GLFWwindow* windowPtr, float screenWidth, float screenHeight);

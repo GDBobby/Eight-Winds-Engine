@@ -18,18 +18,19 @@ namespace EWE {
 
 		class ShaderStructureManager {
 		public:
-			static void populateFromPreviouslyDefinedStructures() {}
+			void populateFromPreviouslyDefinedStructures() {}
 
-			static int32_t addStructure(std::string& structure_name, std::vector<Shader_Variable>& members);
+			int32_t addStructure(std::string& structure_name, std::vector<Shader_Variable>& members);
 
-			static void writeStructure(std::string& outString, VariableType variableType);
-			static void changeStructureName(std::string nextName, VariableType variableType);
+			void writeStructureDefinition(std::string& outString, VariableType variableType);
+			void changeStructureName(std::string nextName, VariableType variableType);
+			void writeType(std::string& outString, VariableType variableType);
 
-			static std::string getStructureName(VariableType variableType);
-			static std::vector<std::string> const& getAllVariableNames();
+			std::string getStructureName(VariableType variableType);
+			std::vector<std::string> const& getAllVariableNames();
 		private:
-			static std::vector<std::string> all_variable_names;
-			static std::vector<Shader_Structure> shader_structures;
+			std::vector<std::string> all_variable_names;
+			std::vector<Shader_Structure> shader_structures;
 
 		};
 	}
