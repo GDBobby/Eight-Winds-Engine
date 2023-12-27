@@ -157,17 +157,17 @@ namespace EWE {
 			return;
 		}
 
-
+		printf("selectedEngine : %d:%.2f - volume of sound : %.2f \n", selectedEngine, ma_engine_get_volume(&engines.at(selectedEngine)), ma_sound_get_volume(&effects.at(selectedEngine).at(whichEffect)));
+		
 		ma_result result = ma_sound_start(&effects.at(selectedEngine).at(whichEffect));
 		if (result != MA_SUCCESS) {
-			printf("WARNING: Failed to [load];ay sound \"%d\"", whichEffect);
+			printf("WARNING: Failed to start sound \"%d\"", whichEffect);
 			return;
 		}
 	}
 
 	void SoundEngine::loadHowlingWind() {
 		bin2cpp::File const* hWind = &bin2cpp::getHowlingWindFile();
-		effects.at(selectedEngine).emplace(0, ma_sound{});
 		
 		ma_decoder_config decoderConfig = ma_decoder_config_init(ma_format_f32, 2, 48000);
 		decoderConfig.pCustomBackendUserData = NULL;
@@ -192,6 +192,7 @@ namespace EWE {
 		}
 	}
 	void SoundEngine::initEngines(ma_device_info* deviceInfos, uint32_t deviceCount) {
+
 		ma_engine_config engineConfig;
 		engineConfig = ma_engine_config_init();
 		engineConfig.pResourceManager = &resourceManager;
@@ -231,7 +232,6 @@ namespace EWE {
 			engineConfig.pResourceManager = &resourceManager;
 			engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
 
-			printf("device name - %d: %s\n", i, pPlaybackDeviceInfos[i].name);
 			if (i == 0) {
 				auto& deviceName = deviceNames.emplace_back("default");
 				result = ma_engine_init(&engineConfig, &engines[0]);
@@ -242,6 +242,7 @@ namespace EWE {
 				}
 				else if (SettingsJSON::settingsData.selectedDevice == deviceName) {
 					foundDesiredDevice = true;
+					printf("starting default device, matched with settings \n");
 					result = ma_engine_start(&engines[0]);
 					if (result != MA_SUCCESS) {
 						printf("Failed to start engine for DEFAULT \n");
@@ -266,6 +267,7 @@ namespace EWE {
 				else if (deviceName.find(SettingsJSON::settingsData.selectedDevice) != deviceName.npos) {
 					foundDesiredDevice = true;
 					result = ma_engine_start(&engines[i]);
+					printf("starting device from settings : %s \n", deviceName);
 					if (result != MA_SUCCESS) {
 						printf("Failed to start engine for %s\n", deviceName.c_str());
 						ma_engine_uninit(&engines[i]);
@@ -277,8 +279,11 @@ namespace EWE {
 					}
 				}
 			}
+
+			printf("device name - %d: %s\n", i, deviceNames[i].c_str());
 		}
 		if (!foundDesiredDevice) {
+			printf("failed to find desired device in settings, starting default \n");
 			if (engines.size() > 0) {
 				ma_result result = ma_engine_init(&engineConfig, &engines[0]);
 				if (result != MA_SUCCESS) {
@@ -287,6 +292,7 @@ namespace EWE {
 					//throw std exception or just cancel the swap?
 				}
 				else {
+					printf("starting default engine \n");
 					result = ma_engine_start(&engines[0]);
 					if (result != MA_SUCCESS) {
 						printf("Failed to start engine for DEFAULT \n");
@@ -381,6 +387,9 @@ namespace EWE {
 						}
 					}
 				}
+			}
+			else {
+				printf("trying to emplace a sound into a map key that already has a sounnd. this is being ignored \n");
 			}
 		}
 

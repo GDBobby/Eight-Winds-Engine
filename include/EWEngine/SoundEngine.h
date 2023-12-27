@@ -45,7 +45,6 @@ namespace EWE {
 		}
 
 		~SoundEngine();
-		void loadEffectsFromFile();
 
 
 		void playMusic(uint16_t whichSong, bool repeat);
@@ -55,9 +54,17 @@ namespace EWE {
 		void playNextSong() {}
 		void stopMusic() {
 			printf("stop the music pls \n");
+			if (currentSong == 65534) {
+				ma_sound_stop(&hwSound);
+				return;
+			}
+
+
 			if (music.at(selectedEngine).find(currentSong) != music.at(selectedEngine).end()) {
-				printf("found the song \n");
 				ma_sound_stop(&music.at(selectedEngine).at(currentSong));
+			}
+			else {
+				printf("attempting to stop music, failed to find it \n");
 			}
 		}
 

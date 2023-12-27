@@ -16,6 +16,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 endif()
 
 option(EWE_EXAMPLES "Build examples" ${is_project_root})
+option(EWE_PROJECTS "Build projects" ${is_project_root})
 
 Message(STATUS "Cmake Generator : ${CMAKE_GENERATOR}")
 
@@ -173,6 +174,11 @@ export(TARGETS ${PROJECT_NAME}
 if(EWE_EXAMPLES)
 	message(STATUS "building examples\n\n")
 	add_subdirectory(examples)
+endif()
+
+if(EWE_PROJECTS)
+	message(STATUS "building projects\n\n")
+	add_subdirectory(Projects)
 endif()
 
 set_target_properties(${PROJECT_NAME}
