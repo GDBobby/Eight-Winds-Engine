@@ -24,8 +24,8 @@ struct LightningPushConstants {
 
 struct PointLightPushConstants {
 	glm::vec4 position{};
-	glm::vec4 color{};
-	float radius;
+	glm::vec4 color{1.f};
+	float radius{};
 };
 struct Simple2DPushConstantData {
 	glm::vec4 scaleOffset{ 1.f }; //4 floats here, 2 x 2

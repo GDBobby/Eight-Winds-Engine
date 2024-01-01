@@ -40,7 +40,7 @@ namespace EWE {
 			uniformBuffers = buffers;
 			assert(uniformBuffers->size() > 0);
 		}
-		void updateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp) {
+		void updateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp = glm::vec3{0.f,1.f,0.f}) {
 			//probably store a position, target, and camera up variable in this class, then hand out a pointer to those variables
 			//being lazy rn
 			this->position = position;

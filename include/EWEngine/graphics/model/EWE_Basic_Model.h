@@ -6,6 +6,7 @@ namespace EWE {
         static std::unique_ptr<EWEModel> generateQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f });
         static std::unique_ptr<EWEModel> generateQuadPNU(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f });
         static std::unique_ptr<EWEModel> generateSimple3DQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f });
+        static std::unique_ptr<EWEModel> generate3DTileQuad(EWEDevice& device, glm::vec2 uvScale);
         /*
         static std::unique_ptr<EWEModel> generateSimpleZedQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f }) {
             std::vector<EffectVertex> vertices{

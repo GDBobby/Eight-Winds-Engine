@@ -47,8 +47,9 @@ namespace EWE {
 		~SoundEngine();
 
 
-		void playMusic(uint16_t whichSong, bool repeat);
-		void playEffect(uint16_t whichEffect);
+		void playMusic(uint16_t whichSong, bool repeat = false);
+		void playEffect(uint16_t whichEffect, bool looping = false);
+		void stopEfect(uint16_t whichEffect);
 		void playVoice(uint16_t whichVoice) {} //idk
 
 		void playNextSong() {}

@@ -1,3 +1,4 @@
+/*
 #include "EWEngine/ShaderGraph/InputBox.h"
 
 namespace EWE {
@@ -12,7 +13,7 @@ namespace EWE {
 			}
 
 			if (typeID >= Type_Struct) {
-				outString += ShaderStructureManager::getStructureName(typeID);
+				//outString += ShaderStructureManager::getStructureName(typeID);
 				outString += ' ' + variableName + ';';
 			}
 			else {
@@ -386,3 +387,4 @@ namespace EWE {
 		}
 	}
 }
+*/

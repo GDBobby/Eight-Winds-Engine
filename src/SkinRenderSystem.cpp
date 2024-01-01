@@ -1,5 +1,7 @@
 #include "EWEngine/systems/SkinRendering/SkinRenderSystem.h"
 
+#define RENDER_DEBUG false
+
 namespace EWE {
 	SkinRenderSystem* SkinRenderSystem::skinnedMainObject = nullptr;
 
@@ -126,17 +128,7 @@ namespace EWE {
 		globalPool.reset();
 	}
 
-	void SkinRenderSystem::render(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
-		//printf("skin render? \n");
-		/*
-		if (enemyData->actorCount[actorType - 3] == 0) {
-			return;
-		}
-		*/
-		//^ figure out how to contain new actors to replace that line
-		//setFrameIndex(cmdIndexPair.second);
-
-		//printf("pre instance drawing in skinned RS \n");
+	void SkinRenderSystem::renderInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
 		for (auto& instanced : instancedData) {
 			//if instanced.first.actorCount == 0 return;
 
@@ -208,6 +200,8 @@ namespace EWE {
 			iter->second.resetInstanceCount();
 		}
 
+	}
+	void SkinRenderSystem::renderNonInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
 		for (auto& boned : boneData) {
 			//printf("shader flags on non-instanced : %d \n", boned.first);
 			boned.second.pipeline->bind(cmdIndexPair.first);
@@ -271,6 +265,10 @@ namespace EWE {
 						//meshRef->BindAndDrawInstanceNoBuffer(cmdIndexPair.first, actorCount.at(instanced.first));
 						meshRef->bind(cmdIndexPair.first);
 
+#if RENDER_DEBUG
+						printf("before drawing to pipeline : %d \n", boned.first);
+#endif
+
 						uint8_t pushSize = pushConstants.at(skeleDataRef.first).size;
 						for (auto& pushData : pushConstants.at(skeleDataRef.first).data) {
 							vkCmdPushConstants(cmdIndexPair.first, pipeLayoutRef, VK_SHADER_STAGE_VERTEX_BIT, 0, pushSize, pushData);
@@ -281,6 +279,23 @@ namespace EWE {
 				}
 			}
 		}
+	}
+
+	void SkinRenderSystem::render(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
+		//printf("skin render? \n");
+		/*
+		if (enemyData->actorCount[actorType - 3] == 0) {
+			return;
+		}
+		*/
+		//^ figure out how to contain new actors to replace that line
+		//setFrameIndex(cmdIndexPair.second);
+
+		//printf("pre instance drawing in skinned RS \n");
+		renderInstanced(cmdIndexPair);
+
+		renderNonInstanced(cmdIndexPair);
+		
 
 		//printf("after skinned RS drawing \n");
 	}
@@ -359,10 +374,9 @@ namespace EWE {
 			}
 		}
 		else {
+			skinnedMainObject->createBoneBuffer(skeletonID, boneCount);
 
 			if (skinnedMainObject->boneData.find(texturePair.first) == skinnedMainObject->boneData.end()) {
-
-				skinnedMainObject->createBoneBuffer(skeletonID, boneCount);
 
 				skinnedMainObject->createBonePipe(texturePair.first);
 				skinnedMainObject->boneData.at(texturePair.first).skeletonData.emplace(skeletonID, std::vector<TextureMeshStruct>{});

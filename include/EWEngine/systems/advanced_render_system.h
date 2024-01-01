@@ -38,7 +38,7 @@ namespace EWE {
 		void renderBuilderObjects(FrameInfo& frameInfo);
 #endif
 		void updateLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
-		void updatePipelines(ObjectManager& objectManager, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		void updatePipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 		void updateMaterialPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo); //only cause this outside of ARS in the level builder, donot call elsewhere, updatepipelines calls this
 		void initGlobalPool(unsigned int maxSets);
 

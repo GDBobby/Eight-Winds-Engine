@@ -99,8 +99,8 @@ namespace EWE {
             VertexBuffers(vertexCount, vertexSize, (void*)vertices.data());
         }
 
-        void AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex);
-        void updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf);
+        void AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data);
+        //void updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf);
 
         //virtual ~EWEModel() {}
         
@@ -115,7 +115,7 @@ namespace EWE {
         void BindAndDraw(VkCommandBuffer commandBuffer);
         void bind(VkCommandBuffer commandBuffer);
         void draw(VkCommandBuffer commandBuffer);
-        void BindAndDrawInstance(VkCommandBuffer commandBuffer, uint8_t instanceIndex);
+        void BindAndDrawInstance(VkCommandBuffer commandBuffer);
         void BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount);
 
         uint32_t getVertexCount() { return vertexCount; }
@@ -143,7 +143,7 @@ namespace EWE {
         uint32_t indexCount;
         
         bool hasInstanceBuffer = false;
-        std::vector<std::unique_ptr<EWEBuffer>> instanceBuffer;
+        std::unique_ptr<EWEBuffer> instanceBuffer;
         uint32_t instanceCount;
     };
 

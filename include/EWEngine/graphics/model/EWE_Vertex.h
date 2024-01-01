@@ -321,8 +321,7 @@ namespace EWE {
     };
     struct GrassInstance {
         glm::mat4 transform;
-        glm::vec2 uv;
-        GrassInstance(glm::mat4 transform, glm::vec2 uv) : transform{ transform }, uv{ uv } {}
+        GrassInstance(glm::mat4 transform) : transform{ transform } {}
     };
     struct LeafVertex {
         bobvec3 position{ 0.f };
@@ -351,6 +350,20 @@ namespace EWE {
             return position == other.position && uv == other.uv;
         }
     };
+    struct TileVertex {
+        glm::vec3 position{0.f};
+        glm::vec2 uv{ 0.f };
+        static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        bool operator ==(const TileVertex& other) const {
+            return position == other.position && uv == other.uv;
+        }
+    };
+    struct TileInstance{
+        glm::mat4 transform;
+        glm::vec2 uvOffset;
+        TileInstance(glm::mat4 transform, glm::vec2 uv) : transform{ transform }, uvOffset{ uv } {}
+    };
     struct Vertex {
         glm::vec3 position{ 0.f };
         glm::vec3 normal{ 0.f };
@@ -358,8 +371,6 @@ namespace EWE {
         glm::vec3 color{ 0.f };
 
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
-
-
 
         bool operator==(const Vertex& other) const {
             return position == other.position && color == other.color && normal == other.normal &&

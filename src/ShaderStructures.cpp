@@ -1,3 +1,4 @@
+/*
 #include "EWEngine/ShaderGraph/ShaderStructures.h"
 
 #include <stdexcept>
@@ -73,3 +74,4 @@ namespace EWE {
 		}
 	}
 }
+*/

@@ -122,16 +122,16 @@ namespace EWE {
 			std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
 			std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-			VkPipelineViewportStateCreateInfo viewportInfo;
-			VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
-			VkPipelineRasterizationStateCreateInfo rasterizationInfo;
-			VkPipelineMultisampleStateCreateInfo multisampleInfo;
-			VkPipelineColorBlendAttachmentState colorBlendAttachment;
-			VkPipelineColorBlendStateCreateInfo colorBlendInfo;
-			VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
+			VkPipelineViewportStateCreateInfo viewportInfo{};
+			VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+			VkPipelineRasterizationStateCreateInfo rasterizationInfo{};
+			VkPipelineMultisampleStateCreateInfo multisampleInfo{};
+			VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+			VkPipelineColorBlendStateCreateInfo colorBlendInfo{};
+			VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
 
-			std::vector<VkDynamicState> dynamicStateEnables;
-			VkPipelineDynamicStateCreateInfo dynamicStateInfo;
+			std::vector<VkDynamicState> dynamicStateEnables{};
+			VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
 
 			VkPipelineLayout pipelineLayout = nullptr;
 			//VkPipelineRenderingCreateInfo const& pipeRenderInfo = nullptr;

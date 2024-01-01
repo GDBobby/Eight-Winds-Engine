@@ -84,6 +84,7 @@ namespace EWE {
 
 	EightWindsEngine::~EightWindsEngine() {
 		Dimension2::destruct(eweDevice);
+		PipelineSystem::destruct(eweDevice);
 #if DECONSTRUCTION_DEBUG
 		printf("beginning of EightWindsEngine deconstructor \n");
 #endif
@@ -299,6 +300,7 @@ namespace EWE {
 		advancedRS.render2DGameObjects(frameInfo2D);
 	}
 	void EightWindsEngine::drawObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt) {
+		PipelineSystem::setCmdIndexPair(cmdIndexPair);
 		draw3DObjects(cmdIndexPair, dt);
 		draw2DObjects(cmdIndexPair);
 		drawText(cmdIndexPair, dt);

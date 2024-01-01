@@ -7,6 +7,8 @@
 
 #include <list>
 
+//need instancing here
+
 namespace EWE {
     struct TextureMapping {
         std::vector<std::pair<ShaderFlags, TextureID>> meshNames;
@@ -22,7 +24,7 @@ namespace EWE {
             auto matInstance = MaterialHandler::getMaterialHandlerInstance();
             for (auto iter = ownedTextureIDs.begin(); iter != ownedTextureIDs.end(); iter++) {
                 //printf("adding material from tex id %d \n", *iter);
-                matInstance->addMaterialObjectFromTexID(*iter, &transform);
+                matInstance->addMaterialObjectFromTexID(*iter, &transform, &drawable);
             }
         }
         EweObject& operator=(const EweObject&& other) noexcept {

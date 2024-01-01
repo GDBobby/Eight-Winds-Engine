@@ -95,6 +95,10 @@ namespace EWE {
 		void flushBuffers(uint8_t frameIndex);
 
 		void render(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
+	protected:
+		void renderInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
+		void renderNonInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
+	public:
 
 		static SkeletonID getSkinID() {
 			return skinnedMainObject->skinID++;
@@ -192,6 +196,7 @@ namespace EWE {
 				throw std::runtime_error("creating a buffer that already exist ");
 			}
 			//buffersCreated += 2;
+			printf("creating bone buffer \n");
 			buffers.emplace(skeletonID, SkinBufferHandler{ device, boneCount, 1, globalPool });
 		}
 		void createReferenceBuffer(SkeletonID skeletonID, SkeletonID referenceID) {

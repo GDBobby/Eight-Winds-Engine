@@ -94,8 +94,8 @@ namespace EWE {
         }
         else {
 #if _DEBUG
-            if (offset + size > bufferSize) {
-                printf("overflow error in buffer \n");
+            if ((offset + size) > bufferSize) {
+                printf("overflow error in buffer - %lu:%lu \n", offset+size, bufferSize);
                 throw std::exception("DATA TOO LARGE FOR BUFFER");
             }
 #endif

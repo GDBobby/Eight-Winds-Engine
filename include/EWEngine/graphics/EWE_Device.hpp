@@ -53,12 +53,6 @@ namespace EWE {
 
     class EWEDevice {
     public:
-#ifdef NDEBUG
-        const bool enableValidationLayers = false;
-#else
-        //const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-        const bool enableValidationLayers = true;
-#endif
 
         EWEDevice(MainWindow& window);
         ~EWEDevice();

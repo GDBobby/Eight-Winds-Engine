@@ -6,7 +6,7 @@
 namespace EWE {
 	class OverlayBase {
 	public:
-		OverlayBase(std::shared_ptr<TextOverlay> textOverlay, float screenWidth, float screenHeight);
+		OverlayBase(float screenWidth, float screenHeight);
 
 		virtual void drawText();
 
@@ -24,7 +24,6 @@ namespace EWE {
 		bool isActive = false;
 		float screenWidth;
 		float screenHeight;
-		std::shared_ptr<TextOverlay> textOverlay{};
 		std::vector<TextStruct> textStructs{};
 		std::vector<GameObject2D> gameObjects{};
 	};

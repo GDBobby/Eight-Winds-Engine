@@ -57,7 +57,7 @@ namespace EWE {
 	void AdvancedRenderSystem::updateLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 		PipelineManager::createLoadingPipeline(eweDevice, pipeRenderInfo);
 	}
-	void AdvancedRenderSystem::updatePipelines(ObjectManager& objectManager, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
+	void AdvancedRenderSystem::updatePipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 
 		std::list<Pipeline_Enum> pipeList;
 
@@ -459,7 +459,7 @@ namespace EWE {
 		vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_grass], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UVScrollingPushData), &push);
 
 		for (int i = 0; i < objectManager.grassField.size(); i++) {
-			objectManager.grassField[i].model->BindAndDrawInstance(frameInfo.cmdIndexPair.first, 0);
+			objectManager.grassField[i].model->BindAndDrawInstance(frameInfo.cmdIndexPair.first);
 		}
 #if DEBUGGING_PIPELINES
 		printf("after drawing grass \n");

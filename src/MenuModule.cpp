@@ -294,13 +294,13 @@ namespace EWE {
 			push.color = glm::vec3{ 1.f };
 			for (auto& object : checkBoxes) {
 				if (object.isChecked) {
-					Dimension2::bindTexture2D(textureIDs[MT_Checked]);
+					Dimension2::bindTexture2DUI(textureIDs[MT_Checked]);
 					object.render(push);
 				}
 			}
 			for (auto& object : checkBoxes) {
 				if (!object.isChecked) {
-					Dimension2::bindTexture2D(textureIDs[MT_Unchecked]);
+					Dimension2::bindTexture2DUI(textureIDs[MT_Unchecked]);
 					object.render(push);
 				}
 			}
@@ -308,16 +308,16 @@ namespace EWE {
 
 		if (sliders.size() > 0) {
 			push.color = glm::vec3(1.f);
-			Dimension2::bindTexture2D(textureIDs[MT_Slider]);
+			Dimension2::bindTexture2DUI(textureIDs[MT_Slider]);
 
 			for (auto& object : sliders) {
 				object.render(push, 0);
 			}
-			Dimension2::bindTexture2D(textureIDs[MT_BracketButton]);
+			Dimension2::bindTexture2DUI(textureIDs[MT_BracketButton]);
 			for (auto& object : sliders) {
 				object.render(push, 1);
 			}
-			Dimension2::bindTexture2D(textureIDs[MT_Bracket]);
+			Dimension2::bindTexture2DUI(textureIDs[MT_Bracket]);
 			for (auto& object : sliders) {
 				object.render(push, 2);
 			}
@@ -326,21 +326,22 @@ namespace EWE {
 		if (controlBoxes.size() > 0) {
 			//printf("before draw objects control boxes \n");
 			push.color = glm::vec3(1.f);
-			Dimension2::bindTexture2D(textureIDs[MT_Button]);
+			Dimension2::bindTexture2DUI(textureIDs[MT_Button]);
 			for (auto& object : controlBoxes) {
 				object.render(push);
 			}
 
-			if (images.size() > 0) {
-				//not considering for texture ordering
-				push.color = glm::vec3(1.f);
-				for (int i = 0; i < images.size(); i++) {
-					Dimension2::bindTexture2D(images[i].textureID);
-					push.scaleOffset = glm::vec4(images[i].transform.scale, images[i].transform.translation);
-					Dimension2::pushAndDraw(push);
-				}
-			}
+
 			//printf("after control boxes \n");
+		}
+		if (images.size() > 0) {
+			//not considering for texture ordering
+			push.color = glm::vec3(1.f);
+			for (int i = 0; i < images.size(); i++) {
+				Dimension2::bindTexture2DUI(images[i].textureID);
+				push.scaleOffset = glm::vec4(images[i].transform.scale, images[i].transform.translation);
+				Dimension2::pushAndDraw(push);
+			}
 		}
 	}
 	void MenuModule::drawNewNine() {

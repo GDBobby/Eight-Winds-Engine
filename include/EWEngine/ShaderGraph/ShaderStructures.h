@@ -1,3 +1,4 @@
+/*
 #pragma once
 #include "VariableType.h"
 
@@ -36,3 +37,4 @@ namespace EWE {
 	}
 }
 
+*/

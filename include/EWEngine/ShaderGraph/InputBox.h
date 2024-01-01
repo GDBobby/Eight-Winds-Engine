@@ -1,3 +1,4 @@
+/*
 #pragma once
 #include "EWEngine/GUI/UIComponents.h"
 #include "EWEngine/GUI/MenuModule.h"
@@ -89,3 +90,4 @@ namespace EWE {
 	}
 }
 
+*/

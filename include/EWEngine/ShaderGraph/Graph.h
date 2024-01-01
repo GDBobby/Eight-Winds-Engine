@@ -1,10 +1,11 @@
+/*
 #pragma once
 #include <string>
 #include <vector>
 #include "Node.h"
 #include "Edge.h"
 #include "ShaderStructures.h"
-#include "FunctionManager.h"
+//#include "FunctionManager.h"
 #include "InputBox.h"
 
 namespace EWE {
@@ -15,7 +16,7 @@ namespace EWE {
 			InputBox inputBox;
 			InputBox outputBox;
 			ShaderStructureManager structureManager;
-			FunctionManager functionManager;
+			//FunctionManager functionManager;
 
 		public:
 			Graph(GLFWwindow* windowPtr, float screenWidth, float screenHeight);
@@ -48,3 +49,4 @@ namespace EWE {
 		};
 	}
 }
+*/

@@ -34,11 +34,42 @@ namespace EWE {
             { 2, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
             { 3, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4)},
             { 4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 2},
-            { 5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 3},
-            {6, 1, VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec4) * 4}
+            { 5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 3}
+            //{ 6, 1, VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec4) * 4} removing this, going to use world position for uvscroll calculation instead
         };
         return attributeDescriptions;
     }
+    std::vector<VkVertexInputBindingDescription> TileVertex::getBindingDescriptions() { //still here because instanced
+        std::vector<VkVertexInputBindingDescription> bindingDescriptions(2);
+        bindingDescriptions[0].binding = 0;
+        bindingDescriptions[0].stride = sizeof(TileVertex);
+        bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        bindingDescriptions[1].binding = 1;
+        bindingDescriptions[1].stride = sizeof(TileInstance);
+        bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+        return bindingDescriptions;
+    }
+
+    std::vector<VkVertexInputAttributeDescription> TileVertex::getAttributeDescriptions() {
+
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
+            { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(TileVertex, position) },
+            { 1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(TileVertex, uv) },
+            //{ 1, 0, VK_FORMAT_R32_SFLOAT, sizeof(glm::vec3) * 3 },
+
+            //instance
+            { 2, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+            { 3, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4)},
+            { 4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 2},
+            { 5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 3},
+            { 6, 1, VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec4) * 4}
+        };
+        return attributeDescriptions;
+    }
+
+
     std::vector<VkVertexInputBindingDescription> LeafVertex::getBindingDescriptions() { //still here because instanced
         std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
         bindingDescriptions[0].binding = 0;

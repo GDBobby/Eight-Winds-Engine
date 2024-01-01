@@ -210,11 +210,12 @@ namespace EWE {
 #ifdef _DEBUG
 
             printf("removing mode id iterator? i : modeID : type %d : %d : %d \n", i, sceneIDs[i], textureMap.at(sceneIDs[i]).textureData.tType);
+
+#endif
             if (textureMap.at(sceneIDs[i]).textureData.tType) {
                 removeSmartTexture(sceneIDs[i]);
                 continue;
             }
-#endif
             existingIDs.erase(textureMap.at(sceneIDs[i]).textureData.path);
             textureMap.at(sceneIDs[i]).destroy();
             textureMap.erase(sceneIDs[i]);
@@ -224,15 +225,13 @@ namespace EWE {
 
     }
     void EWETexture::removeSmartTexture(TextureID removeID) {
-#ifdef _DEBUG
-        //if (removeID == 21) {
-        //    printf("texture 21? : %s \n", getTextureData(removeID).path.c_str());
-        //}
-       // printf("removing smart ID : %d \n", removeID);
-#endif
+
 
         if (textureMap.find(removeID) != textureMap.end()) {
             printf("before erasing smart texture \n");
+#ifdef _DEBUG
+            printf("texture path : %d:%s \n", removeID, getTextureData(removeID).path.c_str());
+#endif
             textureMap.at(removeID).destroy();
             existingSmartIDs.erase(textureMap.at(removeID).textureData.path);
             textureMap.erase(removeID);

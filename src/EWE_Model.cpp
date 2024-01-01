@@ -64,7 +64,7 @@ namespace EWE {
         return std::make_unique<EWEModel>(device, builder.vertices, builder.indices);
     }
 
-    void EWEModel::AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex) {
+    void EWEModel::AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data) {
         VkDeviceSize bufferSize = instanceSize * instanceCount;
         this->instanceCount = instanceCount;
         EWEBuffer stagingBuffer{
@@ -78,21 +78,18 @@ namespace EWE {
         stagingBuffer.map();
         stagingBuffer.writeToBuffer(data);
 
-        if (instanceIndex == instanceBuffer.size()) {
-            instanceBuffer.emplace_back(std::make_unique<EWEBuffer>(
-                eweDevice,
-                instanceSize,
-                instanceCount,
-                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-        }
-        else {
-            printf("instanceIndex and instanceBuffer getting KINDA STRNAGE, values - %d:%lu \n", instanceIndex, instanceBuffer.size());
-            assert(instanceIndex == instanceBuffer.size());
-        }
 
-        eweDevice.copyBuffer(stagingBuffer.getBuffer(), instanceBuffer[instanceIndex]->getBuffer(), bufferSize);
+        instanceBuffer = std::make_unique<EWEBuffer>(
+            eweDevice,
+            instanceSize,
+            instanceCount,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        
+
+        eweDevice.copyBuffer(stagingBuffer.getBuffer(), instanceBuffer->getBuffer(), bufferSize);
     }
+    /*
     void EWEModel::updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf) {
         assert(instanceIndex < instanceBuffer.size());
         VkDeviceSize bufferSize = instanceSize * instanceCount;
@@ -117,6 +114,7 @@ namespace EWE {
 
         eweDevice.copySecondaryBuffer(stagingBuffer.getBuffer(), instanceBuffer[instanceIndex]->getBuffer(), bufferSize, cmdBuf);
     }
+    */
     void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void* data) {
         VkDeviceSize bufferSize = vertexSize * vertexCount;
 
@@ -233,8 +231,8 @@ namespace EWE {
             vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
         }
     }
-    void EWEModel::BindAndDrawInstance(VkCommandBuffer commandBuffer, uint8_t instanceIndex) {
-        VkBuffer buffers[2] = { vertexBuffer->getBuffer(), instanceBuffer[instanceIndex]->getBuffer()};
+    void EWEModel::BindAndDrawInstance(VkCommandBuffer commandBuffer) {
+        VkBuffer buffers[2] = { vertexBuffer->getBuffer(), instanceBuffer->getBuffer()};
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffers[0], offsets);
         vkCmdBindVertexBuffers(commandBuffer, 1, 1, &buffers[1], offsets);

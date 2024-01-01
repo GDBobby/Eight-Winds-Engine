@@ -68,6 +68,18 @@ namespace EWE {
         std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
         return std::make_unique<EWEModel>(device, vertices, indices);
     }
+
+    std::unique_ptr<EWEModel> Basic_Model::generate3DTileQuad(EWEDevice& device, glm::vec2 uvScale) {
+        std::vector<TileVertex> vertices{
+            {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
+            {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},
+            {{-0.5f,0.0f, 0.5f}, {0.0f,0.f}},
+            {{0.5f,0.0f, 0.5f}, {uvScale.x,0.f}},
+        };
+        std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
+        return std::make_unique<EWEModel>(device, vertices, indices);
+    }
+
     std::unique_ptr<EWEModel> Basic_Model::generate2DQuad(EWEDevice& device, glm::vec2 scale) {
         std::vector<VertexUI> vertices{
             {{-0.5f, -0.5f}, {0.f, 0.f}},

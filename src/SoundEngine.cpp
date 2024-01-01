@@ -130,22 +130,22 @@ namespace EWE {
 			
 	}
 
-	void SoundEngine::playMusic(uint16_t whichSong, bool repeat = false) {
+	void SoundEngine::playMusic(uint16_t whichSong, bool repeat) {
 		printf("starting music \n");
 
 		currentSong = whichSong;
+		//ma_result result = ma_sound_start(&music.at(selectedEngine).at(whichSong));
+		ma_sound_set_looping(&music.at(selectedEngine).at(whichSong), repeat);
+		printf("soudn looping : %d \n", ma_sound_is_looping(&music.at(selectedEngine).at(whichSong)));
+
 		ma_result result = ma_sound_start(&music.at(selectedEngine).at(whichSong));
-		if (whichSong == 0) {
-			ma_sound_set_looping(&music.at(selectedEngine).at(whichSong), true);
-			printf("soudn looping : %d \n", ma_sound_is_looping(&music.at(selectedEngine).at(whichSong)));
-		}
 
 		if (result != MA_SUCCESS) {
 			printf("WARNING: Failed to [load];ay sound \"%d\"", whichSong);
 			return;
 		}
 	}
-	void SoundEngine::playEffect(uint16_t whichEffect) {
+	void SoundEngine::playEffect(uint16_t whichEffect, bool looping) {
 		printf("starting sound \n");
 		
 		if(selectedEngine > effects.size()){
@@ -160,10 +160,14 @@ namespace EWE {
 		printf("selectedEngine : %d:%.2f - volume of sound : %.2f \n", selectedEngine, ma_engine_get_volume(&engines.at(selectedEngine)), ma_sound_get_volume(&effects.at(selectedEngine).at(whichEffect)));
 		
 		ma_result result = ma_sound_start(&effects.at(selectedEngine).at(whichEffect));
+		ma_sound_set_looping(&effects.at(selectedEngine).at(whichEffect), looping);
 		if (result != MA_SUCCESS) {
 			printf("WARNING: Failed to start sound \"%d\"", whichEffect);
 			return;
 		}
+	}
+	void SoundEngine::stopEfect(uint16_t whichEffect) {
+		ma_sound_stop(&effects.at(selectedEngine).at(whichEffect));
 	}
 
 	void SoundEngine::loadHowlingWind() {
@@ -182,7 +186,6 @@ namespace EWE {
 		if (result != MA_SUCCESS) {
 			printf("decoder init from memroy failed \n");
 		}
-		music.at(selectedEngine).emplace(1, ma_sound{});
 		printf("finna init sound from data source \n");
 		result = ma_sound_init_from_data_source(&engines[selectedEngine], &hwDecoder, MA_SOUND_FLAG_STREAM, NULL, &hwSound);
 
@@ -267,7 +270,7 @@ namespace EWE {
 				else if (deviceName.find(SettingsJSON::settingsData.selectedDevice) != deviceName.npos) {
 					foundDesiredDevice = true;
 					result = ma_engine_start(&engines[i]);
-					printf("starting device from settings : %s \n", deviceName);
+					printf("starting device from settings : %s \n", deviceName.c_str());
 					if (result != MA_SUCCESS) {
 						printf("Failed to start engine for %s\n", deviceName.c_str());
 						ma_engine_uninit(&engines[i]);
@@ -364,7 +367,7 @@ namespace EWE {
 							result = ma_sound_init_from_file(&engines[selectedEngine], soundPath.second.c_str(),
 								MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE | MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC | MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM,
 								NULL, NULL, &sounds->at(soundPath.first));
-							ma_sound_set_volume(&sounds->at(soundPath.first), static_cast<float>(volumes[(uint8_t)SoundVolume::effect]) / 100.f);
+							ma_sound_set_volume(&sounds->at(soundPath.first), volumes[(uint8_t)SoundVolume::effect]);
 
 							if (result != MA_SUCCESS) {
 								printf("WARNING: Failed to load effect \"%s\"", soundPath.second.c_str());
@@ -378,18 +381,20 @@ namespace EWE {
 					}
 					case SoundType::Voice:
 					case SoundType::Music: {
+
 						result = ma_sound_init_from_file(&engines[selectedEngine], soundPath.second.c_str(), MA_SOUND_FLAG_STREAM, NULL, NULL, &sounds->at(soundPath.first));
 
-						ma_sound_set_volume(&sounds->at(soundPath.first), static_cast<float>(volumes[(uint8_t)SoundVolume::music]) / 100.f);
+						ma_sound_set_volume(&sounds->at(soundPath.first), volumes[(uint8_t)SoundVolume::music]);
 						if (result != MA_SUCCESS) {
 							printf("WARNING: Failed to load music or voice \"%s\"", soundPath.second.c_str());
 							throw std::runtime_error("failed to load sound");
 						}
+						break;
 					}
 				}
 			}
 			else {
-				printf("trying to emplace a sound into a map key that already has a sounnd. this is being ignored \n");
+				printf("trying to emplace a sound into a map key that already has a sounnd. this is being ignored - %d:%d \n", soundPath.first, soundType);
 			}
 		}
 

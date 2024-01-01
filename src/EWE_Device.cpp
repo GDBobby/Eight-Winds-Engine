@@ -14,6 +14,12 @@
 #define ENGINE_DIR "../"
 
 namespace EWE {
+#ifdef NDEBUG
+    const bool enableValidationLayers = false;
+#else
+    //const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+    const bool enableValidationLayers = true;
+#endif
 
     // local callback functions
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(

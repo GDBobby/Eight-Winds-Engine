@@ -1,3 +1,4 @@
+/*
 #include "EWEngine/ShaderGraph/Graph.h"
 
 namespace EWE {
@@ -96,3 +97,4 @@ namespace EWE {
 		}
 	}
 }
+*/

@@ -2,6 +2,8 @@
 #include "EWEngine/graphics/EWE_Texture.h"
 #include "EWEngine/graphics/model/EWE_Basic_Model.h"
 
+#define RENDER_DEBUG false
+
 namespace EWE {
 	Dimension2* Dimension2::dimension2Ptr{ nullptr };
 	Dimension2::Dimension2(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
@@ -88,6 +90,10 @@ namespace EWE {
 	}
 
 	void Dimension2::bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {
+#if RENDER_DEBUG
+		printf("binding 2d pipeline in dimension 2 \n");
+#endif
+
 		dimension2Ptr->pipe2d->bind(cmdBuffer);
 		dimension2Ptr->model2D->bind(cmdBuffer);
 		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED;
@@ -95,6 +101,9 @@ namespace EWE {
 		dimension2Ptr->cmdBuffer = cmdBuffer;
 	}
 	void Dimension2::bindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {
+#if RENDER_DEBUG
+		printf("binding 9ui in dimension 2 \n");
+#endif
 		dimension2Ptr->pipe9->bind(cmdBuffer);
 		dimension2Ptr->nineUIModel->bind(cmdBuffer);
 		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED;
@@ -102,13 +111,25 @@ namespace EWE {
 		dimension2Ptr->cmdBuffer = cmdBuffer;
 	}
 
-	void Dimension2::bindTexture2D(TextureID textureID) {
+	void Dimension2::bindTexture2DUI(TextureID textureID) {
 		if (textureID != dimension2Ptr->bindedTexture) {
 			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
 				EWETexture::getUIDescriptorSets(textureID, dimension2Ptr->frameIndex),
+				0, nullptr
+			);
+			dimension2Ptr->bindedTexture = textureID;
+		}
+	}
+	void Dimension2::bindTexture2D(TextureID textureID) {
+		if (textureID != dimension2Ptr->bindedTexture) {
+			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				dimension2Ptr->PL_2d,
+				0, 1,
+				EWETexture::getDescriptorSets(textureID, dimension2Ptr->frameIndex),
 				0, nullptr
 			);
 			dimension2Ptr->bindedTexture = textureID;

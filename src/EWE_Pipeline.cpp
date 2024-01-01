@@ -440,12 +440,12 @@ namespace EWE {
 			VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 
 			pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+			VkPushConstantRange pushConstantRange{};
 			if (instanced) {
 				pipelineLayoutInfo.pPushConstantRanges = nullptr;
 				pipelineLayoutInfo.pushConstantRangeCount = 0;
 			}
 			else {
-				VkPushConstantRange pushConstantRange{};
 				pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 				pushConstantRange.offset = 0;
 				if (hasBones) {
@@ -461,7 +461,7 @@ namespace EWE {
 			pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDescLayout->size());
 			pipelineLayoutInfo.pSetLayouts = tempDescLayout->data();
 
-			printf("creating pipe layout with index : %d \n", textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2)));
+			printf("creating dynamic pipe layout with index : %d \n", textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2)));
 
 			VkResult vkResult = vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &dynamicMaterialPipeLayout[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))]);
 			if (vkResult != VK_SUCCESS) {

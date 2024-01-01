@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "EWEngine/ShaderGraph/ShaderStructures.h"
@@ -53,7 +54,7 @@ namespace EWE {
 				for (int i = 0; i < 100; i++) {
 					auto& functionBack = glslFunctions.emplace_back();
 					functionBack.name = "abs";
-					functionBack.parameterTypes = gen(iType)
+					//functionBack.parameterTypes = gen(iType)
 				}
 			}
 		};
@@ -63,3 +64,4 @@ namespace EWE {
 	}
 }
 
+*/

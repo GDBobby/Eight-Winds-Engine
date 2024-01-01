@@ -436,8 +436,12 @@ namespace EWE {
 		//std::cout << "immediately after submitting graphics \n";
 
 		if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to submit draw command buffer : " << vkResult << std::endl;
-			throw std::runtime_error("failed to submit draw command buffer!");
+			std::string errorString = "failed to submit draw command buffer : ";
+			errorString += std::to_string(vkResult);
+			std::cout << errorString << std::endl;
+
+
+			throw std::runtime_error(errorString);
 		}
 		/*
 		if (oceanComputing) {

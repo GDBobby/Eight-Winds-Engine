@@ -34,7 +34,8 @@ namespace EWE {
 		static void bindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
 		static void bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
 
-		static void bindTexture2D(TextureID  textureID);
+		static void bindTexture2DUI(TextureID textureID);
+		static void bindTexture2D(TextureID textureID);
 		static void bindTexture9(TextureID  textureID);
 
 		static void pushAndDraw(Simple2DPushConstantData& push);
