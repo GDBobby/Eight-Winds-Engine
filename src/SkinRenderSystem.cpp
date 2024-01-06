@@ -6,7 +6,7 @@ namespace EWE {
 	SkinRenderSystem* SkinRenderSystem::skinnedMainObject = nullptr;
 
 
-	SkinRenderSystem::SkinRenderSystem(EWEDevice& device, std::shared_ptr<EWEDescriptorPool> globalPool, VkPipelineRenderingCreateInfo const& pipeRenderInfo) : pipeRenderInfo{ pipeRenderInfo }, device { device }, globalPool{ globalPool } {
+	SkinRenderSystem::SkinRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) : pipeRenderInfo{ pipeRenderInfo }, device { device } {
 		skinnedMainObject = this;
 
 		//this initializes the descriptors
@@ -111,7 +111,7 @@ namespace EWE {
 			if (!buffer.second.CheckReference()) {
 				for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 					buffer.second.setFrameIndex(i);
-					globalPool->freeDescriptor(buffer.second.getDescriptor());
+					EWEDescriptorPool::freeDescriptor(DescriptorPool_Global, buffer.second.getDescriptor());
 					bufferDescriptorsCleared++;
 				}
 			}
@@ -119,13 +119,12 @@ namespace EWE {
 		for (auto& instanceBuffer : instancedBuffers) {
 			for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 				instanceBuffer.second.setFrameIndex(i);
-				globalPool->freeDescriptor(instanceBuffer.second.getDescriptor());
+				EWEDescriptorPool::freeDescriptor(DescriptorPool_Global, instanceBuffer.second.getDescriptor());
 				instancedBuffersCleared++;
 			}
 		}
 		printf("after clearing buffer descriptors - count - %d:%d  \n", bufferDescriptorsCleared, instancedBuffersCleared);
 		skinnedMainObject = nullptr;
-		globalPool.reset();
 	}
 
 	void SkinRenderSystem::renderInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {

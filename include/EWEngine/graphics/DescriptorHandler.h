@@ -49,82 +49,20 @@ namespace EWE {
         static std::unordered_map<DescSet_Enum, std::vector<VkDescriptorSet>> descriptorSets;
         static std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> pipeDescSetLayouts;
         static std::vector<VkDescriptorSetLayout> dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
-    public:
-        static void cleanup(EWEDevice& device, std::shared_ptr<EWEDescriptorPool> globalPool) {
-            printf("before descriptor handler cleanup \n");
-            descriptorSetLayouts.clear();
-            printf("after desc set layouts \n");
-            for (auto& descriptorSet : descriptorSets) {
-                globalPool->freeDescriptors(descriptorSet.second);
-            }
-            printf("After freeing  descritpors \n");
-            descriptorSets.clear();
-            printf("after desc sets \n");
-            /*
-            printf("before cleaning pipeDescSetLayouts, size : %d \n", pipeDescSetLayouts.size());
-            for (auto iter = pipeDescSetLayouts.begin(); iter != pipeDescSetLayouts.end(); iter++) {
-                printf("\t iterfirst(%d) size : %d \n", iter->first, iter->second.size());
-            }
-            for (auto iter = pipeDescSetLayouts.begin(); iter != pipeDescSetLayouts.end(); iter++) {
-                for (int i = 0; i < iter->second.size(); i++) {
-                    if (iter->second[i] != VK_NULL_HANDLE) {
-                        printf("destroying pipeDescSetLayouts, iter(iter first: i) - (%d:%d) \n", iter->first, i);
-                        vkDestroyDescriptorSetLayout(device.device(), iter->second[i], nullptr);
-                    }
-                    else {
-                        printf("why is pipe desc set layout[%d] nullhandle, but exists? \n", i);
-                    }
-                }
-            }
-            
-            printf("after pipedesc set layouts \n");
-            for (int i = 0; i < 10; i++) {
-                for (int j = 0; j < dynamicMaterialPipeDescSetLayouts[i].size(); j++) {
-                    if (dynamicMaterialPipeDescSetLayouts[i][j] != VK_NULL_HANDLE) {
-                        vkDestroyDescriptorSetLayout(device.device(), dynamicMaterialPipeDescSetLayouts[i][j], nullptr);
-                    }
-                    else {
-                        printf("why is dynamicMaterialPipeDescSetLayouts[%d][%d] nullhandle, but exists? \n", i, j);
-                    }
-                }
-            }
-            */
-            pipeDescSetLayouts.clear();
-            for (int i = 0; i < 10; i++) {
-                dynamicMaterialPipeDescSetLayouts[i].clear();
-            }
 
-            printf("after descriptor handler cleanup \n");
-        }
-        static EWEDescriptorSetLayout& getLDSL(LDSL_Enum whichLDSL) {
-            if (whichLDSL == LDSL_pointLight && descriptorSetLayouts.find(LDSL_pointLight) == descriptorSetLayouts.end()) {
-                printf("returning global instead of point LDSL \n");
-                return *(descriptorSetLayouts[LDSL_global]);
-            }
-#if _DEBUG
-            else if (descriptorSetLayouts.find(whichLDSL) == descriptorSetLayouts.end()) {
-                printf("failed to find LDSL : %d \n", whichLDSL);
-            }
-#endif
-            return *(descriptorSetLayouts[whichLDSL]);
-        }
-        static void initGlobalDescriptors(std::shared_ptr<EWEDescriptorPool> globalPool, std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device);
+    public:
+        static void cleanup(EWEDevice& device);
+        static EWEDescriptorSetLayout& getLDSL(LDSL_Enum whichLDSL);
+        static void initGlobalDescriptors(std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device);
         
-        static void initDescriptors(std::shared_ptr<EWEDescriptorPool> globalPool, std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap);
+        static void initDescriptors(std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap);
         static VkDescriptorSetLayout getDescSetLayout(LDSL_Enum whichDescSet, EWEDevice& device);
         static std::vector<VkDescriptorSetLayout>* getPipeDescSetLayout(PipeDescSetLayouts_Enum PDLe, EWEDevice& device);
         static std::vector<VkDescriptorSetLayout>* getDynamicPipeDescSetLayout(uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device);
-        static VkDescriptorSet* getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
-#if _DEBUG
-            if (descriptorSets.find(whichDescSet) == descriptorSets.end()) {
-                printf("failed to find DescSet in getDescSet : %d \n", whichDescSet);
-            }
-#endif
-            return &descriptorSets[whichDescSet][whichFrameIndex];
-        }
-        //std::vector<std::unique_ptr<EWEBuffer>>* bufferVector, int maxFIF, std::shared_ptr<EWEDescriptorPool> globalPool
+        static VkDescriptorSet* getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex);
+        //std::vector<std::unique_ptr<EWEBuffer>>* bufferVector, int maxFIF
         /*
-        static void setActorBoneDescriptor(int maxFIF, std::shared_ptr<EWEDescriptorPool> globalPool, std::vector<std::unique_ptr<EWEBuffer>>* bufferVector, EWEDevice& device) {
+        static void setActorBoneDescriptor(int maxFIF, std::vector<std::unique_ptr<EWEBuffer>>* bufferVector, EWEDevice& device) {
             printf("before actor bone descriptor \n");
             //bufferVector->clear();
             descriptorSets[DS_ActorBone].clear();
@@ -134,7 +72,7 @@ namespace EWE {
             for (int i = 0; i < maxFIF; i++) {
                 descriptorSets[DS_ActorBone].push_back(VkDescriptorSet{});
                 if (!
-                    EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), *globalPool)
+                    EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
                     .writeBuffer(0, &bufferVector->at(i)->descriptorInfo())
                     .build(descriptorSets[DS_ActorBone].back())
                     ) {

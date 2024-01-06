@@ -27,6 +27,11 @@ struct PointLightPushConstants {
 	glm::vec4 color{1.f};
 	float radius{};
 };
+struct Grid2DPushConstantData {
+	glm::vec4 scaleOffset{ 1.f };
+	alignas(16)glm::vec2 gridScale{1.f};
+	alignas(16)glm::vec3 color{ 1.f };
+};
 struct Simple2DPushConstantData {
 	glm::vec4 scaleOffset{ 1.f }; //4 floats here, 2 x 2
 	alignas(16) glm::vec3 color{1.f}; //?idk if id stuff anything else right here
@@ -43,6 +48,11 @@ struct ModelTimePushData {
 struct ModelPushData {
 	glm::mat4 modelMatrix{ 1.f };
 };
+struct PushTileConstantData {
+	glm::vec3 translation{0.f};
+	alignas(16)glm::vec3 scale{ 1.f };
+};
+
 struct UVScrollingPushData {
 	glm::vec2 uvScroll{ 0.f };
 };

@@ -50,7 +50,7 @@ namespace EWE {
 		uiHandler{ SettingsJSON::settingsData.getDimensions(), eweDevice, mainWindow.getGLFWwindow(), eweRenderer.makeTextOverlay() },
 		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), eweDevice, mainWindow.getGLFWwindow(), uiHandler.getTextOverlay() },
 		advancedRS{ eweDevice, eweRenderer.getPipelineInfo(), objectManager, menuManager},
-		skinnedRS{ eweDevice, advancedRS.globalPool, eweRenderer.getPipelineInfo() }
+		skinnedRS{ eweDevice, eweRenderer.getPipelineInfo() }
 	{
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
 		camera.setPerspectiveProjection(glm::radians(70.0f), eweRenderer.getAspectRatio(), 0.1f, 10000.0f);
@@ -58,7 +58,7 @@ namespace EWE {
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
 		camera.newViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
 		initGlobalBuffers();
-		DescriptorHandler::initGlobalDescriptors(advancedRS.globalPool, bufferMap, eweDevice);
+		DescriptorHandler::initGlobalDescriptors(bufferMap, eweDevice);
 		//printf("back to ui handler? \n");
 		advancedRS.takeUIHandlerPtr(&uiHandler);
 		advancedRS.updateLoadingPipeline(eweRenderer.getPipelineInfo());
@@ -72,7 +72,7 @@ namespace EWE {
 	}
 	void EightWindsEngine::finishLoading() {
 		printf("before init descriptors \n");
-		DescriptorHandler::initDescriptors(advancedRS.globalPool, bufferMap);
+		DescriptorHandler::initDescriptors(bufferMap);
 		printf("after init descriptors \n");
 		advancedRS.updateMaterialPipelines(eweRenderer.getPipelineInfo());
 
@@ -90,7 +90,7 @@ namespace EWE {
 #endif
 		printf("after deconstructig level manager \n");
 		vkDestroyQueryPool(eweDevice.device(), queryPool, nullptr);
-		DescriptorHandler::cleanup(eweDevice, advancedRS.globalPool);
+		DescriptorHandler::cleanup(eweDevice);
 
 		EWETexture::cleanup();
 		auto matInst = MaterialHandler::getMaterialHandlerInstance();

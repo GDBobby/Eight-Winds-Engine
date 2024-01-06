@@ -162,6 +162,40 @@ namespace EWE {
 
         eweDevice.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
+
+    EWEBuffer* EWEModel::createIndexBuffer(EWEDevice& device, std::vector<uint32_t> const& indices) {
+        uint32_t indexCount = static_cast<uint32_t>(indices.size());
+
+        if (indexCount == 0) {
+            std::cout << "no index" << std::endl;
+            return nullptr;
+        }
+        VkDeviceSize bufferSize = sizeof(uint32_t) * indexCount;
+        uint32_t indexSize = sizeof(uint32_t);
+
+        EWEBuffer stagingBuffer{
+            device,
+            indexSize,
+            indexCount,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        };
+
+        stagingBuffer.map();
+        stagingBuffer.writeToBuffer((void*)indices.data());
+
+        EWEBuffer* indexBuffer = new EWEBuffer(
+            device,
+            indexSize,
+            indexCount,
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+
+        return indexBuffer;
+    }
+
     void EWEModel::createIndexBuffers(const std::vector<uint32_t>& indices) {
         indexCount = static_cast<uint32_t>(indices.size());
         hasIndexBuffer = indexCount > 0;
@@ -171,8 +205,8 @@ namespace EWE {
             return;
         }
 
-        VkDeviceSize bufferSize = sizeof(indices[0]) * indexCount;
-        uint32_t indexSize = sizeof(indices[0]);
+        VkDeviceSize bufferSize = sizeof(uint32_t) * indexCount;
+        uint32_t indexSize = sizeof(uint32_t);
 
         EWEBuffer stagingBuffer{
             eweDevice,
@@ -241,6 +275,18 @@ namespace EWE {
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
     }
+    void EWEModel::BindAndDrawInstanceNoIndex(VkCommandBuffer cmdBuf) {
+        VkBuffer buffers[2] = { vertexBuffer->getBuffer(), instanceBuffer->getBuffer() };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(cmdBuf, 0, 1, &buffers[0], offsets);
+        vkCmdBindVertexBuffers(cmdBuf, 1, 1, &buffers[1], offsets);
+        //vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets); //test this with grass later
+        //if no index buffer, indexing wont work
+        //vkCmdBindIndexBuffer(cmdBuf, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDraw(cmdBuf, vertexCount, instanceCount, 0, 0);
+    }
+
+
     void EWEModel::BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount) {
         VkBuffer buffers[] = { vertexBuffer->getBuffer() };
         VkDeviceSize offsets[] = { 0 };
@@ -403,10 +449,12 @@ namespace EWE {
         //printf("vertex count after loading simple model from file : %d \n", vertices.size());
         //printf("index count after loading simple model from file : %d \n", indices.size());
     }
+
+
     /*
     std::unique_ptr<EWEModel> EWEModel::LoadGrassField(EWEDevice& device) {
         printf("beginning load grass field \n");
-        std::fstream grassFile{ "..//models//grassField.gs" };
+        std::ifstream grassFile{ "..//models//grassField.gs" };
         if (!grassFile.is_open()) {
             printf("failed to open grass field file \n");
             return nullptr;

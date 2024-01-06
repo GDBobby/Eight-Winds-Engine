@@ -55,16 +55,11 @@ namespace EWE {
     std::vector<VkVertexInputAttributeDescription> TileVertex::getAttributeDescriptions() {
 
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
-            { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(TileVertex, position) },
-            { 1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(TileVertex, uv) },
-            //{ 1, 0, VK_FORMAT_R32_SFLOAT, sizeof(glm::vec3) * 3 },
+            //vertex
+            { 0, 0, VK_FORMAT_R32G32_SFLOAT, 0},
 
             //instance
-            { 2, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-            { 3, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4)},
-            { 4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 2},
-            { 5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 3},
-            { 6, 1, VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec4) * 4}
+            { 1, 1, VK_FORMAT_R32G32_SFLOAT, 0}
         };
         return attributeDescriptions;
     }
@@ -193,6 +188,16 @@ namespace EWE {
         attributeDescriptions[0].offset = offsetof(VertexUI, position);
 
         attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexUI, uv) });
+
+        return attributeDescriptions;
+    }
+
+    std::vector<VkVertexInputAttributeDescription> VertexGrid2D::getAttributeDescriptions() {
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions(1);
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(VertexGrid2D, position);
 
         return attributeDescriptions;
     }

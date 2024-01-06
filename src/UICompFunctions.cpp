@@ -45,6 +45,7 @@ namespace EWE {
 
 		}
 		void convertScreenTo2D(glm::ivec2 const screen, glm::vec2& coord2D, float screenWidth, float screenHeight) {
+			//screen to world?
 			coord2D.x = (screen.x - (screenWidth / 2.f)) / (screenWidth / 2.f);
 			coord2D.y = (screen.y - (screenHeight / 2.f)) / (screenHeight / 2.f);
 		}
@@ -333,6 +334,18 @@ namespace EWE {
 			}
 			}
 		}
+
+		glm::ivec2 convertWorldCoordinatesToScreenCoordinates(glm::vec2 worldCoord, float screenWidth, float screenHeight) {
+			glm::ivec2 ret{ static_cast<int>(screenWidth / 2.f), static_cast<int>(screenHeight / 2.f)};
+
+			//1 adds a quarter, 2 adds a half
+
+			ret.x += static_cast<int>(worldCoord.x * screenWidth / 4.f);
+			ret.y += static_cast<int>(worldCoord.y * screenHeight / 4.f);
+
+			return ret;
+		}
+
 
 	}
 }

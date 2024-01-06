@@ -13,6 +13,66 @@ namespace EWE {
 
     std::vector<VkDescriptorSetLayout> DescriptorHandler::dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
 
+    void DescriptorHandler::cleanup(EWEDevice& device) {
+        printf("before descriptor handler cleanup \n");
+        descriptorSetLayouts.clear();
+        printf("after desc set layouts \n");
+        for (auto& descriptorSet : descriptorSets) {
+            EWEDescriptorPool::freeDescriptors(DescriptorPool_Global, descriptorSet.second);
+            //globalPool->freeDescriptors(descriptorSet.second);
+        }
+        printf("After freeing  descritpors \n");
+        descriptorSets.clear();
+        printf("after desc sets \n");
+        /*
+        printf("before cleaning pipeDescSetLayouts, size : %d \n", pipeDescSetLayouts.size());
+        for (auto iter = pipeDescSetLayouts.begin(); iter != pipeDescSetLayouts.end(); iter++) {
+            printf("\t iterfirst(%d) size : %d \n", iter->first, iter->second.size());
+        }
+        for (auto iter = pipeDescSetLayouts.begin(); iter != pipeDescSetLayouts.end(); iter++) {
+            for (int i = 0; i < iter->second.size(); i++) {
+                if (iter->second[i] != VK_NULL_HANDLE) {
+                    printf("destroying pipeDescSetLayouts, iter(iter first: i) - (%d:%d) \n", iter->first, i);
+                    vkDestroyDescriptorSetLayout(device.device(), iter->second[i], nullptr);
+                }
+                else {
+                    printf("why is pipe desc set layout[%d] nullhandle, but exists? \n", i);
+                }
+            }
+        }
+
+        printf("after pipedesc set layouts \n");
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < dynamicMaterialPipeDescSetLayouts[i].size(); j++) {
+                if (dynamicMaterialPipeDescSetLayouts[i][j] != VK_NULL_HANDLE) {
+                    vkDestroyDescriptorSetLayout(device.device(), dynamicMaterialPipeDescSetLayouts[i][j], nullptr);
+                }
+                else {
+                    printf("why is dynamicMaterialPipeDescSetLayouts[%d][%d] nullhandle, but exists? \n", i, j);
+                }
+            }
+        }
+        */
+        pipeDescSetLayouts.clear();
+        for (int i = 0; i < 10; i++) {
+            dynamicMaterialPipeDescSetLayouts[i].clear();
+        }
+        printf("after descriptor handler cleanup \n");
+    }
+
+    EWEDescriptorSetLayout& DescriptorHandler::getLDSL(LDSL_Enum whichLDSL) {
+        if (whichLDSL == LDSL_pointLight && descriptorSetLayouts.find(LDSL_pointLight) == descriptorSetLayouts.end()) {
+            printf("returning global instead of point LDSL \n");
+            return *(descriptorSetLayouts[LDSL_global]);
+        }
+#if _DEBUG
+        else if (descriptorSetLayouts.find(whichLDSL) == descriptorSetLayouts.end()) {
+            printf("failed to find LDSL : %d \n", whichLDSL);
+        }
+#endif
+        return *(descriptorSetLayouts[whichLDSL]);
+    }
+
     VkDescriptorSetLayout DescriptorHandler::getDescSetLayout(LDSL_Enum whichDescSet, EWEDevice& device) {
         if (descriptorSetLayouts.find(whichDescSet) != descriptorSetLayouts.end()) {
             return descriptorSetLayouts[whichDescSet]->getDescriptorSetLayout();
@@ -156,7 +216,7 @@ namespace EWE {
     }
 
 
-    void DescriptorHandler::initGlobalDescriptors(std::shared_ptr<EWEDescriptorPool> globalPool, std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device) {
+    void DescriptorHandler::initGlobalDescriptors(std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device) {
         printf("init global descriptors \n");
         DescriptorHandler::getDescSetLayout(LDSL_global, device);
         DescriptorHandler::getDescSetLayout(LDSL_boned, device);
@@ -164,7 +224,7 @@ namespace EWE {
             //printf("init ars descriptors, loop : %d \n", i);
             descriptorSets[DS_global].push_back(VkDescriptorSet{});
             if (!
-                EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_global), *globalPool)
+                EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_global), DescriptorPool_Global)
                 .writeBuffer(0, bufferMap[Buff_ubo][i]->descriptorInfo())
                 .writeBuffer(1, bufferMap[Buff_gpu][i]->descriptorInfo())
                 .build(descriptorSets[DS_global].back())
@@ -174,7 +234,7 @@ namespace EWE {
 
             descriptorSets[DS_loading].push_back(VkDescriptorSet{});
             if (!
-                EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), *globalPool)
+                EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
                 .writeBuffer(0, bufferMap[Buff_loading][i]->descriptorInfo())
                 .build(descriptorSets[DS_loading].back())
                 ) {
@@ -182,7 +242,7 @@ namespace EWE {
             }
         }
     }
-    void DescriptorHandler::initDescriptors(std::shared_ptr<EWEDescriptorPool> globalPool, std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap) {
+    void DescriptorHandler::initDescriptors(std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap) {
 
         //printf("initializing VkDescriptorSets \n");
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -213,5 +273,13 @@ namespace EWE {
             */
         }
         //printf("returning from init VkDescriptorSets \n");
+    }
+    VkDescriptorSet* DescriptorHandler::getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
+#if _DEBUG
+        if (descriptorSets.find(whichDescSet) == descriptorSets.end()) {
+            printf("failed to find DescSet in getDescSet : %d \n", whichDescSet);
+        }
+#endif
+        return &descriptorSets[whichDescSet][whichFrameIndex];
     }
 }

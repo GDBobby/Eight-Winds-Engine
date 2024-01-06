@@ -266,8 +266,18 @@ namespace EWE {
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 		vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
-		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-		vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+		if (attributeDescriptions.size() > 0) {
+			vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+		}
+		else {
+			vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+		}
+		if (bindingDescriptions.size() > 0) {
+			vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+		}
+		else {
+			vertexInputInfo.pVertexBindingDescriptions = nullptr;
+		}
 
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.pNext = &configInfo.pipelineRenderingInfo;
@@ -373,7 +383,7 @@ namespace EWE {
 		configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
 		configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
 		configInfo.dynamicStateInfo.flags = 0;
-
+		/*
 		std::vector<VkVertexInputBindingDescription> bindingDescription(1);
 		bindingDescription[0].binding = 0;                            // Binding index
 		bindingDescription[0].stride = 0;                             // No per-vertex data
@@ -388,6 +398,7 @@ namespace EWE {
 
 		configInfo.bindingDescriptions = bindingDescription;
 		configInfo.attributeDescriptions = attributeDescription;
+		*/
 	}
 
 	void EWEPipeline::enableAlphaBlending(PipelineConfigInfo& configInfo) {

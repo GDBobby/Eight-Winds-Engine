@@ -16,7 +16,6 @@
 #define DEBUGGING_PIPELINES false
 #define DEBUGGING_DYNAMIC_PIPE false
 
-#define GLOBAL_POOL_MAX_SETS 2000
 
 //#define GRASS_ENABLED false
 
@@ -28,9 +27,8 @@ namespace EWE {
 
 	AdvancedRenderSystem::AdvancedRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo, ObjectManager& objectManager, MenuManager& menuManager) : eweDevice{ device }, objectManager{ objectManager }, menuManager{ menuManager } {
 		printf("ARS constructor \n");
-		initGlobalPool(GLOBAL_POOL_MAX_SETS);
+		EWEDescriptorPool::BuildGlobalPool(device);
 		EWETexture::buildSetLayouts(device);
-		EWETexture::setGlobalPool(globalPool);
 		PipelineManager::initStaticVariables();
 
 		model2D = Basic_Model::generate2DQuad(device);
@@ -46,10 +44,9 @@ namespace EWE {
 		PipelineManager::cleanupStaticVariables(eweDevice);
 		EWEPipeline::cleanShaderModules(eweDevice);
 
-		//globalPool->resetPool();
-		//globalPool->~EWEDescriptorPool();
-		globalPool.reset();
-		//vkDestroyCommandPool(eweDevice.device, globalPool->)
+		EWEDescriptorPool::DestructPools();
+
+
 #if true//DECONSTRUCTION_DEBUG
 		printf("end of ARS deconstructor \n");
 #endif
@@ -119,9 +116,9 @@ namespace EWE {
 #if DEBUGGING_PIPELINES
 		printf("getting into render game objects \n");
 #endif
-
-		renderSkybox(frameInfo);
-	
+		if (drawSkybox) {
+			renderSkybox(frameInfo);
+		}
 		//renderSimpleGameObjects(frameInfo);
 		//renderBonedWeapons(frameInfo);
 		
@@ -897,17 +894,6 @@ namespace EWE {
 		//printf("after leaf bind and draw \n");
 	}
 
-	//void AdvancedRenderSystem::initDescriptorSets()
-	void AdvancedRenderSystem::initGlobalPool(unsigned int maxSets) {
-		globalPool = EWEDescriptorPool::Builder(eweDevice)
-			.setMaxSets(maxSets)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
-			.setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
-			.build();
-
-	}
 	/* this is old af, one of the first things i did in this engine. id like to revisit it at some point
 	inline void AdvancedRenderSystem::renderRocks(FrameInfo& frameInfo) {
 		//simple gameObjects and playerObjects use the same pipeline

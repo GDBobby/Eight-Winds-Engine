@@ -17,7 +17,7 @@ namespace EWE {
      */
     VkDeviceSize EWEBuffer::getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment) {
         if (minOffsetAlignment > 0) {
-            //printf("get alignment size : %lu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
+            printf("get alignment size : %lu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
             return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
         }
         return instanceSize;
@@ -86,6 +86,26 @@ namespace EWE {
      * @param offset (Optional) Byte offset from beginning of mapped region
      *
      */
+    void EWEBuffer::writeToBufferAligned(void* data, VkDeviceSize size, uint64_t alignmentOffset) {
+        assert(mapped && "Cannot copy to unmapped buffer");
+
+        char* memOffset = (char*)mapped;
+#if _DEBUG
+        uint64_t offset = alignmentOffset * alignmentSize;
+        if ((offset + size) > bufferSize) {
+            printf("overflow error in buffer - %lu:%lu \n", offset + size, bufferSize);
+            throw std::exception("DATA TOO LARGE FOR BUFFER");
+        }
+        memOffset += offset;
+        memcpy(memOffset, data, size);
+#else
+        memOffset += alignmentOffset * alignmentSize;
+        memcpy(memOffset, data, size);
+#endif
+
+        
+    }
+
     void EWEBuffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
         assert(mapped && "Cannot copy to unmapped buffer");
 
@@ -191,6 +211,14 @@ namespace EWE {
      */
     VkResult EWEBuffer::invalidateIndex(int index) {
         return invalidate(alignmentSize, index * alignmentSize);
+    }
+
+    EWEBuffer* EWEBuffer::createAndInitBuffer(EWEDevice& device, void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
+        EWEBuffer* retBuffer = new EWEBuffer(device, dataSize * dataCount, 1, usageFlags, memoryPropertyFlags);
+        retBuffer->map();
+        retBuffer->writeToBuffer(data, dataSize * dataCount);
+        retBuffer->flush();
+        return retBuffer;
     }
 
 }  // namespace EWE

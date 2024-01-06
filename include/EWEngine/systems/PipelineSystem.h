@@ -45,7 +45,7 @@ namespace EWE {
 		void push(void* push);
 		virtual void pushAndDraw(void* push);
 		void drawModel();
-		void drawInstanced(EWEModel* model);
+		virtual void drawInstanced(EWEModel* model);
 
 
 

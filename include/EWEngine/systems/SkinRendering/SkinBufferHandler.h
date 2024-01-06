@@ -10,9 +10,9 @@ namespace EWE {
 		//put a pointer to bufferstruct pointer in each actor
 	public:
 
-		InstancedSkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint16_t maxActorCount, std::shared_ptr<EWEDescriptorPool> globalPool);
+		InstancedSkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint16_t maxActorCount);
 		void writeData(glm::mat4* modelMatrix, void* finalBoneMatrices);
-		void changeMaxActorCount(EWEDevice& device, uint16_t actorCount, std::shared_ptr<EWEDescriptorPool> globalPool);
+		void changeMaxActorCount(EWEDevice& device, uint16_t actorCount);
 		void flush();
 
 		void setFrameIndex(uint8_t frameIndex) {
@@ -38,10 +38,10 @@ namespace EWE {
 			std::unique_ptr<EWEBuffer> bone{};
 			VkDescriptorSet descriptor{};
 
-			InnerBufferStruct(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize, std::shared_ptr<EWEDescriptorPool> globalPool);
+			InnerBufferStruct(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize);
 
-			void changeActorCount(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize, std::shared_ptr<EWEDescriptorPool> globalPool);
-			void buildDescriptor(uint16_t maxActorCount, std::shared_ptr<EWEDescriptorPool> globalPool);
+			void changeActorCount(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize);
+			void buildDescriptor(uint16_t maxActorCount);
 
 			void flush();
 		private:
@@ -68,10 +68,10 @@ namespace EWE {
 			VkDescriptorSet descriptor;
 			uint16_t currentActorCount = 0;
 
-			InnerBufferStruct(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize, std::shared_ptr<EWEDescriptorPool> globalPool);
+			InnerBufferStruct(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize);
 
-			void changeActorCount(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize, std::shared_ptr<EWEDescriptorPool> globalPool);
-			void buildDescriptor(std::shared_ptr<EWEDescriptorPool> globalPool);
+			void changeActorCount(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize);
+			void buildDescriptor();
 
 			void flush() {
 				if (updated) {
@@ -85,11 +85,11 @@ namespace EWE {
 
 	public:
 
-		SkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint8_t maxActorCount, std::shared_ptr<EWEDescriptorPool> globalPool);
+		SkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint8_t maxActorCount);
 		SkinBufferHandler(uint8_t maxActorCount, std::vector<InnerBufferStruct>* referencedData);
 
 		void writeData(void* finalBoneMatrices);
-		void changeMaxActorCount(EWEDevice& device, uint8_t actorCount, std::shared_ptr<EWEDescriptorPool> globalPool);
+		void changeMaxActorCount(EWEDevice& device, uint8_t actorCount);
 		void flush() {
 			gpuData[frameIndex].flush();
 			boneMemOffset = 0;

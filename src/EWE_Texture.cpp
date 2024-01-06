@@ -46,8 +46,6 @@ namespace EWE {
 
     std::vector<std::unique_ptr<EWEDescriptorSetLayout>> EWETexture::dynamicDescSetLayout;
 
-    std::shared_ptr<EWEDescriptorPool> EWETexture::globalPool;
-
 
     uint32_t EWETexture::spriteFrameCounter = 0;
 
@@ -637,13 +635,14 @@ namespace EWE {
         spriteDescSetLayout.reset();
         dynamicDescSetLayout.clear();
 
-        globalPool.reset();
+        //globalPool.reset();
         printf("end of texture cleanup \n");
     }
 
     void EWETexture::destroy() {
         //std::cout << "destroying" << std::endl;
-        globalPool->freeDescriptors(descriptorSets);
+        //globalPool->freeDescriptors(descriptorSets);
+        EWEDescriptorPool::freeDescriptors(DescriptorPool_Global, descriptorSets);
 
         for (int i = 0; i < sampler.size(); i++) {
             vkDestroySampler(eweDevice.device(), sampler[i], nullptr);
@@ -987,7 +986,7 @@ namespace EWE {
         //printf("creating simple descriptor \n");
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             if (!
-                EWEDescriptorWriter(*simpleDescSetLayout, *globalPool)
+                EWEDescriptorWriter(*simpleDescSetLayout, DescriptorPool_Global)
                 .writeImage(0, &descriptor[0])
                 .build(descriptorSets[i]))
             {
@@ -1000,7 +999,7 @@ namespace EWE {
         //printf("creating simple vert descriptor \n");
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             if (!
-                EWEDescriptorWriter(*simpleVertDescSetLayout, *globalPool)
+                EWEDescriptorWriter(*simpleVertDescSetLayout, DescriptorPool_Global)
                 .writeImage(0, &descriptor[0])
                 .build(descriptorSets[i]))
             {
@@ -1013,7 +1012,7 @@ namespace EWE {
         //printf("creating orb descriptor \n");
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             if (!
-                EWEDescriptorWriter(*orbDescSetLayout, *globalPool)
+                EWEDescriptorWriter(*orbDescSetLayout, DescriptorPool_Global)
                 .writeImage(0, &descriptor[0])
                 .writeImage(1, &descriptor[1])
                 .build(descriptorSets[i]))
@@ -1031,7 +1030,7 @@ namespace EWE {
         }
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             //printf("creating dynamic descriptor, imageCount : %d \n", imageCount);
-            auto tempHolder = EWEDescriptorWriter(*dynamicDescSetLayout[imageCount - 1], *globalPool);
+            auto tempHolder = EWEDescriptorWriter(*dynamicDescSetLayout[imageCount - 1], DescriptorPool_Global);
             for (int j = 0; j < imageCount; j++) {
                 //printf("writing image to dynamic desc set layout : %d \n", j);
                 tempHolder.writeImage(j, &descriptor[j]);

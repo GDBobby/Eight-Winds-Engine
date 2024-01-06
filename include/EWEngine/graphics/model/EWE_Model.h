@@ -116,11 +116,14 @@ namespace EWE {
         void bind(VkCommandBuffer commandBuffer);
         void draw(VkCommandBuffer commandBuffer);
         void BindAndDrawInstance(VkCommandBuffer commandBuffer);
+        void BindAndDrawInstanceNoIndex(VkCommandBuffer commandBuffer);
         void BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount);
 
         uint32_t getVertexCount() { return vertexCount; }
         uint32_t getIndexCount() { return indexCount; }
         
+        //delete needs to be called on this at destruction, or put it into a smart pointer
+        static EWEBuffer* createIndexBuffer(EWEDevice& device, std::vector<uint32_t> const& indices);
 
     protected:
         //void createVertexBuffers(const std::vector<Vertex>& vertices);

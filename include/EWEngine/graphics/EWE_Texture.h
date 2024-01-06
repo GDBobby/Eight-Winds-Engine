@@ -81,8 +81,6 @@ namespace EWE {
 		static std::unordered_map<TextureID, EWETexture> textureMap;
 		static std::unordered_map<TextureID, EWETexture> uiMap;
 
-		static std::shared_ptr<EWEDescriptorPool> globalPool;
-
 		static std::unique_ptr<EWEDescriptorSetLayout> simpleDescSetLayout;
 		static std::unique_ptr<EWEDescriptorSetLayout> simpleVertDescSetLayout;
 		static std::unique_ptr<EWEDescriptorSetLayout> spriteDescSetLayout;
@@ -140,7 +138,6 @@ namespace EWE {
 		static VkDescriptorSetLayout getSpriteDescriptorSetLayout() { return spriteDescSetLayout->getDescriptorSetLayout(); }
 		static VkDescriptorSetLayout getDynamicDescriptorSetLayout(uint8_t imageCount) { return dynamicDescSetLayout[imageCount]->getDescriptorSetLayout(); }
 
-		static void setGlobalPool(std::shared_ptr<EWEDescriptorPool> pool) { globalPool = pool; }
 		static size_t getUIMapSize() { return uiMap.size(); }
 		static TextureData getTextureData(uint32_t textureID) { return textureMap.at(textureID).textureData; }
 

@@ -1,12 +1,14 @@
-/*
+
 #pragma once
 
 #include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui/imgui_impl_vulkan.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_vulkan.h"
 
-#include "EWE_device.hpp"
-#include "EWE_descriptors.h"
+#include "EWEngine/graphics/EWE_Device.hpp"
+#include "EWEngine/graphics/EWE_Descriptors.h"
+
+#include "EWEngine/graphics/EWE_Texture.h"
 
 
 #include <stdexcept>
@@ -38,27 +40,22 @@ namespace EWE {
 		}
 	public:
 		ImGUIHandler(GLFWwindow* window, EWEDevice& eweDevice, uint32_t imageCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
-		~ImGUIHandler() {
-			ImGui_ImplVulkan_Shutdown();
-			ImGui_ImplGlfw_Shutdown();
-			ImGui::DestroyContext();
-			vkDestroyDescriptorPool(device.device(), descriptorPool, nullptr);
-			printf("imguihandler deconstructed \n");
-		}
+        ~ImGUIHandler();
 
-		void beforeRender();
-		void afterRender(VkCommandBuffer cmdBuf);
+		void beginRender();
+		void endRender(VkCommandBuffer cmdBuf);
 
 		void rebuild() {
 			//ImGui_ImplVulkanH_CreateWindow(device.getInstance(), device.getPhysicalDevice(), device.device(), &g_MainWindowData, g_QueueFamily, nullptr, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
 		}
+        void addTexture(TextureID eweTexID) {
 
+        }
 
 	private:
 		//float tempFloat{0.f};
 		void createDescriptorPool();
-		void uploadFonts();
-		*
+		/*
 		void creatingARenderPass(VkFormat imageFormat) {
 			VkAttachmentDescription attachment = {};
 			attachment.format = imageFormat;
@@ -99,11 +96,10 @@ namespace EWE {
 				throw std::runtime_error("Could not create Dear ImGui's render pass");
 			}
 		}
-		*
+		*/
 		EWEDevice& device;
-		VkDescriptorPool descriptorPool;
+        DescriptorPool_ID imguiPoolID;
 		VkRenderPass imGuiRenderPass;
 
 	};
 }
-*/

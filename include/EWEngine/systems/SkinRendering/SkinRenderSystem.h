@@ -55,7 +55,7 @@ namespace EWE {
 			uint16_t pipeLayoutIndex; //a lot of work to find this value, might as well just store it
 			std::unordered_map<SkeletonID, std::vector<TextureMeshStruct>> skeletonData; //key is skeletonID
 
-			PipelineStruct(uint16_t boneCount, ShaderFlags textureFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, std::shared_ptr<EWEDescriptorPool> globalPool, EWEDevice& device) :
+			PipelineStruct(uint16_t boneCount, ShaderFlags textureFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) :
 				pipeline{ PipelineManager::createInstancedRemote(textureFlags, boneCount, pipeRenderInfo, device) }, skeletonData{}
 				//instanced
 			{
@@ -68,7 +68,7 @@ namespace EWE {
 				uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
 				pipeLayoutIndex = textureCount + (3 * MAX_SMART_TEXTURE_COUNT);
 			}
-			PipelineStruct(ShaderFlags textureFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, std::shared_ptr<EWEDescriptorPool> globalPool, EWEDevice& device) :
+			PipelineStruct(ShaderFlags textureFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) :
 				pipeline{ PipelineManager::createBoneRemote(textureFlags, pipeRenderInfo, device) }, skeletonData{}
 				//non instanced
 			{
@@ -85,7 +85,7 @@ namespace EWE {
 
 	public:
 
-		SkinRenderSystem(EWEDevice& device, std::shared_ptr<EWEDescriptorPool> globalPool, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		SkinRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 		~SkinRenderSystem();
 		//~MonsterBoneBufferDescriptorStruct();
 
@@ -152,7 +152,7 @@ namespace EWE {
 				throw std::exception("trying to change the max actor count for a buffer that doesn't exist");
 			}
 #endif
-			buffers.at(skeletonID).changeMaxActorCount(device, maxActorCount, globalPool);
+			buffers.at(skeletonID).changeMaxActorCount(device, maxActorCount);
 
 		}
 
@@ -187,7 +187,7 @@ namespace EWE {
 			}
 #endif
 			//instancedBuffersCreated += 2;
-			instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ device, boneCount, 2000, globalPool });
+			instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ device, boneCount, 2000});
 		}
 		void createBoneBuffer(SkeletonID skeletonID, uint16_t boneCount) {
 			if (buffers.find(skeletonID) != buffers.end()) {
@@ -197,7 +197,7 @@ namespace EWE {
 			}
 			//buffersCreated += 2;
 			printf("creating bone buffer \n");
-			buffers.emplace(skeletonID, SkinBufferHandler{ device, boneCount, 1, globalPool });
+			buffers.emplace(skeletonID, SkinBufferHandler{ device, boneCount, 1});
 		}
 		void createReferenceBuffer(SkeletonID skeletonID, SkeletonID referenceID) {
 			if (buffers.find(skeletonID) != buffers.end()) {
@@ -210,11 +210,11 @@ namespace EWE {
 
 		void createInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, ShaderFlags textureFlags) {
 			instancedData.emplace(instancedFlags,
-				PipelineStruct{ boneCount, textureFlags, pipeRenderInfo, globalPool, device }
+				PipelineStruct{ boneCount, textureFlags, pipeRenderInfo, device }
 			);
 		}
 		void createBonePipe(ShaderFlags boneFlags) {
-			boneData.emplace(boneFlags, PipelineStruct{ boneFlags, pipeRenderInfo, globalPool, device });
+			boneData.emplace(boneFlags, PipelineStruct{ boneFlags, pipeRenderInfo, device });
 		}
 
 		uint32_t skinID = 0;
@@ -225,7 +225,6 @@ namespace EWE {
 		std::unordered_map<SkeletonID, PushConstantStruct> pushConstants{};
 
 		VkPipelineRenderingCreateInfo const& pipeRenderInfo;
-		std::shared_ptr<EWEDescriptorPool> globalPool;
 		EWEDevice& device;
 
 		//uint32_t buffersCreated = 0;

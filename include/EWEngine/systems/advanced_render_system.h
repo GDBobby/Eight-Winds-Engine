@@ -40,9 +40,6 @@ namespace EWE {
 		void updateLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 		void updatePipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 		void updateMaterialPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo); //only cause this outside of ARS in the level builder, donot call elsewhere, updatepipelines calls this
-		void initGlobalPool(unsigned int maxSets);
-
-		std::shared_ptr<EWEDescriptorPool> globalPool{};
 
 		bool shouldRenderPoints = false;
 		//uint32_t uiTextureID = 0;
@@ -55,6 +52,7 @@ namespace EWE {
 			return model2D;
 		}
 
+		bool drawSkybox = true;
 	private:
 		UIHandler* uiHandler;
 

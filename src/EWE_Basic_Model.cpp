@@ -71,12 +71,32 @@ namespace EWE {
 
     std::unique_ptr<EWEModel> Basic_Model::generate3DTileQuad(EWEDevice& device, glm::vec2 uvScale) {
         std::vector<TileVertex> vertices{
-            {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
-            {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},
-            {{-0.5f,0.0f, 0.5f}, {0.0f,0.f}},
-            {{0.5f,0.0f, 0.5f}, {uvScale.x,0.f}},
+            {{uvScale.x,uvScale.y}},
+            {{0.0f,uvScale.y}},
+            {{0.0f,0.f}},
+            {{0.0f,0.f}},
+            {{uvScale.x,0.f}},
+            {{uvScale.x,uvScale.y}},
         };
-        std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
+        std::vector<uint32_t> indices{};// 0, 1, 2, 2, 3, 0 };
+        return std::make_unique<EWEModel>(device, vertices, indices);
+    }
+
+    std::unique_ptr<EWEModel> Basic_Model::generate2DGrid(EWEDevice& device, glm::vec2 scale){
+        const float leftX = -1.f * scale.x;
+        const float rightX = 1.f * scale.x;
+        const float topY = -1.f * scale.y;
+        const float botY = 1.f * scale.y;
+
+        const std::vector<VertexGrid2D> vertices{
+            {leftX, topY},
+            {leftX, botY},
+            {rightX, topY},
+            {rightX, topY},
+            {leftX, botY},
+            {rightX, botY}
+        };
+        std::vector<uint32_t> indices{};
         return std::make_unique<EWEModel>(device, vertices, indices);
     }
 

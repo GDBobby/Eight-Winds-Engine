@@ -351,18 +351,16 @@ namespace EWE {
         }
     };
     struct TileVertex {
-        glm::vec3 position{0.f};
         glm::vec2 uv{ 0.f };
         static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
         bool operator ==(const TileVertex& other) const {
-            return position == other.position && uv == other.uv;
+            return uv == other.uv;
         }
     };
     struct TileInstance{
-        glm::mat4 transform;
         glm::vec2 uvOffset;
-        TileInstance(glm::mat4 transform, glm::vec2 uv) : transform{ transform }, uvOffset{ uv } {}
+        TileInstance(glm::vec2 uv) : uvOffset{ uv } {}
     };
     struct Vertex {
         glm::vec3 position{ 0.f };
@@ -380,6 +378,13 @@ namespace EWE {
     struct VertexUI {
         glm::vec2 position{ 0.f };
         glm::vec2 uv{ 0.f };
+
+        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+    };
+    struct VertexGrid2D {
+        glm::vec2 position;
+        VertexGrid2D() {}
+        VertexGrid2D(float x, float y) : position{ x, y } {}
 
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
     };

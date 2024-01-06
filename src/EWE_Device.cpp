@@ -63,7 +63,7 @@ namespace EWE {
         //printf("device constructor \n");
 #if GPU_LOGGING
         {
-            std::fstream logFile{ GPU_LOG_FILE };
+            std::ofstream logFile{ GPU_LOG_FILE, std::ofstream::trunc };
             logFile << "testing output \n";
             //initialize log file (reset it)
 
@@ -683,7 +683,7 @@ namespace EWE {
         }
         for (auto iter = requiredExtensions.begin(); iter != requiredExtensions.end(); iter++) {
 #if GPU_LOGGING
-            std::fstream logFile{ GPU_LOG_FILE, std::ios::app };
+            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
             logFile << "REQUIRED EXTENSIONOS NOT SUPPORTED : " << *iter << std::endl;
             logFile.close();
 #endif
@@ -982,7 +982,7 @@ namespace EWE {
             std::cout << "couldnt pull all queues!" << std::endl;
             if (!indices.computeFamilyHasValue) {
 #if GPU_LOGGING
-                std::fstream logFile{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
                 logFile << "GPU doesn't have compute queue family \n";
                 logFile.close();
 #endif
@@ -990,7 +990,7 @@ namespace EWE {
             }
             if (!indices.graphicsFamilyHasValue) {
 #if GPU_LOGGING
-                std::fstream logFile{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
                 logFile << "GPU doesn't have graphics queue family \n";
                 logFile.close();
 #endif
@@ -998,7 +998,7 @@ namespace EWE {
             }
             if (!indices.presentFamilyHasValue) {
 #if GPU_LOGGING
-                std::fstream logFile{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
                 logFile << "GPU doesn't have present queue family, testing present=graphics \n";
                 logFile.close();
 #endif
@@ -1008,7 +1008,7 @@ namespace EWE {
             if (!indices.transferFamilyHasValue) {
                 printf("GPU doesn't have transfer family, using a second graphics queue instead \n");
 #if GPU_LOGGING
-                std::fstream logFile{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
                 logFile << "GPU doesn't have transfer queue family, testing trasfer=graphics \n";
                 logFile.close();
 #endif
@@ -1026,7 +1026,7 @@ namespace EWE {
         if (vkResult != VK_SUCCESS) {
 #if GPU_LOGGING
             {
-                std::fstream file{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
                 file << "failed to get physical device surface capabilities KHR : " << vkResult << "\n";
                 file.close();
             }
@@ -1038,7 +1038,7 @@ namespace EWE {
         if (vkResult != VK_SUCCESS) {
 #if GPU_LOGGING
             {
-                std::fstream file{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
                 file << "failed to get physical device surface formats : " << vkResult << "\n";
                 file.close();
             }
@@ -1055,7 +1055,7 @@ namespace EWE {
         if (vkResult != VK_SUCCESS) {
 #if GPU_LOGGING
             {
-                std::fstream file{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
                 file << "failed to get physical device surface capabilities KHR : " << vkResult << "\n";
                 file.close();
             }
@@ -1084,7 +1084,7 @@ namespace EWE {
         }
 #if GPU_LOGGING
         {
-            std::fstream file{ GPU_LOG_FILE };
+            std::ofstream file{ GPU_LOG_FILE };
             file << "failed to find supported format \n";
         }
 #endif
@@ -1128,7 +1128,7 @@ namespace EWE {
         if (result != VK_SUCCESS) {
 #if GPU_LOGGING
         {
-            std::fstream file{ GPU_LOG_FILE };
+            std::ofstream file{ GPU_LOG_FILE };
             file << "failed to create buffer : " << result << "\n";
         }
 #endif
@@ -1148,7 +1148,7 @@ namespace EWE {
         if (result != VK_SUCCESS) {
 #if GPU_LOGGING
         {
-            std::fstream file{ GPU_LOG_FILE };
+            std::ofstream file{ GPU_LOG_FILE };
             file << "failed to create image : " << result << "\n";
         }
 #endif
@@ -1428,7 +1428,7 @@ namespace EWE {
         if (result != VK_SUCCESS) {
 #if GPU_LOGGING
             {
-                std::fstream file{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
                 file << "failed to create image : " << result << "\n";
                 file.close();
             }
@@ -1449,7 +1449,7 @@ namespace EWE {
         if (result != VK_SUCCESS) {
 #if GPU_LOGGING
             {
-                std::fstream file{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
                 file << "failed to allocate memory : " << result << "\n";
             }
 #endif
@@ -1461,7 +1461,7 @@ namespace EWE {
         if (result != VK_SUCCESS) {
 #if GPU_LOGGING
             {
-                std::fstream file{ GPU_LOG_FILE, std::ios::app };
+                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
                 file << "failed to bind image : " << result << "\n";
             }
 #endif

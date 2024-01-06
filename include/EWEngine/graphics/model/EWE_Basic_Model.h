@@ -20,6 +20,7 @@ namespace EWE {
         }
         */
 
+        static std::unique_ptr<EWEModel> generate2DGrid(EWEDevice& device, glm::vec2 scale = { 1.f,1.f });
         static std::unique_ptr<EWEModel> generate2DQuad(EWEDevice& device, glm::vec2 scale = { 1.f,1.f });
 
         static std::unique_ptr<EWEModel> generateNineUIQuad(EWEDevice& device);
