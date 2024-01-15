@@ -1,4 +1,4 @@
-#include "EWEngine/systems/PipelineSystem.h"
+#include "EWEngine/Systems/PipelineSystem.h"
 
 namespace EWE {
 	std::unordered_map<PipelineID, std::unique_ptr<PipelineSystem>> PipelineSystem::pipelineSystem{};

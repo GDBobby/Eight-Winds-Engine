@@ -1,5 +1,5 @@
-#include "EWEngine/graphics/EWE_Object.h"
-#include "EWEngine/systems/SkinRendering/SkinRenderSystem.h"
+#include "EWEngine/Graphics/EWE_Object.h"
+#include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
 
 namespace EWE {
     EweObject::EweObject(std::string objectPath, EWEDevice& device, bool globalTextures) {
@@ -146,10 +146,10 @@ namespace EWE {
             std::string finalDir = objectPath;
             finalDir += "\\" + importData.meshNames[i];
             if (globalTextures) {
-                returnPair = EWETexture::addSmartGlobalTexture(device, finalDir, EWETexture::tType_smart);
+                returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
             }
             else {
-                returnPair = EWETexture::addSmartSceneTexture(device, finalDir, EWETexture::tType_smart);
+                returnPair = EWETexture::addSceneMaterialTexture(device, finalDir);
             }
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
             if (returnPair.first < 0) {
@@ -166,10 +166,10 @@ namespace EWE {
             std::string finalDir = objectPath;
             finalDir += "\\" + importData.meshNTNames[i];
             if (globalTextures) {
-                returnPair = EWETexture::addSmartGlobalTexture(device, finalDir, EWETexture::tType_smart);
+                returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
             }
             else {
-                returnPair = EWETexture::addSmartSceneTexture(device, finalDir, EWETexture::tType_smart);
+                returnPair = EWETexture::addSceneMaterialTexture(device, finalDir);
             }
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
             if (returnPair.first < 0) {
@@ -189,10 +189,10 @@ namespace EWE {
             finalDir += "\\" + importData.meshSimpleNames[i];
             //printf("simple names final Dir : %s \n", finalDir.c_str());
             if (globalTextures) {
-                returnPair = EWETexture::addSmartGlobalTexture(device, finalDir, EWETexture::tType_smart);
+                returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
             }
             else {
-                returnPair = EWETexture::addSmartSceneTexture(device, finalDir, EWETexture::tType_smart);
+                returnPair = EWETexture::addSceneMaterialTexture(device, finalDir);
             }
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
             if (returnPair.first < 0) {
@@ -209,10 +209,10 @@ namespace EWE {
             std::string finalDir = objectPath;
             finalDir += "\\" + importData.meshNTSimpleNames[i];
             if (globalTextures) {
-                returnPair = EWETexture::addSmartGlobalTexture(device, finalDir, EWETexture::tType_smart);
+                returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
             }
             else {
-                returnPair = EWETexture::addSmartSceneTexture(device, finalDir, EWETexture::tType_smart);
+                returnPair = EWETexture::addSceneMaterialTexture(device, finalDir);
             }
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
             if (returnPair.first < 0) {

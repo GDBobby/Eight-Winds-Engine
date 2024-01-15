@@ -25,7 +25,6 @@ x64/
 .vs/
 buildCopy/
 build_backup
-EightWinds.dir/
 CmakeFiles/
 release/
 debug/

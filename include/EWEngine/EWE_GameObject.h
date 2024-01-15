@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EWEngine/graphics/model/EWE_Model.h"
+#include "EWEngine/Graphics/Model/Model.h"
 #include <memory>
 #include "EWEngine/Data/TransformInclude.h"
 #include "EWEngine/Data/EngineDataTypes.h"

@@ -5,10 +5,10 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
 
-#include "EWEngine/graphics/EWE_Device.hpp"
-#include "EWEngine/graphics/EWE_Descriptors.h"
+#include "EWEngine/Graphics/Device.hpp"
+#include "EWEngine/Graphics/Descriptors.h"
 
-#include "EWEngine/graphics/EWE_Texture.h"
+#include "EWEngine/Graphics/Texture.h"
 
 
 #include <stdexcept>

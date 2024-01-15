@@ -2,10 +2,10 @@
 
 #include "UIComponents.h"
 #include "UIComponentsHigher.h"
-#include "EWEngine/graphics/model/EWE_Basic_Model.h"
+#include "EWEngine/Graphics/Model/Basic_Model.h"
 #include "EWEngine/GUI/MenuEnums.h"
 
-#include "EWEngine/graphics/EWE_FrameInfo.h"
+#include "EWEngine/Graphics/Frame_Info.h"
 //#include "../../Game/InputHandler.h"
 
 #include <queue>

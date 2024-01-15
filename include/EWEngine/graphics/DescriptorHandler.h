@@ -1,5 +1,5 @@
 #pragma once
-#include "EWE_Texture.h"
+#include "EWEngine/Graphics/Texture.h"
 //#include "EWE_descriptors.h" //included in EWEtexture
 #define DRAWING_POINTS false
 

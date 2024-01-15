@@ -1,6 +1,6 @@
 
-#include "EWEngine/graphics/EWE_Renderer.h"
-#include "EWEngine/graphics/TextOverlay.h"
+#include "EWEngine/Graphics/Renderer.h"
+#include "EWEngine/Graphics/TextOverlay.h"
 
 #include <stdexcept>
 //#include <iostream>

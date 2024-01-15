@@ -1,4 +1,4 @@
-#include "EWEngine/systems/advanced_render_system.h"
+#include "EWEngine/Systems/Rendering/advanced_render_system.h"
 
 
 #define GLM_FORCE_RADIANS
@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <iostream>
 
-#include "EWEngine/graphics/Dimension2/Dimension2.h"
+#include "EWEngine/Graphics/Dimension2/Dimension2.h"
 
 
 #define DEBUGGING_PIPELINES false

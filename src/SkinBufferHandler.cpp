@@ -1,4 +1,4 @@
-#include "EWEngine/systems/SkinRendering/SkinBufferHandler.h"
+#include "EWEngine/Systems/Rendering/Skin/SkinBufferHandler.h"
 
 namespace EWE {
 	SkinBufferHandler::SkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint8_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount } {

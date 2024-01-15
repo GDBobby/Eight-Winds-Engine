@@ -1,21 +1,15 @@
 #pragma once
 
-#include "EWEngine/Data/EWEImport.h"
+#include "EWEngine/Data/EWE_Import.h"
 #include "EWEngine/EWE_GameObject.h"
-#include "EWE_Texture.h"
-#include "EWEngine/systems/RigidRendering/RigidRenderSystem.h"
+#include "Texture.h"
+#include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
 
 #include <list>
 
 //need instancing here
 
 namespace EWE {
-    struct TextureMapping {
-        std::vector<std::pair<ShaderFlags, TextureID>> meshNames;
-        std::vector<std::pair<ShaderFlags, TextureID>> meshNTNames;
-        std::vector<std::pair<ShaderFlags, TextureID>> meshSimpleNames;
-        std::vector<std::pair<ShaderFlags, TextureID>> meshNTSimpleNames;
-    };
 
 	class EweObject {
 	public:
@@ -60,6 +54,13 @@ namespace EWE {
             return mySkinID;
         }
 	private:
+        struct TextureMapping {
+            std::vector<std::pair<ShaderFlags, TextureID>> meshNames;
+            std::vector<std::pair<ShaderFlags, TextureID>> meshNTNames;
+            std::vector<std::pair<ShaderFlags, TextureID>> meshSimpleNames;
+            std::vector<std::pair<ShaderFlags, TextureID>> meshNTSimpleNames;
+        };
+
         uint32_t mySkinID = 0;
 
         void addToMaterialHandler(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker);

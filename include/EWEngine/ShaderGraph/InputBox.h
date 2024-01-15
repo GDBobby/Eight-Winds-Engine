@@ -5,7 +5,7 @@
 
 //#include "EWEngine/ShaderGraph/VariableType.h" //this is included in ShaderStructures but im going to explicitly include it anyways
 #include "EWEngine/ShaderGraph/ShaderStructures.h"
-#include "EWEngine/graphics/EWE_FrameInfo.h"
+#include "EWEngine/Graphics/EWE_FrameInfo.h"
 
 namespace EWE {
 	namespace Shader {

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "EWEngine/graphics/TextOverlay.h"
-#include "EWEngine/SoundEngine.h"
-#include "EWEngine/graphics/EWE_Texture.h"
+#include "EWEngine/Graphics/TextOverlay.h"
+#include "EWEngine/Sound_Engine.h"
+#include "EWEngine/Graphics/Texture.h"
 //#include "GameUI.h"
 #include "Overlay.h"
 

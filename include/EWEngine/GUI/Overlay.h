@@ -1,7 +1,7 @@
 #pragma once
 
 #include "EWEngine/GameObject2D.h"
-#include "EWEngine/graphics/TextOverlay.h"
+#include "EWEngine/Graphics/TextOverlay.h"
 
 namespace EWE {
 	class OverlayBase {

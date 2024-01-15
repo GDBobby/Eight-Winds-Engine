@@ -1,9 +1,9 @@
 #pragma once
 
 #include "EWEngine/GameObject2D.h"
-#include "EWEngine/graphics/TextOverlay.h"
+#include "EWEngine/Graphics/TextOverlay.h"
 #include "UICompFunctions.h"
-#include "EWEngine/graphics/Dimension2/Dimension2.h"
+#include "EWEngine/Graphics/Dimension2/Dimension2.h"
 
 
 namespace EWE {

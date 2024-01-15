@@ -1,5 +1,5 @@
 #include "EWEngine/GUI/MenuModule.h"
-#include "EWEngine/graphics/Dimension2/Dimension2.h"
+#include "EWEngine/Graphics/Dimension2/Dimension2.h"
 
 namespace EWE {
 
@@ -191,7 +191,7 @@ namespace EWE {
 			}
 
 			for (int i = 0; i < sliders.size(); i++) {
-				push.scaleOffset = glm::vec4(sliders[i].slider.mat2(), sliders[i].slider.translation);
+				push.scaleOffset = sliders[i].slider.scaleOffset;
 				vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
 				model2D->draw(frameInfo.cmdIndexPair.first);
 			}
@@ -208,10 +208,10 @@ namespace EWE {
 				frameInfo.currentlyBindedTexture = textureIDs[MT_BracketButton];
 			}
 			for (int i = 0; i < sliders.size(); i++) {
-				push.scaleOffset = glm::vec4(sliders[i].bracketButtons.first.mat2(), sliders[i].bracketButtons.first.translation);
+				push.scaleOffset = sliders[i].bracketButtons.first.scaleOffset;
 				vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
 				model2D->draw(frameInfo.cmdIndexPair.first);
-				push.scaleOffset = glm::vec4(sliders[i].bracketButtons.second.mat2(), sliders[i].bracketButtons.second.translation);
+				push.scaleOffset = sliders[i].bracketButtons.second.scaleOffset;
 				vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
 				model2D->draw(frameInfo.cmdIndexPair.first);
 			}
@@ -228,7 +228,7 @@ namespace EWE {
 				frameInfo.currentlyBindedTexture = textureIDs[MT_Bracket];
 			}
 			for (int i = 0; i < sliders.size(); i++) {
-				push.scaleOffset = glm::vec4(sliders[i].bracket.mat2(), sliders[i].bracket.translation);
+				push.scaleOffset = sliders[i].bracket.scaleOffset;
 				vkCmdPushConstants(frameInfo.cmdIndexPair.first, pl2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
 				model2D->draw(frameInfo.cmdIndexPair.first);
 			}

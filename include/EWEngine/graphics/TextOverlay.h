@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "EWE_Device.hpp"
-#include "EWE_Pipeline.h"
-#include "EWE_Descriptors.h"
+#include "Device.hpp"
+#include "Pipeline.h"
+#include "Descriptors.h"
 
 #include <glm/glm.hpp>
 

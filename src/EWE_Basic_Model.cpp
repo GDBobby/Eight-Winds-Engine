@@ -1,4 +1,4 @@
-#include "EWEngine/graphics/model/EWE_Basic_Model.h"
+#include "EWEngine/Graphics/Model/Basic_Model.h"
 
 
 namespace EWE {

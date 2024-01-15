@@ -1,4 +1,4 @@
-#include "EWEngine/systems/Graphics/Ocean.h"
+#include "EWEngine/Systems/Ocean/Ocean.h"
 #include "EWEngine/Data/TransformInclude.h"
 
 namespace EWE {

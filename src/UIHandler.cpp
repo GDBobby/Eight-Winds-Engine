@@ -3,7 +3,7 @@
 
 #define USING_IMGUI false
 #if USING_IMGUI
-#include "EWEngine/graphics/imGuiHandler.h"
+#include "EWEngine/Graphics/imGuiHandler.h"
 #endif
 
 //#include <sstream>

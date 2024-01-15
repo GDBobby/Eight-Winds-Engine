@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EWEngine/graphics/model/EWE_Model.h"
-#include "EWEngine/graphics/PushConstants.h"
+#include "EWEngine/Graphics/Model/Model.h"
+#include "EWEngine/Graphics/PushConstants.h"
 // std
 #include <memory>
 
@@ -12,25 +12,26 @@ I can only use this for 2d view ports
 namespace EWE {
 
 struct Transform2dComponent {
-    glm::vec2 translation{};  // (position offset)
-    glm::vec2 scale{1.f, 1.f};
+    //glm::vec2 translation{};  // (position offset)
+    //glm::vec2 scale{1.f, 1.f};
+    union {
+        struct {
+            glm::vec2 scale;
+            glm::vec2 translation;
+        };
+        glm::vec4 scaleOffset;
+        
+    };
+    Transform2dComponent() : scaleOffset{ 0.f, 0.f, 1.f, 1.f } {}
+
     float rotation{ 0.f };
 
     void setPush(Simple2DPushConstantData& push) {
-        push.scaleOffset = glm::vec4(scale.x, scale.y, translation.x, translation.y);
+        push.scaleOffset = scaleOffset;
     }
+    glm::vec4 getScaleOffset() {
 
-    glm::vec2 mat2() {
-        return scale;
-        /*
-        const float s = glm::sin(rotation); //sin0 = 0
-        const float c = glm::cos(rotation); //cos0 = 1
-        glm::mat2 rotMatrix{{c, s}, {-s, c}};
-                            //1, 0,    0  1
-
-        glm::mat2 scaleMat{{scale.x, .0f}, {.0f, scale.y}};
-            return rotMatrix * scaleMat;
-        */
+        return scaleOffset;
     }
 };
 

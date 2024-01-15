@@ -1,4 +1,4 @@
-#include "EWEngine/systems/Graphics/OceanFFT.h"
+#include "EWEngine/Systems/Ocean/OceanFFT.h"
 
 namespace EWE {
 	namespace Ocean {

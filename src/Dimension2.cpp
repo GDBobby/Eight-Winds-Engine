@@ -1,6 +1,6 @@
-#include "EWEngine/graphics/Dimension2/Dimension2.h"
-#include "EWEngine/graphics/EWE_Texture.h"
-#include "EWEngine/graphics/model/EWE_Basic_Model.h"
+#include "EWEngine/Graphics/Dimension2/Dimension2.h"
+#include "EWEngine/Graphics/Texture.h"
+#include "EWEngine/Graphics/Model/Basic_Model.h"
 
 #define RENDER_DEBUG false
 

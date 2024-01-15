@@ -45,7 +45,7 @@ namespace EWE {
 			//lbo.sunlightDirection.z = levelImport.sun.direction[2];
 			//lbo.sunlightDirection.w = 0.f;
 			if (levelImport.mapType == LevelExportData::Map_Type::target) {
-				auto tempTextureID = EWETexture::addSmartSceneTexture(device, levelImport.targetPathName, EWETexture::tType_smart);
+				auto tempTextureID = EWETexture::addSceneMaterialTexture(device, levelImport.targetPathName, EWETexture::tType_smart);
 				if ((tempTextureID.first >= 0) && (tempTextureID.second >= 0)) {
 					objectManager->targetTexturePair = tempTextureID;
 				}
@@ -66,7 +66,7 @@ namespace EWE {
 			for (int i = 0; i < levelImport.tangentObjects.size(); i++) {
 				EWETexture::texture_type textureType = levelImport.tangentObjects[i].textureType;
 				if (textureType == EWETexture::tType_smart) {
-					auto textureID = EWETexture::addSmartSceneTexture(device, levelImport.tangentObjects[i].texturePath, EWETexture::tType_smart);
+					auto textureID = EWETexture::addSceneMaterialTexture(device, levelImport.tangentObjects[i].texturePath, EWETexture::tType_smart);
 					if (textureID.second >= 0 && textureID.first >= 0) {
 						objectList[objectCounter] = &objectManager->dynamicBuildObjects;
 						objectManager->dynamicBuildObjects[objectCounter].model = std::make_shared<BuilderModel>(device, levelImport.tangentObjects[i].vertices, levelImport.tangentObjects[i].indices);
@@ -129,7 +129,7 @@ namespace EWE {
 		//lbo.sunlightDirection.w = 0.f;
 		TextureID targetTextureID;
 		if (mapType == LevelExportData::Map_Type::target) {
-			auto tempTextureID = EWETexture::addSmartSceneTexture(device, levelImport.targetPathName, EWETexture::tType_smart);
+			auto tempTextureID = EWETexture::addSceneMaterialTexture(device, levelImport.targetPathName, EWETexture::tType_smart);
 			printf("target texture id? %d \n", tempTextureID.second);
 			if ((tempTextureID.first) >= 0 && (tempTextureID.second >= 0)) {
 				targetTextureID = tempTextureID.second;
@@ -159,7 +159,7 @@ namespace EWE {
 			for (int i = 0; i < levelImport.tangentObjects.size(); i++) {
 				EWETexture::texture_type textureType = levelImport.tangentObjects[i].textureType;
 				if (textureType == EWETexture::tType_smart) {
-					auto textureID = EWETexture::addSmartSceneTexture(device, levelImport.tangentObjects[i].texturePath, textureType);
+					auto textureID = EWETexture::addSceneMaterialTexture(device, levelImport.tangentObjects[i].texturePath, textureType);
 					
 					if ((textureID.second >= 0) && (textureID.first >= 0)) {
 						objectManager->dynamicGameObjects.emplace_back();

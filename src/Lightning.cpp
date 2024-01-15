@@ -1,4 +1,4 @@
-#include "EWEngine/systems/Graphics/Lightning.h"
+#include "EWEngine/Systems/Lightning.h"
 namespace EWE {
 
 

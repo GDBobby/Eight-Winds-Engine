@@ -1,20 +1,20 @@
 #pragma once
 
 #include "EWEngine/MainWindow.h"
-#include "EWEngine/graphics/EWE_Device.hpp"
-#include "EWEngine/graphics/EWE_Renderer.h"
-#include "EWEngine/graphics/EWE_Descriptors.h"
+#include "EWEngine/Graphics/Device.hpp"
+#include "EWEngine/Graphics/Renderer.h"
+#include "EWEngine/Graphics/Descriptors.h"
 
-#include "EWEngine/systems/SkinRendering/SkinRenderSystem.h"
+#include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
 
-#include "EWEngine/systems/advanced_render_system.h"
+#include "EWEngine/Systems/Rendering/advanced_render_system.h"
 #include "EWEngine/ObjectManager.h"
 //#include "LevelBuilder/LevelBuilder.h"
 #include "EWEngine/GUI/UIHandler.h"
 //#include "EWEngine/graphicsimGuiHandler.h"
 #include "EWEngine/LoadingScreen/LeafSystem.h"
 #include "EWEngine/GUI/MenuManager.h"
-#include "EWEngine/systems/PipelineSystem.h"
+#include "EWEngine/Systems/PipelineSystem.h"
 
 #include <functional>
 #include <memory>

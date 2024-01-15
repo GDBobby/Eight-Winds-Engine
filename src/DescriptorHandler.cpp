@@ -1,4 +1,4 @@
-#include "EWEngine/graphics/DescriptorHandler.h"
+#include "EWEngine/Graphics/DescriptorHandler.h"
 
 #include <stdexcept>
 
