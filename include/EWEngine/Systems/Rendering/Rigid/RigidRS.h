@@ -6,20 +6,20 @@
 //this is still a WIP
 
 namespace EWE {
-    struct MaterialInfo {
+    struct MaterialRenderInfo {
         TransformComponent* ownerTransform; //if nullptr and not playerOwned, error
         EWEModel* meshPtr;
         bool* drawable;
         //Actor_Type actorType = Actor_None;
 
         //int32_t textureID;
-        MaterialInfo() {
+        MaterialRenderInfo() {
             printf("Default construction of material info??? \n");
             ownerTransform = nullptr;
             meshPtr = nullptr;
             //textureID = 0;
         }
-        MaterialInfo(TransformComponent* tComp, EWEModel* meshP, bool* drawable) : ownerTransform{ tComp }, meshPtr{ meshP }, drawable{ drawable } {}
+        MaterialRenderInfo(TransformComponent* tComp, EWEModel* meshP, bool* drawable) : ownerTransform{ tComp }, meshPtr{ meshP }, drawable{ drawable } {}
     };
 
 
@@ -38,15 +38,15 @@ namespace EWE {
         MaterialHandler(const MaterialHandler&) = delete;
         MaterialHandler& operator=(const MaterialHandler&) = delete;
 
-        std::map<ShaderFlags, std::map<TextureID, std::vector<MaterialInfo>>> materialMap;
+        std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>> materialMap;
     public:
         ~MaterialHandler() {}
-        const std::map<ShaderFlags, std::map<TextureID, std::vector<MaterialInfo>>>& getMaterialMap() {
+        const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>>& getMaterialMap() {
             return materialMap;
         }
-        const std::map<ShaderFlags, std::map<TextureID, std::vector<MaterialInfo>>>& cleanAndGetMaterialMap();
-        void addMaterialObject(ShaderFlags flags, TextureID textureID, MaterialInfo& materialInfo);
-        void addMaterialObject(ShaderFlags flags, TransformComponent* ownerTransform, EWEModel* modelPtr, uint32_t textureID, bool* drawable);
+        const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>>& cleanAndGetMaterialMap();
+        void addMaterialObject(MaterialTextureInfo materialInfo, MaterialRenderInfo& renderInfo);
+        void addMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
 
         void addMaterialObjectFromTexID(TextureID copyID, TransformComponent* ownerTransform, bool* drawablePtr);
 

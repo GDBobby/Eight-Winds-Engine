@@ -8,8 +8,6 @@
 #include "EWEngine/Graphics/Device.hpp"
 #include "EWEngine/Graphics/Descriptors.h"
 
-#include "EWEngine/Graphics/Texture.h"
-
 
 #include <stdexcept>
 

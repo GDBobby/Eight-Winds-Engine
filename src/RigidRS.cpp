@@ -1,7 +1,7 @@
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
 
 namespace EWE {
-    const std::map<ShaderFlags, std::map<TextureID, std::vector<MaterialInfo>>>& MaterialHandler::cleanAndGetMaterialMap() {
+    const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>>& MaterialHandler::cleanAndGetMaterialMap() {
         for (auto iter = materialMap.begin(); iter != materialMap.end();) {
             if (iter->second.size() == 0) {
                 iter = materialMap.erase(iter);
@@ -13,19 +13,19 @@ namespace EWE {
         }
         return materialMap;
     }
-    void MaterialHandler::addMaterialObject(ShaderFlags flags, TextureID textureID, MaterialInfo& materialInfo) {
-        if (materialInfo.meshPtr == nullptr) {
+    void MaterialHandler::addMaterialObject(MaterialTextureInfo materialInfo, MaterialRenderInfo& renderInfo) {
+        if (renderInfo.meshPtr == nullptr) {
             printf("NULLTPR MESH EXCEPTION \n");
             throw std::runtime_error("nullptr mesh");
         }
-        materialMap[flags][textureID].push_back(materialInfo);
+        materialMap[materialInfo.materialFlags][materialInfo.textureID].push_back(renderInfo);
     }
-    void MaterialHandler::addMaterialObject(ShaderFlags flags, TransformComponent* ownerTransform, EWEModel* modelPtr, uint32_t textureID, bool* drawable) {
+    void MaterialHandler::addMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
         if (modelPtr == nullptr) {
             printf("NULLTPR MESH EXCEPTION \n");
             throw std::runtime_error("nullptr mesh");
         }
-        materialMap[flags][textureID].emplace_back(ownerTransform, modelPtr, drawable);
+        materialMap[materialInfo.materialFlags][materialInfo.textureID].emplace_back(ownerTransform, modelPtr, drawable);
 
     }
     void MaterialHandler::addMaterialObjectFromTexID(TextureID copyID, TransformComponent* ownerTransform, bool* drawablePtr) {

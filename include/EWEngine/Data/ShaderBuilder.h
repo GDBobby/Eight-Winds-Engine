@@ -21,8 +21,8 @@
 class ShaderBlock {
 public:
 
-	static void BatchCreateFragmentShader(std::vector<ShaderFlags> flagVector);
-	static std::vector<uint32_t> getFragmentShader(ShaderFlags flags, bool hasBones);
+	static void BatchCreateFragmentShader(std::vector<MaterialFlags> flagVector);
+	static std::vector<uint32_t> getFragmentShader(MaterialFlags flags, bool hasBones);
 	static std::vector<uint32_t> getVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance = true);
 	static std::vector<uint32_t> getLoadingVertShader();
 	static std::vector<uint32_t> getLoadingFragShader();
@@ -132,16 +132,16 @@ private:
 			Resources.limits.generalConstantMatrixVectorIndexing = 1;
 		}
 
-		static bool BuildFlaggedFrag(ShaderFlags flags, bool hasBones, std::vector<unsigned int>& spirv);
+		static bool BuildFlaggedFrag(MaterialFlags flags, bool hasBones, std::vector<unsigned int>& spirv);
 		static bool BuildFlaggedVert(bool hasNormal, uint16_t boneCount, bool instanced, std::vector<unsigned int>& spirv, bool largeInstance); //currently, ALWAYS has bones
 		static bool LoadingVertSPV(std::vector<unsigned int>& spirv);
 		static bool LoadingFragSPV(std::vector<unsigned int>& spirv);
 	};
-	static std::string buildFragmentShader(ShaderFlags flags, bool hasBones);
+	static std::string buildFragmentShader(MaterialFlags flags, bool hasBones);
 
 	static std::string buildVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance);
 
-
+	static void addBindings(std::string& shaderString, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones);
 };
 
 

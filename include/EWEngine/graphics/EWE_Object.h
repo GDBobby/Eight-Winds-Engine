@@ -2,7 +2,6 @@
 
 #include "EWEngine/Data/EWE_Import.h"
 #include "EWEngine/EWE_GameObject.h"
-#include "Texture.h"
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
 
 #include <list>
@@ -55,10 +54,10 @@ namespace EWE {
         }
 	private:
         struct TextureMapping {
-            std::vector<std::pair<ShaderFlags, TextureID>> meshNames;
-            std::vector<std::pair<ShaderFlags, TextureID>> meshNTNames;
-            std::vector<std::pair<ShaderFlags, TextureID>> meshSimpleNames;
-            std::vector<std::pair<ShaderFlags, TextureID>> meshNTSimpleNames;
+            std::vector<MaterialTextureInfo> meshNames;
+            std::vector<MaterialTextureInfo> meshNTNames;
+            std::vector<MaterialTextureInfo> meshSimpleNames;
+            std::vector<MaterialTextureInfo> meshNTSimpleNames;
         };
 
         uint32_t mySkinID = 0;

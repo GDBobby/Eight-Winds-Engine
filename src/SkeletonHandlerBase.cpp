@@ -1,6 +1,6 @@
 #include "EWEngine/SkeletonHandlerBase.h"
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
-#include "EWEngine/Graphics/Texture.h"
+#include "EWEngine/Graphics/Textures/Texture_Manager.h"
 
 #include <thread>
 
@@ -126,7 +126,7 @@ namespace EWE {
 
     }
 
-    void SkeletonBase::loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<std::pair<ShaderFlags, TextureID>>, std::vector<std::pair<ShaderFlags, TextureID>>>& textureTracker, std::string texturePath) {
+    void SkeletonBase::loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<std::pair<MaterialFlags, TextureID>>, std::vector<std::pair<MaterialFlags, TextureID>>>& textureTracker, std::string texturePath) {
         //printf("failed to open : %s \n", filePath.c_str());
         std::ifstream inFile(filePath, std::ifstream::binary);
         if (!inFile.is_open()) {
@@ -145,7 +145,7 @@ namespace EWE {
             importData.meshNames[i] = importData.meshNames[i].substr(0, importData.meshNames[i].find_first_of("."));
             std::string finalDir = texturePath;
             finalDir += importData.meshNames[i];
-            std::pair<ShaderFlags, TextureID> returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
+            std::pair<MaterialFlags, TextureID> returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
             if (returnPair.first < 0) {
                 printf("FAILED TO FIND PIPE, NEED TO THROW AN ERROR : %d \n", returnPair.first);
@@ -160,7 +160,7 @@ namespace EWE {
             importData.meshNTNames[i] = importData.meshNTNames[i].substr(0, importData.meshNTNames[i].find_first_of("."));
             std::string finalDir = texturePath;
             finalDir += importData.meshNTNames[i];
-            std::pair<ShaderFlags, TextureID> returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
+            std::pair<MaterialFlags, TextureID> returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
             if (returnPair.first < 0) {
                 printf("FAILED TO FIND PIPE, NEED TO THROW AN ERROR : %d \n", returnPair.first);
@@ -217,7 +217,7 @@ namespace EWE {
             }
         }
 
-        std::pair<std::vector<std::pair<ShaderFlags, TextureID>>, std::vector<std::pair<ShaderFlags, TextureID>>> textureMappingTracker;
+        std::pair<std::vector<std::pair<MaterialFlags, TextureID>>, std::vector<std::pair<MaterialFlags, TextureID>>> textureMappingTracker;
         readAnimData(meshPath, device, partial);
 
         loadTextures(device, importPath + "_Names.ewe", textureMappingTracker, texturePath);

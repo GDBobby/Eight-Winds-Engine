@@ -1,6 +1,7 @@
-#include "EWEngine/Graphics/Dimension2/Dimension2.h"
-#include "EWEngine/Graphics/Texture.h"
+#include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
+
 #include "EWEngine/Graphics/Model/Basic_Model.h"
+#include <EWEngine/Graphics/Textures/Texture_Manager.h>
 
 #define RENDER_DEBUG false
 
@@ -129,7 +130,7 @@ namespace EWE {
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
-				EWETexture::getDescriptorSets(textureID, dimension2Ptr->frameIndex),
+				Texture_Manager::getDescriptorSet(textureID),
 				0, nullptr
 			);
 			dimension2Ptr->bindedTexture = textureID;

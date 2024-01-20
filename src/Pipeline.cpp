@@ -163,7 +163,7 @@ namespace EWE {
 		createGraphicsPipeline(configInfo);
 	}
 
-	EWEPipeline::EWEPipeline(EWEDevice& device, uint16_t boneCount, ShaderFlags flags, const PipelineConfigInfo& configInfo) : eweDevice{ device } {
+	EWEPipeline::EWEPipeline(EWEDevice& device, uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo) : eweDevice{ device } {
 		std::string vertPath = SHADER_DIR;
 		//this is always instanced???
 		bool hasNormal = (flags & DynF_hasNormal) > 0;
@@ -197,7 +197,7 @@ namespace EWE {
 		createGraphicsPipeline(configInfo);
 	}
 
-	EWEPipeline::EWEPipeline(EWEDevice& device, const std::string& vertFilePath, ShaderFlags flags, const PipelineConfigInfo& configInfo, bool hasBones) : eweDevice{ device } {
+	EWEPipeline::EWEPipeline(EWEDevice& device, const std::string& vertFilePath, MaterialFlags flags, const PipelineConfigInfo& configInfo, bool hasBones) : eweDevice{ device } {
 
 		if (shaderModuleMap.find(vertFilePath) == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilePath);
@@ -424,7 +424,7 @@ namespace EWE {
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PIPELINE MANAGER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
+	/*
 	std::map<PipeLayout_Enum, VkPipelineLayout> PipelineManager::pipeLayouts;
 	std::map<Pipeline_Enum, std::unique_ptr<EWEPipeline>> PipelineManager::pipelines;
 
@@ -435,7 +435,7 @@ namespace EWE {
 	std::unique_ptr<EWEPipeline> PipelineManager::loadingPipeline{ nullptr };
 #ifdef _DEBUG
 	std::vector<uint8_t> PipelineManager::dynamicBonePipeTracker;
-	std::vector<std::pair<uint16_t, ShaderFlags>> PipelineManager::dynamicInstancedPipeTracker;
+	std::vector<std::pair<uint16_t, MaterialFlags>> PipelineManager::dynamicInstancedPipeTracker;
 #endif
 
 	VkPipelineCache PipelineManager::materialPipelineCache = VK_NULL_HANDLE;
@@ -445,7 +445,7 @@ namespace EWE {
 
 	void PipelineManager::initDynamicPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device) {
 		//layouts
-		//textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))
+		//textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))
 		if (dynamicMaterialPipeLayout[dynamicPipeLayoutIndex] == VK_NULL_HANDLE) {
 
 
@@ -476,9 +476,9 @@ namespace EWE {
 			pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDescLayout->size());
 			pipelineLayoutInfo.pSetLayouts = tempDescLayout->data();
 
-			printf("creating dynamic pipe layout with index : %d \n", textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2)));
+			printf("creating dynamic pipe layout with index : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
 
-			VkResult vkResult = vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &dynamicMaterialPipeLayout[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))]);
+			VkResult vkResult = vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &dynamicMaterialPipeLayout[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))]);
 			if (vkResult != VK_SUCCESS) {
 				printf("failed to create dynamic mat pipelayout layout [%d] \n", textureCount);
 				throw std::runtime_error("Failed to create dynamic mat pipe layout \n");
@@ -486,7 +486,7 @@ namespace EWE {
 		}
 	}
 
-	void PipelineManager::updateMaterialPipe(ShaderFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
+	void PipelineManager::updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
 		bool hasBones = flags & 128;
 		bool instanced = flags & 64; //curently creating an outside manager to deal with instanced skinned meshes
 #ifdef _DEBUG
@@ -496,7 +496,7 @@ namespace EWE {
 		}
 #endif
 
-		//bool finalSlotBeforeNeedExpansion = ShaderFlags & 32;
+		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
 		bool hasBumps = flags & 16;
 		bool hasNormal = flags & 8;
 		bool hasRough = flags & 4;
@@ -578,7 +578,7 @@ namespace EWE {
 		}
 	}
 
-	std::unique_ptr<EWEPipeline> PipelineManager::createInstancedRemote(ShaderFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
+	std::unique_ptr<EWEPipeline> PipelineManager::createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
 
 #ifdef _DEBUG
 		for (int i = 0; i < dynamicInstancedPipeTracker.size(); i++) {
@@ -591,7 +591,7 @@ namespace EWE {
 		}
 		dynamicInstancedPipeTracker.emplace_back(boneCount, flags);
 #endif
-		//bool finalSlotBeforeNeedExpansion = ShaderFlags & 32;
+		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
 		bool hasBumps = flags & DynF_hasBump;
 		bool hasNormal = flags & DynF_hasNormal;
 		bool hasRough = flags & DynF_hasRough;
@@ -604,7 +604,7 @@ namespace EWE {
 			printf("HAS BONES AND BUMP, SHOULD NOT HAPPEN \n");
 		}
 
-		uint16_t pipeLayoutIndex = textureCount + (MAX_SMART_TEXTURE_COUNT * 3);
+		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * 3);
 		initDynamicPipeLayout(pipeLayoutIndex, textureCount, true, true, device);
 
 
@@ -636,7 +636,7 @@ namespace EWE {
 		
 	}
 
-	std::unique_ptr<EWEPipeline> PipelineManager::createBoneRemote(ShaderFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
+	std::unique_ptr<EWEPipeline> PipelineManager::createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
 #ifdef _DEBUG
 		for (int i = 0; i < dynamicBonePipeTracker.size(); i++) {
 			if (flags == dynamicBonePipeTracker[i]) {
@@ -648,7 +648,7 @@ namespace EWE {
 		//remotePipelines.emplace_back(boneCount, flags);
 #endif
 
-		//bool finalSlotBeforeNeedExpansion = ShaderFlags & 32;
+		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
 		bool hasBumps = flags & DynF_hasBump;
 		bool hasNormal = flags & DynF_hasNormal;
 		bool hasRough = flags & DynF_hasRough;
@@ -662,7 +662,7 @@ namespace EWE {
 			throw std::runtime_error("currently not supporting skinned meshes with bump maps");
 		}
 
-		uint16_t pipeLayoutIndex = textureCount + MAX_SMART_TEXTURE_COUNT;
+		uint16_t pipeLayoutIndex = textureCount + MAX_MATERIAL_TEXTURE_COUNT;
 		initDynamicPipeLayout(pipeLayoutIndex, textureCount, true, false, device);
 
 
@@ -701,6 +701,7 @@ namespace EWE {
 		glslang::FinalizeProcess();
 
 	}
+
 	void PipelineManager::createLoadingPipeline(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 		if (loadingPipeline.get() != nullptr) {
 			printf("trying to recreate the loading pipeline \n");
@@ -814,21 +815,7 @@ namespace EWE {
 				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
 				break;
 			}
-			/*
-			case PL_boneWeapon: {
-				pushConstantRange.size = sizeof(SimplePushConstantData);
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_boneWeapon, eweDevice);
-				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
-				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				if (vkCreatePipelineLayout(eweDevice.device(), &pipelineLayoutInfo, nullptr, &pipeLayouts[PL_boneWeapon]) != VK_SUCCESS) {
 
-					throw std::runtime_error("failed to create pipeline layout");
-				}
-				break;
-			}
-			*/
 			case PL_boned: {
 				pushConstantRange.size = sizeof(SimplePushConstantData);
 				pipelineLayoutInfo.pushConstantRangeCount = 1;
@@ -839,34 +826,6 @@ namespace EWE {
 				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
 				break;
 			}
-			/*
-			case PL_fbx: {
-				pushConstantRange.size = sizeof(SimplePushConstantData);
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_material, eweDevice);
-				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
-				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				if (vkCreatePipelineLayout(eweDevice.device(), &pipelineLayoutInfo, nullptr, &pipeLayouts[PL_fbx]) != VK_SUCCESS) {
-					throw std::runtime_error("failed to create pipeline layout");
-				}
-				break;
-			}
-			case PL_metalRough: {
-				pushConstantRange.size = sizeof(SimplePushConstantData);
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_metalRough, eweDevice);
-				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
-				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				if (vkCreatePipelineLayout(eweDevice.device(), &pipelineLayoutInfo, nullptr, &pipeLayouts[PL_metalRough]) != VK_SUCCESS) {
-					throw std::runtime_error("failed to create pipeline layout");
-				}
-				break;
-
-				break;
-			}
-			*/
 			case PL_2d: {
 				pushConstantRange.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
 				pushConstantRange.size = sizeof(Simple2DPushConstantData);
@@ -1148,15 +1107,7 @@ namespace EWE {
 				fragString = "visualEffect.frag.spv";
 				break;
 			}
-			/*
-			case Pipe_bobTrans: { //this fragment shader is out of date, need to replace in dynamic material pipeline
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_fbx, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
-				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
-				pipelines[Pipe_bobTrans] = std::make_unique<EWEPipeline>(eweDevice, "fbx_shader.vert.spv", "bob_transparency.frag.spv", pipelineConfig);
-				break;
-			}
-			*/
+
 			case Pipe_grid: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_textured, eweDevice);
 
@@ -1230,5 +1181,5 @@ namespace EWE {
 		printf("end deconstructing pipeline manager \n");
 #endif
 	}
-
+	*/
 }

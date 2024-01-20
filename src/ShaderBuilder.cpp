@@ -5,7 +5,7 @@
 
 #include <chrono>
 
-void ShaderBlock::BatchCreateFragmentShader(std::vector<ShaderFlags> flagVector) {
+void ShaderBlock::BatchCreateFragmentShader(std::vector<MaterialFlags> flagVector) {
 	/*
 	std::vector<std::pair<uint8_t, std::string>> needShader;
 	for (int i = 0; i < flagVector.size(); i++) {
@@ -118,7 +118,7 @@ std::vector<uint32_t> ShaderBlock::getLoadingFragShader() {
 
 }
 
-std::vector<uint32_t> ShaderBlock::getFragmentShader(ShaderFlags flags, bool hasBones) {
+std::vector<uint32_t> ShaderBlock::getFragmentShader(MaterialFlags flags, bool hasBones) {
 	/*
 	auto print_msg_to_printf = [](spv_message_level_t, const char*, const spv_position_t&, const char* m) {
 			printf("\t SPIRV Validator : error: %s \n", m);
@@ -234,7 +234,7 @@ std::vector<uint32_t> ShaderBlock::getVertexShader(bool hasNormal, uint16_t bone
 
 
 }
-bool ShaderBlock::SpirvHelper::BuildFlaggedFrag(ShaderFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
+bool ShaderBlock::SpirvHelper::BuildFlaggedFrag(MaterialFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
 	glslang::TShader shader(EShLangFragment);
 	glslang::TProgram program;
 	const char* shaderStrings[1];
@@ -550,11 +550,11 @@ std::string ShaderBlock::buildVertexShader(bool hasNormal, uint16_t boneCount, b
 	return shaderString;
 }
 
-std::string ShaderBlock::buildFragmentShader(ShaderFlags flags, bool hasBones) {
+std::string ShaderBlock::buildFragmentShader(MaterialFlags flags, bool hasBones) {
 	//printf("building fragment shader :%d \n", flags);
 	//bool hasTangents = flags & 32; //if it has a normal map, it has tangents
 	//bool hasBones = flags & 128;
-	//bool instanced = ShaderFlags & 64;
+	//bool instanced = MaterialFlags & 64;
 	bool hasBumps = flags & 16;
 	bool hasNormal = flags & 8;
 	bool hasRough = flags & 4;
@@ -578,30 +578,9 @@ std::string ShaderBlock::buildFragmentShader(ShaderFlags flags, bool hasBones) {
 		for (int i = 0; i < functionBlock.size(); i++) {
 			shaderString += functionBlock[i];
 		}
-		shaderString += albedoBinding[hasBones];
 
-		if (hasNormal) {
-			shaderString += normalBinding[hasBones];
-		}
-		if (hasRough) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal);
-			shaderString += secondHalfBinding;
-			shaderString += "roughSampler;";
-		}
+		addBindings(shaderString, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones);
 
-		if (hasMetal) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough);
-			shaderString += secondHalfBinding;
-			shaderString += "metalSampler;";
-		}
-		if (hasAO) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough + hasMetal);
-			shaderString += secondHalfBinding;
-			shaderString += "amOccSampler;";
-		}
 		if (hasNormal) {
 			for (int i = 0; i < calcNormalFunction.size(); i++) {
 				shaderString += calcNormalFunction[i];
@@ -630,7 +609,7 @@ std::string ShaderBlock::buildFragmentShader(ShaderFlags flags, bool hasBones) {
 			shaderString += "float metal = texture(metalSampler, fragTexCoord).r;";
 		}
 		else {
-			shaderString += "float metal = 0.0f;";
+			shaderString += "float metal = 0.0;";
 		}
 		for (int i = 0; i < mainThirdBlock.size(); i++) {
 			shaderString += mainThirdBlock[i];
@@ -665,35 +644,7 @@ std::string ShaderBlock::buildFragmentShader(ShaderFlags flags, bool hasBones) {
 			shaderString += functionBlock[i];
 		}
 		//bump map should not have bones, but leaving it in regardless
-		shaderString += albedoBinding[hasBones];
-		if (hasNormal) {
-			shaderString += normalBinding[hasBones];
-		}
-		if (hasRough) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal);
-			shaderString += secondHalfBinding;
-			shaderString += "roughSampler;";
-		}
-
-		if (hasMetal) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough);
-			shaderString += secondHalfBinding;
-			shaderString += "metalSampler;";
-		}
-		if (hasAO) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough + hasMetal);
-			shaderString += secondHalfBinding;
-			shaderString += "amOccSampler;";
-		}
-		if (hasBumps) { //should always be getting called here
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough + hasMetal + hasAO);
-			shaderString += secondHalfBinding;
-			shaderString += "bumpSampler;";
-		}
+		addBindings(shaderString, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones);
 
 		for (int i = 0; i < parallaxMapping.size(); i++) {
 			shaderString += parallaxMapping[i];
@@ -762,4 +713,45 @@ std::string ShaderBlock::buildFragmentShader(ShaderFlags flags, bool hasBones) {
 
 
 	return shaderString;
+}
+void addBindings(std::string& shaderString, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones) {
+	uint8_t currentBinding = hasBumps;
+
+	shaderString += firstHalfBinding[hasBones];
+	shaderString += std::to_string(currentBinding);
+	currentBinding++;
+	shaderString += secondHalfBinding;
+	shaderString += "albedoSampler;";
+
+
+
+	if (hasNormal) {
+		shaderString += firstHalfBinding[hasBones];
+		shaderString += std::to_string(currentBinding);
+		currentBinding++;
+		shaderString += secondHalfBinding;
+		shaderString += "normalSampler;";
+	}
+	if (hasRough) {
+		shaderString += firstHalfBinding[hasBones];
+		shaderString += std::to_string(currentBinding);
+		currentBinding++;
+		shaderString += secondHalfBinding;
+		shaderString += "roughSampler;";
+	}
+
+	if (hasMetal) {
+		shaderString += firstHalfBinding[hasBones];
+		shaderString += std::to_string(currentBinding);
+		currentBinding++;
+		shaderString += secondHalfBinding;
+		shaderString += "metalSampler;";
+	}
+	if (hasAO) {
+		shaderString += firstHalfBinding[hasBones];
+		shaderString += std::to_string(currentBinding);
+		currentBinding++;
+		shaderString += secondHalfBinding;
+		shaderString += "amOccSampler;";
+	}
 }

@@ -69,18 +69,7 @@ namespace EWE {
 		PL_MAX_COUNT,
 	};
 
-	//typedef uint8_t ShaderFlags; this in engine/data/enginedatatypes.h
-
-	enum DynamicFlags {
-		DynF_hasAO = 1,
-		DynF_hasMetal = 2,
-		DynF_hasRough = 4,
-		DynF_hasNormal = 8,
-		DynF_hasBump = 16,
-
-
-		//DynF_hasBones = 128, //removed from texture flags
-	};
+	//typedef uint8_t MaterialFlags; this in engine/data/enginedatatypes.h
 
 	namespace Pipeline_Helper_Functions {
 		void createShaderModule(EWEDevice& device, std::string const& file_path, VkShaderModule* shaderModule);
@@ -148,8 +137,8 @@ namespace EWE {
 
 		EWEPipeline(EWEDevice& device, const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo);
 		EWEPipeline(EWEDevice& device, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo);
-		EWEPipeline(EWEDevice& device, const std::string& vertFilePath, ShaderFlags flags, const PipelineConfigInfo& configInfo, bool hasBones);
-		EWEPipeline(EWEDevice& device, uint16_t boneCount, ShaderFlags flags, const PipelineConfigInfo& configInfo);
+		EWEPipeline(EWEDevice& device, const std::string& vertFilePath, MaterialFlags flags, const PipelineConfigInfo& configInfo, bool hasBones);
+		EWEPipeline(EWEDevice& device, uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo);
 
 		~EWEPipeline();
 
@@ -186,7 +175,7 @@ namespace EWE {
 
 
 
-
+	/*
 	class PipelineManager {
 		PipelineManager() {}
 	public:
@@ -194,11 +183,11 @@ namespace EWE {
 		//is static reference even a thing?
 		static std::map<PipeLayout_Enum, VkPipelineLayout> pipeLayouts;
 		static std::map<Pipeline_Enum, std::unique_ptr<EWEPipeline>> pipelines;
-		static std::map<ShaderFlags, std::unique_ptr<EWEPipeline>> dynamicMaterialPipeline;
+		static std::map<MaterialFlags, std::unique_ptr<EWEPipeline>> dynamicMaterialPipeline;
 
 #ifdef _DEBUG
-		static std::vector<ShaderFlags> dynamicBonePipeTracker;
-		static std::vector<std::pair<uint16_t, ShaderFlags>> dynamicInstancedPipeTracker;
+		static std::vector<MaterialFlags> dynamicBonePipeTracker;
+		static std::vector<std::pair<uint16_t, MaterialFlags>> dynamicInstancedPipeTracker;
 #endif
 		static VkPipelineLayout dynamicMaterialPipeLayout[DYNAMIC_PIPE_LAYOUT_COUNT];
 
@@ -211,11 +200,11 @@ namespace EWE {
 		static VkPipelineLayout getPipelineLayout(PipeLayout_Enum ple, EWEDevice& eweDevice);
 
 		static void initDynamicPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device);
-		static void updateMaterialPipe(ShaderFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device);
+		static void updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device);
 
 		//this should ALWAYS have bones
-		static std::unique_ptr<EWEPipeline> createInstancedRemote(ShaderFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device);
-		static std::unique_ptr<EWEPipeline> createBoneRemote(ShaderFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device);
+		static std::unique_ptr<EWEPipeline> createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device);
+		static std::unique_ptr<EWEPipeline> createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device);
 
 		static void initStaticVariables() {
 			for (int i = 0; i < DYNAMIC_PIPE_LAYOUT_COUNT; i++) {
@@ -236,7 +225,7 @@ namespace EWE {
 		static VkPipelineCache boneMaterialPipelineCache;
 		static VkPipelineCache instanceMaterialPipelineCache;
 	};
-
+	*/
 
 
 }

@@ -3,7 +3,7 @@
 #include "EWEngine/GameObject2D.h"
 #include "EWEngine/Graphics/TextOverlay.h"
 #include "UICompFunctions.h"
-#include "EWEngine/Graphics/Dimension2/Dimension2.h"
+#include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 
 
 namespace EWE {

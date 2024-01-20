@@ -71,15 +71,6 @@ std::vector<std::string> functionBlock = {
 
 
 //first index is no bones, second index is with bones
-std::string albedoBinding[2] = {
-	{"layout(set = 1, binding = 0) uniform sampler2D albedoSampler;"},
-	{"layout(set = 2, binding = 0) uniform sampler2D albedoSampler;"}
-};
-
-std::string normalBinding[2] = {
-	{"layout(set = 1, binding = 1) uniform sampler2D normalSampler;"},
-	{"layout(set = 2, binding = 1) uniform sampler2D normalSampler;"}
-};
 
 std::string firstHalfBinding[2] = {
 	{"layout (set = 1, binding = "},

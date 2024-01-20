@@ -1,6 +1,6 @@
 #pragma once
 #include "EWEngine/Data/EWE_Import.h"
-#include "EWEngine/Graphics/Texture.h"
+#include "EWEngine/Graphics/Textures/Texture_Manager.h"
 
 #include <random>
 

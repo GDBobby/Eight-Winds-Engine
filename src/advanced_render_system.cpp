@@ -28,7 +28,6 @@ namespace EWE {
 	AdvancedRenderSystem::AdvancedRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo, ObjectManager& objectManager, MenuManager& menuManager) : eweDevice{ device }, objectManager{ objectManager }, menuManager{ menuManager } {
 		printf("ARS constructor \n");
 		EWEDescriptorPool::BuildGlobalPool(device);
-		EWETexture::buildSetLayouts(device);
 		PipelineManager::initStaticVariables();
 
 		model2D = Basic_Model::generate2DQuad(device);
@@ -56,7 +55,7 @@ namespace EWE {
 	}
 	void AdvancedRenderSystem::updatePipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 
-		std::list<Pipeline_Enum> pipeList;
+		std::set<Pipeline_Enum> pipeSet;
 
 #if false//LEVEL_BUILDER
 		pipeList.push_back(Pipe_textured);
@@ -70,17 +69,17 @@ namespace EWE {
 
 		//i need a better way of doing this lol
 		if (objectManager.texturedGameObjects.size() > 0) {
-			pipeList.push_back(Pipe_textured);
+			pipeSet.emplace(Pipe_textured);
 		}
 		if (objectManager.grassField.size() > 0) {
-			pipeList.push_back(Pipe_grass);
+			pipeSet.emplace(Pipe_grass);
 		}
 		if (objectManager.skybox.first) {
-			pipeList.push_back(Pipe_skybox);
+			pipeSet.emplace(Pipe_skybox);
 		}
 
 		//pipeList.push_back(Pipe_boneWeapon);
-		pipeList.push_back(Pipe_textured);
+		pipeSet.emplace(Pipe_textured);
 		/* i need a better way of doing this
 		pipeList.push_back(Pipe_spikyBall);
 		pipeList.push_back(Pipe_alpha);
@@ -97,10 +96,8 @@ namespace EWE {
 		}
 #endif
 
-		pipeList.sort();
-		pipeList.unique();
-		for (auto listIter = pipeList.begin(); listIter != pipeList.end(); listIter++) {
-			PipelineManager::initPipelines(pipeRenderInfo, *listIter, eweDevice);
+		for (auto& pipe : pipeSet) {
+			PipelineManager::initPipelines(pipeRenderInfo, pipe, eweDevice);
 		}
 		//if (PipelineManager::pipelines.find(Pipe_2d) == PipelineManager::pipelines.end()) {
 		//	PipelineManager::initPipelines(pipeRenderInfo, Pipe_2d, eweDevice);
@@ -291,7 +288,7 @@ namespace EWE {
 		//ill replace this shit eventually
 
 
-		const std::map<ShaderFlags, std::map<TextureID, std::vector<MaterialInfo>>>& matMapTemp = materialHandlerInstance->getMaterialMap(); //not clean and get because shit shouldnt be deleted runtime??? at least not currently
+		const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialInfo>>>& matMapTemp = materialHandlerInstance->getMaterialMap(); //not clean and get because shit shouldnt be deleted runtime??? at least not currently
 		for(auto iter = matMapTemp.begin(); iter != matMapTemp.end(); iter++) {
 #if DEBUGGING_DYNAMIC_PIPE
 			printf("checking validity of map iter? \n");
@@ -317,8 +314,8 @@ namespace EWE {
 				((flags & 4) >> 2) + 
 				((flags & 2) >> 1) + 
 				(flags & 1) +
-				(((flags & 128) >> 7) * MAX_SMART_TEXTURE_COUNT) +
-				(((flags & 64) >> 6) * MAX_SMART_TEXTURE_COUNT * 2)	
+				(((flags & 128) >> 7) * MAX_MATERIAL_TEXTURE_COUNT) +
+				(((flags & 64) >> 6) * MAX_MATERIAL_TEXTURE_COUNT * 2)	
 			);
 			/*
 			printf("dynamic material pipeLayoutIndex:hasBump : %d:%d \n", pipeLayoutIndex, flags & 16);
@@ -530,7 +527,7 @@ namespace EWE {
 		if(objectManager.dynamicBuildObjects.size() > 0) {
 
 
-			const std::map<ShaderFlags, std::map<TextureID, std::vector<MaterialInfo>>>& matMapTemp = materialHandlerInstance->getMaterialMap(); //not clean and get because shit shouldnt be deleted runtime??? at least not currently
+			const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialInfo>>>& matMapTemp = materialHandlerInstance->getMaterialMap(); //not clean and get because shit shouldnt be deleted runtime??? at least not currently
 			for (auto iter = matMapTemp.begin(); iter != matMapTemp.end(); iter++) {
 #if DEBUGGING_DYNAMIC_PIPE
 				printf("checking validity of map iter? \n");
@@ -939,7 +936,7 @@ namespace EWE {
 		printf("benchmarking cost of GLSLang : %.5f \n", timeTaken / 1000);
 		*/
 
-		const std::map<ShaderFlags, std::map<TextureID, std::vector<MaterialInfo>>>& matMapTemp = materialHandlerInstance->cleanAndGetMaterialMap();
+		const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialInfo>>>& matMapTemp = materialHandlerInstance->cleanAndGetMaterialMap();
 		if (matMapTemp.size() > 0) {
 			bool glslNeeded = false;
 

@@ -1,7 +1,6 @@
 #pragma once
 #include "OceanFFT.h"
 #include "WaveCascades.h"
-#include "EWEngine/Graphics/Texture.h"
 #include "EWEngine/Graphics/Model/Model.h"
 
 //this is largely self-contained, and builds its own systems.

@@ -1,4 +1,8 @@
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
+#include "EWEngine/Graphics/Textures/Texture_Manager.h"
+#include "EWEngine/Graphics/Textures/Material_Textures.h"
+
+#include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
 #define RENDER_DEBUG false
 
@@ -12,97 +16,13 @@ namespace EWE {
 		//this initializes the descriptors
 		DescriptorHandler::getDescSetLayout(LDSL_boned, device);
 		DescriptorHandler::getDescSetLayout(LDSL_largeInstance, device);
-
-		//pipe time
-		//std::vector<EWEPipeline> pipelines;
-		/*
-		switch (actorType) {
-		case Monster_Skeleton: {
-			//PipelineManager::createDynamicRemote(uint8_t flags, const std::string& vertString, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device)
-			for (auto iter = SkeleMon::skeleton->pipePairs.begin(); iter != SkeleMon::skeleton->pipePairs.end(); iter++) {
-				pipelines.emplace_back(
-					PipelineManager::createDynamicRemote(iter->first + 192, "instanced_skele_tangent.vert.spv", renderPass, device),
-					&iter->second
-				);
-
-				bool hasBumps = iter->first & 16;
-				bool hasNormal = iter->first & 8;
-				bool hasRough = iter->first & 4;
-				bool hasMetal = iter->first & 2;
-				bool hasAO = iter->first & 1;
-
-				uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-				pipeLayoutIndex.emplace_back(textureCount + (3 * MAX_SMART_TEXTURE_COUNT));
-			}
-			break;
-		}
-		case Monster_Deer: {
-			for (auto iter = DeerMonster::skeleton->pipePairs.begin(); iter != DeerMonster::skeleton->pipePairs.end(); iter++) {
-				pipelines.emplace_back(
-					PipelineManager::createDynamicRemote(iter->first + 192, "instanced_deer_tangent.vert.spv", renderPass, device),
-					&iter->second
-				);
-
-				bool hasBumps = iter->first & 16;
-				bool hasNormal = iter->first & 8;
-				bool hasRough = iter->first & 4;
-				bool hasMetal = iter->first & 2;
-				bool hasAO = iter->first & 1;
-
-				uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-				pipeLayoutIndex.emplace_back(textureCount + (3 * MAX_SMART_TEXTURE_COUNT));
-			}
-			break;
-		}
-		case Monster_Lich: {
-			for (auto iter = LichKing::skeleton->pipePairs.begin(); iter != LichKing::skeleton->pipePairs.end(); iter++) {
-				pipelines.emplace_back(
-					PipelineManager::createDynamicRemote(iter->first + 192, "instanced_lich_tangent.vert.spv", renderPass, device),
-					&iter->second
-				);
-
-				bool hasBumps = iter->first & 16;
-				bool hasNormal = iter->first & 8;
-				bool hasRough = iter->first & 4;
-				bool hasMetal = iter->first & 2;
-				bool hasAO = iter->first & 1;
-
-				uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-				pipeLayoutIndex.emplace_back(textureCount + (3 * MAX_SMART_TEXTURE_COUNT));
-			}
-			break;
-		}
-		case Monster_Devil: {
-			for (auto iter = DevilMan::skeleton->pipePairs.begin(); iter != DevilMan::skeleton->pipePairs.end(); iter++) {
-				pipelines.emplace_back(
-					PipelineManager::createDynamicRemote(iter->first + 192, "instanced_devil_tangent.vert.spv", renderPass, device),
-					&iter->second
-				);
-
-				bool hasBumps = iter->first & 16;
-				bool hasNormal = iter->first & 8;
-				bool hasRough = iter->first & 4;
-				bool hasMetal = iter->first & 2;
-				bool hasAO = iter->first & 1;
-
-				printf("devil texture ids? : %d \n", iter->first);
-				uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-				pipeLayoutIndex.emplace_back(textureCount + (3 * MAX_SMART_TEXTURE_COUNT));
-			}
-			break;
-		}
-		}
-		*/
-
+		
+		MaterialPipelines::initStaticVariables();
+	
 	}
 	SkinRenderSystem::~SkinRenderSystem() {
 		printf("before clearing pipes \n");
-		for (auto iter = boneData.begin(); iter != boneData.end(); iter++) {
-			iter->second.pipeline.reset();
-		}
-		for (auto iter = instancedData.begin(); iter != instancedData.end(); iter++) {
-			iter->second.pipeline.reset();
-		}
+		MaterialPipelines::cleanupStaticVariables(device);
 
 		printf("before clearing skin buffer descriptors");// , amount created - % d: % d \n", buffersCreated, instancedBuffersCreated);
 		uint16_t bufferDescriptorsCleared = 0;
@@ -130,6 +50,8 @@ namespace EWE {
 	void SkinRenderSystem::renderInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
 		for (auto& instanced : instancedData) {
 			//if instanced.first.actorCount == 0 return;
+			MaterialPipelines::bindPipeline();
+
 
 			instanced.second.pipeline->bind(cmdIndexPair.first);
 			auto& pipeLayoutRef = PipelineManager::dynamicMaterialPipeLayout[instanced.second.pipeLayoutIndex];
@@ -180,7 +102,7 @@ namespace EWE {
 							VK_PIPELINE_BIND_POINT_GRAPHICS,
 							pipeLayoutRef,
 							2, 1,
-							EWETexture::getDescriptorSets(currentlyBindedTexture, cmdIndexPair.second),
+							Texture_Manager::getDescriptorSet(currentlyBindedTexture),
 							0, nullptr
 						);
 					}
@@ -252,7 +174,7 @@ namespace EWE {
 							VK_PIPELINE_BIND_POINT_GRAPHICS,
 							pipeLayoutRef,
 							2, 1,
-							EWETexture::getDescriptorSets(currentlyBindedTexture, cmdIndexPair.second),
+							Texture_Manager::getDescriptorSet(currentlyBindedTexture),
 							0, nullptr
 						);
 					}
@@ -330,7 +252,7 @@ namespace EWE {
 		*/
 
 	}
-	void SkinRenderSystem::addSkeleton(std::pair<ShaderFlags, TextureID>& texturePair, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced) {
+	void SkinRenderSystem::addSkeleton(MaterialTextureInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced) {
 #ifdef _DEBUG
 		if (skinnedMainObject == nullptr) {
 			printf("skinned main object is nullptr \n");
@@ -338,16 +260,16 @@ namespace EWE {
 		}
 #endif
 		if (instanced) {
-			uint32_t instancedFlags = (boneCount << 16) + texturePair.first;
+			uint32_t instancedFlags = (boneCount << 16) + materialInfo.materialFlags;
 
 			if (skinnedMainObject->instancedData.find(instancedFlags) == skinnedMainObject->instancedData.end()) {
 
 				skinnedMainObject->createInstancedBuffer(skeletonID, boneCount);
 
-				skinnedMainObject->createInstancedPipe(instancedFlags, boneCount, texturePair.first);
+				skinnedMainObject->createInstancedPipe(instancedFlags, boneCount, materialInfo.materialFlags);
 				skinnedMainObject->instancedData.at(instancedFlags).skeletonData.emplace(skeletonID, std::vector<TextureMeshStruct>{});
 				//auto& secondRef = 
-				skinnedMainObject->instancedData.at(instancedFlags).skeletonData.at(skeletonID).emplace_back(texturePair.second, std::vector<EWEModel*>{modelPtr});
+				skinnedMainObject->instancedData.at(instancedFlags).skeletonData.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 				//secondRef.meshes.push_back(modelPtr);
 			}
 			else {
@@ -356,89 +278,89 @@ namespace EWE {
 				if (skeleRef.find(skeletonID) != skeleRef.end()) {
 					bool foundATextureMatch = false;
 					for (auto& textureRef : skeleRef.at(skeletonID)) {
-						if (textureRef.textureID == texturePair.second) {
+						if (textureRef.textureID == materialInfo.textureID) {
 							foundATextureMatch = true;
 							textureRef.meshes.push_back(modelPtr);
 							break;
 						}
 					}
 					if (!foundATextureMatch) {
-						skeleRef.at(skeletonID).emplace_back(texturePair.second, std::vector<EWEModel*>{modelPtr});
+						skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 					}
 				}
 				else {
 					skeleRef.emplace(skeletonID, std::vector<TextureMeshStruct>{});
-					skeleRef.at(skeletonID).emplace_back(texturePair.second, std::vector<EWEModel*>{modelPtr});
+					skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 				}
 			}
 		}
 		else {
 			skinnedMainObject->createBoneBuffer(skeletonID, boneCount);
 
-			if (skinnedMainObject->boneData.find(texturePair.first) == skinnedMainObject->boneData.end()) {
+			if (skinnedMainObject->boneData.find(materialInfo.materialFlags) == skinnedMainObject->boneData.end()) {
 
-				skinnedMainObject->createBonePipe(texturePair.first);
-				skinnedMainObject->boneData.at(texturePair.first).skeletonData.emplace(skeletonID, std::vector<TextureMeshStruct>{});
+				skinnedMainObject->createBonePipe(materialInfo.materialFlags);
+				skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.emplace(skeletonID, std::vector<TextureMeshStruct>{});
 				//auto& secondRef = 
-				skinnedMainObject->boneData.at(texturePair.first).skeletonData.at(skeletonID).emplace_back(texturePair.second, std::vector<EWEModel*>{modelPtr});
+				skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 				//secondRef.meshes.push_back(modelPtr);
 			}
 			else {
 
-				auto& skeleRef = skinnedMainObject->boneData.at(texturePair.first).skeletonData;
+				auto& skeleRef = skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData;
 				if (skeleRef.find(skeletonID) != skeleRef.end()) {
 					bool foundATextureMatch = false;
 					for (auto& textureRef : skeleRef.at(skeletonID)) {
-						if (textureRef.textureID == texturePair.second) {
+						if (textureRef.textureID == materialInfo.textureID) {
 							foundATextureMatch = true;
 							textureRef.meshes.push_back(modelPtr);
 							break;
 						}
 					}
 					if (!foundATextureMatch) {
-						skeleRef.at(skeletonID).emplace_back(texturePair.second, std::vector<EWEModel*>{modelPtr});
+						skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 					}
 				}
 				else {
 					skeleRef.emplace(skeletonID, std::vector<TextureMeshStruct>{});
-					skeleRef.at(skeletonID).emplace_back(texturePair.second, std::vector<EWEModel*>{modelPtr});
+					skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 				}
 			}
 		}
 	}
-	void SkinRenderSystem::addWeapon(std::pair<ShaderFlags, TextureID>& texturePair, EWEModel* modelPtr, SkeletonID skeletonID, SkeletonID ownerID) {
+	void SkinRenderSystem::addWeapon(MaterialTextureInfo& materialInfo, EWEModel* modelPtr, SkeletonID skeletonID, SkeletonID ownerID) {
 		//need this to reference the owner buffer
 		if (skinnedMainObject->buffers.find(skeletonID) == skinnedMainObject->buffers.end()) {
 			std::cout << "creating reference buffer \n";
 			skinnedMainObject->createReferenceBuffer(skeletonID, ownerID);
 		}
-		if (skinnedMainObject->boneData.find(texturePair.first) == skinnedMainObject->boneData.end()) {
+		if (skinnedMainObject->boneData.find(materialInfo.materialFlags) == skinnedMainObject->boneData.end()) {
 
-			skinnedMainObject->createBonePipe(texturePair.first);
-			skinnedMainObject->boneData.at(texturePair.first).skeletonData.emplace(skeletonID, std::vector<TextureMeshStruct>{});
+			skinnedMainObject->createBonePipe(materialInfo.materialFlags);
+			skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.emplace(skeletonID, std::vector<TextureMeshStruct>{});
 			//auto& secondRef = 
-			skinnedMainObject->boneData.at(texturePair.first).skeletonData.at(skeletonID).emplace_back(texturePair.second, std::vector<EWEModel*>{modelPtr});
+			skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 			//secondRef.meshes.push_back(modelPtr);
 		}
 		else {
 
-			auto& skeleRef = skinnedMainObject->boneData.at(texturePair.first).skeletonData;
+			auto& skeleRef = skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData;
 			if (skeleRef.find(skeletonID) != skeleRef.end()) {
 				bool foundATextureMatch = false;
 				for (auto& textureRef : skeleRef.at(skeletonID)) {
-					if (textureRef.textureID == texturePair.second) {
+					if (textureRef.textureID == materialInfo.textureID) {
 						foundATextureMatch = true;
 						textureRef.meshes.push_back(modelPtr);
 						break;
 					}
 				}
 				if (!foundATextureMatch) {
-					skeleRef.at(skeletonID).emplace_back(texturePair.second, std::vector<EWEModel*>{modelPtr});
+					skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 				}
 			}
 			else {
 				skeleRef.emplace(skeletonID, std::vector<TextureMeshStruct>{});
-				skeleRef.at(skeletonID).emplace_back(texturePair.second, std::vector<EWEModel*>{modelPtr});
+				skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 			}
 		}
 	}

@@ -1,7 +1,6 @@
 #pragma once
 #include "EWE_GameObject.h"
 #include "EWEngine/Graphics/PointLight.h"
-#include "EWEngine/Graphics/Texture.h"
 //#include "FloatingRockSystem.h"
 #include "GameObject2D.h"
 //#include "EWEngine/graphicsAssimpModel.h"
@@ -55,7 +54,7 @@ namespace EWE {
 		
 #endif
 
-		//std::pair<ShaderFlags, TextureID> targetTexturePair{0,0};
+		//std::pair<MaterialFlags, TextureID> targetTexturePair{0,0};
 		//uint32_t maxTargets = 0;
 		//uint32_t currentActiveTargets = 0;
 		TextureID grassTextureID{65535};

@@ -20,12 +20,12 @@ namespace EWE {
         std::vector<TextureID> textureIDs;
         std::vector<TextureID> textureNTIDs;
 
-        std::vector<std::pair<ShaderFlags, //pipeline flags
+        std::vector<std::pair<MaterialFlags, //pipeline flags
             std::vector<std::pair<TextureID, //textureID
             std::vector<EWEModel* //meshPtr
             >>>>> pipePairs;
 
-        //pipePairs.first == ShaderFlags
+        //pipePairs.first == MaterialFlags
         //pipePairs.second = textureVector
         //pipePairs.second[0].second == meshID
         //so the drawing would look like this
@@ -61,6 +61,6 @@ namespace EWE {
         void readMeshNTData(std::string filePath, EWEDevice& device, ImportData::meshNTEData& importMesh);
         void readMeshData(std::string filePath, EWEDevice& device, ImportData::meshEData& importMesh);
         void readAnimData(std::string filePath, EWEDevice& device, bool partial);
-        void loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<std::pair<ShaderFlags, TextureID>>, std::vector<std::pair<ShaderFlags, TextureID>>>& textureTracker, std::string texturePath);
+        void loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<std::pair<MaterialFlags, TextureID>>, std::vector<std::pair<MaterialFlags, TextureID>>>& textureTracker, std::string texturePath);
     };
 }

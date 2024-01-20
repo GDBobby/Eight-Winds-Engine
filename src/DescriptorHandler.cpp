@@ -9,9 +9,9 @@ namespace EWE {
 	std::unordered_map<LDSL_Enum, std::unique_ptr<EWEDescriptorSetLayout>> DescriptorHandler::descriptorSetLayouts;
 
 	std::unordered_map<DescSet_Enum, std::vector<VkDescriptorSet>> DescriptorHandler::descriptorSets;
-	std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> DescriptorHandler::pipeDescSetLayouts;
+	//std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> DescriptorHandler::pipeDescSetLayouts;
 
-    std::vector<VkDescriptorSetLayout> DescriptorHandler::dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
+    //std::vector<VkDescriptorSetLayout> DescriptorHandler::dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
 
     void DescriptorHandler::cleanup(EWEDevice& device) {
         printf("before descriptor handler cleanup \n");
@@ -53,7 +53,7 @@ namespace EWE {
             }
         }
         */
-        pipeDescSetLayouts.clear();
+        //pipeDescSetLayouts.clear();
         for (int i = 0; i < 10; i++) {
             dynamicMaterialPipeDescSetLayouts[i].clear();
         }
@@ -115,7 +115,7 @@ namespace EWE {
         //printf("returning LDSL : %d \n", whichDescSet);
         return descriptorSetLayouts[whichDescSet]->getDescriptorSetLayout();
     }
-
+    /*
     std::vector<VkDescriptorSetLayout>* DescriptorHandler::getPipeDescSetLayout(PipeDescSetLayouts_Enum PDLe, EWEDevice& device) {
         if (pipeDescSetLayouts.find(PDLe) != pipeDescSetLayouts.end()) {
             return &pipeDescSetLayouts[PDLe];
@@ -153,14 +153,6 @@ namespace EWE {
             pipeDescSetLayouts[PDSL_2d].push_back(EWETexture::getSimpleDescriptorSetLayout());
             break;
         }
-        /*
-        case PDSL_boneWeapon: {
-            pipeDescSetLayouts[PDSL_boneWeapon].push_back(getDescSetLayout(LDSL_global, device));
-            pipeDescSetLayouts[PDSL_boneWeapon].push_back(EWETexture::getMaterialDescriptorSetLayout());
-            pipeDescSetLayouts[PDSL_boneWeapon].push_back(getDescSetLayout(LDSL_boneWeapon, device));
-            break;
-        }
-        */
         case PDSL_visualEffect: {
             pipeDescSetLayouts[PDSL_visualEffect].push_back(getDescSetLayout(LDSL_global, device));
             pipeDescSetLayouts[PDSL_visualEffect].push_back(EWETexture::getSimpleDescriptorSetLayout());
@@ -188,33 +180,33 @@ namespace EWE {
     }
 
     std::vector<VkDescriptorSetLayout>* DescriptorHandler::getDynamicPipeDescSetLayout(uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device) {
-        //printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2)));
-        if (dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].size() == 0) {
-            dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_global, device));
+        //printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
+        if (dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].size() == 0) {
+            dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_global, device));
 #ifdef _DEBUG
             printf("getting dynamic PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
 #endif
             //testing if this is faster, if not return if(hasbones)
             if (hasBones && instanced) {
                 //printf("Pushing back LDSL instanced monster \n");
-                dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_largeInstance, device));
+                dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_largeInstance, device));
 
             }
             else if (hasBones) {
-                dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_boned, device));
+                dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_boned, device));
             }
             else if (instanced) {
                 printf("currrently not supporting instancing without bones, THROWING ERROR \n");
                 throw std::runtime_error("instanced but doesn't have bones?");
             }
-            dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].push_back(EWETexture::getDynamicDescriptorSetLayout(textureCount));
+            dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].push_back(EWETexture::getDynamicDescriptorSetLayout(textureCount));
         }
         //if (instanced) {
-            //printf("returning instanced PDSL size : %d \n", dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].size());
+            //printf("returning instanced PDSL size : %d \n", dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].size());
         //}
-        return &dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))];
+        return &dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))];
     }
-
+    */
 
     void DescriptorHandler::initGlobalDescriptors(std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device) {
         printf("init global descriptors \n");

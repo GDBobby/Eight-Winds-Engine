@@ -18,34 +18,32 @@
 #define ENGINE_DIR "models/"
 #endif
 
-namespace std {
 
-    //these are used for loading obj files and automatically indexing the vertices
-    template <>
-    struct hash<EWE::Vertex> {
-        size_t operator()(EWE::Vertex const& vertex) const {
-            size_t seed = 0;
-            EWE::hashCombine(seed, vertex.position, vertex.color, vertex.normal, vertex.uv);
-            return seed;
-        }
-    };
-    template<>
-    struct hash<EWE::simpleVertex> {
-        size_t operator()(EWE::simpleVertex const& vertex) const {
-            size_t seed = 0;
-            EWE::hashCombine(seed, vertex.position);
-            return seed;
-        }
-    };
-    template<>
-    struct hash<EWE::GrassVertex> {
-        size_t operator()(EWE::GrassVertex const& vertex) const {
-            size_t seed = 0;
-            EWE::hashCombine(seed, vertex.position, vertex.color);
-            return seed;
-        }
-    };
-}  // namespace std
+//these are used for loading obj files and automatically indexing the vertices
+template <>
+struct std::hash<EWE::Vertex> {
+    size_t operator()(EWE::Vertex const& vertex) const {
+        size_t seed = 0;
+        EWE::hashCombine(seed, vertex.position, vertex.color, vertex.normal, vertex.uv);
+        return seed;
+    }
+};
+template<>
+struct std::hash<EWE::simpleVertex> {
+    size_t operator()(EWE::simpleVertex const& vertex) const {
+        size_t seed = 0;
+        EWE::hashCombine(seed, vertex.position);
+        return seed;
+    }
+};
+template<>
+struct std::hash<EWE::GrassVertex> {
+    size_t operator()(EWE::GrassVertex const& vertex) const {
+        size_t seed = 0;
+        EWE::hashCombine(seed, vertex.position, vertex.color);
+        return seed;
+    }
+};
 
 namespace EWE {
 

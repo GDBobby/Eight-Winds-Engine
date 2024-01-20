@@ -1,7 +1,6 @@
 /*
 #pragma once
 
-#include "EWEngine/graphicsEWE_texture.h"
 #include "EWE_GameObject.h"
 #include "ObjectManager.h"
 #include "EWEngine/graphicsEWE_FrameInfo.h"

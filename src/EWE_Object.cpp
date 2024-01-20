@@ -1,5 +1,6 @@
 #include "EWEngine/Graphics/EWE_Object.h"
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
+#include "EWEngine/Graphics/Textures/Material_Textures.h"
 
 namespace EWE {
     EweObject::EweObject(std::string objectPath, EWEDevice& device, bool globalTextures) {
@@ -50,11 +51,11 @@ namespace EWE {
 
         for (int i = 0; i < tempData.meshSimpleExport.meshesSimple.size(); i++) {
             meshes.push_back(EWEModel::createMesh(device, tempData.meshSimpleExport.meshesSimple[i].first, tempData.meshSimpleExport.meshesSimple[i].second));
-            materialInstance->addMaterialObject(textureTracker.meshSimpleNames[i].first, &transform, meshes.back().get(), textureTracker.meshSimpleNames[i].second, &drawable);
+            materialInstance->addMaterialObject(textureTracker.meshSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
         for (int i = 0; i < tempData.meshNTSimpleExport.meshesNTSimple.size(); i++) {
             meshes.push_back(EWEModel::createMesh(device, tempData.meshNTSimpleExport.meshesNTSimple[i].first, tempData.meshNTSimpleExport.meshesNTSimple[i].second));
-            materialInstance->addMaterialObject(textureTracker.meshNTSimpleNames[i].first, &transform, meshes.back().get(), textureTracker.meshNTSimpleNames[i].second, &drawable);
+            materialInstance->addMaterialObject(textureTracker.meshNTSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
         /*
         for (int i = 0; i < tempData.meshExport.meshes.size(); i++) {
@@ -120,7 +121,7 @@ namespace EWE {
         //this should be put in a separate function but im too lazy rn
         //printf("before loading ewe textures \n");
 
-        std::pair<ShaderFlags, TextureID> returnPair;
+        MaterialTextureInfo returnPair;
         for (int i = 0; i < importData.meshNames.size(); i++) {
             importData.meshNames[i] = importData.meshNames[i].substr(0, importData.meshNames[i].find_first_of("."));
             if (importData.meshNames[i].find("lethear") != importData.meshNames[i].npos) {
@@ -132,11 +133,8 @@ namespace EWE {
                         }
                         else {
                             returnPair = textureTracker.meshNames[j];
-                            if (returnPair.first <= 0) {
-                                printf("return pair error? : %d \n", returnPair.first);
-                            }
                             textureTracker.meshNames.push_back(returnPair);
-                            ownedTextureIDs.push_back(returnPair.second);
+                            ownedTextureIDs.push_back(returnPair.textureID);
                             break;
                         }
                     }
@@ -145,40 +143,24 @@ namespace EWE {
             }
             std::string finalDir = objectPath;
             finalDir += "\\" + importData.meshNames[i];
-            if (globalTextures) {
-                returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
-            }
-            else {
-                returnPair = EWETexture::addSceneMaterialTexture(device, finalDir);
-            }
+            returnPair = Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
-            if (returnPair.first < 0) {
-                printf("FAILED TO FIND PIPE, NEED TO THROW AN ERROR : %d \n", returnPair.first);
-            }
-            else {
-                textureTracker.meshNames.push_back(returnPair);
-                ownedTextureIDs.push_back(returnPair.second);
-            }
+
+            textureTracker.meshNames.push_back(returnPair);
+            ownedTextureIDs.push_back(returnPair.textureID);
+            
         }
         //printf("after mesh texutres \n");
         for (int i = 0; i < importData.meshNTNames.size(); i++) {
             importData.meshNTNames[i] = importData.meshNTNames[i].substr(0, importData.meshNTNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "\\" + importData.meshNTNames[i];
-            if (globalTextures) {
-                returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
-            }
-            else {
-                returnPair = EWETexture::addSceneMaterialTexture(device, finalDir);
-            }
+            Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
-            if (returnPair.first < 0) {
-                printf("FAILED TO FIND PIPE, NEED TO THROW AN ERROR : %d \n", returnPair.first);
-            }
-            else {
-                textureTracker.meshNTNames.push_back(returnPair);
-                ownedTextureIDs.push_back(returnPair.second);
-            }
+
+            textureTracker.meshNTNames.push_back(returnPair);
+            ownedTextureIDs.push_back(returnPair.textureID);
+            
         }
         //printf("after mesh nt texutres \n");
 
@@ -188,40 +170,24 @@ namespace EWE {
             std::string finalDir = objectPath;
             finalDir += "\\" + importData.meshSimpleNames[i];
             //printf("simple names final Dir : %s \n", finalDir.c_str());
-            if (globalTextures) {
-                returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
-            }
-            else {
-                returnPair = EWETexture::addSceneMaterialTexture(device, finalDir);
-            }
+            Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
-            if (returnPair.first < 0) {
-                printf("FAILED TO FIND PIPE, NEED TO THROW AN ERROR : %d \n", returnPair.first);
-            }
-            else {
-                textureTracker.meshSimpleNames.push_back(returnPair);
-                ownedTextureIDs.push_back(returnPair.second);
-            }
+
+            textureTracker.meshSimpleNames.push_back(returnPair);
+            ownedTextureIDs.push_back(returnPair.textureID);
+            
         }
 
         for (int i = 0; i < importData.meshNTSimpleNames.size(); i++) {
             importData.meshNTSimpleNames[i] = importData.meshNTSimpleNames[i].substr(0, importData.meshNTSimpleNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "\\" + importData.meshNTSimpleNames[i];
-            if (globalTextures) {
-                returnPair = EWETexture::addGlobalMaterialTexture(device, finalDir);
-            }
-            else {
-                returnPair = EWETexture::addSceneMaterialTexture(device, finalDir);
-            }
+            Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
-            if (returnPair.first < 0) {
-                printf("FAILED TO FIND PIPE, NEED TO THROW AN ERROR : %d \n", returnPair.first);
-            }
-            else {
-                textureTracker.meshNTSimpleNames.push_back(returnPair);
-                ownedTextureIDs.push_back(returnPair.second);
-            }
+
+            textureTracker.meshNTSimpleNames.push_back(returnPair);
+            ownedTextureIDs.push_back(returnPair.textureID);
+            
         }
     }
 

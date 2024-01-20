@@ -1,4 +1,4 @@
-#include "EWEngine/Graphics/Texture.h"
+#include "EWEngine/Graphics/Textures/Texture.h"
 
 #include <string>
 #include <iostream>
@@ -8,622 +8,162 @@
 #define TEXTURE_DIR "textures/"
 #endif
 
-#ifndef SKYBOX_DIR
-#define SKYBOX_DIR "textures/skybox/"
-#endif
-
 #define MIPMAP_ENABLED true
 
 namespace EWE {
-    std::unordered_map<std::string, TextureID> EWETexture::existingIDs;
-    std::unordered_map<std::string, std::pair<ShaderFlags, TextureID>> EWETexture::existingMaterialIDs;
-    std::unordered_map<std::string, TextureID> EWETexture::existingUIs;
+    std::unordered_map<TextureDSLInfo, std::unique_ptr<EWEDescriptorSetLayout>> TextureDSLInfo::descSetLayouts;
 
-    std::unordered_map<TextureID, EWETexture> EWETexture::textureMap;
-    std::unordered_map<TextureID, EWETexture> EWETexture::uiMap;
 
-    TextureID EWETexture::returnID = 0;
-    TextureID EWETexture::uiID = 0;
-    TextureID EWETexture::skyboxID;
-    std::vector<TextureID> EWETexture::sceneIDs;
-    std::array<std::string, 6> EWETexture::fileNames = {
-        "px", "nx", "py", "ny", "pz", "nz"
-    };
-
-    std::vector<std::vector<std::string>> EWETexture::smartTextureTypes = {
-            {"_Diffuse", "_albedo", "_diffuse", "_Albedo", "_BaseColor", "_Base_Color", ""},
-            { "_Normal", "_normal" },
-            { "_roughness", "_rough", "_Rough", "_Roughness"},
-            { "_metallic", "_metal", "_Metallic", "_Metal"},
-            { "_ao", "_ambientOcclusion", "_AO", "_AmbientOcclusion", "_Ao"},
-            { "_bump", "_height", "_parallax"},
-    };
-
-    std::unique_ptr<EWEDescriptorSetLayout> EWETexture::simpleDescSetLayout;
-
-    std::vector<std::unique_ptr<EWEDescriptorSetLayout>> EWETexture::dynamicDescSetLayout;
-
-    TextureID EWETexture::addUITexture(EWEDevice& eweDevice, std::string texPath, texture_type tType) {
-
-        if (existingUIs.find(texPath) != existingUIs.end()) {
-            //printf("this UI path arleady exist! ~ %s \n", texPath.c_str());
-            return existingUIs[texPath];
+    void TextureDSLInfo::setStageTextureCount(VkShaderStageFlags stageFlag, uint8_t textureCount) {
+        switch (stageFlag) {
+        case VK_SHADER_STAGE_VERTEX_BIT: {
+            stageCounts[0] = textureCount;
+            break;
         }
-        std::vector<PixelPeek> pixelPeek(1);
-        std::string enginePath = TEXTURE_DIR + texPath;
-        pixelPeek[0].pixels = stbi_load(enginePath.c_str(), &pixelPeek[0].width, &pixelPeek[0].height, &pixelPeek[0].channels, STBI_rgb_alpha);
-        if ((!pixelPeek[0].pixels) || ((pixelPeek[0].width * pixelPeek[0].height) <= 0)) {
-            printf("failed to load UI texture: %s \n", texPath.c_str());
-            throw std::runtime_error("faield to load UI texture");
-            return -1;
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: {
+            stageCounts[1] = textureCount;
+            break;
         }
-        uiMap.emplace(std::make_pair(uiID, EWETexture{ texPath, eweDevice, pixelPeek }));
-        existingUIs[texPath] = uiID;
-        return uiID++;
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: {
+            stageCounts[2] = textureCount;
+            break;
+        }
+        case VK_SHADER_STAGE_GEOMETRY_BIT: {
+            stageCounts[3] = textureCount;
+            break;
+        }
+        case VK_SHADER_STAGE_FRAGMENT_BIT: {
+            stageCounts[4] = textureCount;
+            break;
+        }
+        case VK_SHADER_STAGE_COMPUTE_BIT: {
+            stageCounts[5] = textureCount;
+            break;
+        }
+        case VK_SHADER_STAGE_ALL_GRAPHICS: {
+            //im pretty sure that _ALL_GRAPHICS and _ALL are both noob traps, but ill put them in anyways
+            stageCounts[6] = textureCount;
+            break;
+        }
+        case VK_SHADER_STAGE_ALL: {
+            stageCounts[7] = textureCount;
+            break;
+        }
+        case VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT: {
+            stageCounts[8] = textureCount;
+            break;
+        }
+        default: {
+            printf("unsupported texture shader stage flag \n");
+            throw std::runtime_error("invalid shader stage flag for textures");
+            break;
+        }
+        }
+    }
+
+    std::unique_ptr<EWEDescriptorSetLayout> TextureDSLInfo::buildDSL(EWEDevice& device) {
+        uint32_t currentBinding = 0;
+        VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //this is 1
+        EWEDescriptorSetLayout::Builder dslBuilder{ device };
+        for (uint8_t j = 0; j < 6; j++) {
+            
+            for (uint8_t i = 0; i < stageCounts[j]; i++) {
+                dslBuilder.addBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlags);
+                currentBinding++;
+            }
+            stageFlags <<= 1;
+        }
+        for (uint8_t i = 0; i < stageCounts[6]; i++) {
+            dslBuilder.addBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS);
+            currentBinding++;
+        }
+
+        for (uint8_t i = 0; i < stageCounts[7]; i++) {
+            dslBuilder.addBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL);
+            currentBinding++;
+        }
+
+        for (uint8_t i = 0; i < stageCounts[8]; i++) {
+            dslBuilder.addBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+            currentBinding++;
+        }
+        return dslBuilder.build();
+    }
+
+    EWEDescriptorSetLayout* TextureDSLInfo::getDescSetLayout(EWEDevice& device) {
+        if (descSetLayouts.contains(*this)) {
+            return descSetLayouts.find(*this)->second.get();
+        }
+        auto emplaceRet = descSetLayouts.try_emplace(*this, buildDSL(device));
+        if (!emplaceRet.second) {
+            printf("failed to create dynamic desc set layout \n");
+            throw std::runtime_error("failed to create dynamic desc set layout");
+        }
+
+        return emplaceRet.first->second.get();
+
+    }
+
+    ImageInfo::ImageInfo(EWEDevice& device, PixelPeek& pixelPeek, bool mipmap) {
+
+        createTextureImage(device, pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        //printf("after create image \n");
+        createTextureImageView(device);
+        //printf("after image view \n");
+        createTextureSampler(device);
+
+        descriptorImageInfo.sampler = sampler;
+        descriptorImageInfo.imageView = imageView;
+        descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
+    void ImageInfo::destroy(EWEDevice& device) {
+        vkDestroySampler(device.device(), sampler, nullptr);
         
-    }
-    TextureID EWETexture::addGlobalTexture(EWEDevice& eweDevice, std::string texPath, texture_type tType) {
-        if (existingIDs.find(texPath) != existingIDs.end()) {
-            //printf("this texture path arleady exist! ~ %s \n", texPath.c_str());
-            return existingIDs[texPath];
-        }
-
-        //printf("adding global texture : %s \n", texPath.c_str());
-        if (tType == tType_simple) {
-            return createSimpleTexture(eweDevice, texPath);
-        }
-        else if (tType == tType_cube) {
-            return createCubeTexture(eweDevice, texPath);
-        }
-        throw std::runtime_error("invalid texture type??? USE THE ENUM \n");
-        return 0;
-    }
-    TextureID EWETexture::addSceneTexture(EWEDevice& eweDevice, std::string texPath, texture_type tType) {
-        uint32_t sceneID = -1;
-        if (existingIDs.find(texPath) != existingIDs.end()) {
-            //printf("this texture path arleady exist! ~ %s \n", texPath.c_str());
-            return existingIDs[texPath];
-        }
-        //printf("addmin mode texture : %s \n", texPath.c_str());
-        if (tType == tType_simple) {
-            sceneID = createSimpleTexture(eweDevice, texPath);
-        }
-        else if (tType == tType_cube) {
-            sceneID = createCubeTexture(eweDevice, texPath);
-        }
-
-        if (sceneID >= 0) {
-            sceneIDs.push_back(sceneID);
-        }
-        if (sceneID == -1) {
-            printf("failed to load mode texture \n");
-        }
-#ifdef _DEBUG
-        if (sceneID == 29) {
-            printf("texPath at 29 : %s \n", texPath.c_str());
-        }
-#endif
-        return sceneID;
-    }
-
-    //return value <flags, textureID>
-    std::pair<ShaderFlags, TextureID> EWETexture::addGlobalMaterialTexture(EWEDevice& eweDevice, std::string texPath) {
-        if (existingMaterialIDs.find(texPath) != existingMaterialIDs.end()) {
-            printf("this smart path already exist! ~ %s \n", texPath.c_str());
-
-            return existingMaterialIDs[texPath];
-        }
-
-        return createMaterialTexture(eweDevice, texPath, true);
+        vkDestroyImageView(device.device(), imageView, nullptr);
         
-    }
-
-    std::pair<ShaderFlags, TextureID> EWETexture::addSceneMaterialTexture(EWEDevice& eweDevice, std::string texPath) {
-        if (existingMaterialIDs.find(texPath) != existingMaterialIDs.end()) {
-            printf("this smart path already exist! ~ %s \n", texPath.c_str());
-            return existingMaterialIDs[texPath];
-        }
-
-        auto smartReturn = createMaterialTexture(eweDevice, texPath, true);
-        sceneIDs.push_back(smartReturn.second);
-        return smartReturn;
-
-    }
-    void EWETexture::clearSceneTextures() {
-        //everythign created with a mode texture needs to be destroyed. if it persist thru modes, it needs to be a global texture
-        printf("clear mode textures beginning \n");
-#ifdef _DEBUG
-        //DBEUUGGIG TEXUTRE BEING CLEARED INCORRECTLY
-        //printf("clearing texutre 29 - %s \n", textureMap.at(29).textureData.path.c_str());
-#endif
-
-        for (TextureID i = 0; i < sceneIDs.size(); i++) {
-            printf("clearing scene texture : %d \n", i);
-#ifdef _DEBUG
-
-            printf("removing mode id iterator? i : modeID : type %d : %d : %d \n", i, sceneIDs[i], textureMap.at(sceneIDs[i]).textureData.tType);
-
-#endif
-            if (textureMap.at(sceneIDs[i]).textureData.tType) {
-                removeSmartTexture(sceneIDs[i]);
-                continue;
-            }
-            existingIDs.erase(textureMap.at(sceneIDs[i]).textureData.path);
-            textureMap.at(sceneIDs[i]).destroy();
-            textureMap.erase(sceneIDs[i]);
-        }
-        sceneIDs.clear();
-        printf("clear mode textures end \n");
-
-    }
-    void EWETexture::removeSmartTexture(TextureID removeID) {
-
-
-        if (textureMap.find(removeID) != textureMap.end()) {
-            printf("before erasing smart texture \n");
-#ifdef _DEBUG
-            printf("texture path : %d:%s \n", removeID, getTextureData(removeID).path.c_str());
-#endif
-            textureMap.at(removeID).destroy();
-            existingMaterialIDs.erase(textureMap.at(removeID).textureData.path);
-            textureMap.erase(removeID);
-            printf("after erasing smart texture \n");
-            //textureMap.at(removeID).destroy();
-            //textureMap.erase(removeID);
-        }
-        for (int i = 0; i < sceneIDs.size(); i++) {
-            if (sceneIDs[i] == removeID) {
-                sceneIDs.erase(sceneIDs.begin() + i);
-                i--;
-            }
-        }
-    }
-
-    TextureID EWETexture::createSimpleTexture(EWEDevice& eweDevice, std::string texPath, texture_type tType) {
-        std::vector<PixelPeek> pixelPeek(1);
-        std::string enginePath = TEXTURE_DIR + texPath;
-        pixelPeek[0].pixels = stbi_load(enginePath.c_str(), &pixelPeek[0].width, &pixelPeek[0].height, &pixelPeek[0].channels, STBI_rgb_alpha);
-        if ((!pixelPeek[0].pixels) || ((pixelPeek[0].width * pixelPeek[0].height) <= 0)) {
-            printf("failed to load simple : %s \n", texPath.c_str());
-            throw std::runtime_error("failed to load texture");
-        }
-        //globalTracker.push_back(returnID);
-        //printf("before constructing simple texture, tType : %d \n", tType);
-        textureMap.emplace(std::make_pair(returnID, EWETexture{ texPath, eweDevice, pixelPeek, tType }));
-        //globaEWEctor.emplace_back(EWETexture(eweDevice, texPath));
-        existingIDs.emplace(texPath, returnID);
-        return returnID++;
-    }
-
-    TextureID EWETexture::createCubeTexture(EWEDevice& eweDevice, std::string texPath) {
-        //printf("tCubeID : %d \n", tCubeID);
-        std::vector<PixelPeek> pixelPeeks(6);
-        for (int i = 0; i < 6; i++) {
-            std::string individualPath = SKYBOX_DIR;
-            individualPath += texPath;
-            individualPath += fileNames[i];
-            individualPath += ".png";
-            pixelPeeks[i].pixels = stbi_load(individualPath.c_str(), &pixelPeeks[i].width, &pixelPeeks[i].height, &pixelPeeks[i].channels, STBI_rgb_alpha);
-            if (!pixelPeeks[i].pixels) {
-                throw std::runtime_error("failed to load cube texture");
-                return -1;
-            }
-            if (i > 0) {
-                if ((pixelPeeks[i].width != pixelPeeks[i - 1].width) || (pixelPeeks[i].height != pixelPeeks[i - 1].height)) {
-                    throw std::runtime_error("failed to load smart texture, bad dimensions");
-                    return -1;
-                }
-            }
-        }
-        textureMap.emplace(std::make_pair((uint32_t)returnID, EWETexture{ texPath, eweDevice, pixelPeeks, tType_cube }));
-        //cubeVector.emplace_back(EWETexture(eweDevice, texPath, tType_cube));
-        existingIDs.emplace(texPath, returnID);
-        skyboxID = returnID;
-        return returnID++;
-    }
-    std::pair<ShaderFlags, TextureID> EWETexture::createMaterialTexture(EWEDevice& device, std::string texPath, bool smart) {
-        //printf("creating new MRO Texture : %s \n", texPath.c_str());
-
-        std::vector<bool> foundTypes = {
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-        };
-        /*
-        * the future
-        * but it searches the entire directory for every texture,
-        * too many textures in the full directory rn,
-        * and need to filter out opacity, or make opacity work
-
-        std::string basePath = TEXTURE_DIR;
-        basePath += texPath.substr(0, texPath.find_first_of("\\") + 1);
-        //printf("basePath : %s \n", basePath.c_str());
-        std::string texIndPath = texPath.substr(texPath.find_first_of("\\") + 1);
-        printf("texIndPath : %s \n", texIndPath.c_str());
-
-        std::vector<std::string> finalPaths;
-        if (std::filesystem::exists(basePath)) {
-            for (const auto& entry : std::filesystem::directory_iterator(basePath)) {
-                //printf("music string : %s \n", entry.path().string().c_str());
-                std::string tempString = entry.path().string();
-                if (tempString.find(texIndPath) != tempString.npos) {
-                    printf("found texIndPath : %s \n", tempString.c_str());
-                    finalPaths.push_back(tempString);
-                }
-            }
-        }
-        else {
-            printf("base path doesnt even exist? \n");
-        }
-        */
-
-
-        std::vector<PixelPeek> pixelPeek;
-        //cycling thru extensions, currently png and jpg
-        for (int i = 0; i < smartTextureTypes.size(); i++) {
-            //foundTypes[i] = true;
-            for (int j = 0; j < smartTextureTypes[i].size(); j++) {
-                std::string materialPath = TEXTURE_DIR;
-                materialPath += texPath + smartTextureTypes[i][j];
-
-                //printf("smart material path : %s \n", materialPath.c_str());
-
-                if (std::filesystem::exists(materialPath + ".png")) {
-                    materialPath += ".png";
-                    PixelPeek tempPeek;
-                    tempPeek.pixels = stbi_load(materialPath.c_str(), &tempPeek.width, &tempPeek.height, &tempPeek.channels, STBI_rgb_alpha);
-                    if ((!tempPeek.pixels) || ((tempPeek.width * tempPeek.height) <= 0)) {
-                        printf("failed to load smart MRO texture %d : %s \n", i, materialPath.c_str());
-                        throw std::runtime_error("failed to load smart material");
-                    }
-                    else {
-                        //printf("found texture, png - %s \n", materialPath.c_str());
-                        foundTypes[i] = true;
-                        pixelPeek.push_back(tempPeek);
-                        break;
-                    }
-                }
-                else if (std::filesystem::exists(materialPath + ".jpg")) {
-                    materialPath += ".jpg";
-                    PixelPeek tempPeek;
-                    tempPeek.pixels = stbi_load(materialPath.c_str(), &tempPeek.width, &tempPeek.height, &tempPeek.channels, STBI_rgb_alpha);
-                    if ((!tempPeek.pixels) || ((tempPeek.width * tempPeek.height) <= 0)) {
-                        printf("failed to load smart MRO texture %d : %s \n", i, materialPath.c_str());
-                        throw std::runtime_error("failed to load smart material");
-                    }
-                    else {
-                        //printf("found texture, jpg - %s \n", materialPath.c_str());
-                        foundTypes[i] = true;
-                        pixelPeek.push_back(tempPeek);
-                        break;
-                    }
-                }
-                else if (std::filesystem::exists(materialPath + ".tga")) {
-                    materialPath += ".tga";
-                    PixelPeek tempPeek;
-                    tempPeek.pixels = stbi_load(materialPath.c_str(), &tempPeek.width, &tempPeek.height, &tempPeek.channels, STBI_rgb_alpha);
-                    if ((!tempPeek.pixels) || ((tempPeek.width * tempPeek.height) <= 0)) {
-                        printf("failed to load smart MRO texture %d : %s \n", i, materialPath.c_str());
-                        throw std::runtime_error("failed to load smart material");
-                    }
-                    else {
-                        //printf("found texture, jpg - %s \n", materialPath.c_str());
-                        foundTypes[i] = true;
-                        pixelPeek.push_back(tempPeek);
-                        break;
-                    }
-                }
-                /*
-                else {
-                    printf("could not find materialpathg with any extensions : %s \n", materialPath.c_str());
-                }
-                */
-            }
-        }
-
-        //flag it up
-        //albedo only -> throw an error
-        //no albedo -> throw an error
-
-        //flags = normal, metal, rough, ao
-        ShaderFlags flags = (foundTypes[5] << 4) + (foundTypes[1] << 3) + (foundTypes[2] << 2) + (foundTypes[3] << 1) + (foundTypes[4]);
-        //printf("flag values : %d \n", flags);
-        if (!foundTypes[0]) {
-            printf("did not find an albedo or diffuse texture for this MRO set : %s \n", texPath.c_str());
-            throw std::runtime_error("no albedo in dynamic material");
-            //std::throw 
-        }
-        if (foundTypes[5]) {
-            printf("found a parallax map \n");
-        }
-        //printf("constructng texture from smart \n");
-        textureMap.emplace(returnID, EWETexture{ texPath, device, pixelPeek, tType_material, flags });
-#ifdef _DEBUG
-        
-        //printf("texPath of texture %d : %s \n", returnID, texPath.c_str());
-       
-#endif
-        existingMaterialIDs[texPath] = std::pair<ShaderFlags, int32_t>{ flags, returnID };
-        
-        //printf("returning from smart creation \n");
-        return std::pair<ShaderFlags, int32_t>{ flags, returnID++ };
-    }
-
-
-    EWETexture::EWETexture(std::string texPath, EWEDevice& device, std::vector<PixelPeek>& pixelPeek, texture_type tType) : eweDevice{ device } {
-        //imageLayout{ descriptorCount }, image{ descriptorCount }, imageMemory{ descriptorCount }, texPath{ texPath }
-        textureData.path = texPath;
-        textureData.tType = tType;
-        descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-        mipLevels.resize(pixelPeek.size(), 1);
-#if GPU_LOGGING
-    {
-        std::ofstream textureLogger{ GPU_LOG_FILE, std::ios::app };
-        textureLogger << "creating texture : " << texPath << "\n";
-        textureLogger.close();
-    }
-#endif
-        //printf("beginning texture constructor, tType : %d \n", tType);
-        if (tType == tType_simple) {
-            //printf("constructing texture type simple \n");
-            sampler.resize(1);
-            imageView.resize(1);
-            imageLayout.resize(1);
-            image.resize(1);
-            imageMemory.resize(1);
-            //printf("size of simple pixel peek : %d \n", pixelPeek.size());
-            createTextureImage(pixelPeek); //strange to pass in the first, btu whatever
-            //printf("after create image \n");
-            createTextureImageView(tType);
-            //printf("after image view \n");
-            createTextureSampler(tType);
-            //printf("before descriptors \n");
-
-            descriptor.resize(1);
-            descriptor[0].sampler = sampler[0];
-            descriptor[0].imageView = imageView[0];
-            descriptor[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            //printf("before create simple desc \n");
-            createSimpleDescriptor();
-            //printf("after create simple desc \n");
-        }
-        else if (tType == tType_cube) {
-            sampler.resize(1);
-            imageView.resize(1);
-            imageLayout.resize(1);
-            image.resize(1);
-            imageMemory.resize(1);
-            createCubeImage(pixelPeek);
-            createTextureImageView(tType);
-            createTextureSampler(tType);
-
-            descriptor.resize(1);
-            descriptor[0].sampler = sampler[0];
-            descriptor[0].imageView = imageView[0];
-            descriptor[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            createSimpleDescriptor();
-        }
-        //printf("ending texture constructor");
-#if GPU_LOGGING
-    {
-        std::ofstream textureLogger{ GPU_LOG_FILE, std::ios::app };
-        textureLogger << "texture created successfully : " << texPath << "\n";
-        textureLogger.close();
-    }
-#endif
-        
-    }
-
-    EWETexture::EWETexture(std::string texPath, EWEDevice& device, std::vector<PixelPeek>& pixelPeek, texture_type tType, ShaderFlags flags) : eweDevice{ device } {
-        //printf("beginning smart texture construcotr, size of pixelPeek : %d  \n", pixelPeek.size());
-        textureData.path = texPath;
-        textureData.tType = tType;
-        textureData.materialFlags = flags;
-        descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-#if GPU_LOGGING
-    {
-        std::ofstream textureLogger{ GPU_LOG_FILE, std::ios::app };
-        textureLogger << "creating texture : " << texPath << "\n";
-        textureLogger.close();
-    }
-#endif
-
-        mipLevels.resize(pixelPeek.size(), 1);
-        if (tType == tType_material) {
-           // printf("creating a smart texture sized : %d \n", pixelPeek.size());
-            sampler.resize(pixelPeek.size());
-            imageView.resize(pixelPeek.size());
-            imageLayout.resize(pixelPeek.size());
-            image.resize(pixelPeek.size());
-            imageMemory.resize(pixelPeek.size());
-
-            //printf("before texture image \n");
-            createTextureImage(pixelPeek);
-            //printf("before image view \n");
-            createTextureImageView(tType);
-            //printf("before sampelr \n");
-            createTextureSampler(tType);
-
-            //printf("after sampler \n");
-            descriptor.resize(pixelPeek.size());
-            //printf("getting into descriptor \n");
-            for (int i = 0; i < pixelPeek.size(); i++) {
-                descriptor[i].sampler = sampler[i];
-                descriptor[i].imageView = imageView[i];
-                descriptor[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-            //printf("before dynamic descriptor creation \n");
-            createDynamicDescriptor(static_cast<uint16_t>(pixelPeek.size()));
-            //printf("after dynamic descriptor \n");
-        }
-        else {
-            printf("trying to create a non-smart texture with a smart texture constructor \n");
-            //std::thrwo
-        }
-
-#if GPU_LOGGING
-    {
-        std::ofstream textureLogger{ GPU_LOG_FILE, std::ios::app };
-        textureLogger << "texture created successfully? : " << texPath << "\n";
-        textureLogger.close();
-    }
-#endif
-    }
-
-    void EWETexture::cleanup() {
-        //call at end of program
-        //printf("beginning of texture cleanup \n");
-        //uint32_t tracker = 0;
-        for (auto iter = textureMap.begin(); iter != textureMap.end(); iter++) {
-            //printf("%d tracking \n", tracker++);
-            iter->second.destroy();
-
-            //textureMap.erase(iter);
-        }
-        //printf("before clear \n");
-        textureMap.clear();
-        //printf("after clear \n");
-        //printf("after texture map cleanup \n");
-        //tracker = 0;
-        for (auto iter = uiMap.begin(); iter != uiMap.end(); iter++) {
-            //printf("%d tracking \n", tracker++);
-            iter->second.destroy();
-        }
-        uiMap.clear();
-        //printf("after uimap cleanup \n");
-        simpleDescSetLayout.reset();
-        dynamicDescSetLayout.clear();
-
-        //globalPool.reset();
-        printf("end of texture cleanup \n");
-    }
-
-    void EWETexture::destroy() {
-        //std::cout << "destroying" << std::endl;
-        //globalPool->freeDescriptors(descriptorSets);
-        EWEDescriptorPool::freeDescriptors(DescriptorPool_Global, descriptorSets);
-
-        for (int i = 0; i < sampler.size(); i++) {
-            vkDestroySampler(eweDevice.device(), sampler[i], nullptr);
-        }
-        //printf("after sampler destruction \n");
-        for (int i = 0; i < imageView.size(); i++) {
-            vkDestroyImageView(eweDevice.device(), imageView[i], nullptr);
-        }
         //printf("after image view destruction \n");
-        for (int i = 0; i < image.size(); i++) {
-            vkDestroyImage(eweDevice.device(), image[i], nullptr);
-        }
+        vkDestroyImage(device.device(), image, nullptr);
+        
         //printf("after image destruction \n");
-        for (int i = 0; i < imageMemory.size(); i++) {
-            vkFreeMemory(eweDevice.device(), imageMemory[i], nullptr);
-        }
-        //this->~EWETexture();
-        //std::cout << "finished destroying" << std::endl;
+        vkFreeMemory(device.device(), imageMemory, nullptr);
     }
 
-    void EWETexture::createTextureImage(std::vector<PixelPeek>& pixelPeek) {
-        width.resize(pixelPeek.size());
-        height.resize(pixelPeek.size());
-        for (int i = 0; i < pixelPeek.size(); i++) {
-            width[i] = pixelPeek[i].width;
-            height[i] = pixelPeek[i].height;
-            VkDeviceSize imageSize = width[i] * height[i] * 4;
-            //printf("image dimensions : %d:%d \n", width[i], height[i]);
-            //printf("beginning of create image, dimensions - %d : %d : %d \n", width[i], height[i], pixelPeek[i].channels);
-            if (MIPMAP_ENABLED) {
-                mipLevels[i] = static_cast<uint32_t>(std::floor(std::log2(std::max(width[i], height[i]))) + 1);
-            }
-            VkBuffer stagingBuffer;
-            VkDeviceMemory stagingBufferMemory;
-            //printf("before creating buffer \n");
+    void ImageInfo::createTextureImage(EWEDevice& device, PixelPeek& pixelPeek, bool mipmapping) {
+        int width = pixelPeek.width;
+        int height = pixelPeek.height;
 
-            eweDevice.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-            //printf("before memory mapping \n");
-            void* data;
-            vkMapMemory(eweDevice.device(), stagingBufferMemory, 0, imageSize, 0, &data);
-            //printf("memcpy \n");
-            memcpy(data, pixelPeek[i].pixels, static_cast<size_t>(imageSize));
-            //printf("unmapping \n");
-            vkUnmapMemory(eweDevice.device(), stagingBufferMemory);
-            //printf("freeing pixels \n");
-            stbi_image_free(pixelPeek[i].pixels);
-            //printf("after memory mapping \n");
-
-            VkImageCreateInfo imageInfo;
-            imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-            imageInfo.pNext = nullptr;
-            imageInfo.imageType = VK_IMAGE_TYPE_2D;
-            imageInfo.extent.width = width[i];
-            imageInfo.extent.height = height[i];
-            imageInfo.extent.depth = 1;
-            imageInfo.mipLevels = mipLevels[i];
-            imageInfo.arrayLayers = 1;
-
-            imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-            imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-            imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-            imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-            imageInfo.flags = 0; // Optional
-
-            //printf("before image info \n");
-            eweDevice.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image[i], imageMemory[i]);
-            //printf("before transition \n");
-            eweDevice.transitionImageLayout(image[i], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels[i]);
-            //printf("before copy buffer to image \n");
-            eweDevice.copyBufferToImage(stagingBuffer, image[i], width[i], height[i], 1);
-            //printf("after copy buffer to image \n");
-            //i gotta do this a 2nd time i guess
-            //eweDevice.transitionImageLayout(image[i], VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels[i]);
-
-            vkDestroyBuffer(eweDevice.device(), stagingBuffer, nullptr);
-            vkFreeMemory(eweDevice.device(), stagingBufferMemory, nullptr);
-            //printf("end of create texture image loop %d \n", i);
+        VkDeviceSize imageSize = width * height * 4;
+        //printf("image dimensions : %d:%d \n", width[i], height[i]);
+        //printf("beginning of create image, dimensions - %d : %d : %d \n", width[i], height[i], pixelPeek[i].channels);
+        if (MIPMAP_ENABLED && mipmapping) {
+            mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height))) + 1);
         }
-        //printf("before generate mip maps \n");
-        generateMipmaps(VK_FORMAT_R8G8B8A8_SRGB);
-        //printf("after generate mip maps \n");
-    }
-
-    void EWETexture::createCubeImage(std::vector<PixelPeek>& pixelPeek) {
-        width.resize(1);
-        height.resize(1);
-        width[0] = pixelPeek[0].width;
-        height[0] = pixelPeek[0].height;
-        uint64_t layerSize = width[0] * height[0] * 4;
-        VkDeviceSize imageSize = layerSize * 6;
-
-        void* data;
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
+        //printf("before creating buffer \n");
 
-        eweDevice.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-        vkMapMemory(eweDevice.device(), stagingBufferMemory, 0, imageSize, 0, &data);
-        uint64_t memAddress = reinterpret_cast<uint64_t>(data);
-
-        mipLevels.resize(6, 1);
-        for (int i = 0; i < 6; i++) {
-            memcpy(reinterpret_cast<void*>(memAddress), pixelPeek[i].pixels, static_cast<size_t>(layerSize)); //static_cast<void*> unnecessary>?
-            stbi_image_free(pixelPeek[i].pixels);
-            memAddress += layerSize;
-        }
-        vkUnmapMemory(eweDevice.device(), stagingBufferMemory);
+        device.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        //printf("before memory mapping \n");
+        void* data;
+        vkMapMemory(device.device(), stagingBufferMemory, 0, imageSize, 0, &data);
+        //printf("memcpy \n");
+        memcpy(data, pixelPeek.pixels, static_cast<size_t>(imageSize));
+        //printf("unmapping \n");
+        vkUnmapMemory(device.device(), stagingBufferMemory);
+        //printf("freeing pixels \n");
+        stbi_image_free(pixelPeek.pixels);
+        //printf("after memory mapping \n");
 
         VkImageCreateInfo imageInfo;
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.pNext = nullptr;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = width[0];
-        imageInfo.extent.height = height[0];
+        imageInfo.extent.width = width;
+        imageInfo.extent.height = height;
         imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 6;
+        imageInfo.mipLevels = mipLevels;
+        imageInfo.arrayLayers = 1;
 
         imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -631,253 +171,170 @@ namespace EWE {
         imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        imageInfo.flags = 0; // Optional
 
-        eweDevice.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image[0], imageMemory[0]);
-
-        eweDevice.transitionImageLayout(image[0], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels[0], 6);
-        eweDevice.copyBufferToImage(stagingBuffer, image[0], width[0], height[0], 6);
-
-
-
-        vkDestroyBuffer(eweDevice.device(), stagingBuffer, nullptr);
-        vkFreeMemory(eweDevice.device(), stagingBufferMemory, nullptr);
-
+        //printf("before image info \n");
+        device.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+        //printf("before transition \n");
+        device.transitionImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
+        //printf("before copy buffer to image \n");
+        device.copyBufferToImage(stagingBuffer, image, width, height, 1);
+        //printf("after copy buffer to image \n");
         //i gotta do this a 2nd time i guess
-        eweDevice.transitionImageLayout(image[0], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels[0], 6, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        //eweDevice.transitionImageLayout(image[i], VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels[i]);
+
+        vkDestroyBuffer(device.device(), stagingBuffer, nullptr);
+        vkFreeMemory(device.device(), stagingBufferMemory, nullptr);
+        //printf("end of create texture image loop %d \n", i);
+        
+        //printf("before generate mip maps \n");
+        if (MIPMAP_ENABLED && mipmapping) {
+            generateMipmaps(device, VK_FORMAT_R8G8B8A8_SRGB, width, height);
+        }
+        //printf("after generate mip maps \n");
     }
 
-    void EWETexture::createTextureImageView(texture_type tType) {
-        for (int i = 0; i < image.size(); i++) {
-            VkImageViewCreateInfo viewInfo{};
-            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            viewInfo.image = image[i];
-            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            viewInfo.subresourceRange.baseMipLevel = 0;
-            viewInfo.subresourceRange.levelCount = mipLevels[i];
-            viewInfo.subresourceRange.baseArrayLayer = 0;
-            viewInfo.subresourceRange.layerCount = 1;
+    void ImageInfo::createTextureImageView(EWEDevice& device) {
+        VkImageViewCreateInfo viewInfo{};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = image;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = mipLevels;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
 
-            if (tType == tType_cube) {
-                viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-                viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
-                viewInfo.subresourceRange.layerCount = 6;
-            }
-
-
-            if (vkCreateImageView(eweDevice.device(), &viewInfo, nullptr, &imageView[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create texture image view!");
-            }
+        if (vkCreateImageView(device.device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create texture image view!");
         }
     }
 
-    void EWETexture::createTextureSampler(texture_type tType) {
-        for (int i = 0; i < image.size(); i++) {
-            VkSamplerCreateInfo samplerInfo{};
-            samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    void ImageInfo::createTextureSampler(EWEDevice& device) {
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 
-            //if(tType == tType_2d){
-            samplerInfo.magFilter = VK_FILTER_LINEAR;
-            samplerInfo.minFilter = VK_FILTER_LINEAR;
+        //if(tType == tType_2d){
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
 
-            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            if (tType == tType_cube) {
-                samplerInfo.magFilter = VK_FILTER_NEAREST;
-                samplerInfo.minFilter = VK_FILTER_NEAREST;
-                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            }
-            samplerInfo.addressModeV = samplerInfo.addressModeU;
-            samplerInfo.addressModeW = samplerInfo.addressModeU;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
-            samplerInfo.anisotropyEnable = VK_TRUE;
-            samplerInfo.maxAnisotropy = eweDevice.getProperties().limits.maxSamplerAnisotropy;
+        samplerInfo.addressModeV = samplerInfo.addressModeU;
+        samplerInfo.addressModeW = samplerInfo.addressModeU;
 
-            samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-            samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.anisotropyEnable = VK_TRUE;
+        samplerInfo.maxAnisotropy = device.getProperties().limits.maxSamplerAnisotropy;
 
-            samplerInfo.compareEnable = VK_FALSE;
-            samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 
-            //force sampler to not use lowest level by changing this value
-            // i.e. samplerInfo.minLod = static_cast<float>(mipLevels / 2);
-            samplerInfo.minLod = 0.0f;
-            samplerInfo.maxLod = static_cast<float>(mipLevels[i]);
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.mipLodBias = 0.0f;
 
-            if (vkCreateSampler(eweDevice.device(), &samplerInfo, nullptr, &sampler[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create texture sampler!");
-            }
+        //force sampler to not use lowest level by changing this value
+        // i.e. samplerInfo.minLod = static_cast<float>(mipLevels / 2);
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = static_cast<float>(mipLevels);
+
+        if (vkCreateSampler(device.device(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create texture sampler!");
         }
+        
     }
 
-    void EWETexture::generateMipmaps(VkFormat imageFormat) {
+    void ImageInfo::generateMipmaps(EWEDevice& device, VkFormat imageFormat, int width, int height) {
         // Check if image format supports linear blitting
         VkFormatProperties formatProperties;
-        vkGetPhysicalDeviceFormatProperties(eweDevice.getPhysicalDevice(), imageFormat, &formatProperties);
+        vkGetPhysicalDeviceFormatProperties(device.getPhysicalDevice(), imageFormat, &formatProperties);
 
         if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
             throw std::runtime_error("texture image format does not support linear blitting!");
         }
         //printf("before mip map loop? size of image : %d \n", image.size());
-        for (int j = 0; j < image.size(); j++) {
 
-            VkCommandBuffer commandBuffer = SyncHub::getSyncHubInstance()->beginSingleTimeCommands();
-            //printf("after beginning single time command \n");
+        VkCommandBuffer commandBuffer = SyncHub::getSyncHubInstance()->beginSingleTimeCommands();
+        //printf("after beginning single time command \n");
 
-            VkImageMemoryBarrier barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.image = image[j];
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
-            barrier.subresourceRange.levelCount = 1;
+        VkImageMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.image = image;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.subresourceRange.levelCount = 1;
 
-            int32_t mipWidth = width[j];
-            int32_t mipHeight = height[j];
-
-            for (uint32_t i = 1; i < mipLevels[j]; i++) {
-                barrier.subresourceRange.baseMipLevel = i - 1;
-                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                //printf("before cmd pipeline barrier \n");
-                vkCmdPipelineBarrier(commandBuffer,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                    0, nullptr,
-                    0, nullptr,
-                    1, &barrier);
-                //printf("after cmd pipeline barreir \n");
-                VkImageBlit blit{};
-                blit.srcOffsets[0] = { 0, 0, 0 };
-                blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
-                blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                blit.srcSubresource.mipLevel = i - 1;
-                blit.srcSubresource.baseArrayLayer = 0;
-                blit.srcSubresource.layerCount = 1;
-                blit.dstOffsets[0] = { 0, 0, 0 };
-                blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
-                blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                blit.dstSubresource.mipLevel = i;
-                blit.dstSubresource.baseArrayLayer = 0;
-                blit.dstSubresource.layerCount = 1;
-                //printf("before blit image \n");
-                vkCmdBlitImage(commandBuffer,
-                    image[j], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    image[j], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    1, &blit,
-                    VK_FILTER_LINEAR);
-                //printf("after blit image \n");
-                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                vkCmdPipelineBarrier(commandBuffer,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                    0, nullptr,
-                    0, nullptr,
-                    1, &barrier);
-                //printf("after pipeline barrier 2 \n");
-                if (mipWidth > 1) { mipWidth /= 2; }
-                if (mipHeight > 1) { mipHeight /= 2; }
-            }
-
-            barrier.subresourceRange.baseMipLevel = mipLevels[j] - 1;
+        for (uint32_t i = 1; i < mipLevels; i++) {
+            barrier.subresourceRange.baseMipLevel = i - 1;
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            //printf("before cmd pipeline barrier \n");
+            vkCmdPipelineBarrier(commandBuffer,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier
+            );
+            //printf("after cmd pipeline barreir \n");
+            VkImageBlit blit{};
+            blit.srcOffsets[0] = { 0, 0, 0 };
+            blit.srcOffsets[1] = { width, height, 1 };
+            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.mipLevel = i - 1;
+            blit.srcSubresource.baseArrayLayer = 0;
+            blit.srcSubresource.layerCount = 1;
+            blit.dstOffsets[0] = { 0, 0, 0 };
+            blit.dstOffsets[1] = { width > 1 ? width / 2 : 1, height > 1 ? height / 2 : 1, 1 };
+            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.mipLevel = i;
+            blit.dstSubresource.baseArrayLayer = 0;
+            blit.dstSubresource.layerCount = 1;
+            //printf("before blit image \n");
+            vkCmdBlitImage(commandBuffer,
+                image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &blit,
+                VK_FILTER_LINEAR);
+            //printf("after blit image \n");
+            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            //printf("before pipeline barrier 3 \n");
+
             vkCmdPipelineBarrier(commandBuffer,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                 0, nullptr,
                 0, nullptr,
                 1, &barrier);
-            //printf("after pipeline barrier 3 \n");
-            eweDevice.endSingleTimeCommands(commandBuffer);
-            //printf("after end single time commands \n");
+            //printf("after pipeline barrier 2 \n");
+            if (width > 1) { width /= 2; }
+            if (height > 1) { height /= 2; }
         }
+
+        barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        //printf("before pipeline barrier 3 \n");
+        vkCmdPipelineBarrier(commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+        );
+        //printf("after pipeline barrier 3 \n");
+        device.endSingleTimeCommands(commandBuffer);
+        //printf("after end single time commands \n");
+        
         //printf("end of mip maps \n");
-    }
-    void EWETexture::initStaticVariables() {
-        //printf("initting EWEtexture static variables \n");
-
-        assert(smartTextureTypes.size() == MAX_SMART_TEXTURE_COUNT);
-    }
-
-    void EWETexture::buildSetLayouts(EWEDevice& eweDevice) {
-        initStaticVariables();
-        //printf("building set layouts \n");
-
-        simpleDescSetLayout = EWEDescriptorSetLayout::Builder(eweDevice)
-            .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT) //texture
-            .build();
-
-
-        for (int i = 0; i < MAX_SMART_TEXTURE_COUNT; i++) { //MAX_TEXTURE_COUNT + 1
-            //printf("building dynamic descritpor layout, i : %d \n", i);
-            auto tempLayout = EWEDescriptorSetLayout::Builder(eweDevice);
-            for (int j = 0; j < (i + 1); j++) {
-               // printf("\t adding binding to dynamic descritpor layout, j : %d \n", j);
-                tempLayout.addBinding(j, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-            }
-            dynamicDescSetLayout.push_back(tempLayout.build());
-        }
-    }
-    void EWETexture::createSimpleDescriptor() {
-        //printf("creating simple descriptor \n");
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (!
-                EWEDescriptorWriter(*simpleDescSetLayout, DescriptorPool_Global)
-                .writeImage(0, &descriptor[0])
-                .build(descriptorSets[i]))
-            {
-                //returnValue = false;
-                printf("simple descriptor failure at back \n");
-            }
-        }
-    }
-
-    void EWETexture::createDynamicDescriptor(uint16_t imageCount) {
-        //printf("creating dynamic descriptor set, imageCount - %d \n", imageCount);
-        if (imageCount == 0) {
-            printf("why do we have 0 imageCount in dynamic descriptor construction? \n");
-        }
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            //printf("creating dynamic descriptor, imageCount : %d \n", imageCount);
-            auto tempHolder = EWEDescriptorWriter(*dynamicDescSetLayout[imageCount - 1], DescriptorPool_Global);
-            for (int j = 0; j < imageCount; j++) {
-                //printf("writing image to dynamic desc set layout : %d \n", j);
-                tempHolder.writeImage(j, &descriptor[j]);
-            }
-
-            if(!tempHolder.build(descriptorSets[i])) {
-				//returnValue = false;
-				printf("dynamic descriptor failure at back, imageCount : %d \n", imageCount);
-			}
-		}
-    }
-
-    VkDescriptorSet* EWETexture::getDescriptorSets(TextureID textureID, uint8_t frame) {
-        //printf("descriptor set ~ %d \n", textureID);
-
-#ifdef _DEBUG
-            //if (textureID == 13) { //match this with whatever fucking
-            //	printf("texture string : %s \n", getTextureData(textureID).first.c_str());
-            //}
-        if (textureMap.find(textureID) == textureMap.end()) {
-            printf("TEXTURE DOES NOT EXIST  : %d \n", textureID);
-            printf("texture string : %s \n", getTextureData(textureID).path.c_str());
-            throw std::exception("texture descriptor set doesnt exist");
-        }
-#endif
-        return &textureMap.at(textureID).descriptorSets[frame];
     }
 }

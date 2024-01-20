@@ -259,8 +259,10 @@ namespace EWE {
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec2 uv;
+
         int m_BoneIDs[MAX_BONE_INFLUENCE];
         float m_Weights[MAX_BONE_INFLUENCE];
+
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
     };
     struct boneVertexNoTangent {

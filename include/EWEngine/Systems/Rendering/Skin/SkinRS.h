@@ -4,6 +4,7 @@
 
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Graphics/Pipeline.h"
+#include "EWEngine/Graphics/Textures/Material_Textures.h"
 
 #include <algorithm>
 
@@ -51,35 +52,40 @@ namespace EWE {
 		};
 
 		struct PipelineStruct {
-			std::unique_ptr<EWEPipeline> pipeline;
+			//std::unique_ptr<EWEPipeline> pipeline;
+			MaterialFlags pipelineID;
 			uint16_t pipeLayoutIndex; //a lot of work to find this value, might as well just store it
 			std::unordered_map<SkeletonID, std::vector<TextureMeshStruct>> skeletonData; //key is skeletonID
 
-			PipelineStruct(uint16_t boneCount, ShaderFlags textureFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) :
-				pipeline{ PipelineManager::createInstancedRemote(textureFlags, boneCount, pipeRenderInfo, device) }, skeletonData{}
+			PipelineStruct(uint16_t boneCount, MaterialFlags materialFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) :
+				//pipeline{ PipelineManager::createInstancedRemote(textureFlags, boneCount, pipeRenderInfo, device) }, 
+				pipelineID{ materialFlags },
+				skeletonData{}
 				//instanced
 			{
-				bool hasBumps = textureFlags & DynF_hasBump;
-				bool hasNormal = textureFlags & DynF_hasNormal;
-				bool hasRough = textureFlags & DynF_hasRough;
-				bool hasMetal = textureFlags & DynF_hasMetal;
-				bool hasAO = textureFlags & DynF_hasAO;
+				bool hasBumps = materialFlags & DynF_hasBump;
+				bool hasNormal = materialFlags & DynF_hasNormal;
+				bool hasRough = materialFlags & DynF_hasRough;
+				bool hasMetal = materialFlags & DynF_hasMetal;
+				bool hasAO = materialFlags & DynF_hasAO;
 
 				uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-				pipeLayoutIndex = textureCount + (3 * MAX_SMART_TEXTURE_COUNT);
+				pipeLayoutIndex = textureCount + (3 * MAX_MATERIAL_TEXTURE_COUNT);
 			}
-			PipelineStruct(ShaderFlags textureFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) :
-				pipeline{ PipelineManager::createBoneRemote(textureFlags, pipeRenderInfo, device) }, skeletonData{}
+			PipelineStruct(MaterialFlags materialFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) :
+				//pipeline{ PipelineManager::createBoneRemote(textureFlags, pipeRenderInfo, device) }, 
+				pipelineID{materialFlags},
+				skeletonData{}
 				//non instanced
 			{
-				bool hasBumps = textureFlags & DynF_hasBump;
-				bool hasNormal = textureFlags & DynF_hasNormal;
-				bool hasRough = textureFlags & DynF_hasRough;
-				bool hasMetal = textureFlags & DynF_hasMetal;
-				bool hasAO = textureFlags & DynF_hasAO;
+				bool hasBumps = materialFlags & DynF_hasBump;
+				bool hasNormal = materialFlags & DynF_hasNormal;
+				bool hasRough = materialFlags & DynF_hasRough;
+				bool hasMetal = materialFlags & DynF_hasMetal;
+				bool hasAO = materialFlags & DynF_hasAO;
 
 				uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-				pipeLayoutIndex = textureCount + MAX_SMART_TEXTURE_COUNT;
+				pipeLayoutIndex = textureCount + MAX_MATERIAL_TEXTURE_COUNT;
 			}
 		};
 
@@ -104,8 +110,8 @@ namespace EWE {
 			return skinnedMainObject->skinID++;
 		}
 
-		static void addSkeleton(std::pair<ShaderFlags, TextureID>& texturePair, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced);
-		static void addWeapon(std::pair<ShaderFlags, TextureID>& texturePair, EWEModel* meshes, SkeletonID skeletonID, SkeletonID ownerID);
+		static void addSkeleton(MaterialTextureInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced);
+		static void addWeapon(MaterialTextureInfo& materialInfo, EWEModel* meshes, SkeletonID skeletonID, SkeletonID ownerID);
 
 		static void removeSkeleton(SkeletonID skeletonID);
 
@@ -141,7 +147,7 @@ namespace EWE {
 		}
 
 		std::unordered_map<SkeletonID, PipelineStruct> instancedData{};
-		std::unordered_map<ShaderFlags, PipelineStruct> boneData{};
+		std::unordered_map<MaterialFlags, PipelineStruct> boneData{};
 		//uint8_t frameIndex = 0;
 
 		//changes memory size allocated to buffers
@@ -208,12 +214,12 @@ namespace EWE {
 			buffers.emplace(skeletonID, SkinBufferHandler{ 1, buffers.at(referenceID).getInnerPtr() });
 		}
 
-		void createInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, ShaderFlags textureFlags) {
+		void createInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, MaterialFlags textureFlags) {
 			instancedData.emplace(instancedFlags,
 				PipelineStruct{ boneCount, textureFlags, pipeRenderInfo, device }
 			);
 		}
-		void createBonePipe(ShaderFlags boneFlags) {
+		void createBonePipe(MaterialFlags boneFlags) {
 			boneData.emplace(boneFlags, PipelineStruct{ boneFlags, pipeRenderInfo, device });
 		}
 
