@@ -179,11 +179,11 @@ namespace EWE {
 
 		virtual void drawText(TextOverlay* textOverlay);
 		virtual void drawNewObjects();
-		void drawObjects(FrameInfo2D& frameInfo);
+		//void drawObjects(FrameInfo2D& frameInfo);
 
 		bool drawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0) || (menuBars.size() > 0); }
 		virtual void drawNewNine();
-		void drawNineUI(FrameInfo2D& frameInfo);
+		//void drawNineUI(FrameInfo2D& frameInfo);
 
 
 		static std::string getInputName(int keycode);

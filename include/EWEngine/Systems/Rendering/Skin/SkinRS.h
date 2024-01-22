@@ -5,6 +5,9 @@
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Graphics/Pipeline.h"
 #include "EWEngine/Graphics/Textures/Material_Textures.h"
+#include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
+
+#include "EWEngine/Systems/Rendering/Skin/SupportingStructs.h"
 
 #include <algorithm>
 
@@ -13,85 +16,10 @@ namespace EWE {
 	class SkinRenderSystem {
 	private:
 		static SkinRenderSystem* skinnedMainObject;
-		struct TextureMeshStruct {
-			TextureID textureID;
-			std::vector<EWEModel*> meshes;
-			TextureMeshStruct(TextureID textureID) : textureID{ textureID }, meshes{} {}
-			TextureMeshStruct(TextureID textureID, std::vector<EWEModel*> meshes) : textureID{ textureID }, meshes{ meshes }{}
-		};
-
-		struct PushConstantStruct {
-			std::vector<void*> data{};
-			uint8_t size{};
-			uint8_t count{ 0 };
-			PushConstantStruct(void* data, uint8_t size) : data{ data }, size{ size }{
-				count++;
-			}
-			void addData(void* data, uint8_t pushSize) {
-#ifdef _DEBUG
-				if (pushSize != size) {
-					printf("misaligned push size between skeletons of the same id \n");
-					throw std::exception("misaligned push size between skeletons of the same id");
-				}
-#endif
-				count++;
-				this->data.emplace_back(data);
-			}
-			void remove(void* removalData) {
-
-				auto findVal = std::find(data.cbegin(), data.cend(), removalData);
-				if (findVal != data.cend()) {
-					//std::cout << "successfully removed push data \n";
-					data.erase(findVal);
-					count--;
-				}
-				//else {
-				//	std::cout << "failed to find address of push to be removed \n";
-				//}
-			}
-		};
-
-		struct PipelineStruct {
-			//std::unique_ptr<EWEPipeline> pipeline;
-			MaterialFlags pipelineID;
-			uint16_t pipeLayoutIndex; //a lot of work to find this value, might as well just store it
-			std::unordered_map<SkeletonID, std::vector<TextureMeshStruct>> skeletonData; //key is skeletonID
-
-			PipelineStruct(uint16_t boneCount, MaterialFlags materialFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) :
-				//pipeline{ PipelineManager::createInstancedRemote(textureFlags, boneCount, pipeRenderInfo, device) }, 
-				pipelineID{ materialFlags },
-				skeletonData{}
-				//instanced
-			{
-				bool hasBumps = materialFlags & DynF_hasBump;
-				bool hasNormal = materialFlags & DynF_hasNormal;
-				bool hasRough = materialFlags & DynF_hasRough;
-				bool hasMetal = materialFlags & DynF_hasMetal;
-				bool hasAO = materialFlags & DynF_hasAO;
-
-				uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-				pipeLayoutIndex = textureCount + (3 * MAX_MATERIAL_TEXTURE_COUNT);
-			}
-			PipelineStruct(MaterialFlags materialFlags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) :
-				//pipeline{ PipelineManager::createBoneRemote(textureFlags, pipeRenderInfo, device) }, 
-				pipelineID{materialFlags},
-				skeletonData{}
-				//non instanced
-			{
-				bool hasBumps = materialFlags & DynF_hasBump;
-				bool hasNormal = materialFlags & DynF_hasNormal;
-				bool hasRough = materialFlags & DynF_hasRough;
-				bool hasMetal = materialFlags & DynF_hasMetal;
-				bool hasAO = materialFlags & DynF_hasAO;
-
-				uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-				pipeLayoutIndex = textureCount + MAX_MATERIAL_TEXTURE_COUNT;
-			}
-		};
 
 	public:
 
-		SkinRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		SkinRenderSystem(EWEDevice& device);
 		~SkinRenderSystem();
 		//~MonsterBoneBufferDescriptorStruct();
 
@@ -102,8 +30,8 @@ namespace EWE {
 
 		void render(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
 	protected:
-		void renderInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
-		void renderNonInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
+		void renderInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex);
+		void renderNonInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex);
 	public:
 
 		static SkeletonID getSkinID() {
@@ -146,8 +74,8 @@ namespace EWE {
 			return &instancedBuffers.at(skeletonID);
 		}
 
-		std::unordered_map<SkeletonID, PipelineStruct> instancedData{};
-		std::unordered_map<MaterialFlags, PipelineStruct> boneData{};
+		std::unordered_map<SkeletonID, SkinRS::PipelineStruct> instancedData{};
+		std::unordered_map<MaterialFlags, SkinRS::PipelineStruct> boneData{};
 		//uint8_t frameIndex = 0;
 
 		//changes memory size allocated to buffers
@@ -164,7 +92,7 @@ namespace EWE {
 
 		static void setPushData(SkeletonID skeletonID, void* pushData, uint8_t pushSize) {
 			if (skinnedMainObject->pushConstants.find(skeletonID) == skinnedMainObject->pushConstants.end()) {
-				skinnedMainObject->pushConstants.emplace(skeletonID, PushConstantStruct{ pushData, pushSize });
+				skinnedMainObject->pushConstants.emplace(skeletonID, SkinRS::PushConstantStruct{ pushData, pushSize });
 				//pushConstants[skeletonID] = { pushData, pushSize };
 			}
 			else {
@@ -216,11 +144,11 @@ namespace EWE {
 
 		void createInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, MaterialFlags textureFlags) {
 			instancedData.emplace(instancedFlags,
-				PipelineStruct{ boneCount, textureFlags, pipeRenderInfo, device }
+				SkinRS::PipelineStruct{ boneCount, textureFlags, device }
 			);
 		}
 		void createBonePipe(MaterialFlags boneFlags) {
-			boneData.emplace(boneFlags, PipelineStruct{ boneFlags, pipeRenderInfo, device });
+			boneData.emplace(boneFlags, SkinRS::PipelineStruct{ boneFlags, device });
 		}
 
 		uint32_t skinID = 0;
@@ -228,9 +156,8 @@ namespace EWE {
 		//key is skeletonID
 		std::unordered_map<SkeletonID, SkinBufferHandler> buffers{};
 		std::unordered_map<SkeletonID, InstancedSkinBufferHandler> instancedBuffers{};
-		std::unordered_map<SkeletonID, PushConstantStruct> pushConstants{};
+		std::unordered_map<SkeletonID, SkinRS::PushConstantStruct> pushConstants{};
 
-		VkPipelineRenderingCreateInfo const& pipeRenderInfo;
 		EWEDevice& device;
 
 		//uint32_t buffersCreated = 0;

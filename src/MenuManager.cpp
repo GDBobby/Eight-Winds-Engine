@@ -44,14 +44,6 @@ namespace EWE {
 			menuModules[currentMenuState]->drawNewObjects();//(gameState == 0));
 		}
 	}
-	void MenuManager::drawMenuObjects(FrameInfo2D& frameInfo) {
-		//printf("draw menu objects in uihandler \n");
-		if (isActive) {
-			//printf("Drawing menu \n");
-			menuModules[currentMenuState]->drawObjects(frameInfo);//(gameState == 0));
-		}
-
-	}
 
 	void MenuManager::changeMenuState(uint8_t nextMenu, uint8_t nextScene) { //nextScene is really just turning on mouse or not
 		printf("beginning of change menu state \n");

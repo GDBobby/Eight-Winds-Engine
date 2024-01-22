@@ -21,7 +21,7 @@ namespace EWE {
 #endif
 		PipelineSystem() {}
 		virtual void createPipeLayout(EWEDevice& device) = 0;
-		virtual void createPipeline(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) = 0;
+		virtual void createPipeline(EWEDevice& device) = 0;
 
 	public:
 		static void setCmdIndexPair(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
@@ -53,7 +53,7 @@ namespace EWE {
 		std::unique_ptr<EWEPipeline> pipe{nullptr};
 		VkPipelineLayout pipeLayout{};
 		TextureID bindedTexture = TEXTURE_UNBINDED;
-		VkPipelineCache cache{VK_NULL_HANDLE};
+		//VkPipelineCache cache{VK_NULL_HANDLE};
 		EWEModel* bindedModel = nullptr;
 		VkShaderStageFlags pushStageFlags;
 		uint32_t pushSize;

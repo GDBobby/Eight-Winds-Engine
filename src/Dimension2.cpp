@@ -1,13 +1,13 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 
 #include "EWEngine/Graphics/Model/Basic_Model.h"
-#include <EWEngine/Graphics/Textures/Texture_Manager.h>
+#include "EWEngine/Graphics/Textures/Texture_Manager.h"
 
 #define RENDER_DEBUG false
 
 namespace EWE {
 	Dimension2* Dimension2::dimension2Ptr{ nullptr };
-	Dimension2::Dimension2(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
+	Dimension2::Dimension2(EWEDevice& device) {
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -20,9 +20,14 @@ namespace EWE {
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-		auto tempDSL = EWETexture::getSimpleDescriptorSetLayout();
-		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &tempDSL;
+		std::vector<VkDescriptorSetLayout> tempDSL{};
+		TextureDSLInfo dslInfo{};
+		dslInfo.setStageTextureCount(VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+		tempDSL.emplace_back(dslInfo.getDescSetLayout(device));
+		
+
+		pipelineLayoutInfo.setLayoutCount = tempDSL.size();
+		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
 		if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &PL_2d) != VK_SUCCESS) {
 			printf("failed to create 2d pipe layout\n");
@@ -34,7 +39,6 @@ namespace EWE {
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 		EWEPipeline::enableAlphaBlending(pipelineConfig);
 
-		pipelineConfig.pipelineRenderingInfo = pipeRenderInfo;
 		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
 		pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
 		pipelineConfig.pipelineLayout = PL_2d;
@@ -70,13 +74,13 @@ namespace EWE {
 	}
 
 
-	void Dimension2::init(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
+	void Dimension2::init(EWEDevice& device) {
 		if (dimension2Ptr != nullptr) {
 			printf("initing twice??? \n");
 			throw std::runtime_error("initing twice?");
 			return;
 		}
-		dimension2Ptr = new Dimension2(device, pipeRenderInfo);
+		dimension2Ptr = new Dimension2(device);
 	}
 	void Dimension2::destruct(EWEDevice& device) {
 		vkDestroyPipelineCache(device.device(), dimension2Ptr->cache, nullptr);
@@ -118,7 +122,7 @@ namespace EWE {
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
-				EWETexture::getUIDescriptorSets(textureID, dimension2Ptr->frameIndex),
+				Texture_Manager::getDescriptorSet(textureID),
 				0, nullptr
 			);
 			dimension2Ptr->bindedTexture = textureID;
@@ -142,7 +146,7 @@ namespace EWE {
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_9,
 				0, 1,
-				EWETexture::getUIDescriptorSets(textureID, dimension2Ptr->frameIndex),
+				Texture_Manager::getDescriptorSet(textureID),
 				0, nullptr
 			);
 			dimension2Ptr->bindedTexture = textureID;

@@ -27,7 +27,7 @@ namespace EWE {
 
     // *************** Descriptor Set Layout *********************
 
-    EWEDescriptorSetLayout::EWEDescriptorSetLayout(EWEDevice& eweDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings)
+    EWEDescriptorSetLayout::EWEDescriptorSetLayout(EWEDevice& eweDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings)
         : eweDevice{ eweDevice }, bindings{ bindings } {
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
         for (auto& kv : bindings) {

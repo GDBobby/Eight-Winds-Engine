@@ -149,6 +149,7 @@ namespace EWE {
 		static void defaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
 		static void enable2DConfig(PipelineConfigInfo& configInfo);
 		static void enableAlphaBlending(PipelineConfigInfo& configInfo);
+		static VkPipelineRenderingCreateInfo* pipelineRenderingInfo;
 
 		static void cleanShaderModules(EWEDevice& device) {
 			for (auto iter = shaderModuleMap.begin(); iter != shaderModuleMap.end(); iter++) {

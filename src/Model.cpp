@@ -1,6 +1,6 @@
 #include "EWEngine/Graphics/Model/Model.h"
 
-#include "EWEngine/EWE_Utils.h"
+#include "EWEngine/Data/EWE_Utils.h"
 
 // libs
 #define TINYOBJLOADER_IMPLEMENTATION

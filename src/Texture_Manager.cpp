@@ -64,7 +64,7 @@ namespace EWE {
     TextureID Texture_Builder::build() {
         auto tmPtr = Texture_Manager::getTextureManagerPtr();
         
-        size_t myHash = Texture_Manager::hashTexture(paths);
+        //size_t myHash = Texture_Manager::hashTexture(paths);
 
         TextureDSLInfo dslInfo{};
         VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //this is 1
@@ -153,13 +153,68 @@ namespace EWE {
             }
             return *containedTextures.begin();
         }
-
-
-
     }
+
+
+    TextureID Texture_Builder::createSimpleTexture(EWEDevice& device, std::string texPath, bool global, VkShaderStageFlags shaderStage) {
+        Texture_Manager* tmPtr = Texture_Manager::getTextureManagerPtr();
+        auto tempImageInfo = tmPtr->imageMap.find(texPath);
+
+        Texture_Manager::ImageTracker* imageInfo;
+        bool uniqueImage = false;
+
+
+        if (tempImageInfo != tmPtr->imageMap.end()) {
+            imageInfo = tempImageInfo->second;
+        }
+        else {
+            uniqueImage = true;
+            PixelPeek pixelPeek{ texPath };
+            imageInfo = tmPtr->imageMap.try_emplace(texPath, device, pixelPeek, true).first->second;
+        }
+
+        if (uniqueImage) {
+            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+            EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(device, shaderStage), DescriptorPool_Global);
+
+            descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
+            imageInfo->usedInTexture.insert(tmPtr->currentTextureCount);
+            
+            if (!descBuilder.build(descriptorSet)) {
+                //returnValue = false;
+                printf("failed to construct texture descriptor\n");
+                throw std::runtime_error("failed to construct texture descriptor");
+            }
+            tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descriptorSet);
+            if (!global) {
+                tmPtr->sceneIDs.push_back(tmPtr->currentTextureCount);
+            }
+            return tmPtr->currentTextureCount++;
+        }
+        else {
+            for (auto iter = imageInfo->usedInTexture.begin(); iter != imageInfo->usedInTexture.end(); iter++) {
+                if (tmPtr->deletionMap.at(*iter)->usedInTexture.size() == 1) {
+                    return *iter;
+                }
+            }
+            
+            if (imageInfo->usedInTexture.size() == 0) {
+                //its possible that the textures were loaded in a different order
+                //not adding a catch for that
+                printf("descriptor was declared non-unique, but no match was found \n");
+                throw std::runtime_error("was not unique, but no match found");
+            }
+            //warnign silencing, this should never happen
+            return 0;
+        }
+    }
+
+
+
     Texture_Manager::Texture_Manager() : imageTrackerBucket{ sizeof(ImageTracker) } {
 
     }
+
 
 
     void Texture_Manager::cleanup(EWEDevice& device) {

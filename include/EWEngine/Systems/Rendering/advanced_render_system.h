@@ -21,7 +21,7 @@ namespace EWE {
 	//descriptorsetlayouts are in a vector vector
 	//the first layert of the vector (vector<vector>>) designates a pipeline
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
-		AdvancedRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo, ObjectManager& objectManager, MenuManager& menuManager);
+		AdvancedRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo* pipeRenderInfo, ObjectManager& objectManager, MenuManager& menuManager);
 		~AdvancedRenderSystem();
 
 		AdvancedRenderSystem(const AdvancedRenderSystem&) = delete;
@@ -30,16 +30,16 @@ namespace EWE {
 		void renderGameObjects(FrameInfo& frameInfo);
 		void render2DGameObjects(FrameInfo2D& frameInfo);
 
-		void renderLoadingScreen(FrameInfoLoading& frameInfo);
+		//void renderLoadingScreen(FrameInfoLoading& frameInfo);
 
 		std::shared_ptr<MaterialHandler> materialHandlerInstance;
 
 #if LEVEL_BUILDER
 		void renderBuilderObjects(FrameInfo& frameInfo);
 #endif
-		void updateLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
-		void updatePipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
-		void updateMaterialPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo); //only cause this outside of ARS in the level builder, donot call elsewhere, updatepipelines calls this
+		void updateLoadingPipeline();
+		void updatePipelines();
+		void updateMaterialPipelines(); //only cause this outside of ARS in the level builder, donot call elsewhere, updatepipelines calls this
 
 		bool shouldRenderPoints = false;
 		//uint32_t uiTextureID = 0;

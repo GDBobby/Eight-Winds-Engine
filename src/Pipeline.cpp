@@ -387,6 +387,8 @@ namespace EWE {
 		configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
 		configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
 		configInfo.dynamicStateInfo.flags = 0;
+
+		configInfo.pipelineRenderingInfo = *pipelineRenderingInfo;
 		/*
 		std::vector<VkVertexInputBindingDescription> bindingDescription(1);
 		bindingDescription[0].binding = 0;                            // Binding index

@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <iostream>
 
-#include "EWEngine/Graphics/Dimension2/Dimension2.h"
+#include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 
 
 #define DEBUGGING_PIPELINES false
@@ -25,10 +25,9 @@ namespace EWE {
 	//the first layert of the vector (vector<vector>>) designates a pipeline
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
 
-	AdvancedRenderSystem::AdvancedRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo, ObjectManager& objectManager, MenuManager& menuManager) : eweDevice{ device }, objectManager{ objectManager }, menuManager{ menuManager } {
+	AdvancedRenderSystem::AdvancedRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo* pipeRenderInfo, ObjectManager& objectManager, MenuManager& menuManager) : eweDevice{ device }, objectManager{ objectManager }, menuManager{ menuManager } {
 		printf("ARS constructor \n");
 		EWEDescriptorPool::BuildGlobalPool(device);
-		PipelineManager::initStaticVariables();
 
 		model2D = Basic_Model::generate2DQuad(device);
 		materialHandlerInstance = MaterialHandler::getMaterialHandlerInstance();
@@ -39,8 +38,6 @@ namespace EWE {
 #if true//DECONSTRUCTION_DEBUG
 		std::cout << "entering ARS deconstructor " << std::endl;
 #endif
-
-		PipelineManager::cleanupStaticVariables(eweDevice);
 		EWEPipeline::cleanShaderModules(eweDevice);
 
 		EWEDescriptorPool::DestructPools();
@@ -50,10 +47,10 @@ namespace EWE {
 		printf("end of ARS deconstructor \n");
 #endif
 	}
-	void AdvancedRenderSystem::updateLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
-		PipelineManager::createLoadingPipeline(eweDevice, pipeRenderInfo);
+	void AdvancedRenderSystem::updateLoadingPipeline() {
+		PipelineManager::createLoadingPipeline(eweDevice);
 	}
-	void AdvancedRenderSystem::updatePipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
+	void AdvancedRenderSystem::updatePipelines() {
 
 		std::set<Pipeline_Enum> pipeSet;
 
@@ -97,14 +94,12 @@ namespace EWE {
 #endif
 
 		for (auto& pipe : pipeSet) {
-			PipelineManager::initPipelines(pipeRenderInfo, pipe, eweDevice);
+			PipelineManager::initPipelines(pipe, eweDevice);
 		}
 		//if (PipelineManager::pipelines.find(Pipe_2d) == PipelineManager::pipelines.end()) {
 		//	PipelineManager::initPipelines(pipeRenderInfo, Pipe_2d, eweDevice);
 		//	PipelineManager::initPipelines(pipeRenderInfo, Pipe_NineUI, eweDevice);
 		//}
-
-		updateMaterialPipelines(pipeRenderInfo);
 
 		//printf("returning from update pipelines \n");
 	}
@@ -200,85 +195,56 @@ namespace EWE {
 		printf("drawing skybox \n");
 #endif
 		//skyboxPipeline->bind(frameInfo.cmdIndexPair.first);
-		PipelineManager::pipelines[Pipe_skybox]->bind(frameInfo.cmdIndexPair.first);
-		vkCmdBindDescriptorSets(
-			frameInfo.cmdIndexPair.first,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			PipelineManager::pipeLayouts[PL_skybox],
-			0, 1,
-			DescriptorHandler::getDescSet(DS_global, frameInfo.cmdIndexPair.second),
-			0,
-			nullptr
-		);
-		
-		vkCmdBindDescriptorSets(
-			frameInfo.cmdIndexPair.first,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			PipelineManager::pipeLayouts[PL_skybox],
-			1, 1,
-			EWETexture::getSkyboxDescriptorSets(frameInfo.cmdIndexPair.second),
-			0,
-			nullptr
-		);
+		auto pipe = PipelineSystem::at(Pipe_skybox);
+		pipe->bindPipeline();
+		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.cmdIndexPair.second));
+		pipe->bindDescriptor(1, Texture_Manager::getDescriptorSet(objectManager.skybox.second));
 
-		objectManager.skybox.first->bind(frameInfo.cmdIndexPair.first);
-		objectManager.skybox.first->draw(frameInfo.cmdIndexPair.first);
+		pipe->bindModel(objectManager.skybox.first.get());
+		pipe->drawModel();
 		
 	}
 
 	inline void AdvancedRenderSystem::renderTexturedGameObjects(FrameInfo& frameInfo) {
 		bool texturePipeBinded = false;
 		if ((objectManager.texturedGameObjects.size() > 0)) {
+			auto pipe = PipelineSystem::at(Pipe_textured);
 #if DEBUGGING_PIPELINES
 			printf("Drawing texutered game objects \n");
 #endif
 			//texturedPipeline->bind(frameInfo.cmdIndexPair.first);
 			texturePipeBinded = true;
-			PipelineManager::pipelines[Pipe_textured]->bind(frameInfo.cmdIndexPair.first);
-
-			vkCmdBindDescriptorSets(
-				frameInfo.cmdIndexPair.first,
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				PipelineManager::pipeLayouts[PL_textured],
-				0, 1,
-				DescriptorHandler::getDescSet(DS_global, frameInfo.cmdIndexPair.second),
-				0,
-				nullptr
-			);
+			pipe->bindPipeline();
+			pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.cmdIndexPair.second));
 
 
 			//std::cout << "post-bind textured" << std::endl;
 			int currentBindedTextureID = -1;
 
+			SimplePushConstantData push{};
 			//std::cout << "textured game o bject size : " << objectManager.texturedGameObjects.size() << std::endl;
-			for (int i = 0; i < objectManager.texturedGameObjects.size(); i++) {
-				if (objectManager.texturedGameObjects[i].isTarget && (!objectManager.texturedGameObjects[i].activeTarget)) {
+			for(auto& textureGameObject : objectManager.texturedGameObjects){
+
+				if (textureGameObject.isTarget && (!textureGameObject.activeTarget)) {
 					continue;
 				}
-				if ((objectManager.texturedGameObjects[i].textureID == TEXTURE_UNBINDED) || (objectManager.texturedGameObjects[i].model == nullptr)) {
+				if ((textureGameObject.textureID == TEXTURE_UNBINDED) || (textureGameObject.model == nullptr)) {
 					std::cout << "why does a textured game object have no texture, or no model?? " << std::endl;
 					continue;
 				}
-				else if (objectManager.texturedGameObjects[i].textureID != currentBindedTextureID) {
+				else if (textureGameObject.textureID != currentBindedTextureID) {
 
-					vkCmdBindDescriptorSets(
-						frameInfo.cmdIndexPair.first,
-						VK_PIPELINE_BIND_POINT_GRAPHICS,
-						PipelineManager::pipeLayouts[PL_textured],
-						1, 1,
-						EWETexture::getDescriptorSets(objectManager.texturedGameObjects[i].textureID, frameInfo.cmdIndexPair.second),
-						0, nullptr
-					);
-					currentBindedTextureID = objectManager.texturedGameObjects[i].textureID;
+					pipe->bindDescriptor(0, Texture_Manager::getDescriptorSet(textureGameObject.textureID));
+
+					currentBindedTextureID = textureGameObject.textureID;
 				}
 				//printf("drawing now : %d \n", i);
-				SimplePushConstantData push{};
-				push.modelMatrix = objectManager.texturedGameObjects[i].transform.mat4();
-				push.normalMatrix = objectManager.texturedGameObjects[i].transform.normalMatrix();
+				push.modelMatrix = textureGameObject.transform.mat4();
+				push.normalMatrix = textureGameObject.transform.normalMatrix();
 				//std::cout << "pre-bind/draw : " << i;
-				vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_textured], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SimplePushConstantData), &push);
-				objectManager.texturedGameObjects[i].model->bind(frameInfo.cmdIndexPair.first);
-				objectManager.texturedGameObjects[i].model->draw(frameInfo.cmdIndexPair.first);
+
+				pipe->bindModel(textureGameObject.model.get());
+				pipe->pushAndDraw(&push);
 				//std::cout << " ~ post-bind/draw : " << i << std::endl;
 			}
 		}
@@ -288,7 +254,11 @@ namespace EWE {
 		//ill replace this shit eventually
 
 
-		const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialInfo>>>& matMapTemp = materialHandlerInstance->getMaterialMap(); //not clean and get because shit shouldnt be deleted runtime??? at least not currently
+		const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>>& matMapTemp = materialHandlerInstance->getMaterialMap(); //not clean and get because shit shouldnt be deleted runtime??? at least not currently
+
+		//move this into the rigid rendering system while we're here
+
+		MaterialPipelines* pipe;
 		for(auto iter = matMapTemp.begin(); iter != matMapTemp.end(); iter++) {
 #if DEBUGGING_DYNAMIC_PIPE
 			printf("checking validity of map iter? \n");
@@ -429,31 +399,17 @@ namespace EWE {
 #if DEBUGGING_PIPELINES
 		printf("Drawing grass \n");
 #endif
-		PipelineManager::pipelines[Pipe_grass]->bind(frameInfo.cmdIndexPair.first);
-		vkCmdBindDescriptorSets(
-			frameInfo.cmdIndexPair.first,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			PipelineManager::pipeLayouts[PL_grass],
-			0, 1,
-			DescriptorHandler::getDescSet(DS_global, frameInfo.cmdIndexPair.second),
-			0,
-			nullptr
-		);
-		vkCmdBindDescriptorSets(
-			frameInfo.cmdIndexPair.first,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			PipelineManager::pipeLayouts[PL_grass],
-			1, 1,
-			EWETexture::getDescriptorSets(objectManager.grassTextureID, frameInfo.cmdIndexPair.second),
-			0,
-			nullptr
-		);
+		PipelineSystem* pipe = PipelineSystem::at(Pipe_grass);
+		pipe->bindPipeline();
+		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.cmdIndexPair.second));
+		pipe->bindDescriptor(1, Texture_Manager::getDescriptorSet(objectManager.grassTextureID));
+
 
 		UVScrollingPushData push{ glm::vec2{glm::mod(frameInfo.time / 6.f, 1.f), glm::mod(frameInfo.time / 9.f, 1.f)} };
-		vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts[PL_grass], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UVScrollingPushData), &push);
+		pipe->push(&push);
 
-		for (int i = 0; i < objectManager.grassField.size(); i++) {
-			objectManager.grassField[i].model->BindAndDrawInstance(frameInfo.cmdIndexPair.first);
+		for (const auto& grassField : objectManager.grassField) {
+			pipe->drawInstanced(grassField.model.get());
 		}
 #if DEBUGGING_PIPELINES
 		printf("after drawing grass \n");
@@ -850,46 +806,6 @@ namespace EWE {
 		//printf("after rendering the grid \n");
 	}
 #endif
-	
-	void AdvancedRenderSystem::renderLoadingScreen(FrameInfoLoading& frameInfo) {
-		PipelineManager::loadingPipeline->bind(frameInfo.cmdIndexPair.first);
-
-		//printf("before binding descriptor set 0 \n");
-		vkCmdBindDescriptorSets(
-			frameInfo.cmdIndexPair.first,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			PipelineManager::pipeLayouts[PL_loading],
-			0, 1,
-			DescriptorHandler::getDescSet(DS_global, frameInfo.cmdIndexPair.second),
-			0,
-			nullptr
-		);
-
-		//printf("after binding descriptor set 0 \n");
-		vkCmdBindDescriptorSets(
-			frameInfo.cmdIndexPair.first,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			PipelineManager::pipeLayouts[PL_loading],
-			1, 1,
-			EWETexture::getDescriptorSets(frameInfo.leafSystem->leafTextureID, frameInfo.cmdIndexPair.second),
-			0,
-			nullptr
-		);
-		//printf("after binding descriptor set 1 \n");
-		vkCmdBindDescriptorSets(
-			frameInfo.cmdIndexPair.first,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			PipelineManager::pipeLayouts[PL_loading],
-			2, 1,
-			DescriptorHandler::getDescSet(DS_loading, frameInfo.cmdIndexPair.second),
-			0, nullptr
-		);
-		//printf("after binding descriptor set 2 \n");
-
-		//frameInfo.leafSystem->leafModel->BindAndDrawInstance(frameInfo.cmdIndexPair.first, frameInfo.cmdIndexPair.second);
-		frameInfo.leafSystem->draw(frameInfo.cmdIndexPair.first);
-		//printf("after leaf bind and draw \n");
-	}
 
 	/* this is old af, one of the first things i did in this engine. id like to revisit it at some point
 	inline void AdvancedRenderSystem::renderRocks(FrameInfo& frameInfo) {
@@ -920,7 +836,7 @@ namespace EWE {
 	}
 	*/
 	
-	void AdvancedRenderSystem::updateMaterialPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
+	void AdvancedRenderSystem::updateMaterialPipelines() {
 		//call this function every time a new material is added to the scene
 		
 
@@ -936,7 +852,7 @@ namespace EWE {
 		printf("benchmarking cost of GLSLang : %.5f \n", timeTaken / 1000);
 		*/
 
-		const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialInfo>>>& matMapTemp = materialHandlerInstance->cleanAndGetMaterialMap();
+		const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>>& matMapTemp = materialHandlerInstance->cleanAndGetMaterialMap();
 		if (matMapTemp.size() > 0) {
 			bool glslNeeded = false;
 
@@ -946,7 +862,7 @@ namespace EWE {
 						glslNeeded = true;
 						glslang::InitializeProcess();
 					}
-					PipelineManager::updateMaterialPipe(iter->first, pipeRenderInfo, eweDevice);
+					PipelineManager::updateMaterialPipe(iter->first, eweDevice);
 				}
 			}
 			if (glslNeeded) {

@@ -1,13 +1,16 @@
 #pragma once
-//#include "EWE_descriptors.h" //included in EWEtexture
 #define DRAWING_POINTS false
+
+#include "EWEngine/Graphics/Descriptors.h"
+#include "EWEngine/Graphics/Device_Buffer.h"
+
+#include <unordered_map>
 
 
 namespace EWE {
-    enum DescSet_Enum {
+    enum DescSet_Enum : uint16_t {
         DS_global,
         DS_pointLight,
-        DS_loading,
 
         DS_MAX_COUNT,
     };
@@ -28,17 +31,16 @@ namespace EWE {
         PSL_MAX_COUNT,
     };
     */
-	enum LDSL_Enum {
+	enum LDSL_Enum : uint16_t {
 		LDSL_global,
 		LDSL_pointLight,
 		LDSL_boned,
         LDSL_smallInstance,
         LDSL_largeInstance,
 	};
-	enum Buffer_Enum {
+	enum Buffer_Enum : uint16_t {
 		Buff_ubo,
 		Buff_gpu,
-        Buff_loading,
 	};
 
     class DescriptorHandler {
@@ -48,14 +50,13 @@ namespace EWE {
         static std::unordered_map<LDSL_Enum, std::unique_ptr<EWEDescriptorSetLayout>> descriptorSetLayouts;
         static std::unordered_map<DescSet_Enum, std::vector<VkDescriptorSet>> descriptorSets;
         //static std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> pipeDescSetLayouts;
-        static std::vector<VkDescriptorSetLayout> dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
 
     public:
         static void cleanup(EWEDevice& device);
         static EWEDescriptorSetLayout& getLDSL(LDSL_Enum whichLDSL);
-        static void initGlobalDescriptors(std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device);
+        static void initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device);
         
-        static void initDescriptors(std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap);
+        static void initDescriptors(std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap);
         static VkDescriptorSetLayout getDescSetLayout(LDSL_Enum whichDescSet, EWEDevice& device);
         //static std::vector<VkDescriptorSetLayout>* getPipeDescSetLayout(PipeDescSetLayouts_Enum PDLe, EWEDevice& device);
         //static std::vector<VkDescriptorSetLayout>* getDynamicPipeDescSetLayout(uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device);

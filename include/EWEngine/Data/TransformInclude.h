@@ -14,6 +14,7 @@ struct TransformComponent {
 
 
 	glm::mat4 mat4();
+	void mat4(float* buffer);
 
 	glm::mat3 normalMatrix();
 

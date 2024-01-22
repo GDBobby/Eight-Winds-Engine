@@ -62,7 +62,7 @@ namespace EWE {
 		void clearBuilders();
 		void resetBuilders();
 #endif
-		void clearSceneObjects();
+		void clearSceneObjects(EWEDevice& device);
 
 		/*
 		add callbacks, when the first item is added to a vector, bind the pipeline

@@ -90,7 +90,21 @@ namespace EWE {
         return dslBuilder.build();
     }
 
+    EWEDescriptorSetLayout* TextureDSLInfo::getSimpleDSL(EWEDevice& device, VkShaderStageFlags stageFlag) {
+        TextureDSLInfo dslInfo{};
+        dslInfo.setStageTextureCount(stageFlag, 1);
+        if (descSetLayouts.contains(dslInfo)) {
+            return descSetLayouts.find(dslInfo)->second.get();
+        }
+        EWEDescriptorSetLayout::Builder dslBuilder{ device };
+        dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlag);
+        auto emplaceRet = descSetLayouts.emplace(dslInfo, dslBuilder.build());
+
+        return emplaceRet.first->second.get();
+    }
+
     EWEDescriptorSetLayout* TextureDSLInfo::getDescSetLayout(EWEDevice& device) {
+
         if (descSetLayouts.contains(*this)) {
             return descSetLayouts.find(*this)->second.get();
         }
@@ -101,7 +115,6 @@ namespace EWE {
         }
 
         return emplaceRet.first->second.get();
-
     }
 
     ImageInfo::ImageInfo(EWEDevice& device, PixelPeek& pixelPeek, bool mipmap) {

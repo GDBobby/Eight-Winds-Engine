@@ -29,7 +29,7 @@ namespace EWE {
             std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
         };
 
-        EWEDescriptorSetLayout(EWEDevice& eweDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings);
+        EWEDescriptorSetLayout(EWEDevice& eweDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings);
         ~EWEDescriptorSetLayout();
         EWEDescriptorSetLayout(const EWEDescriptorSetLayout&) = delete;
         EWEDescriptorSetLayout& operator=(const EWEDescriptorSetLayout&) = delete;

@@ -54,9 +54,6 @@ namespace EWE {
         }
         */
         //pipeDescSetLayouts.clear();
-        for (int i = 0; i < 10; i++) {
-            dynamicMaterialPipeDescSetLayouts[i].clear();
-        }
         printf("after descriptor handler cleanup \n");
     }
 
@@ -208,7 +205,7 @@ namespace EWE {
     }
     */
 
-    void DescriptorHandler::initGlobalDescriptors(std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device) {
+    void DescriptorHandler::initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device) {
         printf("init global descriptors \n");
         DescriptorHandler::getDescSetLayout(LDSL_global, device);
         DescriptorHandler::getDescSetLayout(LDSL_boned, device);
@@ -223,18 +220,9 @@ namespace EWE {
                 ) {
                 printf("global desc failure \n");
             }
-
-            descriptorSets[DS_loading].push_back(VkDescriptorSet{});
-            if (!
-                EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
-                .writeBuffer(0, bufferMap[Buff_loading][i]->descriptorInfo())
-                .build(descriptorSets[DS_loading].back())
-                ) {
-                printf("loading desc set failure \n");
-            }
         }
     }
-    void DescriptorHandler::initDescriptors(std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap) {
+    void DescriptorHandler::initDescriptors(std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap) {
 
         //printf("initializing VkDescriptorSets \n");
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {

@@ -27,7 +27,7 @@ namespace EWE {
 			ocean_push.modelMatrix = transform.mat4();
 
 			oceanModel = EWEModel::createSimpleModelFromFile(device, "ocean.obj");
-			foam = EWETexture::addGlobalTexture(device, "ocean/foam.jpg");
+			Texture_Builder::createSimpleTexture(device, "ocean/foam.jpg", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 			//renderPipeline;
 
@@ -307,12 +307,16 @@ namespace EWE {
 			pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
 
-			std::vector<VkDescriptorSetLayout> tempDSL = *DescriptorHandler::getPipeDescSetLayout(PDSL_global, device);
-				tempDSL.push_back(renderParamsDSL->getDescriptorSetLayout());
-				tempDSL.push_back(cascadeDSLs[5]->getDescriptorSetLayout());
-				tempDSL.push_back(cascadeDSLs[5]->getDescriptorSetLayout());
-				tempDSL.push_back(cascadeDSLs[5]->getDescriptorSetLayout());
-				tempDSL.push_back(EWETexture::getSimpleDescriptorSetLayout());
+			TextureDSLInfo dslInfo{};
+			dslInfo.setStageTextureCount(VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+			std::vector<VkDescriptorSetLayout> tempDSL = {
+				DescriptorHandler::getDescSetLayout(LDSL_global, device),
+				renderParamsDSL->getDescriptorSetLayout(),
+				cascadeDSLs[5]->getDescriptorSetLayout(),
+				cascadeDSLs[5]->getDescriptorSetLayout(),
+				cascadeDSLs[5]->getDescriptorSetLayout(),
+				dslInfo.getDescSetLayout(device)->getDescriptorSetLayout()
+			};
 
 			pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 			pipelineLayoutInfo.pSetLayouts = tempDSL.data();
@@ -403,7 +407,7 @@ namespace EWE {
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				renderPipeLayout,
 				5, 1,
-				EWETexture::getDescriptorSets(foam, cmdIndexPair.second),
+				Texture_Manager::getDescriptorSet(foam),
 				0, nullptr
 			);
 			//std::cout << "after foam desc OCEAN \n";

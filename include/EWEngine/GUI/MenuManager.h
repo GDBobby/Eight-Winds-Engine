@@ -83,7 +83,6 @@ namespace EWE {
 		}
 		bool drawingNineUI() { return menuModules[currentMenuState]->drawingNineUI(); }
 		void drawNewNine() { menuModules[currentMenuState]->drawNewNine(); }
-		void drawNineUI(FrameInfo2D& frameInfo) { menuModules[currentMenuState]->drawNineUI(frameInfo); }
 
 		static void staticKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void staticMouseCallback(GLFWwindow* window, int button, int action, int mods);

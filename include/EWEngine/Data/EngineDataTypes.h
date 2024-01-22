@@ -19,6 +19,7 @@ struct MaterialTextureInfo {
 	MaterialFlags materialFlags;
 	TextureID textureID;
 	//MaterialTextureInfo() {}
+	MaterialTextureInfo() {}
 	MaterialTextureInfo(MaterialFlags flags, TextureID texID) : materialFlags{ flags }, textureID{ texID } {}
 };
 

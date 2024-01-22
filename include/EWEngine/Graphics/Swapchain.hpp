@@ -52,8 +52,8 @@ class EWESwapChain {
         }
 
         //VkPipelineRenderingCreateInfo const& pipeRenderInfo
-        VkPipelineRenderingCreateInfo const& getPipelineInfo() {
-            return pipeline_rendering_create_info;
+        VkPipelineRenderingCreateInfo* getPipelineInfo() {
+            return &pipeline_rendering_create_info;
         }
         VkImage getImage(uint8_t imageIndex) {
             return swapChainImages[imageIndex];

@@ -5,6 +5,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
 
+#include <EWEngine/Data/EngineDataTypes.h>
 #include "EWEngine/Graphics/Device.hpp"
 #include "EWEngine/Graphics/Descriptors.h"
 

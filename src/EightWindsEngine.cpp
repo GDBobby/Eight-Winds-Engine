@@ -3,7 +3,7 @@
 //#include "keyboard_movement_controller.h" //this is for a free camera, which is currently not utilized
 #include "EWEngine/Graphics/Device_Buffer.h"
 #include "EWEngine/Graphics/Camera.h"
-#include "EWEngine/Graphics/Dimension2/Dimension2.h"
+#include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 
 
 #define GLM_FORCE_RADIANS
@@ -50,7 +50,7 @@ namespace EWE {
 		uiHandler{ SettingsJSON::settingsData.getDimensions(), eweDevice, mainWindow.getGLFWwindow(), eweRenderer.makeTextOverlay() },
 		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), eweDevice, mainWindow.getGLFWwindow(), uiHandler.getTextOverlay() },
 		advancedRS{ eweDevice, eweRenderer.getPipelineInfo(), objectManager, menuManager},
-		skinnedRS{ eweDevice, eweRenderer.getPipelineInfo() }
+		skinnedRS{ eweDevice }
 	{
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
 		camera.setPerspectiveProjection(glm::radians(70.0f), eweRenderer.getAspectRatio(), 0.1f, 10000.0f);
@@ -61,10 +61,10 @@ namespace EWE {
 		DescriptorHandler::initGlobalDescriptors(bufferMap, eweDevice);
 		//printf("back to ui handler? \n");
 		advancedRS.takeUIHandlerPtr(&uiHandler);
-		advancedRS.updateLoadingPipeline(eweRenderer.getPipelineInfo());
+		advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
 		leafSystem = std::make_unique<LeafSystem>(eweDevice);
-		Dimension2::init(eweDevice, eweRenderer.getPipelineInfo());
+		Dimension2::init(eweDevice);
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
 
@@ -74,7 +74,7 @@ namespace EWE {
 		printf("before init descriptors \n");
 		DescriptorHandler::initDescriptors(bufferMap);
 		printf("after init descriptors \n");
-		advancedRS.updateMaterialPipelines(eweRenderer.getPipelineInfo());
+		advancedRS.updateMaterialPipelines();
 
 		pointLightsEnabled = SettingsJSON::settingsData.pointLights;
 		if (!pointLightsEnabled) {
@@ -92,7 +92,6 @@ namespace EWE {
 		vkDestroyQueryPool(eweDevice.device(), queryPool, nullptr);
 		DescriptorHandler::cleanup(eweDevice);
 
-		EWETexture::cleanup();
 		auto matInst = MaterialHandler::getMaterialHandlerInstance();
 
 		bufferMap.clear();
@@ -111,7 +110,6 @@ namespace EWE {
 
 		bufferMap[Buff_ubo].resize(MAX_FRAMES_IN_FLIGHT);
 		bufferMap[Buff_gpu].resize(MAX_FRAMES_IN_FLIGHT);
-		bufferMap[Buff_loading].resize(MAX_FRAMES_IN_FLIGHT);
 
 
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -120,9 +118,6 @@ namespace EWE {
 			bufferMap[Buff_ubo][i]->map();
 			bufferMap[Buff_gpu][i] = std::make_unique<EWEBuffer>(eweDevice, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 			bufferMap[Buff_gpu][i]->map();
-
-			bufferMap[Buff_loading][i] = std::make_unique<EWEBuffer>(eweDevice, sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-			bufferMap[Buff_loading][i]->map();
 
 			//printf("mapping lbo \n");
 			bufferMap[Buff_gpu][i]->writeToBuffer(&lbo);
@@ -212,12 +207,10 @@ namespace EWE {
 					FrameInfoLoading frameInfo{ cmdFramePair, leafSystem.get() };
 					eweRenderer.beginSwapChainRenderPass(cmdFramePair.first);
 					leafSystem->fallCalculation(static_cast<float>(renderThreadTime), frameIndex);
-					bufferMap[Buff_loading][frameIndex]->writeToBuffer(leafSystem->getLeafTransformBuffer(), LEAF_COUNT * sizeof(glm::mat4));
-					bufferMap[Buff_loading][frameIndex]->flush();
 #if false//BENCHMARKING
 					uiHandler.Benchmarking(renderThreadTime, peakRenderTime, averageRenderTime, minRenderTime, highestRenderTime, averageLogicTime, BENCHMARKING_GPU, elapsedGPUMS, averageElapsedGPUMS);
 #endif
-					advancedRS.renderLoadingScreen(frameInfo);
+					leafSystem->render(frameInfo.cmdIndexPair.first, frameInfo.cmdIndexPair.second);
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.endSwapChainRenderPass(cmdFramePair.first);
 					if (eweRenderer.endFrame()) {

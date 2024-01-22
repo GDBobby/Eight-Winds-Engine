@@ -80,7 +80,7 @@ namespace EWE {
 
 		uint32_t beginRoundFrames = 0; //move this out
 
-		std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>> bufferMap;
+		std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>> bufferMap;
 
 		EWECamera camera;
 		EWEGameObject viewerObject{ EWEGameObject::createGameObject() };
@@ -107,7 +107,7 @@ namespace EWE {
 		void initGlobalBuffers();
 
 		void updatePipelines() {
-			advancedRS.updatePipelines(eweRenderer.getPipelineInfo());
+			advancedRS.updatePipelines();
 		}
 
 		std::pair<VkCommandBuffer, uint8_t> beginRender();

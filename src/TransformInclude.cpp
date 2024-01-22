@@ -13,7 +13,8 @@ glm::mat4 TransformComponent::mat4() {
 
 
     modelMatrix = {
-        {
+        
+        { //is this 0[1] 0[2] 0[3] or [1][0] [2][0]
             scale.x * (c1 * c3 + s1 * s2 * s3),
             scale.x * (c2 * s3),
             scale.x * (c1 * s2 * s3 - c3 * s1),
@@ -34,6 +35,37 @@ glm::mat4 TransformComponent::mat4() {
         {translation.x, translation.y, translation.z, 1.0f} };
 
     return modelMatrix;
+}
+void TransformComponent::mat4(float* buffer) {
+
+    const float c3 = glm::cos(rotation.z);
+    const float s3 = glm::sin(rotation.z);
+    const float c2 = glm::cos(rotation.x);
+    const float s2 = glm::sin(rotation.x);
+    const float c1 = glm::cos(rotation.y);
+    const float s1 = glm::sin(rotation.y);
+
+    buffer[0] = scale.x * (c1 * c3 + s1 * s2 * s3);
+    buffer[1] = scale.x * (c2 * s3);
+    buffer[2] = scale.x * (c1 * s2 * s3 - c3 * s1);
+    buffer[3] = 0.f;
+
+    buffer[4] = scale.y * (c3 * s1 * s2 - c1 * s3);
+    buffer[5] = scale.y * (c2 * c3);
+    buffer[6] = scale.y * (c1 * c3 * s2 + s1 * s3);
+    buffer[7] = 0.f;
+
+    buffer[8] = scale.z * (c2 * s1);
+    buffer[9] = scale.z * (-s2);
+    buffer[10] = scale.z * (c1 * c2);
+    buffer[11] = 0.0f;
+
+    buffer[12] = translation.x;
+    buffer[13] = translation.y;
+    buffer[14] = translation.z;
+    buffer[15] = 1.0f;
+
+
 }
 
 glm::mat3 TransformComponent::normalMatrix() {

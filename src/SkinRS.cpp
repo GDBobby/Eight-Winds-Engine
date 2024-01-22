@@ -10,7 +10,7 @@ namespace EWE {
 	SkinRenderSystem* SkinRenderSystem::skinnedMainObject = nullptr;
 
 
-	SkinRenderSystem::SkinRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) : pipeRenderInfo{ pipeRenderInfo }, device { device } {
+	SkinRenderSystem::SkinRenderSystem(EWEDevice& device) : device { device } {
 		skinnedMainObject = this;
 
 		//this initializes the descriptors
@@ -47,24 +47,18 @@ namespace EWE {
 		skinnedMainObject = nullptr;
 	}
 
-	void SkinRenderSystem::renderInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
+	void SkinRenderSystem::renderInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex) {
+
+		MaterialPipelines* pipe;
+
 		for (auto& instanced : instancedData) {
 			//if instanced.first.actorCount == 0 return;
-			MaterialPipelines::bindPipeline();
+			pipe = instanced.second.pipeline;
 
+			pipe->bindPipeline();
 
-			instanced.second.pipeline->bind(cmdIndexPair.first);
-			auto& pipeLayoutRef = PipelineManager::dynamicMaterialPipeLayout[instanced.second.pipeLayoutIndex];
+			pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
 
-			vkCmdBindDescriptorSets(
-				cmdIndexPair.first,
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				pipeLayoutRef,
-				0, 1,
-				DescriptorHandler::getDescSet(DS_global, cmdIndexPair.second),
-				0,
-				nullptr
-			);
 			int64_t bindedSkeletonID = -1;
 			int32_t currentlyBindedTexture = -1;
 
@@ -83,34 +77,18 @@ namespace EWE {
 						throw std::exception("skinned rs invlaid buffer");
 					}
 #endif
-
-					vkCmdBindDescriptorSets(
-						cmdIndexPair.first,
-						VK_PIPELINE_BIND_POINT_GRAPHICS,
-						pipeLayoutRef,
-						1, 1,
-						instancedBuffers.at(skeleDataRef.first).getDescriptor(),
-						0,
-						nullptr
-					);
+					pipe->bindDescriptor(1, instancedBuffers.at(skeleDataRef.first).getDescriptor());
 				}
 				for (auto& skeleTextureRef : skeleDataRef.second) {
 					if (currentlyBindedTexture != skeleTextureRef.textureID) {
 						currentlyBindedTexture = skeleTextureRef.textureID;
-						vkCmdBindDescriptorSets(
-							cmdIndexPair.first,
-							VK_PIPELINE_BIND_POINT_GRAPHICS,
-							pipeLayoutRef,
-							2, 1,
-							Texture_Manager::getDescriptorSet(currentlyBindedTexture),
-							0, nullptr
-						);
+						pipe->bindDescriptor(2, Texture_Manager::getDescriptorSet(currentlyBindedTexture));
 					}
 
 					for (auto& meshRef : skeleTextureRef.meshes) {
 						//meshRef->BindAndDrawInstanceNoBuffer(cmdIndexPair.first, actorCount.at(instanced.first));
 						//printf("drawing instanced : %d \n", instancedBuffers.at(bindedSkeletonID).getInstanceCount());
-						meshRef->BindAndDrawInstanceNoBuffer(cmdIndexPair.first, instancedBuffers.at(skeleDataRef.first).getInstanceCount());
+						meshRef->BindAndDrawInstanceNoBuffer(cmdBuf, instancedBuffers.at(skeleDataRef.first).getInstanceCount());
 					}
 				}
 
@@ -122,20 +100,15 @@ namespace EWE {
 		}
 
 	}
-	void SkinRenderSystem::renderNonInstanced(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
+	void SkinRenderSystem::renderNonInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex) {
+
+		MaterialPipelines* pipe;
 		for (auto& boned : boneData) {
+			pipe = boned.second.pipeline;
 			//printf("shader flags on non-instanced : %d \n", boned.first);
-			boned.second.pipeline->bind(cmdIndexPair.first);
-			auto& pipeLayoutRef = PipelineManager::dynamicMaterialPipeLayout[boned.second.pipeLayoutIndex];
-			vkCmdBindDescriptorSets(
-				cmdIndexPair.first,
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				pipeLayoutRef,
-				0, 1,
-				DescriptorHandler::getDescSet(DS_global, cmdIndexPair.second),
-				0,
-				nullptr
-			);
+			pipe->bindPipeline();
+
+			pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
 			int32_t currentlyBindedTexture = -1;
 
 			for (auto& skeleDataRef : boned.second.skeletonData) {
@@ -155,28 +128,13 @@ namespace EWE {
 					throw std::exception("skinned rs invlaid buffer");
 				}
 #endif
-				vkCmdBindDescriptorSets(
-					cmdIndexPair.first,
-					VK_PIPELINE_BIND_POINT_GRAPHICS,
-					pipeLayoutRef,
-					1, 1,
-					buffers.at(skeleDataRef.first).getDescriptor(),
-					0,
-					nullptr
-				);
+				pipe->bindDescriptor(1, buffers.at(skeleDataRef.first).getDescriptor());
 
 				for (auto& skeleTextureRef : skeleDataRef.second) {
 					if (currentlyBindedTexture != skeleTextureRef.textureID) {
 						currentlyBindedTexture = skeleTextureRef.textureID;
 
-						vkCmdBindDescriptorSets(
-							cmdIndexPair.first,
-							VK_PIPELINE_BIND_POINT_GRAPHICS,
-							pipeLayoutRef,
-							2, 1,
-							Texture_Manager::getDescriptorSet(currentlyBindedTexture),
-							0, nullptr
-						);
+						pipe->bindDescriptor(2, Texture_Manager::getDescriptorSet(currentlyBindedTexture));
 					}
 
 					//race condition here for deletion of push constant
@@ -184,17 +142,13 @@ namespace EWE {
 					for (auto& meshRef : skeleTextureRef.meshes) {
 						//printf("for each mesh in non-instanced \n");
 						//meshRef->BindAndDrawInstanceNoBuffer(cmdIndexPair.first, actorCount.at(instanced.first));
-						meshRef->bind(cmdIndexPair.first);
+						pipe->bindModel(meshRef);
 
 #if RENDER_DEBUG
 						printf("before drawing to pipeline : %d \n", boned.first);
 #endif
-
-						uint8_t pushSize = pushConstants.at(skeleDataRef.first).size;
 						for (auto& pushData : pushConstants.at(skeleDataRef.first).data) {
-							vkCmdPushConstants(cmdIndexPair.first, pipeLayoutRef, VK_SHADER_STAGE_VERTEX_BIT, 0, pushSize, pushData);
-
-							meshRef->draw(cmdIndexPair.first);
+							pipe->pushAndDraw(pushData);
 						}
 					}
 				}
@@ -213,9 +167,10 @@ namespace EWE {
 		//setFrameIndex(cmdIndexPair.second);
 
 		//printf("pre instance drawing in skinned RS \n");
-		renderInstanced(cmdIndexPair);
+		MaterialPipelines::setCmdIndexPair(cmdIndexPair);
+		renderInstanced(cmdIndexPair.first, cmdIndexPair.second);
 
-		renderNonInstanced(cmdIndexPair);
+		renderNonInstanced(cmdIndexPair.first, cmdIndexPair.second);
 		
 
 		//printf("after skinned RS drawing \n");
@@ -267,7 +222,7 @@ namespace EWE {
 				skinnedMainObject->createInstancedBuffer(skeletonID, boneCount);
 
 				skinnedMainObject->createInstancedPipe(instancedFlags, boneCount, materialInfo.materialFlags);
-				skinnedMainObject->instancedData.at(instancedFlags).skeletonData.emplace(skeletonID, std::vector<TextureMeshStruct>{});
+				skinnedMainObject->instancedData.at(instancedFlags).skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
 				//auto& secondRef = 
 				skinnedMainObject->instancedData.at(instancedFlags).skeletonData.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 				//secondRef.meshes.push_back(modelPtr);
@@ -289,7 +244,7 @@ namespace EWE {
 					}
 				}
 				else {
-					skeleRef.emplace(skeletonID, std::vector<TextureMeshStruct>{});
+					skeleRef.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
 					skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 				}
 			}
@@ -300,7 +255,7 @@ namespace EWE {
 			if (skinnedMainObject->boneData.find(materialInfo.materialFlags) == skinnedMainObject->boneData.end()) {
 
 				skinnedMainObject->createBonePipe(materialInfo.materialFlags);
-				skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.emplace(skeletonID, std::vector<TextureMeshStruct>{});
+				skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
 				//auto& secondRef = 
 				skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 				//secondRef.meshes.push_back(modelPtr);
@@ -322,7 +277,7 @@ namespace EWE {
 					}
 				}
 				else {
-					skeleRef.emplace(skeletonID, std::vector<TextureMeshStruct>{});
+					skeleRef.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
 					skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 				}
 			}
@@ -337,7 +292,7 @@ namespace EWE {
 		if (skinnedMainObject->boneData.find(materialInfo.materialFlags) == skinnedMainObject->boneData.end()) {
 
 			skinnedMainObject->createBonePipe(materialInfo.materialFlags);
-			skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.emplace(skeletonID, std::vector<TextureMeshStruct>{});
+			skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
 			//auto& secondRef = 
 			skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 			//secondRef.meshes.push_back(modelPtr);
@@ -359,7 +314,7 @@ namespace EWE {
 				}
 			}
 			else {
-				skeleRef.emplace(skeletonID, std::vector<TextureMeshStruct>{});
+				skeleRef.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
 				skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 			}
 		}

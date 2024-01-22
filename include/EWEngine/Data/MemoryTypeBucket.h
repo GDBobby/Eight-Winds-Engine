@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <bitset>
+#include <stdexcept>
 
 namespace EWE {
 	template <std::size_t Size>

@@ -9,7 +9,7 @@ namespace EWE {
 	class Dimension2 {
 	private: //protected? no dif
 		static Dimension2* dimension2Ptr;
-		Dimension2(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		Dimension2(EWEDevice& device);
 
 		enum WhichPipe {
 			Pipe_2D,
@@ -28,7 +28,7 @@ namespace EWE {
 		uint8_t frameIndex;
 
 	public:
-		static void init(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		static void init(EWEDevice& device);
 		static void destruct(EWEDevice& device);
 
 		static void bindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
