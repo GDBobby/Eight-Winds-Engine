@@ -4,8 +4,6 @@
 #include "UIComponentsHigher.h"
 #include "EWEngine/Graphics/Model/Basic_Model.h"
 #include "EWEngine/GUI/MenuEnums.h"
-
-#include "EWEngine/Graphics/Frame_Info.h"
 //#include "../../Game/InputHandler.h"
 
 #include <queue>

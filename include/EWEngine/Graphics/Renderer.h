@@ -1,10 +1,10 @@
 #pragma once
 
 #include "EWEngine/MainWindow.h"
-#include "Device.hpp"
-#include "Swapchain.hpp"
-#include "TextOverlay.h"
-#include "Camera.h"
+#include "EWEngine/Graphics/Device.hpp"
+#include "EWEngine/Graphics/Swapchain.hpp"
+#include "EWEngine/Graphics/TextOverlay.h"
+#include "EWEngine/Graphics/Camera.h"
 
 #include <cassert>
 #include <memory>
@@ -57,7 +57,7 @@ namespace EWE {
 			return currentFrameIndex;
 		}
 
-		std::pair<VkCommandBuffer, uint8_t> beginFrame();
+		FrameInfo beginFrame();
 		bool endFrame();
 
 		void beginSecondarySwapChainRenderPass(std::pair<VkCommandBuffer, VkCommandBuffer> commandBufferPair);

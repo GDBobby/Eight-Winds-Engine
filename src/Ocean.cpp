@@ -27,7 +27,9 @@ namespace EWE {
 			ocean_push.modelMatrix = transform.mat4();
 
 			oceanModel = EWEModel::createSimpleModelFromFile(device, "ocean.obj");
-			Texture_Builder::createSimpleTexture(device, "ocean/foam.jpg", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+			//revisit wether this should be global or scene later
+			Texture_Builder::createSimpleTexture( "ocean/foam.jpg", true, true, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 			//renderPipeline;
 
@@ -363,47 +365,47 @@ namespace EWE {
 			spectrum_parameter_buffer->map();
 		}
 
-		void Ocean::RenderUpdate(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
+		void Ocean::RenderUpdate(FrameInfo frameInfo) {
 			//std::cout << " ~~~~~~~~~~~~ BEGINNING OCEAN RENDER ~~~~~~~~~~~~" << std::endl;
-			renderPipeline->bind(cmdIndexPair.first);
+			renderPipeline->bind(frameInfo.cmdBuf);
 
 			//global descriptor set
 			vkCmdBindDescriptorSets(
-				cmdIndexPair.first,
+				frameInfo.cmdBuf,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				renderPipeLayout,
 				0, 1,
-				DescriptorHandler::getDescSet(DS_global, cmdIndexPair.second),
+				DescriptorHandler::getDescSet(DS_global, frameInfo.index),
 				0,
 				nullptr
 			);
 			//std::cout << "after global desc OCEAN \n";
 
 			vkCmdBindDescriptorSets(
-				cmdIndexPair.first,
+				frameInfo.cmdBuf,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				renderPipeLayout,
 				1, 1,
-				&renderParamsDescriptorSets[cmdIndexPair.second],
+				&renderParamsDescriptorSets[frameInfo.index],
 				0, nullptr
 			);
 			//std::cout << "after params desc OCEAN \n";
 
 			for (uint8_t i = 0; i < 3; i++) {
 				vkCmdBindDescriptorSets(
-					cmdIndexPair.first,
+					frameInfo.cmdBuf,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					renderPipeLayout,
 					2 + i, 1,
-					&renderTextureDescriptorSets[i][cmdIndexPair.second],
+					&renderTextureDescriptorSets[i][frameInfo.index],
 					0, nullptr
 				);
-				//cascade[i].bindMergedTextures(cmdIndexPair.first, renderPipeLayout, 2 + i);
+				//cascade[i].bindMergedTextures(frameInfo.cmdBuf, renderPipeLayout, 2 + i);
 			}
 			//std::cout << "after texture desc OCEAN \n";
 
 			vkCmdBindDescriptorSets(
-				cmdIndexPair.first,
+				frameInfo.cmdBuf,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				renderPipeLayout,
 				5, 1,
@@ -413,10 +415,10 @@ namespace EWE {
 			//std::cout << "after foam desc OCEAN \n";
 
 			ocean_push.time = time;
-			vkCmdPushConstants(cmdIndexPair.first, renderPipeLayout, VK_SHADER_STAGE_ALL_GRAPHICS, 0, sizeof(Ocean_Draw_Push_Constant), &ocean_push);
+			vkCmdPushConstants(frameInfo.cmdBuf, renderPipeLayout, VK_SHADER_STAGE_ALL_GRAPHICS, 0, sizeof(Ocean_Draw_Push_Constant), &ocean_push);
 
-			oceanModel->bind(cmdIndexPair.first);
-			oceanModel->draw(cmdIndexPair.first);
+			oceanModel->bind(frameInfo.cmdBuf);
+			oceanModel->draw(frameInfo.cmdBuf);
 
 			//std::cout << " ~~~~~~~~~~~ ENDING OCEAN RENDER ~~~~~~~~~~~~~" << std::endl;
 		}

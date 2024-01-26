@@ -9,7 +9,7 @@ namespace EWE {
         TextureMapping textureTracker;
         loadTextures(device, objectPath, tempData.nameExport, textureTracker, globalTextures);
 
-        addToMaterialHandler(device, tempData, textureTracker);
+        addToRigidRenderingSystem(device, tempData, textureTracker);
     }
     EweObject::EweObject(std::string objectPath, EWEDevice& device, bool globalTextures, SkeletonID ownerID) : mySkinID{ SkinRenderSystem::getSkinID() } {
         std::cout << "weapon object construction : objectPath - " << objectPath << std::endl;
@@ -17,11 +17,11 @@ namespace EWE {
         TextureMapping textureTracker;
         loadTextures(device, objectPath, tempData.nameExport, textureTracker, globalTextures);
 
-        //addToMaterialHandler(device, tempData, textureTracker);
+        //addToRigidRenderingSystem(device, tempData, textureTracker);
         addToSkinHandler(device, tempData, textureTracker, ownerID);
     }
     EweObject::~EweObject() {
-        std::shared_ptr<MaterialHandler> materialInstance = MaterialHandler::getMaterialHandlerInstance();
+        auto materialInstance = RigidRenderingSystem::getRigidRSInstance();
 
         ownedTextureIDs.sort(); //dgaf bout sorting but need it for std::list::unique()
         ownedTextureIDs.unique();
@@ -31,9 +31,9 @@ namespace EWE {
         }
         //printf("after removing textures \n");
     }
-    void EweObject::addToMaterialHandler(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker) {
+    void EweObject::addToRigidRenderingSystem(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker) {
 
-        std::shared_ptr<MaterialHandler> materialInstance = MaterialHandler::getMaterialHandlerInstance();
+        RigidRenderingSystem* materialInstance = RigidRenderingSystem::getRigidRSInstance();
 
         //Actor_Type actorType = (Actor_Type)(1 + isKatana);
         /*
@@ -51,11 +51,11 @@ namespace EWE {
 
         for (int i = 0; i < tempData.meshSimpleExport.meshesSimple.size(); i++) {
             meshes.push_back(EWEModel::createMesh(device, tempData.meshSimpleExport.meshesSimple[i].first, tempData.meshSimpleExport.meshesSimple[i].second));
-            materialInstance->addMaterialObject(textureTracker.meshSimpleNames[i], &transform, meshes.back().get(), &drawable);
+            materialInstance->addMaterialObject(device, textureTracker.meshSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
         for (int i = 0; i < tempData.meshNTSimpleExport.meshesNTSimple.size(); i++) {
             meshes.push_back(EWEModel::createMesh(device, tempData.meshNTSimpleExport.meshesNTSimple[i].first, tempData.meshNTSimpleExport.meshesNTSimple[i].second));
-            materialInstance->addMaterialObject(textureTracker.meshNTSimpleNames[i], &transform, meshes.back().get(), &drawable);
+            materialInstance->addMaterialObject(device, textureTracker.meshNTSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
         /*
         for (int i = 0; i < tempData.meshExport.meshes.size(); i++) {

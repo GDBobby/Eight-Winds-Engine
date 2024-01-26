@@ -36,7 +36,7 @@ namespace EWE {
 			uniformBuffers->at(frameIndex)->flush();
 		}
 
-		void setBuffers(std::vector<std::unique_ptr<EWEBuffer>>* buffers) {
+		void setBuffers(std::vector<EWEBuffer*>* buffers) {
 			uniformBuffers = buffers;
 			assert(uniformBuffers->size() > 0);
 		}
@@ -50,7 +50,7 @@ namespace EWE {
 		}
 		
 	private:
-		std::vector<std::unique_ptr<EWEBuffer>>* uniformBuffers{};
+		std::vector<EWEBuffer*>* uniformBuffers{};
 		GlobalUbo ubo{};
 
 		uint8_t dataHasBeenUpdated = 0;

@@ -58,7 +58,7 @@ namespace EWE {
 		//lastTextureID = EWETexture::addModeTexture(eweDevice, "hazard.png");
 		lastTextureID = EWETexture::addSmartModeTexture(eweDevice, "hazard.png", EWETexture::tType_smart);
 		printf("after smart mode texture \n");
-		materialHandler = MaterialHandler::getMaterialHandlerInstance();
+		materialHandler = RigidRenderingSystem::getRigidRSInstance();
 		printf("after material handler \n");
 	}
 	

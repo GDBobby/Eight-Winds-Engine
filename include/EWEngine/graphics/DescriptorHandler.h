@@ -54,9 +54,9 @@ namespace EWE {
     public:
         static void cleanup(EWEDevice& device);
         static EWEDescriptorSetLayout& getLDSL(LDSL_Enum whichLDSL);
-        static void initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device);
+        static void initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap, EWEDevice& device);
         
-        static void initDescriptors(std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap);
+        static void initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
         static VkDescriptorSetLayout getDescSetLayout(LDSL_Enum whichDescSet, EWEDevice& device);
         //static std::vector<VkDescriptorSetLayout>* getPipeDescSetLayout(PipeDescSetLayouts_Enum PDLe, EWEDevice& device);
         //static std::vector<VkDescriptorSetLayout>* getDynamicPipeDescSetLayout(uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device);

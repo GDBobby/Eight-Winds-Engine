@@ -3,7 +3,7 @@
 
 
 namespace EWE {
-	ImGUIHandler::ImGUIHandler(GLFWwindow* window, EWEDevice& device, uint32_t imageCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo) : device{ device } {
+	ImGUIHandler::ImGUIHandler(GLFWwindow* window, EWEDevice& device, uint32_t imageCount) : device{ device } {
 		//printf("imgui handler constructor \n");
 
 		IMGUI_CHECKVERSION();
@@ -33,7 +33,6 @@ namespace EWE {
 
 		//if an issue, address this first
 		init_info.UseDynamicRendering = true;
-		init_info.pipeRenderInfo = pipeRenderInfo;
 
 		ImGui_ImplVulkan_Init(&init_info, VK_NULL_HANDLE);
 

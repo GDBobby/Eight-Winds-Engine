@@ -21,6 +21,10 @@ namespace EWE {
 		MaterialFlags matFlags;
 
 		SkinInstanceKey(uint16_t boneCount, MaterialFlags flags) : boneCount{ boneCount }, matFlags{ flags } {}
+
+		bool operator==(SkinInstanceKey const& other) const {
+			return (boneCount == other.boneCount) && (matFlags == other.matFlags);
+		}
 	};
 }
 template<>
@@ -43,6 +47,7 @@ namespace EWE{
 
 		void bindModel(EWEModel* model);
 		void bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet);
+		void bindTextureDescriptor(uint8_t descSlot, TextureID texID);
 
 		void push(void* push);
 		void pushAndDraw(void* push);
@@ -53,6 +58,7 @@ namespace EWE{
 		uint16_t pipeLayoutIndex;
 		EWEPipeline* pipeline;
 		EWEModel* bindedModel = nullptr;
+		TextureID bindedTexture = TEXTURE_UNBINDED;
 
 
 		//static portion
@@ -66,12 +72,10 @@ namespace EWE{
 		static void initStaticVariables();
 		static void cleanupStaticVariables(EWEDevice& device);
 
-		static void destruct(EWEDevice& device);
-
 		static MaterialPipelines* at(MaterialFlags flags);
 		static MaterialPipelines* at(SkinInstanceKey skinInstanceKey);
 		static MaterialPipelines* at(uint16_t boneCount, MaterialFlags flags);
-		static void setCmdIndexPair(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
+		static void setFrameInfo(FrameInfo frameInfo);
 
 
 	protected:

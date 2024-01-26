@@ -24,7 +24,7 @@ namespace EWE {
 		virtual void createPipeline(EWEDevice& device) = 0;
 
 	public:
-		static void setCmdIndexPair(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
+		static void setFrameInfo(FrameInfo frameInfo);
 		static PipelineSystem* at(PipelineID pipeID);
 		static void emplace(PipelineID pipeID, PipelineSystem* pipeSys) {
 #ifdef _DEBUG
@@ -41,6 +41,7 @@ namespace EWE {
 
 		void bindModel(EWEModel* model);
 		void bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet);
+		void bindTextureDescriptor(uint8_t descSlot, TextureID texID);
 
 		void push(void* push);
 		virtual void pushAndDraw(void* push);

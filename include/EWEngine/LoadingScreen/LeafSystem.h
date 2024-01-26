@@ -54,7 +54,7 @@ namespace EWE {
 
 		void fallCalculation(float timeStep, uint8_t frameIndex);
 		void loadLeafModel(EWEDevice& device);
-		void render(std::pair<VkCommandBuffer, uint8_t>& cmdBufIndexPair);
+		void render(FrameInfo& frameInfo);
 
 		std::unique_ptr<EWEModel> leafModel;
 		TextureID leafTextureID = 0;

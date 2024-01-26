@@ -37,10 +37,7 @@ namespace EWE {
 		Pipe_spikyBall,
 		Pipe_visualEffect,
 		Pipe_grass,
-
-		Pipe_orbOverlay,
-		Pipe_ExpBar,
-		Pipe_castleHealth,
+		Pipe_loading,
 
 		Pipe_MAX_COUNT,
 	};
@@ -100,6 +97,7 @@ namespace EWE {
 	class EWEPipeline {
 	public:
 
+
 		struct PipelineConfigInfo {
 			PipelineConfigInfo() = default;
 			PipelineConfigInfo(const PipelineConfigInfo&) = delete;
@@ -133,6 +131,9 @@ namespace EWE {
 		#endif
 
 			VkPipelineCache cache = VK_NULL_HANDLE;
+
+
+			static VkPipelineRenderingCreateInfo* pipelineRenderingInfoStatic;
 		};
 
 		EWEPipeline(EWEDevice& device, const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo);
@@ -149,7 +150,6 @@ namespace EWE {
 		static void defaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
 		static void enable2DConfig(PipelineConfigInfo& configInfo);
 		static void enableAlphaBlending(PipelineConfigInfo& configInfo);
-		static VkPipelineRenderingCreateInfo* pipelineRenderingInfo;
 
 		static void cleanShaderModules(EWEDevice& device) {
 			for (auto iter = shaderModuleMap.begin(); iter != shaderModuleMap.end(); iter++) {

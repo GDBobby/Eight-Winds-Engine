@@ -16,6 +16,8 @@
 #include "EWEngine/GUI/MenuManager.h"
 #include "EWEngine/Systems/PipelineSystem.h"
 
+#include "EWEngine/Graphics/LightBufferObject.h"
+
 #include <functional>
 #include <memory>
 #include <vector>
@@ -26,7 +28,6 @@
 //#define LOGIC_TIME 0.0001
 
 #define BENCHMARKING_GPU true
-#define THROTTLED true
 
 
 
@@ -60,6 +61,7 @@ namespace EWE {
 
 		AdvancedRenderSystem advancedRS;
 		SkinRenderSystem skinnedRS;
+		Texture_Manager textureManager;
 
 		std::unique_ptr<LeafSystem> leafSystem;
 
@@ -80,7 +82,7 @@ namespace EWE {
 
 		uint32_t beginRoundFrames = 0; //move this out
 
-		std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>> bufferMap;
+		std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>> bufferMap;
 
 		EWECamera camera;
 		EWEGameObject viewerObject{ EWEGameObject::createGameObject() };
@@ -110,15 +112,15 @@ namespace EWE {
 			advancedRS.updatePipelines();
 		}
 
-		std::pair<VkCommandBuffer, uint8_t> beginRender();
+		FrameInfo beginRender();
 //#define RENDER_OBJECT_DEBUG
 
-		void draw2DObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair);
-		void draw3DObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt);
-		void drawText(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt);
-		void drawObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt);
+		void draw2DObjects(FrameInfo frameInfo);
+		void draw3DObjects(FrameInfo frameInfo, double dt);
+		void drawText(FrameInfo frameInfo, double dt);
+		void drawObjects(FrameInfo frameInfo, double dt);
 
-		void endRender(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
+		void endRender(FrameInfo frameInfo);
 
 		void loadingScreen();
 

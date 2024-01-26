@@ -3,55 +3,79 @@
 #include "EWEngine/Graphics/Model/Model.h"  
 #include "EWEngine/Data/EngineDataTypes.h"
 
+#include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
+
 //this is still a WIP
 
 namespace EWE {
-    struct MaterialRenderInfo {
+    struct MaterialObjectInfo {
         TransformComponent* ownerTransform; //if nullptr and not playerOwned, error
         EWEModel* meshPtr;
         bool* drawable;
         //Actor_Type actorType = Actor_None;
 
         //int32_t textureID;
-        MaterialRenderInfo() {
+        MaterialObjectInfo() {
             printf("Default construction of material info??? \n");
             ownerTransform = nullptr;
             meshPtr = nullptr;
             //textureID = 0;
         }
-        MaterialRenderInfo(TransformComponent* tComp, EWEModel* meshP, bool* drawable) : ownerTransform{ tComp }, meshPtr{ meshP }, drawable{ drawable } {}
+        MaterialObjectInfo(TransformComponent* tComp, EWEModel* meshP, bool* drawable) : ownerTransform{ tComp }, meshPtr{ meshP }, drawable{ drawable } {}
     };
 
+    struct MaterialRenderInfo {
+        MaterialPipelines* pipe;
+        std::unordered_map<TextureID, std::vector<MaterialObjectInfo>> materialMap{};
+        MaterialRenderInfo(MaterialFlags flags, EWEDevice& device) : pipe{MaterialPipelines::getMaterialPipe(flags, device)} {
+
+        }
+        void render(uint8_t frameIndex);
+    };
 
     //singleton
-    class MaterialHandler {
+    class RigidRenderingSystem {
+    private:
+        static RigidRenderingSystem* rigidInstance;
+
     public:
-        static std::shared_ptr<MaterialHandler> getMaterialHandlerInstance() {
-            static std::shared_ptr<MaterialHandler> materialHandlerInstance{ new MaterialHandler };
-            return materialHandlerInstance;
+        static RigidRenderingSystem* getRigidRSInstance() {
+            if (rigidInstance == nullptr) {
+                rigidInstance = new RigidRenderingSystem();
+            }
+            return rigidInstance;
+        }
+        static void destruct() {
+            delete rigidInstance;
         }
     private:
-        //MaterialHandler() {}
+        //RigidRenderingSystem() {}
 
-        MaterialHandler() = default;
-        //~MaterialHandler() = default;
-        MaterialHandler(const MaterialHandler&) = delete;
-        MaterialHandler& operator=(const MaterialHandler&) = delete;
+        RigidRenderingSystem() = default;
+        //~RigidRenderingSystem() = default;
+        RigidRenderingSystem(const RigidRenderingSystem&) = delete;
+        RigidRenderingSystem& operator=(const RigidRenderingSystem&) = delete;
 
-        std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>> materialMap;
+        std::unordered_map<MaterialFlags, MaterialRenderInfo> materialMap{};
     public:
-        ~MaterialHandler() {}
-        const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>>& getMaterialMap() {
+        ~RigidRenderingSystem() {
+        }
+        /*
+        const std::unordered_map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& getMaterialMap() {
             return materialMap;
         }
-        const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>>& cleanAndGetMaterialMap();
-        void addMaterialObject(MaterialTextureInfo materialInfo, MaterialRenderInfo& renderInfo);
-        void addMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
+        */
+        //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& cleanAndGetMaterialMap();
+        void addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo);
+        void addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
 
         void addMaterialObjectFromTexID(TextureID copyID, TransformComponent* ownerTransform, bool* drawablePtr);
 
         void removeByTransform(TextureID textureID, TransformComponent* ownerTransform);
 
         std::vector<TextureID> checkAndClearTextures();
+
+        static void render(FrameInfo const& frameInfo);
+        void renderMemberMethod(FrameInfo const& frameInfo);
     };
 }

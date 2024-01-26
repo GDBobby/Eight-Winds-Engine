@@ -26,7 +26,7 @@ namespace EWE {
 	class SoundEngine {
 	private:
 		SoundEngine();
-		//~MaterialHandler() = default;
+		//~RigidRenderingSystem() = default;
 		SoundEngine(const SoundEngine&) = delete;
 		SoundEngine& operator=(const SoundEngine&) = delete;
 	public:

@@ -13,12 +13,12 @@ namespace EWE {
 		resetBuilders();
 	}
 	void ObjectManager::resetBuilders() {
-		auto materialHandler = MaterialHandler::getMaterialHandlerInstance();
+		auto RigidRenderingSystem = RigidRenderingSystem::getRigidRSInstance();
 		for (int i = 0; i < dynamicBuildObjects.size(); i++) {
 			materialHandler->removeByTransform(dynamicBuildObjects[i].textureID, &dynamicBuildObjects[i].transform);
 		}
 		dynamicBuildObjects.clear();
-		auto clearTextures = MaterialHandler::getMaterialHandlerInstance()->checkAndClearTextures();
+		auto clearTextures = RigidRenderingSystem::getRigidRSInstance()->checkAndClearTextures();
 		for (int i = 0; i < clearTextures.size(); i++) {
 			EWETexture::removeSmartTexture(clearTextures[i]);
 		}
@@ -31,11 +31,11 @@ namespace EWE {
 		printf("clearing ewe objects \n");
 
 
-		auto materialHandler = MaterialHandler::getMaterialHandlerInstance();
-		for (int i = 0; i < dynamicGameObjects.size(); i++) {
-			materialHandler->removeByTransform(dynamicGameObjects[i].textureID, &dynamicGameObjects[i].transform);
+		auto materialHandler = RigidRenderingSystem::getRigidRSInstance();
+		for (int i = 0; i < materialGameObjects.size(); i++) {
+			materialHandler->removeByTransform(materialGameObjects[i].textureID, &materialGameObjects[i].transform);
 		}
-		dynamicGameObjects.clear();
+		materialGameObjects.clear();
 		eweObjects.clear();
 		printf("after clearing ewe \n");
 		auto clearTextures = materialHandler->checkAndClearTextures();
@@ -47,7 +47,7 @@ namespace EWE {
 		}
 		for (int i = 0; i < clearTextures.size(); i++) {
 			printf("each smart texture : %d \n", clearTextures[i]);
-			tmPtr->clearSceneTextures(device);
+			tmPtr->clearSceneTextures();
 		}
 		printf("after removing play objects \n");
 	}

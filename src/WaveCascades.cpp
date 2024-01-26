@@ -286,7 +286,7 @@ namespace EWE {
 				pipeLayout,
 				bindIndex, 1,
 				&merged_texture_descriptor,
-				//&renderTextureDescriptorSets[i][cmdIndexPair.second],
+				//&renderTextureDescriptorSets[i][frameInfo.index],
 				0, nullptr
 			);
 		}

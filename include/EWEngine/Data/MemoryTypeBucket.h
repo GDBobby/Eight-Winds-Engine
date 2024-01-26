@@ -20,8 +20,8 @@ namespace EWE {
 
 		~MemoryTypeBucket() {
 			if (dataChunkTracker.any()) {
-				printf("improper memory bucket deconstruction \n");
-				throw std::runtime_error("deconstructing a memory bucket while elements inside are still allocated");
+				printf("improper memory bucket deconstruction, items still exist \n");
+				//throw std::runtime_error("deconstructing a memory bucket while elements inside are still allocated");
 			}
 			free(reservedMemory);
 		}

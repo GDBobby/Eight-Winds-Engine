@@ -10,45 +10,45 @@ namespace EWE {
     Texture_Manager* Texture_Manager::textureManagerPtr{ nullptr };
 
 
-    Texture_Builder::Texture_Builder(EWEDevice& device, bool global, bool mipmaps) : device(device), global(global), mipmaps{ mipmaps } {}
+    Texture_Builder::Texture_Builder(EWEDevice& device, bool global) : device(device), global(global) {}
 
-    void Texture_Builder::addComponent(std::string const& texPath, VkShaderStageFlags stageFlags) {
+    void Texture_Builder::addComponent(std::string const& texPath, VkShaderStageFlags stageFlags, bool mipmaps) {
         switch (stageFlags) {
             case VK_SHADER_STAGE_VERTEX_BIT: {
-                paths[0].emplace_back(texPath);
+                imageCI[0].emplace_back(texPath, mipmaps);
                 break;
             }
             case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: {
-                paths[1].emplace_back(texPath);
+                imageCI[1].emplace_back(texPath, mipmaps);
                 break;
             }
             case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: {
-                paths[2].emplace_back(texPath);
+                imageCI[2].emplace_back(texPath, mipmaps);
                 break;
             }
             case VK_SHADER_STAGE_GEOMETRY_BIT: {
-                paths[3].emplace_back(texPath);
+                imageCI[3].emplace_back(texPath, mipmaps);
                 break;
             }
             case VK_SHADER_STAGE_FRAGMENT_BIT: {
-                paths[4].emplace_back(texPath);
+                imageCI[4].emplace_back(texPath, mipmaps);
                 break;
             }
             case VK_SHADER_STAGE_COMPUTE_BIT: {
-                paths[5].emplace_back(texPath);
+                imageCI[5].emplace_back(texPath, mipmaps);
                 break;
             }
             case VK_SHADER_STAGE_ALL_GRAPHICS: {
                 //im pretty sure that _ALL_GRAPHICS and _ALL are both noob traps, but ill put them in anyways
-                paths[6].emplace_back(texPath);
+                imageCI[6].emplace_back(texPath, mipmaps);
                 break;
             }
             case VK_SHADER_STAGE_ALL: {
-                paths[7].emplace_back(texPath);
+                imageCI[7].emplace_back(texPath, mipmaps);
                 break;
             }
             case VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT: {
-                paths[8].emplace_back(texPath);
+                imageCI[8].emplace_back(texPath, mipmaps);
                 break;
             }
             default: {
@@ -72,32 +72,31 @@ namespace EWE {
 
         uint16_t imageCount = 0;
         for (uint8_t i = 0; i < 6; i++) {
-            dslInfo.setStageTextureCount(stageFlags, paths[i].size());
+            dslInfo.setStageTextureCount(stageFlags, imageCI[i].size());
             stageFlags <<= 1;
-            imageCount += paths[i].size();
+            imageCount += imageCI[i].size();
         }
-        dslInfo.setStageTextureCount(VK_SHADER_STAGE_ALL_GRAPHICS, paths[6].size());
-        imageCount += paths[6].size();
-        dslInfo.setStageTextureCount(VK_SHADER_STAGE_ALL, paths[7].size());
-        imageCount += paths[7].size();
-        dslInfo.setStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, paths[8].size());
-        imageCount += paths[8].size();
+        dslInfo.setStageTextureCount(VK_SHADER_STAGE_ALL_GRAPHICS, imageCI[6].size());
+        imageCount += imageCI[6].size();
+        dslInfo.setStageTextureCount(VK_SHADER_STAGE_ALL, imageCI[7].size());
+        imageCount += imageCI[7].size();
+        dslInfo.setStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, imageCI[8].size());
+        imageCount += imageCI[8].size();
 
         std::vector<Texture_Manager::ImageTracker*> imageInfos{};
         imageInfos.resize(imageCount, nullptr);
 
         bool uniqueDescriptor = false;
         uint16_t currentImage = 0;
-        for (uint8_t i = 0; i < paths.size(); i++) {
-            for (auto& path : paths[i]) {
-                auto tempImageInfo = tmPtr->imageMap.find(path);
+        for (uint8_t i = 0; i < imageCI.size(); i++) {
+            for (auto& conInfo : imageCI[i]) {
+                auto tempImageInfo = tmPtr->imageMap.find(conInfo.path);
                 if (tempImageInfo != tmPtr->imageMap.end()) {
                     imageInfos[currentImage] = tempImageInfo->second;
                 }
                 else {
                     uniqueDescriptor = true;
-                    PixelPeek pixelPeek{ path };
-                    imageInfos[currentImage] = tmPtr->imageMap.try_emplace(path, device, pixelPeek, true).first->second;
+                    imageInfos[currentImage] = Texture_Manager::constructImageTracker(conInfo.path, conInfo.mipmaps);
                 }
                 currentImage++;
             }
@@ -156,26 +155,29 @@ namespace EWE {
     }
 
 
-    TextureID Texture_Builder::createSimpleTexture(EWEDevice& device, std::string texPath, bool global, VkShaderStageFlags shaderStage) {
+    TextureID Texture_Builder::createSimpleTexture(std::string path, bool global, bool mipmaps, VkShaderStageFlags shaderStage) {
         Texture_Manager* tmPtr = Texture_Manager::getTextureManagerPtr();
-        auto tempImageInfo = tmPtr->imageMap.find(texPath);
 
         Texture_Manager::ImageTracker* imageInfo;
         bool uniqueImage = false;
 
+        std::string texPath{ TEXTURE_DIR };
+        texPath += path;
 
-        if (tempImageInfo != tmPtr->imageMap.end()) {
-            imageInfo = tempImageInfo->second;
-        }
-        else {
-            uniqueImage = true;
-            PixelPeek pixelPeek{ texPath };
-            imageInfo = tmPtr->imageMap.try_emplace(texPath, device, pixelPeek, true).first->second;
+        {
+            auto tempImageInfo = tmPtr->imageMap.find(texPath);
+            if (tempImageInfo != tmPtr->imageMap.end()) {
+                imageInfo = tempImageInfo->second;
+            }
+            else {
+                uniqueImage = true;
+                imageInfo = Texture_Manager::constructImageTracker(texPath, mipmaps);
+            }
         }
 
         if (uniqueImage) {
             VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-            EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(device, shaderStage), DescriptorPool_Global);
+            EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(tmPtr->device, shaderStage), DescriptorPool_Global);
 
             descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
             imageInfo->usedInTexture.insert(tmPtr->currentTextureCount);
@@ -211,13 +213,13 @@ namespace EWE {
 
 
 
-    Texture_Manager::Texture_Manager() : imageTrackerBucket{ sizeof(ImageTracker) } {
-
+    Texture_Manager::Texture_Manager(EWEDevice& device) : device{ device }, imageTrackerBucket { sizeof(ImageTracker) } {
+        textureManagerPtr = this;
     }
 
 
 
-    void Texture_Manager::cleanup(EWEDevice& device) {
+    void Texture_Manager::cleanup() {
         //call at end of program
         //printf("beginning of texture cleanup \n");
         //uint32_t tracker = 0;
@@ -243,7 +245,7 @@ namespace EWE {
 
     //return value <flags, textureID>
 
-    void Texture_Manager::clearSceneTextures(EWEDevice& device) {
+    void Texture_Manager::clearSceneTextures() {
         //everythign created with a mode texture needs to be destroyed. if it persist thru modes, it needs to be a global texture
 #ifdef _DEBUG
         //DBEUUGGIG TEXUTRE BEING CLEARED INCORRECTLY
@@ -308,5 +310,20 @@ namespace EWE {
         }
 #endif
         return &textureManagerPtr->textureMap.at(textureID);
+    }
+    Texture_Manager::ImageTracker* Texture_Manager::constructImageTracker(std::string const& path, bool mipmap) {
+        ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
+
+        new(imageTracker) ImageTracker(textureManagerPtr->device, path, true);
+
+
+        return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
+    }
+    Texture_Manager::ImageTracker* Texture_Manager::constructEmptyImageTracker(std::string const& path) {
+
+        ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
+        new(imageTracker) ImageTracker();
+
+        return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
     }
 }

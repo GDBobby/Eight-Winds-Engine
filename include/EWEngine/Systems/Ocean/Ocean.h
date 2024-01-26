@@ -117,7 +117,7 @@ namespace EWE {
 			//maybe construct the command buffer here?
 			void ComputeUpdate(std::array<VkCommandBuffer, 5> oceanBuffers, float dt);
 
-			void RenderUpdate(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
+			void RenderUpdate(FrameInfo frameInfo);
 
 			void createBuffers();
 			void createRenderPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);

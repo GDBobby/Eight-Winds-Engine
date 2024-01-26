@@ -11,31 +11,15 @@ namespace EWE {
 	}
 
 	void MaterialPipelines::bindPipeline() {
-#ifdef _DEBUG
-		if (currentPipe != this) {
-			printf("pipe id mismatch on bind \n");
-			throw std::runtime_error("pipe id mismatch on bind");
-		}
-#endif
 		pipeline->bind(cmdBuf);
+		bindedTexture = TEXTURE_UNBINDED;
+		bindedModel = nullptr;
 	}
 	void MaterialPipelines::bindModel(EWEModel* model) {
 		bindedModel = model;
-#ifdef _DEBUG
-		if (currentPipe != this) {
-			printf("failed model bind \n");
-			throw std::runtime_error("pipe id mismatch on model bind");
-		}
-#endif
 		bindedModel->bind(cmdBuf);
 	}
 	void MaterialPipelines::bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
-#ifdef _DEBUG
-		if (currentPipe != this) {
-			printf("failed desc bind \n");
-			throw std::runtime_error("pipe id mismatch on desc bind");
-		}
-#endif
 		vkCmdBindDescriptorSets(cmdBuf,
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			materialPipeLayout[pipeLayoutIndex].pipeLayout,
@@ -43,7 +27,13 @@ namespace EWE {
 			descSet,
 			0, nullptr
 		);
+	}
 
+	void MaterialPipelines::bindTextureDescriptor(uint8_t descSlot, TextureID texID) {
+		if (bindedTexture != texID) {
+			bindDescriptor(descSlot, Texture_Manager::getDescriptorSet(texID));
+			bindedTexture = texID;
+		}
 	}
 	void MaterialPipelines::push(void* push) {
 		materialPipeLayout[pipeLayoutIndex].push(cmdBuf, push);
@@ -57,10 +47,6 @@ namespace EWE {
 			printf("failed model draw \n");
 			throw std::runtime_error("attempting to draw a model while none is binded");
 		}
-		if (currentPipe != this) {
-			printf("failed model draw \n");
-			throw std::runtime_error("pipe id mismatch on model draw");
-		}
 #endif
 		bindedModel->draw(cmdBuf);
 	}
@@ -69,10 +55,6 @@ namespace EWE {
 		if (bindedModel == nullptr) {
 			printf("failed model draw \n");
 			throw std::runtime_error("attempting to draw a model while none is binded");
-		}
-		if (currentPipe != this) {
-			printf("failed model draw \n");
-			throw std::runtime_error("pipe id mismatch on model draw");
 		}
 #endif
 		bindedModel->draw(cmdBuf);
@@ -121,9 +103,9 @@ namespace EWE {
 		return instancedBonePipelines.at(key);
 	}
 
-	void MaterialPipelines::setCmdIndexPair(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
-		cmdBuf = cmdIndexPair.first;
-		frameIndex = cmdIndexPair.second;
+	void MaterialPipelines::setFrameInfo(FrameInfo frameInfo) {
+		cmdBuf = frameInfo.cmdBuf;
+		frameIndex = frameInfo.index;
 	}
 
 	void MaterialPipelines::initMaterialPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device, bool hasBump) {
@@ -215,6 +197,7 @@ namespace EWE {
 
 			//printf("after dynamic shader finding \n");
 		}
+		return materialPipelines.at(flags);
 	}
 
 	void MaterialPipelines::initStaticVariables() {
@@ -228,7 +211,13 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
 		printf("begin deconstructing pipeline manager \n");
 #endif
+		for(auto& pipe : materialPipelines) {
+			delete pipe.second;
+		}
 		materialPipelines.clear();
+		for (auto& pipe : instancedBonePipelines) {
+			delete pipe.second;
+		}
 		instancedBonePipelines.clear();
 
 		for (auto& plInfo : materialPipeLayout) {
@@ -236,8 +225,6 @@ namespace EWE {
 				vkDestroyPipelineLayout(device.device(), plInfo.pipeLayout, nullptr);
 			}
 		}
-
-		materialPipelines.clear();
 
 		if (materialPipelineCache != VK_NULL_HANDLE) {
 			vkDestroyPipelineCache(device.device(), materialPipelineCache, nullptr);
@@ -401,14 +388,14 @@ namespace EWE {
 				//printf("boneVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
 				pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
-				materialPipelines.try_emplace(flags, pipeLayoutIndex, new EWEPipeline(device, "bone_Tangent.vert.spv", flags, pipelineConfig, true));
+				materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "bone_Tangent.vert.spv", flags, pipelineConfig, true)));
 
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertexNoTangent>();
 				pipelineConfig.attributeDescriptions = boneVertexNoTangent::getAttributeDescriptions();
-				materialPipelines.try_emplace(flags, pipeLayoutIndex, new EWEPipeline(device, "bone_NT.vert.spv", flags, pipelineConfig, true));
+				materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "bone_NT.vert.spv", flags, pipelineConfig, true)));
 			}
 		}
 		else {
@@ -416,19 +403,19 @@ namespace EWE {
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
 				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
 
-				materialPipelines.try_emplace(flags, pipeLayoutIndex, new EWEPipeline(device, "material_bump.vert.spv", flags, pipelineConfig, false));
+				materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_bump.vert.spv", flags, pipelineConfig, false)));
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
 				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
-				materialPipelines.try_emplace(flags, pipeLayoutIndex, new EWEPipeline(device, "material_Tangent.vert.spv", flags, pipelineConfig, false));
+				materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_Tangent.vert.spv", flags, pipelineConfig, false)));
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertexNT>();
 				pipelineConfig.attributeDescriptions = AVertexNT::getAttributeDescriptions();
-				materialPipelines.try_emplace(flags, pipeLayoutIndex, new EWEPipeline(device, "material_nn.vert.spv", flags, pipelineConfig, false));
+				materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_nn.vert.spv", flags, pipelineConfig, false)));
 			}
 		}
 	}

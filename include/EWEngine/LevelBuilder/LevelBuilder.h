@@ -122,7 +122,7 @@ namespace EWE {
 
 		void addMainControls();
 
-		std::shared_ptr<MaterialHandler> materialHandler;
+		std::shared_ptr<RigidRenderingSystem> materialHandler;
 
 		//these need to be one outside of the rendering process, aka before beginFrame(), or after endframe()
 		bool quadWasAdded = false; 

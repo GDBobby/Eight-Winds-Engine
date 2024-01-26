@@ -70,7 +70,7 @@ namespace EWE {
 		static void windowResize(std::pair<uint32_t, uint32_t> windowDim);
 
 		void drawNewMenuObejcts();
-		void drawMenuObjects(FrameInfo2D& frameInfo);
+		//void drawMenuObjects(FrameInfo& frameInfo, bool menuActive);
 
 		bool getMenuActive() {
 			return isActive;

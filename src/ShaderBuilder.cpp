@@ -692,7 +692,7 @@ std::string ShaderBlock::buildFragmentShader(MaterialFlags flags, bool hasBones)
 
 
 #if DEBUGGING_SHADERS
-	std::string debugShaderPath = "shaders\\debugging\\D_";
+	std::string debugShaderPath = "shaders/debugging/D_";
 	debugShaderPath += std::to_string(flags) + ".frag";
 	std::ofstream debugShader{ debugShaderPath, std::ios::trunc};
 	if (!debugShader.is_open()) {
@@ -714,7 +714,7 @@ std::string ShaderBlock::buildFragmentShader(MaterialFlags flags, bool hasBones)
 
 	return shaderString;
 }
-void addBindings(std::string& shaderString, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones) {
+void ShaderBlock::addBindings(std::string& shaderString, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones) {
 	uint8_t currentBinding = hasBumps;
 
 	shaderString += firstHalfBinding[hasBones];

@@ -27,21 +27,22 @@ namespace EWE {
             }
             
         }
-
-         auto& cubeImage = tmPtr->imageMap.try_emplace(texPath).first->second->imageInfo;
+        
+         auto cubeImage = Texture_Manager::constructEmptyImageTracker(texPath)->imageInfo;
 
         createCubeImage(cubeImage, device, pixelPeeks);
         createCubeImageView(cubeImage, device);
         createCubeSampler(cubeImage, device);
 
-        TextureDSLInfo dslInfo{};
-        dslInfo.setStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT, 1);
+        cubeImage.descriptorImageInfo.sampler = cubeImage.sampler;
+        cubeImage.descriptorImageInfo.imageView = cubeImage.imageView;
+        cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        auto tempHolder = EWEDescriptorWriter(*dslInfo.getDescSetLayout(device), DescriptorPool_Global);
+        EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(tmPtr->device, VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
 
         VkDescriptorSet cubeDesc;
-        tempHolder.writeImage(0, &cubeImage.descriptorImageInfo);
-        if (!tempHolder.build(cubeDesc)) {
+        descBuilder.writeImage(0, &cubeImage.descriptorImageInfo);
+        if (!descBuilder.build(cubeDesc)) {
             //returnValue = false;
             printf("failed to construct cube descriptor\n");
             throw std::runtime_error("failed to construct cube descriptor");
@@ -65,7 +66,7 @@ namespace EWE {
         device.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
         vkMapMemory(device.device(), stagingBufferMemory, 0, imageSize, 0, &data);
         uint64_t memAddress = reinterpret_cast<uint64_t>(data);
-
+        cubeTexture.mipLevels = 1;
         for (int i = 0; i < 6; i++) {
             memcpy(reinterpret_cast<void*>(memAddress), pixelPeek[i].pixels, static_cast<size_t>(layerSize)); //static_cast<void*> unnecessary>?
             stbi_image_free(pixelPeek[i].pixels);
@@ -114,7 +115,7 @@ namespace EWE {
         viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.levelCount = cubeTexture.mipLevels;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 6;
         viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
@@ -149,7 +150,7 @@ namespace EWE {
         samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        samplerInfo.mipLodBias = 1.f;
+        samplerInfo.mipLodBias = 0.f;
 
         //force sampler to not use lowest level by changing this value
         // i.e. samplerInfo.minLod = static_cast<float>(mipLevels / 2);

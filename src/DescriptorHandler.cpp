@@ -205,7 +205,7 @@ namespace EWE {
     }
     */
 
-    void DescriptorHandler::initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device) {
+    void DescriptorHandler::initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap, EWEDevice& device) {
         printf("init global descriptors \n");
         DescriptorHandler::getDescSetLayout(LDSL_global, device);
         DescriptorHandler::getDescSetLayout(LDSL_boned, device);
@@ -222,7 +222,7 @@ namespace EWE {
             }
         }
     }
-    void DescriptorHandler::initDescriptors(std::unordered_map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap) {
+    void DescriptorHandler::initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap) {
 
         //printf("initializing VkDescriptorSets \n");
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {

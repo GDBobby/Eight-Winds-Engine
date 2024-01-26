@@ -25,7 +25,7 @@ namespace EWE {
         //printf("creating new MRO Texture : %s \n", texPath.c_str());
         auto tmPtr = Texture_Manager::getTextureManagerPtr();
 
-        if (!tmPtr->existingMaterials.contains(texPath)) {
+        if (tmPtr->existingMaterials.contains(texPath)) {
             return tmPtr->existingMaterials.at(texPath);
         }
 
@@ -37,6 +37,7 @@ namespace EWE {
         std::vector<std::string> materialPaths{};
         //cycling thru extensions, currently png and jpg
 
+        Texture_Builder tBuilder{ device, global };
         for (int i = 0; i < smartTextureTypes.size(); i++) {
             //foundTypes[i] = true;
             for (int j = 0; j < smartTextureTypes[i].size(); j++) {
@@ -49,6 +50,13 @@ namespace EWE {
                     materialPaths.back() += ".png";
                     //pixelPeek.emplace_back(materialPath);
                     foundTypes[i] = true;
+                    if (i == 0) {
+                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
+                    }
+                    else {
+                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
+                    }
+
                     break;
                     
                 }
@@ -56,12 +64,24 @@ namespace EWE {
                     materialPaths.back() += ".jpg";
                     //pixelPeek.emplace_back(materialPath);
                     foundTypes[i] = true;
+                    if (i == 0) {
+                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
+                    }
+                    else {
+                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
+                    }
                     break;
                 }
                 else if (std::filesystem::exists(materialPaths.back() + ".tga")) {
                     materialPaths.back() += ".tga";
                     //pixelPeek.emplace_back(materialPaths.back());
                     foundTypes[i] = true;
+                    if (i == 0) {
+                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
+                    }
+                    else {
+                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
+                    }
                     break;
                 }
                 materialPaths.pop_back();
@@ -75,6 +95,7 @@ namespace EWE {
         //flags = normal, metal, rough, ao
         MaterialFlags flags = (foundTypes[MT_bump] * DynF_hasBump) + (foundTypes[MT_metal] * DynF_hasMetal) + (foundTypes[MT_rough] * DynF_hasRough) + (foundTypes[MT_ao] * DynF_hasAO) + ((foundTypes[MT_normal] * DynF_hasNormal));
         //printf("flag values : %d \n", flags);
+
         if (!foundTypes[MT_albedo]) {
             printf("did not find an albedo or diffuse texture for this MRO set : %s \n", texPath.c_str());
             throw std::runtime_error("no albedo in dynamic material");
@@ -87,18 +108,9 @@ namespace EWE {
         //printf("constructng texture from smart \n");
         //textureMap.emplace(returnID, EWETexture{ texPath, device, pixelPeek, tType_material, flags });
 
-        Texture_Builder tBuilder{device, global, true};
-        if (foundTypes[0]) {
-            tBuilder.addComponent(materialPaths[MT_bump], VK_SHADER_STAGE_VERTEX_BIT);
-        }
-        for (uint8_t i = foundTypes[MT_bump]; i < foundTypes.size(); i++) {
-            if (foundTypes[i]) {
-				tBuilder.addComponent(materialPaths[i], VK_SHADER_STAGE_FRAGMENT_BIT);
-			}
-		}
         TextureID retID = tBuilder.build();
 
-        tmPtr->existingMaterials.try_emplace(texPath, retID, flags);
+        tmPtr->existingMaterials.try_emplace(texPath, flags, retID);
         //existingMaterialIDs[texPath] = std::pair<MaterialFlags, int32_t>{ flags, returnID };
 
         //printf("returning from smart creation \n");

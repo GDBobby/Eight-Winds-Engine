@@ -162,17 +162,17 @@ namespace EWE {
 					auto textureID = EWETexture::addSceneMaterialTexture(device, levelImport.tangentObjects[i].texturePath, textureType);
 					
 					if ((textureID.second >= 0) && (textureID.first >= 0)) {
-						objectManager->dynamicGameObjects.emplace_back();
-						objectManager->dynamicGameObjects.back().model = EWEModel::createMesh(device, levelImport.tangentObjects[i].vertices, levelImport.tangentObjects[i].indices);
-						objectManager->dynamicGameObjects.back().textureID = textureID.second;
-						objectManager->dynamicGameObjects.back().textureFlags = textureID.first;
-						convertTransform(objectManager->dynamicGameObjects.back().transform, levelImport.tangentObjects[i].bTransform);
+						objectManager->materialGameObjects.emplace_back();
+						objectManager->materialGameObjects.back().model = EWEModel::createMesh(device, levelImport.tangentObjects[i].vertices, levelImport.tangentObjects[i].indices);
+						objectManager->materialGameObjects.back().textureID = textureID.second;
+						objectManager->materialGameObjects.back().textureFlags = textureID.first;
+						convertTransform(objectManager->materialGameObjects.back().transform, levelImport.tangentObjects[i].bTransform);
 						if (objectManager->targetTexturePair.second == textureID.second) {
-							objectManager->dynamicGameObjects.back().isTarget = true;
+							objectManager->materialGameObjects.back().isTarget = true;
 							objectManager->maxTargets++;
 						}
 						else {
-							objectManager->dynamicGameObjects.back().giveCollision();
+							objectManager->materialGameObjects.back().giveCollision();
 						}
 					}
 					else {
@@ -189,17 +189,17 @@ namespace EWE {
 				if (textureType == EWETexture::tType_smart) {
 					auto textureID = EWETexture::addSmartModeTexture(device, levelImport.ntObjects[i].texturePath, textureType);
 					if ((textureID.first >= 0) && (textureID.second >= 0)) {
-						objectManager->dynamicGameObjects.emplace_back();
-						objectManager->dynamicGameObjects.back().model = EWEModel::createMesh(device, levelImport.ntObjects[i].vertices, levelImport.ntObjects[i].indices);
-						objectManager->dynamicGameObjects.back().textureFlags = textureID.first;
-						objectManager->dynamicGameObjects.back().textureID = textureID.second;
-						convertTransform(objectManager->dynamicGameObjects.back().transform, levelImport.ntObjects[i].bTransform);
+						objectManager->materialGameObjects.emplace_back();
+						objectManager->materialGameObjects.back().model = EWEModel::createMesh(device, levelImport.ntObjects[i].vertices, levelImport.ntObjects[i].indices);
+						objectManager->materialGameObjects.back().textureFlags = textureID.first;
+						objectManager->materialGameObjects.back().textureID = textureID.second;
+						convertTransform(objectManager->materialGameObjects.back().transform, levelImport.ntObjects[i].bTransform);
 						if (objectManager->targetTexturePair.second == textureID.second) {
-							objectManager->dynamicGameObjects.back().isTarget = true;
+							objectManager->materialGameObjects.back().isTarget = true;
 							objectManager->maxTargets++;
 						}
 						else {
-							objectManager->dynamicGameObjects.back().giveCollision();
+							objectManager->materialGameObjects.back().giveCollision();
 						}
 					}
 					else {

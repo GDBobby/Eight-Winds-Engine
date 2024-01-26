@@ -142,12 +142,13 @@ namespace EWE {
         //TEXTURES
         //this should be put in a separate function but im too lazy rn
         //printf("before textures \n");
+
         for (int i = 0; i < importData.meshNames.size(); i++) {
             importData.meshNames[i] = importData.meshNames[i].substr(0, importData.meshNames[i].find_first_of("."));
             std::string finalDir = texturePath;
             finalDir += importData.meshNames[i];
             
-            MaterialTextureInfo materialInfo = Material_Texture::createMaterialTexture(device, finalDir, true);
+            MaterialTextureInfo materialInfo{ Material_Texture::createMaterialTexture(device, finalDir, true) };
             textureTracker.first.push_back(materialInfo);
             
         }
@@ -158,7 +159,7 @@ namespace EWE {
             finalDir += importData.meshNTNames[i];
 
             MaterialTextureInfo materialInfo = Material_Texture::createMaterialTexture(device, finalDir, true);
-            textureTracker.first.push_back(materialInfo);
+            textureTracker.second.push_back(materialInfo);
         }
         //printf("after mesh nt texutres \n");
     }
@@ -309,7 +310,7 @@ namespace EWE {
 
 
 
-            std::shared_ptr<MaterialHandler> materialInstance = MaterialHandler::getMaterialHandlerInstance();
+            std::shared_ptr<RigidRenderingSystem> materialInstance = RigidRenderingSystem::getRigidRSInstance();
             //printf("filling data into material map in materialhandler \n");
             for (int i = 0; i < meshes.size(); i++) {
                 //printf("pushing mesh into materialhandler, flags,&8 : %d :%d \n", textureMappingTracker.first[i].first, textureMappingTracker.first[i].first & 8);

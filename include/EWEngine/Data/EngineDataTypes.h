@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
 
+#include "vulkan/vulkan.h"
+
 typedef uint8_t MaterialFlags;
 typedef uint16_t TextureID;
 #ifndef TEXTURE_UNBINDED
@@ -32,4 +34,10 @@ enum DynamicFlags : uint8_t {
 
 
 	//DynF_hasBones = 128, //removed from texture flags
+};
+
+struct FrameInfo {
+	VkCommandBuffer cmdBuf;
+	uint8_t index;
+	FrameInfo(VkCommandBuffer cmdBuffer, uint8_t frameIndex) : cmdBuf{ cmdBuffer }, index{ frameIndex } {}
 };

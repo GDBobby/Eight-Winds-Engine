@@ -4,6 +4,7 @@
 #include "EWEngine/Graphics/Device_Buffer.h"
 #include "EWEngine/Graphics/Camera.h"
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
+#include "EWEngine/Systems/Rendering/Pipelines/Pipe_Skybox.h"
 
 
 #define GLM_FORCE_RADIANS
@@ -49,9 +50,12 @@ namespace EWE {
 		/*2000 is ballparked, if its not set high enough then all textures will be moved, and invalidate the data*/
 		uiHandler{ SettingsJSON::settingsData.getDimensions(), eweDevice, mainWindow.getGLFWwindow(), eweRenderer.makeTextOverlay() },
 		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), eweDevice, mainWindow.getGLFWwindow(), uiHandler.getTextOverlay() },
-		advancedRS{ eweDevice, eweRenderer.getPipelineInfo(), objectManager, menuManager},
-		skinnedRS{ eweDevice }
+		advancedRS{ eweDevice, objectManager, menuManager},
+		skinnedRS{ eweDevice },
+		textureManager{eweDevice}
 	{
+		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = eweRenderer.getPipelineInfo();
+
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
 		camera.setPerspectiveProjection(glm::radians(70.0f), eweRenderer.getAspectRatio(), 0.1f, 10000.0f);
 
@@ -61,12 +65,14 @@ namespace EWE {
 		DescriptorHandler::initGlobalDescriptors(bufferMap, eweDevice);
 		//printf("back to ui handler? \n");
 		advancedRS.takeUIHandlerPtr(&uiHandler);
-		advancedRS.updateLoadingPipeline();
+		//advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
 		leafSystem = std::make_unique<LeafSystem>(eweDevice);
 		Dimension2::init(eweDevice);
+		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(new Pipe_Skybox(eweDevice)));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
+		RigidRenderingSystem::getRigidRSInstance();
 
 		printf("end of EightWindsEngine constructor \n");
 	}
@@ -74,7 +80,7 @@ namespace EWE {
 		printf("before init descriptors \n");
 		DescriptorHandler::initDescriptors(bufferMap);
 		printf("after init descriptors \n");
-		advancedRS.updateMaterialPipelines();
+		//advancedRS.updateMaterialPipelines();
 
 		pointLightsEnabled = SettingsJSON::settingsData.pointLights;
 		if (!pointLightsEnabled) {
@@ -92,8 +98,15 @@ namespace EWE {
 		vkDestroyQueryPool(eweDevice.device(), queryPool, nullptr);
 		DescriptorHandler::cleanup(eweDevice);
 
-		auto matInst = MaterialHandler::getMaterialHandlerInstance();
 
+		RigidRenderingSystem::destruct();
+		MaterialPipelines::cleanupStaticVariables(eweDevice);
+
+		for (auto& bufferType : bufferMap) {
+			for (auto& buffer : bufferType.second) {
+				delete buffer;
+			}
+		}
 		bufferMap.clear();
 		MenuModule::cleanup();
 
@@ -114,9 +127,9 @@ namespace EWE {
 
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			//allocate buffer memory
-			bufferMap[Buff_ubo][i] = std::make_unique<EWEBuffer>(eweDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+			bufferMap[Buff_ubo][i] = new EWEBuffer(eweDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 			bufferMap[Buff_ubo][i]->map();
-			bufferMap[Buff_gpu][i] = std::make_unique<EWEBuffer>(eweDevice, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+			bufferMap[Buff_gpu][i] = new EWEBuffer(eweDevice, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 			bufferMap[Buff_gpu][i]->map();
 
 			//printf("mapping lbo \n");
@@ -163,14 +176,12 @@ namespace EWE {
 			//QueryPerformanceCounter(&QPCend);
 			//renderThreadTime += static_cast<double>(QPCend.QuadPart - QPCstart.QuadPart) / frequency.QuadPart;
 			//QPCstart = QPCend;
-#if THROTTLED
 			if (renderThreadTime > renderTimeCheck) {
 				loadingTime += renderTimeCheck;
-#endif
 				//printf("rendering loading thread start??? \n");
 				
-				auto cmdFramePair = eweRenderer.beginFrame();
-				if (cmdFramePair.first != nullptr) {
+				auto frameInfo = eweRenderer.beginFrame();
+				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 					int frameIndex = eweRenderer.getFrameIndex();
 
 #if false//BENCHMARKING_GPU
@@ -204,15 +215,14 @@ namespace EWE {
 					vkCmdWriteTimestamp(commandBufferPair.first, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
 #endif
 
-					FrameInfoLoading frameInfo{ cmdFramePair, leafSystem.get() };
-					eweRenderer.beginSwapChainRenderPass(cmdFramePair.first);
+					eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->fallCalculation(static_cast<float>(renderThreadTime), frameIndex);
 #if false//BENCHMARKING
 					uiHandler.Benchmarking(renderThreadTime, peakRenderTime, averageRenderTime, minRenderTime, highestRenderTime, averageLogicTime, BENCHMARKING_GPU, elapsedGPUMS, averageElapsedGPUMS);
 #endif
-					leafSystem->render(frameInfo.cmdIndexPair.first, frameInfo.cmdIndexPair.second);
+					leafSystem->render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
-					eweRenderer.endSwapChainRenderPass(cmdFramePair.first);
+					eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);
 					if (eweRenderer.endFrame()) {
 						//printf("dirty swap on end\n");
 						std::pair<uint32_t, uint32_t> tempPair = eweRenderer.getExtent();
@@ -227,18 +237,16 @@ namespace EWE {
 				renderThreadTime = 0.f;
 				//printf("end rendering thread \n");
 				
-#if THROTTLED
 			}
-#endif
 			//printf("end of render thread loop \n");
 		}
 		finishedLoadingScreen = true;
 		printf(" ~~~~ END OF LOADING SCREEN FUNCTION \n");
 	}
-	std::pair<VkCommandBuffer, uint8_t> EightWindsEngine::beginRender() {
+	FrameInfo EightWindsEngine::beginRender() {
 		//printf("begin render \n");
-		std::pair<VkCommandBuffer, uint8_t> cmdBufIndex = eweRenderer.beginFrame();
-		if (cmdBufIndex.first) {
+		FrameInfo frameInfo{ eweRenderer.beginFrame() };
+		if (frameInfo.cmdBuf) {
 			if (displayingRenderInfo) {
 #if BENCHMARKING_GPU
 				if (queryPool == VK_NULL_HANDLE) {
@@ -272,13 +280,13 @@ namespace EWE {
 					//printf("elapsed GPU seconds : %.5f \n", elapsedGPUMS);
 				}
 
-				vkCmdResetQueryPool(cmdBufIndex.first, queryPool, 0, 2);
-				vkCmdWriteTimestamp(cmdBufIndex.first, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
+				vkCmdResetQueryPool(frameInfo.cmdBuf, queryPool, 0, 2);
+				vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
 
 #endif
 			}
-			eweRenderer.beginSwapChainRenderPass(cmdBufIndex.first);
-			skinnedRS.setFrameIndex(cmdBufIndex.second);
+			eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
+			skinnedRS.setFrameIndex(frameInfo.index);
 		}
 		else {
 			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain resize
@@ -286,21 +294,19 @@ namespace EWE {
 			//menuManager.windowResize(eweRenderer.getExtent());
 		}
 
-		return cmdBufIndex;
+		return frameInfo;
 	}
-	void EightWindsEngine::draw2DObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair) {
-		FrameInfo2D frameInfo2D{ cmdIndexPair, menuManager.getMenuActive() };
-		advancedRS.render2DGameObjects(frameInfo2D);
+	void EightWindsEngine::draw2DObjects(FrameInfo frameInfo) {
+		advancedRS.render2DGameObjects(frameInfo, menuManager.getMenuActive());
 	}
-	void EightWindsEngine::drawObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt) {
-		PipelineSystem::setCmdIndexPair(cmdIndexPair);
-		draw3DObjects(cmdIndexPair, dt);
-		draw2DObjects(cmdIndexPair);
-		drawText(cmdIndexPair, dt);
+	void EightWindsEngine::drawObjects(FrameInfo frameInfo, double dt) {
+		PipelineSystem::setFrameInfo(frameInfo);
+		draw3DObjects(frameInfo, dt);
+		draw2DObjects(frameInfo);
+		drawText(frameInfo, dt);
 	}
-	void EightWindsEngine::draw3DObjects(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt) {
+	void EightWindsEngine::draw3DObjects(FrameInfo frameInfo, double dt) {
 		timeTracker = glm::mod(timeTracker + dt, glm::two_pi<double>());
-		FrameInfo frameInfo{ cmdIndexPair, static_cast<float>(timeTracker) };
 
 		if (pointLightsEnabled) {
 			PointLight::update(static_cast<float>(dt), objectManager.pointLights);
@@ -309,19 +315,19 @@ namespace EWE {
 				lbo.pointLights[i].color = glm::vec4(objectManager.pointLights[i].color, objectManager.pointLights[i].lightIntensity);
 			}
 			lbo.numLights = static_cast<uint8_t>(objectManager.pointLights.size());
-			bufferMap[Buff_gpu][cmdIndexPair.second]->writeToBuffer(&lbo);
-			bufferMap[Buff_gpu][cmdIndexPair.second]->flush();
+			bufferMap[Buff_gpu][frameInfo.index]->writeToBuffer(&lbo);
+			bufferMap[Buff_gpu][frameInfo.index]->flush();
 		}
 
-		camera.ViewTargetDirect(cmdIndexPair.second);
+		camera.ViewTargetDirect(frameInfo.index);
 #ifdef RENDER_OBJECT_DEBUG
 		std::cout << "before rendering game objects \n";
 #endif
-		advancedRS.renderGameObjects(frameInfo);
+		advancedRS.renderGameObjects(frameInfo, timeTracker);
 #ifdef RENDER_OBJECT_DEBUG
 		std::cout << "before skin render \n";
 #endif
-		skinnedRS.render(cmdIndexPair);
+		skinnedRS.render(frameInfo);
 #ifdef RENDER_OBJECT_DEBUG
 		std::cout << "render 2d game objects \n";
 #endif
@@ -335,7 +341,7 @@ namespace EWE {
 
 	}
 
-	void EightWindsEngine::drawText(std::pair<VkCommandBuffer, uint8_t>& cmdIndexPair, double dt) {
+	void EightWindsEngine::drawText(FrameInfo frameInfo, double dt) {
 		uiHandler.beginTextRender();
 #if BENCHMARKING
 		if (displayingRenderInfo) {
@@ -346,21 +352,21 @@ namespace EWE {
 #ifdef RENDER_OBJECT_DEBUG
 		std::cout << "before drawing menu \n";
 #endif
-		uiHandler.drawOverlayText(cmdIndexPair.first, displayingRenderInfo);
+		uiHandler.drawOverlayText(frameInfo.cmdBuf, displayingRenderInfo);
 		menuManager.drawText();
-		uiHandler.endTextRender(cmdIndexPair.first);
+		uiHandler.endTextRender(frameInfo.cmdBuf);
 	}
 
-	void EightWindsEngine::endRender(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
+	void EightWindsEngine::endRender(FrameInfo frameInfo) {
 		//printf("end render \n");
 
 
 #if BENCHMARKING_GPU
 		if (displayingRenderInfo) {
-			vkCmdWriteTimestamp(cmdIndexPair.first, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 1);
+			vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 1);
 		}
 #endif
-		eweRenderer.endSwapChainRenderPass(cmdIndexPair.first);
+		eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);
 		//printf("after ending swap chain \n");
 		if (eweRenderer.endFrame()) {
 			printf("dirty swap on end\n");

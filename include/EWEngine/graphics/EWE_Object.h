@@ -14,7 +14,7 @@ namespace EWE {
 	public:
         EweObject(const EweObject& other) : transform{}, ownedTextureIDs{ other.ownedTextureIDs } {
             printf("ewe copy construction \n");
-            auto matInstance = MaterialHandler::getMaterialHandlerInstance();
+            auto matInstance = RigidRenderingSystem::getRigidRSInstance();
             for (auto iter = ownedTextureIDs.begin(); iter != ownedTextureIDs.end(); iter++) {
                 //printf("adding material from tex id %d \n", *iter);
                 matInstance->addMaterialObjectFromTexID(*iter, &transform, &drawable);
@@ -62,7 +62,7 @@ namespace EWE {
 
         uint32_t mySkinID = 0;
 
-        void addToMaterialHandler(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker);
+        void addToRigidRenderingSystem(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker);
         void addToSkinHandler(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner);
 
         void loadTextures(EWEDevice& device, std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);

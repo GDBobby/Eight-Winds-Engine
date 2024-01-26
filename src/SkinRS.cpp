@@ -86,7 +86,7 @@ namespace EWE {
 					}
 
 					for (auto& meshRef : skeleTextureRef.meshes) {
-						//meshRef->BindAndDrawInstanceNoBuffer(cmdIndexPair.first, actorCount.at(instanced.first));
+						//meshRef->BindAndDrawInstanceNoBuffer(frameInfo.cmdBuf, actorCount.at(instanced.first));
 						//printf("drawing instanced : %d \n", instancedBuffers.at(bindedSkeletonID).getInstanceCount());
 						meshRef->BindAndDrawInstanceNoBuffer(cmdBuf, instancedBuffers.at(skeleDataRef.first).getInstanceCount());
 					}
@@ -138,10 +138,9 @@ namespace EWE {
 					}
 
 					//race condition here for deletion of push constant
-
 					for (auto& meshRef : skeleTextureRef.meshes) {
 						//printf("for each mesh in non-instanced \n");
-						//meshRef->BindAndDrawInstanceNoBuffer(cmdIndexPair.first, actorCount.at(instanced.first));
+						//meshRef->BindAndDrawInstanceNoBuffer(frameInfo.cmdBuf, actorCount.at(instanced.first));
 						pipe->bindModel(meshRef);
 
 #if RENDER_DEBUG
@@ -156,7 +155,7 @@ namespace EWE {
 		}
 	}
 
-	void SkinRenderSystem::render(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
+	void SkinRenderSystem::render(FrameInfo frameInfo) {
 		//printf("skin render? \n");
 		/*
 		if (enemyData->actorCount[actorType - 3] == 0) {
@@ -164,13 +163,13 @@ namespace EWE {
 		}
 		*/
 		//^ figure out how to contain new actors to replace that line
-		//setFrameIndex(cmdIndexPair.second);
+		//setFrameIndex(frameInfo.index);
 
 		//printf("pre instance drawing in skinned RS \n");
-		MaterialPipelines::setCmdIndexPair(cmdIndexPair);
-		renderInstanced(cmdIndexPair.first, cmdIndexPair.second);
+		MaterialPipelines::setFrameInfo(frameInfo);
+		renderInstanced(frameInfo.cmdBuf, frameInfo.index);
 
-		renderNonInstanced(cmdIndexPair.first, cmdIndexPair.second);
+		renderNonInstanced(frameInfo.cmdBuf, frameInfo.index);
 		
 
 		//printf("after skinned RS drawing \n");
@@ -192,12 +191,12 @@ namespace EWE {
 			//	printf("too much memory to a uniform buffer \n");
 			//	throw std::exception("writing too much memory to a uniform buffer");
 			//}
-			buffers[cmdIndexPair.second][0]->flush();
+			buffers[frameInfo.index][0]->flush();
 		}
 		if (currentMemOffset[1] > 0) {
-			buffers[cmdIndexPair.second][1]->flush();
+			buffers[frameInfo.index][1]->flush();
 		}
-		//buffers[cmdIndexPair.second][2]->flush();
+		//buffers[frameInfo.index][2]->flush();
 
 
 		currentMemOffset[0] = 0;

@@ -77,7 +77,7 @@ namespace EWE {
 		scissor = { {0, 0}, eweSwapChain->getSwapChainExtent() };
 	}
 
-	std::pair<VkCommandBuffer, uint8_t> EWERenderer::beginFrame() {
+	FrameInfo EWERenderer::beginFrame() {
 #if _DEBUG
 		if (isFrameStarted) {
 			std::cout << "frame was started, finna throw an error " << std::endl;
@@ -91,7 +91,7 @@ namespace EWE {
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 			std::cout << "out of date KHR " << std::endl;
 			recreateSwapChain();
-			return { nullptr, currentFrameIndex };
+			return { VK_NULL_HANDLE, currentFrameIndex };
 		}
 		//std::cout << "begin frame 2" << std::endl;
 

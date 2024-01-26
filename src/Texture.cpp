@@ -11,6 +11,14 @@
 #define MIPMAP_ENABLED true
 
 namespace EWE {
+    PixelPeek::PixelPeek(std::string const& path) {
+        pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+        if ((!pixels) || ((width * height) <= 0)) {
+            printf("failed to construct pixel peek \n");
+            throw std::runtime_error("failed to load texture image with stb");
+        }
+    }
+
     std::unordered_map<TextureDSLInfo, std::unique_ptr<EWEDescriptorSetLayout>> TextureDSLInfo::descSetLayouts;
 
 
@@ -94,7 +102,7 @@ namespace EWE {
         TextureDSLInfo dslInfo{};
         dslInfo.setStageTextureCount(stageFlag, 1);
         if (descSetLayouts.contains(dslInfo)) {
-            return descSetLayouts.find(dslInfo)->second.get();
+            return descSetLayouts.at(dslInfo).get();
         }
         EWEDescriptorSetLayout::Builder dslBuilder{ device };
         dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlag);
@@ -129,6 +137,20 @@ namespace EWE {
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
+    ImageInfo::ImageInfo(EWEDevice& device, std::string const& path, bool mipmap) {
+        PixelPeek pixelPeek{ path };
+
+        createTextureImage(device, pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        //printf("after create image \n");
+        createTextureImageView(device);
+        //printf("after image view \n");
+        createTextureSampler(device);
+
+        descriptorImageInfo.sampler = sampler;
+        descriptorImageInfo.imageView = imageView;
+        descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
 
     void ImageInfo::destroy(EWEDevice& device) {
         vkDestroySampler(device.device(), sampler, nullptr);
@@ -326,7 +348,8 @@ namespace EWE {
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                 0, nullptr,
                 0, nullptr,
-                1, &barrier);
+                1, &barrier
+            );
             //printf("after pipeline barrier 2 \n");
             if (width > 1) { width /= 2; }
             if (height > 1) { height /= 2; }
@@ -338,7 +361,8 @@ namespace EWE {
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         //printf("before pipeline barrier 3 \n");
-        vkCmdPipelineBarrier(commandBuffer,
+        vkCmdPipelineBarrier(
+            commandBuffer,
             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
             0, nullptr,
             0, nullptr,

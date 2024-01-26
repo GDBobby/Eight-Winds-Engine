@@ -10,6 +10,7 @@ namespace EWE {
 		rockDist{ 1.75f, 2.25f },
 		device{device}
 	{
+		myID = UINT32_MAX;
 
 		leafBuffer.reserve(MAX_FRAMES_IN_FLIGHT);
 		leafBufferData.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -19,7 +20,7 @@ namespace EWE {
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			leafBuffer.emplace_back(new EWEBuffer(device, sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 			leafBuffer[i]->map();
-			leafBufferData.emplace_back(leafBuffer[i]->getMappedMemory());
+			leafBufferData.emplace_back(reinterpret_cast<float*>(leafBuffer[i]->getMappedMemory()));
 
 			if (!
 				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
@@ -34,11 +35,7 @@ namespace EWE {
 		loadLeafModel(device);
 
 		createPipeline(device);
-
-		Texture_Builder tBuilder{device, true, true};
-		std::string texPath = "leaf.jpg";
-		tBuilder.addComponent(texPath, VK_SHADER_STAGE_FRAGMENT_BIT);
-		leafTextureID = tBuilder.build();
+		leafTextureID = Texture_Builder::createSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 
 		//printf("leafTextureID :%d \n", leafTextureID);
@@ -308,15 +305,16 @@ namespace EWE {
 		leafModel = EWEModel::createMesh(device, importMesh.meshesNTSimple[0].first, importMesh.meshesNTSimple[0].second);
 		//printf("leaf model loaded \n");
 	}
-	void LeafSystem::render(std::pair<VkCommandBuffer, uint8_t>& cmdBufIndexPair) {
-		setCmdIndexPair(cmdBufIndexPair);
+	void LeafSystem::render(FrameInfo& frameInfo) {
+		setFrameInfo(frameInfo);
+		currentPipe = myID;
 		bindPipeline();
-		bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, cmdBufIndexPair.second));
+		bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
 
 		//printf("after binding descriptor set 0 \n");
 		bindDescriptor(1, Texture_Manager::getDescriptorSet(leafTextureID));
 
-		bindDescriptor(2, &transformDescriptor[cmdBufIndexPair.second]);
+		bindDescriptor(2, &transformDescriptor[frameInfo.index]);
 
 		leafModel->BindAndDrawInstanceNoBuffer(cmdBuf, LEAF_COUNT);
 	}
@@ -351,7 +349,7 @@ namespace EWE {
 
 		std::vector<VkDescriptorSetLayout> setLayouts = {
 			DescriptorHandler::getDescSetLayout(LDSL_global, device),
-			TextureDSLInfo::getSimpleDSL(device, VK_SHADER_STAGE_VERTEX_BIT)->getDescriptorSetLayout(),
+			TextureDSLInfo::getSimpleDSL(device, VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout(),
 			DescriptorHandler::getDescSetLayout(LDSL_boned, device)
 		};
 

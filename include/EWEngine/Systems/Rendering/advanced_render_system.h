@@ -3,7 +3,6 @@
 #include "EWEngine/Graphics/Camera.h"
 #include "EWEngine/Graphics/Pipeline.h"
 #include "EWEngine/Graphics/Device.hpp"
-#include "EWEngine/Graphics/Frame_Info.h"
 
 #include "EWEngine/GUI/UIHandler.h"
 
@@ -21,25 +20,20 @@ namespace EWE {
 	//descriptorsetlayouts are in a vector vector
 	//the first layert of the vector (vector<vector>>) designates a pipeline
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
-		AdvancedRenderSystem(EWEDevice& device, VkPipelineRenderingCreateInfo* pipeRenderInfo, ObjectManager& objectManager, MenuManager& menuManager);
+		AdvancedRenderSystem(EWEDevice& device, ObjectManager& objectManager, MenuManager& menuManager);
 		~AdvancedRenderSystem();
 
 		AdvancedRenderSystem(const AdvancedRenderSystem&) = delete;
 		AdvancedRenderSystem& operator=(const AdvancedRenderSystem&) = delete;
 
-		void renderGameObjects(FrameInfo& frameInfo);
-		void render2DGameObjects(FrameInfo2D& frameInfo);
+		void renderGameObjects(FrameInfo& frameInfo, float time);
+		void render2DGameObjects(FrameInfo const& frameInfo, bool menuActive);
 
-		//void renderLoadingScreen(FrameInfoLoading& frameInfo);
-
-		std::shared_ptr<MaterialHandler> materialHandlerInstance;
 
 #if LEVEL_BUILDER
 		void renderBuilderObjects(FrameInfo& frameInfo);
 #endif
-		void updateLoadingPipeline();
 		void updatePipelines();
-		void updateMaterialPipelines(); //only cause this outside of ARS in the level builder, donot call elsewhere, updatepipelines calls this
 
 		bool shouldRenderPoints = false;
 		//uint32_t uiTextureID = 0;
@@ -69,11 +63,11 @@ namespace EWE {
 #if DRAWING_POINTS
 		void renderPointLights(FrameInfo& frameInfo);
 #endif
-		void RenderLightning(FrameInfo& frameInfo);
+		void RenderLightning(FrameInfo const& frameInfo);
 
-		void RenderGrass(FrameInfo& frameInfo);
+		void RenderGrass(FrameInfo const& frameInfo, float time);
 
-		void RenderDynamicMaterials(FrameInfo& frameInfo);
+		//void RenderDynamicMaterials(FrameInfo& frameInfo);
 
 		EWEDevice& eweDevice;
 

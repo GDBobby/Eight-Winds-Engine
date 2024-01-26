@@ -38,7 +38,7 @@ namespace EWE {
 			}
 		}
 	public:
-		ImGUIHandler(GLFWwindow* window, EWEDevice& eweDevice, uint32_t imageCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		ImGUIHandler(GLFWwindow* window, EWEDevice& eweDevice, uint32_t imageCount);
         ~ImGUIHandler();
 
 		void beginRender();

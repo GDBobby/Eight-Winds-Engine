@@ -18,31 +18,29 @@ namespace EWE {
 		//FOR A DAY IN THE FUTURE
 		//std::map<Pipeline_Enum, std::vector<EWEGameObject>> objectMap;
 
-		std::vector<EWEGameObject> texturedGameObjects;
-		std::vector<EWEGameObject> materialGameObjects;
-		std::vector<EWEGameObject> transparentGameObjects;
-		std::vector<EWEGameObject> grassField;
+		std::vector<EWEGameObject> texturedGameObjects{};
+		std::vector<EWEGameObject> materialGameObjects{};
+		std::vector<EWEGameObject> transparentGameObjects{};
+		std::vector<EWEGameObject> grassField{};
 
-		std::vector<EWEGameObject> dynamicGameObjects;
-		std::vector<EweObject> eweObjects;
+		std::vector<EweObject> eweObjects{};
 
 		//this will get strange with transparent objects
 		//std::unordered_map<uint8_t, std::pair<std::function<void(FrameInfo frameInfo)>, std::vector<EweObject>>> renderObjects;
 
-		std::vector<PointLight> pointLights;
+		std::vector<PointLight> pointLights{};
 
 		// not currently active
 		//std::vector<SpotLight> spotLights;
 
 		//global right now because i only have 1, need to make it scene based
-		std::pair<std::unique_ptr<EWEModel>, TextureID> skybox; //model and textureID
+		std::pair<std::unique_ptr<EWEModel>, TextureID> skybox{}; //model and textureID
 
 
 		void initCollision() {
 			Collision::collisionObjects.clear();
 			Collision::collisionObjects.push_back(&texturedGameObjects);
 			Collision::collisionObjects.push_back(&materialGameObjects);
-			Collision::collisionObjects.push_back(&dynamicGameObjects);
 		}
 
 #if LEVEL_BUILDER
@@ -57,7 +55,7 @@ namespace EWE {
 		//std::pair<MaterialFlags, TextureID> targetTexturePair{0,0};
 		//uint32_t maxTargets = 0;
 		//uint32_t currentActiveTargets = 0;
-		TextureID grassTextureID{65535};
+		TextureID grassTextureID{TEXTURE_UNBINDED};
 #if LEVEL_BUILDER
 		void clearBuilders();
 		void resetBuilders();

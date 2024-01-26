@@ -16,7 +16,7 @@ namespace EWE {
 	class SkinRenderSystem {
 	private:
 		static SkinRenderSystem* skinnedMainObject;
-
+		
 	public:
 
 		SkinRenderSystem(EWEDevice& device);
@@ -28,7 +28,7 @@ namespace EWE {
 
 		void flushBuffers(uint8_t frameIndex);
 
-		void render(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair);
+		void render(FrameInfo frameInfo);
 	protected:
 		void renderInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex);
 		void renderNonInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex);

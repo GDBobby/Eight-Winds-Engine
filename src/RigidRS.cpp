@@ -1,36 +1,73 @@
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
 
+#include "EWEngine/Graphics/PushConstants.h"
+
 namespace EWE {
-    const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialRenderInfo>>>& MaterialHandler::cleanAndGetMaterialMap() {
-        for (auto iter = materialMap.begin(); iter != materialMap.end();) {
-            if (iter->second.size() == 0) {
-                iter = materialMap.erase(iter);
-                //clean up pipeline or leave it be? not sure how expensive it is to maintain while not in use
-            }
-            else {
-                iter++;
+    void MaterialRenderInfo::render(uint8_t frameIndex) {
+        if (!materialMap.size()) {
+            return;
+        }
+        pipe->bindPipeline();
+        pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
+        for (auto iterTexID = materialMap.begin(); iterTexID != materialMap.end(); iterTexID++) {
+
+            pipe->bindTextureDescriptor(1, iterTexID->first);
+
+            for (auto& renderInfo : iterTexID->second) {
+                if (!renderInfo.drawable) {
+                    continue;
+                }
+
+                SimplePushConstantData push{ renderInfo.ownerTransform->mat4(), renderInfo.ownerTransform->normalMatrix() };
+
+                pipe->bindModel(renderInfo.meshPtr);
+                pipe->pushAndDraw(&push);
             }
         }
-        return materialMap;
     }
-    void MaterialHandler::addMaterialObject(MaterialTextureInfo materialInfo, MaterialRenderInfo& renderInfo) {
+
+
+    RigidRenderingSystem* RigidRenderingSystem::rigidInstance{nullptr};
+
+    //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& RigidRenderingSystem::cleanAndGetMaterialMap() {
+    //    for (auto iter = materialMap.begin(); iter != materialMap.end();) {
+    //        if (iter->second.size() == 0) {
+    //            iter = materialMap.erase(iter);
+    //            //clean up pipeline or leave it be? not sure how expensive it is to maintain while not in use
+    //        }
+    //        else {
+    //            iter++;
+    //        }
+    //    }
+    //    return materialMap;
+    //}
+
+    void RigidRenderingSystem::addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
         if (renderInfo.meshPtr == nullptr) {
             printf("NULLTPR MESH EXCEPTION \n");
             throw std::runtime_error("nullptr mesh");
         }
-        materialMap[materialInfo.materialFlags][materialInfo.textureID].push_back(renderInfo);
+        if (!materialMap.contains(materialInfo.materialFlags)) {
+            materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
+        }
+
+        materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.textureID).push_back(renderInfo);
     }
-    void MaterialHandler::addMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
+    void RigidRenderingSystem::addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
         if (modelPtr == nullptr) {
             printf("NULLTPR MESH EXCEPTION \n");
             throw std::runtime_error("nullptr mesh");
         }
-        materialMap[materialInfo.materialFlags][materialInfo.textureID].emplace_back(ownerTransform, modelPtr, drawable);
+
+        if (!materialMap.contains(materialInfo.materialFlags)) {
+            materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
+        }
+        materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.textureID).emplace_back(ownerTransform, modelPtr, drawable);
 
     }
-    void MaterialHandler::addMaterialObjectFromTexID(TextureID copyID, TransformComponent* ownerTransform, bool* drawablePtr) {
+    void RigidRenderingSystem::addMaterialObjectFromTexID(TextureID copyID, TransformComponent* ownerTransform, bool* drawablePtr) {
         for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
-            for (auto iterTexID = iter->second.begin(); iterTexID != iter->second.end(); iterTexID++) {
+            for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
                 if (iterTexID->first == copyID) {
                     if (iterTexID->second.size() == 0 || iterTexID->second[0].meshPtr == nullptr) {
                         printf("NULLTPR MESH EXCEPTION or SIZE IS 0 \n");
@@ -46,9 +83,9 @@ namespace EWE {
             }
         }
     }
-    void MaterialHandler::removeByTransform(TextureID textureID, TransformComponent* ownerTransform) {
+    void RigidRenderingSystem::removeByTransform(TextureID textureID, TransformComponent* ownerTransform) {
         for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
-            for (auto iterTexID = iter->second.begin(); iterTexID != iter->second.end(); iterTexID++) {
+            for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
                 if (iterTexID->first == textureID) {
                     for (int i = 0; i < iterTexID->second.size(); i++) {
                         if (iterTexID->second[i].ownerTransform == ownerTransform) {
@@ -61,15 +98,15 @@ namespace EWE {
 
         }
     }
-    std::vector<TextureID> MaterialHandler::checkAndClearTextures() {
+    std::vector<TextureID> RigidRenderingSystem::checkAndClearTextures() {
         std::vector<TextureID> returnVector;
         for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
 
             //bool removedTexID = false;
-            for (auto iterTexID = iter->second.begin(); iterTexID != iter->second.end();) {
+            for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end();) {
                 if (iterTexID->second.size() == 0) {
                     returnVector.push_back(iterTexID->first);
-                    iterTexID = iter->second.erase(iterTexID);
+                    iterTexID = iter->second.materialMap.erase(iterTexID);
                     //removedTexID = true;
                 }
                 else {
@@ -81,5 +118,45 @@ namespace EWE {
             //}
         }
         return returnVector;
+    }
+    
+    void RigidRenderingSystem::render(FrameInfo const& frameInfo) {
+        //ill replace this shit eventually
+#ifdef _DEBUG
+        assert(rigidInstance != nullptr && "material handler instance is nullptr while trying to render with it");
+#endif
+        rigidInstance->renderMemberMethod(frameInfo);
+    }
+    void RigidRenderingSystem::renderMemberMethod(FrameInfo const& frameInfo){
+
+        for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
+
+#if DEBUGGING_DYNAMIC_PIPE || DEBUGGING_PIPELINES
+            printf("checking validity of map iter? \n");
+            printf("iter->first:second - %d:%d \n", iter->first, iter->second.size());
+            uint8_t flags = iter->first;
+            printf("Drawing dynamic materials : %d \n", flags);
+            if (flags & 128) {
+                printf("should not have bonesin static rendering \n");
+                throw std::runtime_error("should not have boens here");
+            }
+#elif _DEBUG
+
+            uint8_t flags = iter->first;
+            if (flags & 128) {
+                printf("should not have bonesin static rendering \n");
+                throw std::runtime_error("should not have boens here");
+            }
+#endif
+            iter->second.render(frameInfo.index);
+
+
+#if DEBUGGING_DYNAMIC_PIPE
+            printf("finished drawing dynamic material flag : %d \n", flags);
+#endif
+        }
+#if DEBUGGING_PIPELINES || DEBUGGING_DYNAMIC_PIPE
+        printf("finished dynamic render \n");
+#endif
     }
 }

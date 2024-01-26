@@ -17,7 +17,7 @@ namespace EWE {
 			isActive = activity;
 		}
 
-		virtual void drawObjects(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) = 0;
+		virtual void drawObjects(FrameInfo const& frameInfo) = 0;
 		void resizeWindow(std::pair<uint32_t, uint32_t> nextDims);
 		
 	protected:

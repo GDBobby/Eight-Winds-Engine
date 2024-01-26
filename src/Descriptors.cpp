@@ -4,7 +4,7 @@
 #include <cassert>
 #include <stdexcept>
 
-#define DESCRIPTOR_DEBUGGING false
+#define DESCRIPTOR_DEBUGGING true
 
 namespace EWE {
 

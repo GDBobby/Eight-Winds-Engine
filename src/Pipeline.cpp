@@ -139,6 +139,7 @@ namespace EWE {
 	// ~~~~~~~~~~~~~~~~~~~~ END COMPUTE PIPELINE ~~~~~~~~~~~~~~~~~~~~~~
 
 	std::map<std::string, VkShaderModule> EWEPipeline::shaderModuleMap;
+	VkPipelineRenderingCreateInfo* EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic;
 
 	EWEPipeline::EWEPipeline(EWEDevice& device, const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo) : eweDevice{ device } {
 		if (shaderModuleMap.find(vertFilepath) == shaderModuleMap.end()) {
@@ -351,8 +352,8 @@ namespace EWE {
 		configInfo.multisampleInfo.alphaToOneEnable = VK_FALSE;       // Optional
 
 		configInfo.colorBlendAttachment.colorWriteMask =
-			VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-			VK_COLOR_COMPONENT_A_BIT;
+			VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+		;
 		configInfo.colorBlendAttachment.blendEnable = VK_FALSE;
 		configInfo.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
 		configInfo.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
@@ -388,7 +389,7 @@ namespace EWE {
 		configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
 		configInfo.dynamicStateInfo.flags = 0;
 
-		configInfo.pipelineRenderingInfo = *pipelineRenderingInfo;
+		configInfo.pipelineRenderingInfo = *PipelineConfigInfo::pipelineRenderingInfoStatic;
 		/*
 		std::vector<VkVertexInputBindingDescription> bindingDescription(1);
 		bindingDescription[0].binding = 0;                            // Binding index

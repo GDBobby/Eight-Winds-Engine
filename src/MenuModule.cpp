@@ -1,5 +1,7 @@
 #include "EWEngine/GUI/MenuModule.h"
+
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
+#include "EWEngine/Graphics/Textures/Texture_Manager.h"
 
 namespace EWE {
 
@@ -15,17 +17,17 @@ namespace EWE {
 	void MenuModule::initTextures(EWEDevice& eweDevice) {
 		//these textures are deleted in EWETexture, when the program is cleaning itself up on close
 
-		textureIDs.emplace(MT_NineUI, Texture_Builder::createSimpleTexture(eweDevice, "UI/NineUI.png", true));
-		textureIDs.emplace(MT_NineFade, Texture_Builder::createSimpleTexture(eweDevice, "UI/NineFade.png", true));
-		textureIDs.emplace(MT_Slider, Texture_Builder::createSimpleTexture(eweDevice, "UI/clickyBox.png", true));
-		textureIDs.emplace(MT_BracketButton, Texture_Builder::createSimpleTexture(eweDevice, "UI/bracketButton.png", true));
-		textureIDs.emplace(MT_Bracket, Texture_Builder::createSimpleTexture(eweDevice, "UI/bracketSlide.png", true));
-		textureIDs.emplace(MT_Unchecked, Texture_Builder::createSimpleTexture(eweDevice, "UI/unchecked.png", true));
-		textureIDs.emplace(MT_Checked, Texture_Builder::createSimpleTexture(eweDevice, "UI/checked.png", true));
-		//textureIDs.emplace(MT_background, Texture_Builder::createSimpleTexture(eweDevice, "UI/mainPageBG.png"));
-		textureIDs.emplace(MT_Button, Texture_Builder::createSimpleTexture(eweDevice, "UI/ButtonUp.png", true));
+		textureIDs.emplace(MT_NineUI, Texture_Builder::createSimpleTexture( "UI/NineUI.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textureIDs.emplace(MT_NineFade, Texture_Builder::createSimpleTexture( "UI/NineFade.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textureIDs.emplace(MT_Slider, Texture_Builder::createSimpleTexture( "UI/clickyBox.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textureIDs.emplace(MT_BracketButton, Texture_Builder::createSimpleTexture( "UI/bracketButton.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textureIDs.emplace(MT_Bracket, Texture_Builder::createSimpleTexture( "UI/bracketSlide.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textureIDs.emplace(MT_Unchecked, Texture_Builder::createSimpleTexture( "UI/unchecked.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textureIDs.emplace(MT_Checked, Texture_Builder::createSimpleTexture( "UI/checked.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		//textureIDs.emplace(MT_background, Texture_Builder::createSimpleTexture( "UI/mainPageBG.png"));
+		textureIDs.emplace(MT_Button, Texture_Builder::createSimpleTexture( "UI/ButtonUp.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
 		{
-			textureIDs.emplace(MT_Base, Texture_Builder::createSimpleTexture(eweDevice, "UI/menuBase.png", true));
+			textureIDs.emplace(MT_Base, Texture_Builder::createSimpleTexture("UI/menuBase.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
 		}
 
 		model2D = Basic_Model::generate2DQuad(eweDevice);

@@ -20,14 +20,9 @@ namespace EWE {
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-		std::vector<VkDescriptorSetLayout> tempDSL{};
-		TextureDSLInfo dslInfo{};
-		dslInfo.setStageTextureCount(VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-		tempDSL.emplace_back(dslInfo.getDescSetLayout(device));
-		
-
-		pipelineLayoutInfo.setLayoutCount = tempDSL.size();
-		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
+		VkDescriptorSetLayout tempDSL = TextureDSLInfo::getSimpleDSL(device, VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout();
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &tempDSL;
 
 		if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &PL_2d) != VK_SUCCESS) {
 			printf("failed to create 2d pipe layout\n");
