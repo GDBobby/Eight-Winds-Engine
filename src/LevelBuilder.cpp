@@ -176,7 +176,7 @@ namespace EWE {
 				lastTextureID = EWETexture::addSmartModeTexture(eweDevice, textureStringBuffer, EWETexture::tType_smart);
 				if ((lastTextureID.first >= 0) && (lastTextureID.second >= 0)) {
 					objectManager->dynamicBuildObjects[objectCounter] = EWEGameObject{};
-					if (lastTextureID.first & DynF_hasNormal) {
+					if (lastTextureID.first & MaterialF_hasNormal) {
 						objectManager->dynamicBuildObjects[objectCounter].model = BuilderModel::generateTangentQuad(EWEDevice);
 					}
 					else {
@@ -317,12 +317,12 @@ namespace EWE {
 									materialHandler->removeByTransform(objectManager->dynamicBuildObjects[selectedObject].textureID, &objectManager->dynamicBuildObjects[selectedObject].transform);
 									objectManager->dynamicBuildObjects[selectedObject].textureID = tempTextureID.second;
 
-									if ((objectManager->dynamicBuildObjects[selectedObject].textureFlags & DynF_hasNormal) && ((tempTextureID.first & DynF_hasNormal) == 0)) {
+									if ((objectManager->dynamicBuildObjects[selectedObject].textureFlags & MaterialF_hasNormal) && ((tempTextureID.first & MaterialF_hasNormal) == 0)) {
 										printf("before removing tangents \n");
 										((BuilderModel*)objectManager->dynamicBuildObjects[selectedObject].model.get())->removeTangent();
 										printf("after removing tangents \n");
 									}
-									else if (((objectManager->dynamicBuildObjects[selectedObject].textureFlags & DynF_hasNormal) == 0) && (tempTextureID.first & DynF_hasNormal)) {
+									else if (((objectManager->dynamicBuildObjects[selectedObject].textureFlags & MaterialF_hasNormal) == 0) && (tempTextureID.first & MaterialF_hasNormal)) {
 										printf("before adding tangents \n");
 										((BuilderModel*)objectManager->dynamicBuildObjects[selectedObject].model.get())->addTangent();
 										printf("After adding tangents \n");

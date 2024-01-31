@@ -26,6 +26,60 @@ file(GLOB_RECURSE SOURCES_C ${PROJECT_SOURCE_DIR}/src/*.c) #literally just for m
 file(GLOB_RECURSE HEADER_FILES ${PROJECT_SOURCE_DIR}/include/*.h)
 file(GLOB_RECURSE HEADER_FILES_PP ${PROJECT_SOURCE_DIR}/include/*.hpp)
 
+
+include(FetchContent)
+
+
+FetchContent_Declare(
+  glfw
+  GIT_REPOSITORY https://github.com/glfw/glfw
+  GIT_TAG d79afa8
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw"
+  BINARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw-build"
+)
+
+set(GLFW_BUILD_EXAMPLES OFF)
+set(GLFW_BUILD_TESTS OFF)
+set(GLFW_BUILD_DOCS OFF)
+set(GLFW_INSTALL OFF)
+set(GLFW_VULKAN_STATIC ON)
+
+FetchContent_MakeAvailable(glfw)
+
+
+FetchContent_Declare(
+	rapidjson
+	GIT_REPOSITORY https://github.com/Tencent/rapidjson
+	GIT_TAG 6089180
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/rapidjson"
+)
+SET(RAPIDJSON_BUILD_DOC OFF)
+SET(RAPIDJSON_BUILD_EXAMPLES OFF)
+SET(RAPIDJSON_BUILD_TESTS OFF)
+SET(RAPIDJSON_BUILD_THIRDPARTY_GTEST OFF)
+SET(RAPIDJSON_BUILD_CXX11 OFF)
+SET(RAPIDJSON_BUILD_CXX17 ON)
+
+FetchContent_MakeAvailable(rapidjson)
+
+
+FetchContent_Declare(
+	stb
+	GIT_REPOSITORY https://github.com/nothings/stb
+	GIT_TAG f4a71b1
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/include/stb"
+)
+FetchContent_MakeAvailable(stb)
+
+
+FetchContent_Declare(
+	tinyobj
+	GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader
+	GIT_TAG 2945a96
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/include/tinyobjloader"
+)
+FetchContent_MakeAvailable(tinyobj)
+
 add_library(${PROJECT_NAME} STATIC ${SOURCES} ${SOURCES_C} ${HEADER_FILES} ${HEADER_FILES_PP})
 
 # 1. Set VULKAN_SDK_PATH in .env.cmake to target specific vulkan version
@@ -44,27 +98,6 @@ else()
 	message(STATUS "Using vulkan lib at: ${Vulkan_LIB}")
 endif()
 
-# 2. Set GLFW_PATH in .env.cmake to target specific glfw
-if (DEFINED GLFW_PATH)
-  message(STATUS "Using GLFW path specified in .env")
-  set(GLFW_INCLUDE_DIR "${GLFW_PATH}/include")
-  if (MSVC)
-    set(GLFW_LIB "${GLFW_PATH}/lib-vc2022") # 2.1 Update lib-vc2019 to use same version as your visual studio
-  elseif (CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
-    message(STATUS "USING MINGW")
-    set(GLFW_LIB "${GLFW_PATH}/lib-mingw-w64") # 2.1 make sure matches glfw mingw subdirectory
-  endif()
-else()
-  message(STATUS "GLFW path undefined in .env")
-  find_package(glfw3 3.3 REQUIRED)
-  set(GLFW_LIB glfw)
-  message(STATUS "Found GLFW")
-endif()
-if (NOT GLFW_LIB)
-	message(FATAL_ERROR "Could not find glfw library!")
-else()
-	message(STATUS "Using glfw lib at: ${GLFW_LIB}")
-endif()
 
 # 3. Set BOOST_SDK_PATH in .env.cmake to target specific boost version
 if (DEFINED BOOST_SDK_PATH)
@@ -84,55 +117,28 @@ else()
 	message(STATUS "Using Boost lib at: ${BOOST_LIB}")
 endif()
 
-# 4. Set RAPIDJSON_PATH in .env.cmake to target specific rapidjson version
-if (DEFINED RAPIDJSON_PATH)
-  set(RAPIDJSON_INCLUDE_DIR "${RAPIDJSON_PATH}/include") # Make sure this include path is correct
-  set(RAPIDJSON_FOUND "True")
-else()
-  message(STATUS "did not define rapidjson path")
-  find_package(RapidJSON REQUIRED) # throws error if could not find RAPIDJSON
-  message(STATUS "Found RAPIDJSON: $ENV{RAPIDJSON_SDK}")
-endif()
-if (NOT RAPIDJSON_FOUND)
-	message(FATAL_ERROR "Could not find RAPIDJSON library!")
-else()
-	message(STATUS "Using RAPIDJSON lib at: ${RAPIDJSON_INCLUDE_DIR}")
-endif()
-
-# If TINYOBJ_PATH not specified in .env.cmake, try fetching from git repo
-if (NOT TINYOBJ_PATH)
-  message(STATUS "TINYOBJ_PATH not specified in .env.cmake, using external/tinyobjloader")
-  set(TINYOBJ_PATH external/include)
-endif()
-
-# If STB_PATH not specified in .env.cmake, try fetching from git repo
-if (NOT STB_PATH)
-  message(STATUS "STB_PATH not specified in .env.cmake, using external/stb")
-  set(STB_PATH external/include)
-endif()
-
 message(STATUS "including directories")
 target_include_directories(${PROJECT_NAME} PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	$<INSTALL_INTERFACE:include>
+	
 	${Vulkan_INCLUDE_DIR}
 	${BOOST_INCLUDE_DIR}
-	${GLFW_INCLUDE_DIR}
-	${RAPIDJSON_INCLUDE_DIR}
-    	${TINYOBJ_PATH}
-	${STB_PATH}
-	${TINYOBJLOADER_INCLUDE_DIR}
+	${rapidjson_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/external/include
+	
 )
 message(STATUS "linking directories")
 target_link_directories(${PROJECT_NAME} PUBLIC
-	${GLFW_LIB}
 	${Vulkan_LIB}
 	${BOOST_LIB}
 )
 
 message(STATUS "linking libs")
+
+
 target_link_libraries(${PROJECT_NAME} 
-	glfw3 
+	glfw
 	vulkan-1
 	#vulkan
 
@@ -161,14 +167,6 @@ target_link_libraries(${PROJECT_NAME}
 	 SPIRV-Tools-opt
 	>
 	
-)
-
-
-message(STATUS "cmake current binary dir : ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config")
-
-# Export the target properties to be used by other projects
-export(TARGETS ${PROJECT_NAME}
-    FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 )
 
 if(EWE_EXAMPLES)

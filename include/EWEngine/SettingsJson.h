@@ -1,9 +1,8 @@
 #pragma once
 
-//#include "Settings.h"
-#include <rapidjson/document.h>
-#include <rapidjson/prettywriter.h> // for stringify JSON
-#include <rapidjson/error/en.h>
+#include <include/rapidjson/document.h>
+#include <include/rapidjson/prettywriter.h>// for stringify JSON
+#include <include/rapidjson/error/en.h>
 
 
 #include <GLFW/glfw3.h>

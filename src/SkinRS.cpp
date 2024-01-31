@@ -112,18 +112,15 @@ namespace EWE {
 			int32_t currentlyBindedTexture = -1;
 
 			for (auto& skeleDataRef : boned.second.skeletonData) {
-				if (pushConstants.find(skeleDataRef.first) == pushConstants.end()) {
+				if (!pushConstants.contains(skeleDataRef.first) || (pushConstants.at(skeleDataRef.first).count == 0)) {
 #ifdef _DEBUG
 					//std::cout << "this skeleton doesn't have push constants - skeletonID : " << skeleDataRef.first << std::endl;
+					//std::cout << "push count is 0 : " << std::endl;
 #endif
 					continue;
 				}
-				if (pushConstants.at(skeleDataRef.first).count == 0) {
-					//std::cout << "push count is 0 : " << std::endl;
-					continue;
-				}
 #ifdef _DEBUG
-				if (buffers.find(skeleDataRef.first) == buffers.end()) {
+				if (!buffers.contains(skeleDataRef.first)) {
 					printf("buffer at %d does not exist \n", skeleDataRef.first);
 					throw std::exception("skinned rs invlaid buffer");
 				}
@@ -213,7 +210,11 @@ namespace EWE {
 			throw std::exception("skinned main object is nullptr");
 		}
 #endif
+		materialInfo.materialFlags |= MaterialF_hasBones;
+
 		if (instanced) {
+			materialInfo.materialFlags |= MaterialF_instanced;
+
 			uint32_t instancedFlags = (boneCount << 16) + materialInfo.materialFlags;
 
 			if (skinnedMainObject->instancedData.find(instancedFlags) == skinnedMainObject->instancedData.end()) {

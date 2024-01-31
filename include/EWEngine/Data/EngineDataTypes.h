@@ -25,15 +25,18 @@ struct MaterialTextureInfo {
 	MaterialTextureInfo(MaterialFlags flags, TextureID texID) : materialFlags{ flags }, textureID{ texID } {}
 };
 
-enum DynamicFlags : uint8_t {
-	DynF_hasAO = 1,
-	DynF_hasMetal = 2,
-	DynF_hasRough = 4,
-	DynF_hasNormal = 8,
-	DynF_hasBump = 16,
+enum MaterialAttributes : uint8_t {
+	MaterialF_hasAO = 1,
+	MaterialF_hasMetal = 2,
+	MaterialF_hasRough = 4,
+	MaterialF_hasNormal = 8,
+	MaterialF_hasBump = 16,
+
+	MaterialF_instanced = 64,
+	MaterialF_hasBones = 128,
 
 
-	//DynF_hasBones = 128, //removed from texture flags
+	//MaterialF_hasBones = 128, //removed from texture flags
 };
 
 struct FrameInfo {

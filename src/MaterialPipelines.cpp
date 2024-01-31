@@ -157,8 +157,8 @@ namespace EWE {
 
 	MaterialPipelines* MaterialPipelines::getMaterialPipe(MaterialFlags flags, EWEDevice& device) {
 		if (!materialPipelines.contains(flags)) {
-			bool hasBones = flags & 128;
-			bool instanced = flags & 64; //curently creating an outside manager to deal with instanced skinned meshes
+			bool hasBones = flags & MaterialF_hasBones;
+			bool instanced = flags & MaterialF_instanced; //curently creating an outside manager to deal with instanced skinned meshes
 	#ifdef _DEBUG
 			if (instanced) {
 				printf("creating a material pipe with bones or instanced flag set, no longer supported \n");
@@ -167,11 +167,11 @@ namespace EWE {
 	#endif
 
 			//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
-			bool hasBumps = flags & 16;
-			bool hasNormal = flags & 8;
-			bool hasRough = flags & 4;
-			bool hasMetal = flags & 2;
-			bool hasAO = flags & 1;
+			bool hasBumps = flags & MaterialF_hasBump;
+			bool hasNormal = flags & MaterialF_hasNormal;
+			bool hasRough = flags & MaterialF_hasRough;
+			bool hasMetal = flags & MaterialF_hasMetal;
+			bool hasAO = flags & MaterialF_hasAO;
 
 			uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
 			uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * hasBones);
@@ -184,7 +184,7 @@ namespace EWE {
 			}
 	#endif
 
-			initMaterialPipeLayout(pipeLayoutIndex, textureCount, false, false, device, hasBumps);
+			initMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, device, hasBumps);
 
 			//printf("creating new pipeline, dynamicShaderFinding, (key value:%d)-(bones:%d)-(normal:%d)-(rough:%d)-(metal:%d)-(ao:%d) \n", newFlags, hasBones, hasNormal, hasRough, hasMetal, hasAO );
 			EWEPipeline::PipelineConfigInfo pipelineConfig{};
@@ -283,11 +283,11 @@ namespace EWE {
 
 
 		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
-		bool hasBumps = flags & DynF_hasBump;
-		bool hasNormal = flags & DynF_hasNormal;
-		bool hasRough = flags & DynF_hasRough;
-		bool hasMetal = flags & DynF_hasMetal;
-		bool hasAO = flags & DynF_hasAO;
+		bool hasBumps = flags & MaterialF_hasBump;
+		bool hasNormal = flags & MaterialF_hasNormal;
+		bool hasRough = flags & MaterialF_hasRough;
+		bool hasMetal = flags & MaterialF_hasMetal;
+		bool hasAO = flags & MaterialF_hasAO;
 
 		uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
 

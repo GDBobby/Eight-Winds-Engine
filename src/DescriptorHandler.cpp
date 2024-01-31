@@ -256,7 +256,7 @@ namespace EWE {
     }
     VkDescriptorSet* DescriptorHandler::getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
 #if _DEBUG
-        if (descriptorSets.find(whichDescSet) == descriptorSets.end()) {
+        if (!descriptorSets.contains(whichDescSet)) {
             printf("failed to find DescSet in getDescSet : %d \n", whichDescSet);
         }
 #endif

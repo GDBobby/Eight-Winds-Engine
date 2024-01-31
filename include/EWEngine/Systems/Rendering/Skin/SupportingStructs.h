@@ -60,6 +60,7 @@ namespace EWE {
 				skeletonData{}
 				//non instanced
 			{
+				printf("~~~~~ constructing skin pipeline : %d:%d  ~~~~\n", materialFlags, materialFlags & MaterialF_hasBones);
 			}
 		};
 	}

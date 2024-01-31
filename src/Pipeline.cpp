@@ -167,7 +167,7 @@ namespace EWE {
 	EWEPipeline::EWEPipeline(EWEDevice& device, uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo) : eweDevice{ device } {
 		std::string vertPath = SHADER_DIR;
 		//this is always instanced???
-		bool hasNormal = (flags & DynF_hasNormal) > 0;
+		bool hasNormal = (flags & MaterialF_hasNormal) > 0;
 		if (hasNormal) {
 			vertPath += "dynamic\\n" + std::to_string(boneCount) + ".vert.spv";
 		}
@@ -595,11 +595,11 @@ namespace EWE {
 		dynamicInstancedPipeTracker.emplace_back(boneCount, flags);
 #endif
 		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
-		bool hasBumps = flags & DynF_hasBump;
-		bool hasNormal = flags & DynF_hasNormal;
-		bool hasRough = flags & DynF_hasRough;
-		bool hasMetal = flags & DynF_hasMetal;
-		bool hasAO = flags & DynF_hasAO;
+		bool hasBumps = flags & MaterialF_hasBump;
+		bool hasNormal = flags & MaterialF_hasNormal;
+		bool hasRough = flags & MaterialF_hasRough;
+		bool hasMetal = flags & MaterialF_hasMetal;
+		bool hasAO = flags & MaterialF_hasAO;
 
 		uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
 
@@ -652,11 +652,11 @@ namespace EWE {
 #endif
 
 		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
-		bool hasBumps = flags & DynF_hasBump;
-		bool hasNormal = flags & DynF_hasNormal;
-		bool hasRough = flags & DynF_hasRough;
-		bool hasMetal = flags & DynF_hasMetal;
-		bool hasAO = flags & DynF_hasAO;
+		bool hasBumps = flags & MaterialF_hasBump;
+		bool hasNormal = flags & MaterialF_hasNormal;
+		bool hasRough = flags & MaterialF_hasRough;
+		bool hasMetal = flags & MaterialF_hasMetal;
+		bool hasAO = flags & MaterialF_hasAO;
 
 		uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
 

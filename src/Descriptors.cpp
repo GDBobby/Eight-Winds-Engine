@@ -276,9 +276,9 @@ namespace EWE {
 
         activeDescriptors++;
         for (int i = 0; i < setLayout.bindings.size(); i++) {
-            printf("binding[%d] : %d \n", i, setLayout.bindings.at(i).descriptorType);
+            //printf("binding[%d] : %d \n", i, setLayout.bindings.at(i).descriptorType);
             if (setLayout.bindings.at(i).descriptorCount != 1) {
-                printf("\t count:%d\n", setLayout.bindings.at(i).descriptorCount);
+                //printf("\t count:%d\n", setLayout.bindings.at(i).descriptorCount);
             }
             pool.addDescriptorToTrackers(setLayout.bindings.at(i).descriptorType, setLayout.bindings.at(i).descriptorCount);
         }

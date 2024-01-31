@@ -181,7 +181,7 @@ namespace EWE {
             meshThread1 = std::thread{ &SkeletonBase::readMeshData, this, meshPath, std::ref(device), std::ref(importMesh) };
         }
         else {
-            printf("skeleton mesh path doesn't exist : %s \n", meshPath.c_str());
+            //printf("skeleton mesh path doesn't exist : %s \n", meshPath.c_str());
         }
 
         meshPath = importPath + "_meshNT.ewe";
@@ -193,18 +193,18 @@ namespace EWE {
             meshThread2 = std::thread{ &SkeletonBase::readMeshNTData, this, meshPath, std::ref(device), std::ref(importMeshNT) };
         }
         else {
-            printf("skeleton mesh NT path doesn't exist : %s \n", meshPath.c_str());
+            //printf("skeleton mesh NT path doesn't exist : %s \n", meshPath.c_str());
         }
 #endif
         bool partial = true;
         meshPath = importPath + "_anim.ewe";
         if (!std::filesystem::exists(meshPath)) {
-            printf("skeleton partial anim path doesn't exist : %s \n", meshPath.c_str());
+            //printf("skeleton partial anim path doesn't exist : %s \n", meshPath.c_str());
             //printf("finna get an error \n");
             partial = false;
             meshPath = importPath + "_fullAnim.ewe";
             if (!std::filesystem::exists(meshPath)) {
-                printf("skeleton full anim path doesn't exist : %s \n", meshPath.c_str());
+                //printf("skeleton full anim path doesn't exist : %s \n", meshPath.c_str());
                 throw std::runtime_error("couldn't find either anim path for skeleton");
             }
         }

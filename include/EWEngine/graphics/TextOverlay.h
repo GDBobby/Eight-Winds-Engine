@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 
 #define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
-#include <stb/stb_font_consolas_24_latin1.inl>
+#include "EWEngine/Fonts/stb_font_consolas_24_latin1.inl"
 
 
 

@@ -93,7 +93,7 @@ namespace EWE {
         //no albedo -> throw an error
 
         //flags = normal, metal, rough, ao
-        MaterialFlags flags = (foundTypes[MT_bump] * DynF_hasBump) + (foundTypes[MT_metal] * DynF_hasMetal) + (foundTypes[MT_rough] * DynF_hasRough) + (foundTypes[MT_ao] * DynF_hasAO) + ((foundTypes[MT_normal] * DynF_hasNormal));
+        MaterialFlags flags = (foundTypes[MT_bump] * MaterialF_hasBump) + (foundTypes[MT_metal] * MaterialF_hasMetal) + (foundTypes[MT_rough] * MaterialF_hasRough) + (foundTypes[MT_ao] * MaterialF_hasAO) + ((foundTypes[MT_normal] * MaterialF_hasNormal));
         //printf("flag values : %d \n", flags);
 
         if (!foundTypes[MT_albedo]) {
