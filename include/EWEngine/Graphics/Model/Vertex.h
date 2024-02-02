@@ -7,6 +7,11 @@
 #include <vector>
 #include <map>
 
+
+
+
+
+
 #define MAX_BONE_INFLUENCE 4
 namespace EWE {
     struct BoneInfo {
@@ -17,6 +22,7 @@ namespace EWE {
         glm::mat4 offset;
 
     };
+    /*
     struct bobvec3 {
         float x{ 0.f };
         float y{ 0.f };
@@ -31,12 +37,6 @@ namespace EWE {
             z = glmVec.z;
         }
 
-        template<class Archive>
-        void serialize(Archive& archive, const unsigned int version) {
-            archive& x;
-            archive& y;
-            archive& z;
-        }
         bool operator == (const bobvec3& other) {
             return (this->x == other.x) && (this->y == other.y) && (this->z == other.z);
         }
@@ -58,11 +58,6 @@ namespace EWE {
             y = glmVec.y;
         }
 
-        template<class Archive>
-        void serialize(Archive& archive, const unsigned int version) {
-            archive& x;
-            archive& y;
-        }
         bool operator == (const bobvec2& other) {
             return (this->x == other.x) && (this->y == other.y);
         }
@@ -116,16 +111,6 @@ namespace EWE {
             }
             return true;
         }
-
-        template<class Archive>
-        void serialize(Archive& archive, const unsigned int version) {
-            archive& position;
-            archive& normal;
-            archive& uv;
-            archive& tangent;
-            archive& m_BoneIDs;
-            archive& m_Weights;
-        }
     };
     struct bobSimpleVertex {
         bobvec3 position;
@@ -156,13 +141,6 @@ namespace EWE {
             //memcpy(&uv, &other.uv, FLOAT_SIZE2);
             //memcpy(&color, &other.color, FLOAT_SIZE3);
         }
-        template<class Archive>
-        void serialize(Archive& archive, const unsigned int version) {
-            archive& position;
-            archive& normal;
-            archive& uv;
-            archive& color;
-        }
     };
     struct bobAVertex {
         bobvec3 position{};
@@ -177,14 +155,6 @@ namespace EWE {
             position{ posx, posy, posz }, normal{ normalx, normaly, normalz }, uv{ uvx, uvy }, tangent{ tangentx, tangenty, tangentz }
         {}
         bobAVertex(bobvec3& position, bobvec3& normal, bobvec2& uv, bobvec3& tangent) : position{ position }, normal{ normal }, uv{ uv }, tangent{ tangent } {}
-
-        template<class Archive>
-        void serialize(Archive& archive, const unsigned int version) {
-            archive& position;
-            archive& normal;
-            archive& uv;
-            archive& tangent;
-        }
 
         bool operator==(const bobAVertex& other) {
             if (!(this->position == other.position)) {
@@ -219,13 +189,6 @@ namespace EWE {
         {}
         bobAVertexNT(bobvec3& position, bobvec3& normal, bobvec2& uv) : position{ position }, normal{ normal }, uv{ uv } {}
 
-        template<class Archive>
-        void serialize(Archive& archive, const unsigned int version) {
-            archive& position;
-            archive& normal;
-            archive& uv;
-        }
-
         bool operator==(const bobAVertexNT& other) {
             if (!(this->position == other.position)) {
                 printf("position fail bonevertex \n");
@@ -242,29 +205,6 @@ namespace EWE {
             return true;
         }
     };
-
-    struct boneVertex {
-        glm::vec3 position{ 0.f };
-        glm::vec3 normal{ 0.f };
-        glm::vec2 uv{ 0.f };
-        glm::vec3 tangent{ 0.f };
-
-        int m_BoneIDs[MAX_BONE_INFLUENCE];
-        float m_Weights[MAX_BONE_INFLUENCE];
-
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
-
-    };
-    struct glmVertexNoTangent {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec2 uv;
-
-        int m_BoneIDs[MAX_BONE_INFLUENCE];
-        float m_Weights[MAX_BONE_INFLUENCE];
-
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
-    };
     struct boneVertexNoTangent {
         bobvec3 position;
         bobvec3 normal;
@@ -274,35 +214,64 @@ namespace EWE {
         int m_BoneIDs[MAX_BONE_INFLUENCE];
         //weights from each bone
         float m_Weights[MAX_BONE_INFLUENCE];
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() { return glmVertexNoTangent::getAttributeDescriptions(); }
+        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() { return boneVertexNoTangent::getAttributeDescriptions(); }
 
-        template<class Archive>
-        void serialize(Archive& archive, const unsigned int version) {
-            archive& position;
-            archive& normal;
-            archive& uv;
-            archive& m_BoneIDs;
-            archive& m_Weights;
-        }
+    };
+
+    */
+    struct boneVertex {
+        glm::vec3 position{ 0.f };
+        glm::vec3 normal{ 0.f };
+        glm::vec2 uv{ 0.f };
+        glm::vec3 tangent{ 0.f };
+
+        int m_BoneIDs[MAX_BONE_INFLUENCE];
+        float m_Weights[MAX_BONE_INFLUENCE];
+
+
+        void swapEndian();
+
+        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+
+    };
+    struct boneVertexNoTangent {
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 uv;
+
+        int m_BoneIDs[MAX_BONE_INFLUENCE];
+        float m_Weights[MAX_BONE_INFLUENCE];
+
+        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+
+        void swapEndian();
     };
     struct skyVertex {
         glm::vec3 position{ 0.f };
 
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
     };
-    struct AVertex {
+    struct Vertex {
         glm::vec3 position{ 0.f };
         glm::vec3 normal{ 0.f };
         glm::vec2 uv{ 0.f };
         glm::vec3 tangent{ 0.f };
 
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+
+        void swapEndian();
     };
-    struct AVertexNT {
+    struct VertexNT {
         glm::vec3 position{ 0.f };
         glm::vec3 normal{ 0.f };
         glm::vec2 uv{ 0.f };
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+
+        bool operator==(VertexNT const& other) const {
+            return (position == other.position) && (normal == other.normal) && (uv == other.uv);
+        }
+
+        void swapEndian();
     };
     struct simpleVertex {
         glm::vec3 position{ 0.f };
@@ -325,23 +294,10 @@ namespace EWE {
         glm::mat4 transform;
         GrassInstance(glm::mat4 transform) : transform{ transform } {}
     };
-    struct LeafVertex {
-        bobvec3 position{ 0.f };
-        bobvec3 normal{ 0.f };
-        bobvec2 uv{ 0.f };
-        static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
-        template<class Archive>
-        void serialize(Archive& archive, const unsigned int version) {
-            archive& position;
-            archive& normal;
-            archive& uv;
-        }
-    };
-    struct LeafInstance {
+    struct TransformInstance {
         glm::mat4 transform;
-        LeafInstance(glm::mat4 transform) : transform{ transform } {}
+        TransformInstance(glm::mat4 transform) : transform{ transform } {}
     };
 
     struct EffectVertex {
@@ -364,7 +320,20 @@ namespace EWE {
         glm::vec2 uvOffset;
         TileInstance(glm::vec2 uv) : uvOffset{ uv } {}
     };
-    struct Vertex {
+    //struct Vertex {
+    //    glm::vec3 position{ 0.f };
+    //    glm::vec3 normal{ 0.f };
+    //    glm::vec2 uv{ 0.f };
+    //    glm::vec3 color{ 0.f };
+
+    //    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+
+    //    bool operator==(const Vertex& other) const {
+    //        return position == other.position && color == other.color && normal == other.normal &&
+    //            uv == other.uv;
+    //    }
+    //};
+    struct VertexColor {
         glm::vec3 position{ 0.f };
         glm::vec3 normal{ 0.f };
         glm::vec2 uv{ 0.f };
@@ -372,11 +341,12 @@ namespace EWE {
 
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
-        bool operator==(const Vertex& other) const {
+        bool operator==(const VertexColor& other) const {
             return position == other.position && color == other.color && normal == other.normal &&
                 uv == other.uv;
         }
     };
+
     struct VertexUI {
         glm::vec2 position{ 0.f };
         glm::vec2 uv{ 0.f };
@@ -389,5 +359,23 @@ namespace EWE {
         VertexGrid2D(float x, float y) : position{ x, y } {}
 
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+    };
+
+    template <typename V_Type>
+    struct MeshData {
+        std::vector<V_Type> vertices{};
+        std::vector<uint32_t> indices{};
+
+        MeshData() {}
+        MeshData(std::vector<V_Type> const& vertices, std::vector<uint32_t> const& indices) : vertices{ vertices }, indices{ indices } {}
+        MeshData(std::pair<std::vector<V_Type>, std::vector<uint32_t>> const& pairData) : vertices{ pairData.first }, indices{ pairData.second } {}
+
+        //EVENTUALLY swap to a point where attribute descriptions are read, with a switch statement, instead of hard coding the vertex read.
+        //this will allow for a vertex to be popped in without writign a specific read statement for it
+        void readFromFile(std::ifstream& inFile);
+        void readFromFileSwapEndian(std::ifstream& inFile);
+
+    protected:
+        void swapEndian();
     };
 }

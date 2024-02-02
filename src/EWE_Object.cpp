@@ -49,12 +49,12 @@ namespace EWE {
         }
         */
 
-        for (int i = 0; i < tempData.meshSimpleExport.meshesSimple.size(); i++) {
-            meshes.push_back(EWEModel::createMesh(device, tempData.meshSimpleExport.meshesSimple[i].first, tempData.meshSimpleExport.meshesSimple[i].second));
+        for (int i = 0; i < tempData.meshSimpleExport.meshes.size(); i++) {
+            meshes.push_back(EWEModel::createMesh(device, tempData.meshSimpleExport.meshes[i].vertices, tempData.meshSimpleExport.meshes[i].indices));
             materialInstance->addMaterialObject(device, textureTracker.meshSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
-        for (int i = 0; i < tempData.meshNTSimpleExport.meshesNTSimple.size(); i++) {
-            meshes.push_back(EWEModel::createMesh(device, tempData.meshNTSimpleExport.meshesNTSimple[i].first, tempData.meshNTSimpleExport.meshesNTSimple[i].second));
+        for (int i = 0; i < tempData.meshNTSimpleExport.meshes.size(); i++) {
+            meshes.push_back(EWEModel::createMesh(device, tempData.meshNTSimpleExport.meshes[i].vertices, tempData.meshNTSimpleExport.meshes[i].indices));
             materialInstance->addMaterialObject(device, textureTracker.meshNTSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
         /*
@@ -71,7 +71,7 @@ namespace EWE {
             printf("meshNTSimple first : %d \n", textureTracker.meshNTSimpleNames[i].first);
         }
         */
-        size_t nameSum = tempData.meshExport.meshes.size() + tempData.meshNTExport.meshesNT.size() + tempData.meshSimpleExport.meshesSimple.size() + tempData.meshNTSimpleExport.meshesNTSimple.size();
+        size_t nameSum = tempData.meshExport.meshes.size() + tempData.meshNTExport.meshes.size() + tempData.meshSimpleExport.meshes.size() + tempData.meshNTSimpleExport.meshes.size();
 
         if (nameSum != meshes.size()) {
             printf("mesh to name mismatch - %lu:%lu \n", nameSum, meshes.size());
@@ -80,7 +80,7 @@ namespace EWE {
     }
 
     void EweObject::addToSkinHandler(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker, SkeletonID skeletonOwner) {
-        if ((tempData.meshNTSimpleExport.meshesNTSimple.size() > 0) || (tempData.meshSimpleExport.meshesSimple.size() > 0)) {
+        if ((tempData.meshNTSimpleExport.meshes.size() > 0) || (tempData.meshSimpleExport.meshes.size() > 0)) {
             printf("weapon can not have simple meshes \n");
             throw std::runtime_error("object can not have both simple meshes");
         }
@@ -98,14 +98,14 @@ namespace EWE {
         if (tempData.meshExport.meshes.size() > 0) {
             meshes.reserve(tempData.meshExport.meshes.size());
             for (uint16_t i = 0; i < tempData.meshExport.meshes.size(); i++) {
-                meshes.push_back(EWEModel::createMesh(device, tempData.meshExport.meshes[i].first, tempData.meshExport.meshes[i].second));
+                meshes.push_back(EWEModel::createMesh(device, tempData.meshExport.meshes[i].vertices, tempData.meshExport.meshes[i].indices));
                 SkinRenderSystem::addWeapon(textureTracker.meshNames[i], meshes[i].get(), mySkinID, skeletonOwner);
             }
         }
-        else if (tempData.meshNTExport.meshesNT.size() > 0) {
-            meshes.reserve(tempData.meshNTExport.meshesNT.size());
-            for (uint16_t i = 0; i < tempData.meshNTExport.meshesNT.size(); i++) {
-                meshes.push_back(EWEModel::createMesh(device, tempData.meshNTExport.meshesNT[i].first, tempData.meshNTExport.meshesNT[i].second));
+        else if (tempData.meshNTExport.meshes.size() > 0) {
+            meshes.reserve(tempData.meshNTExport.meshes.size());
+            for (uint16_t i = 0; i < tempData.meshNTExport.meshes.size(); i++) {
+                meshes.push_back(EWEModel::createMesh(device, tempData.meshNTExport.meshes[i].vertices, tempData.meshNTExport.meshes[i].indices));
                 SkinRenderSystem::addWeapon(textureTracker.meshNTNames[i], meshes[i].get(), mySkinID, skeletonOwner);
             }
         }

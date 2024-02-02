@@ -1152,7 +1152,7 @@ namespace EWE {
             file << "failed to create image : " << result << "\n";
         }
 #endif
-        printf("failed to allocate vertex buffer memoy \n");
+        printf("failed to allocate vertex buffer memory \n");
             throw std::runtime_error("failed to allocate vertex buffer memory!");
         }
 

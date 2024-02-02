@@ -24,7 +24,15 @@ template <>
 struct std::hash<EWE::Vertex> {
     size_t operator()(EWE::Vertex const& vertex) const {
         size_t seed = 0;
-        EWE::hashCombine(seed, vertex.position, vertex.color, vertex.normal, vertex.uv);
+        EWE::hashCombine(seed, vertex.position, vertex.normal, vertex.uv, vertex.tangent);
+        return seed;
+    }
+};
+template <>
+struct std::hash<EWE::VertexNT> {
+    size_t operator()(EWE::VertexNT const& vertex) const {
+        size_t seed = 0;
+        EWE::hashCombine(seed, vertex.position, vertex.normal, vertex.uv);
         return seed;
     }
 };
@@ -315,10 +323,10 @@ namespace EWE {
         vertices.clear();
         indices.clear();
 
-        std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+        std::unordered_map<VertexNT, uint32_t> uniqueVertices{};
         for (const auto& shape : shapes) {
             for (const auto& index : shape.mesh.indices) {
-                Vertex vertex{};
+                VertexNT vertex;
 
                 if (index.vertex_index >= 0) {
                     vertex.position = {
@@ -326,12 +334,13 @@ namespace EWE {
                         attrib.vertices[3 * index.vertex_index + 1],
                         attrib.vertices[3 * index.vertex_index + 2],
                     };
-
+                    /*
                     vertex.color = {
                         attrib.colors[3 * index.vertex_index + 0],
                         attrib.colors[3 * index.vertex_index + 1],
                         attrib.colors[3 * index.vertex_index + 2],
                     };
+                    */
                 }
 
                 if (index.normal_index >= 0) {
@@ -348,12 +357,19 @@ namespace EWE {
                         attrib.texcoords[2 * index.texcoord_index + 1],
                     };
                 }
+                else {
+                    vertex.uv = {
+                        0.f,
+                        0.f
+                    };
+                }
 
-                if (uniqueVertices.count(vertex) == 0) {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                if (!uniqueVertices.contains(vertex)) {
+                    uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
+                    //uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
                     vertices.push_back(vertex);
                 }
-                indices.push_back(uniqueVertices[vertex]);
+                indices.push_back(uniqueVertices.at(vertex));
             }
         }
         //printf("vertex count after loading model from file : %d \n", vertices.size());

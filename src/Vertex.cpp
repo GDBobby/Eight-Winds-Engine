@@ -1,6 +1,23 @@
 #include "EWEngine/Graphics/Model/Vertex.h"
+#include "EWEngine/Data/ReadEWEFromFile.h"
 
 namespace EWE {
+
+
+    /*
+    std::vector<VkVertexInputAttributeDescription> bobVertex::getAttributeDescriptions() {
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, position) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, normal) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(bobVertex, uv) });
+        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, tangent) });
+        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(bobVertex, m_BoneIDs) });
+        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(bobVertex, m_Weights) });
+
+        return attributeDescriptions;
+    }
+    */
 
     std::vector<VkVertexInputAttributeDescription> simpleVertex::getAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
@@ -64,38 +81,6 @@ namespace EWE {
         return attributeDescriptions;
     }
 
-
-    std::vector<VkVertexInputBindingDescription> LeafVertex::getBindingDescriptions() { //still here because instanced
-        std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
-        bindingDescriptions[0].binding = 0;
-        bindingDescriptions[0].stride = sizeof(LeafVertex);
-        bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        /*
-        bindingDescriptions[1].binding = 1;
-        bindingDescriptions[1].stride = sizeof(LeafInstance);
-        bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
-        */
-        return bindingDescriptions;
-    }
-
-    std::vector<VkVertexInputAttributeDescription> LeafVertex::getAttributeDescriptions() {
-        std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
-            { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LeafVertex, position) },
-            { 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LeafVertex, normal) },
-            { 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(LeafVertex, uv) },
-
-            //instance
-            /*
-            { 3, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-            { 4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4)},
-            { 5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 2},
-            { 6, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 3},
-            */
-        };
-
-        return attributeDescriptions;
-    }
-
     std::vector<VkVertexInputAttributeDescription> EffectVertex::getAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
@@ -106,13 +91,13 @@ namespace EWE {
     }
 
 
-    std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> VertexColor::getAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) });
-        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexColor , position) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexColor, normal) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexColor, uv) });
+        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexColor, color) });
 
         return attributeDescriptions;
     }
@@ -132,50 +117,38 @@ namespace EWE {
         attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(boneVertex, uv) });
         attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertex, tangent) });
         attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertex, m_BoneIDs) });
-        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(boneVertex, m_Weights) });
+        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertex, m_Weights) });
 
         return attributeDescriptions;
     }
-    std::vector<VkVertexInputAttributeDescription> glmVertexNoTangent::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> boneVertexNoTangent::getAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(glmVertexNoTangent, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(glmVertexNoTangent, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(glmVertexNoTangent, uv) });
-        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(glmVertexNoTangent, m_BoneIDs) });
-        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(glmVertexNoTangent, m_Weights) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertexNoTangent, position) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertexNoTangent, normal) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(boneVertexNoTangent, uv) });
+        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertexNoTangent, m_BoneIDs) });
+        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertexNoTangent, m_Weights) });
 
         return attributeDescriptions;
     }
 
-    std::vector<VkVertexInputAttributeDescription> AVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertex, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertex, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(AVertex, uv) });
-        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertex, tangent) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) });
+        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, tangent) });
 
         return attributeDescriptions;
     }
-    std::vector<VkVertexInputAttributeDescription> AVertexNT::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> VertexNT::getAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertexNT, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(AVertexNT, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(AVertexNT, uv) });
-
-        return attributeDescriptions;
-    }
-    std::vector<VkVertexInputAttributeDescription> bobVertex::getAttributeDescriptions() {
-        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
-
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(bobVertex, uv) });
-        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, tangent) });
-        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(bobVertex, m_BoneIDs) });
-        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(bobVertex, m_Weights) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexNT, position) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexNT, normal) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexNT, uv) });
 
         return attributeDescriptions;
     }
@@ -200,5 +173,70 @@ namespace EWE {
         attributeDescriptions[0].offset = offsetof(VertexGrid2D, position);
 
         return attributeDescriptions;
+    }
+
+    void boneVertex::swapEndian() {
+        Reading::swapGLMVec3Endian(position);
+        Reading::swapGLMVec3Endian(normal);
+        Reading::swapGLMVec2Endian(uv);
+        Reading::swapGLMVec3Endian(tangent);
+        for (int i = 0; i < MAX_BONE_INFLUENCE; i++) {
+            Reading::swapBasicEndian(m_BoneIDs + i, sizeof(int));
+            Reading::swapBasicEndian(m_Weights + i, sizeof(int));
+        }
+    }
+
+    void boneVertexNoTangent::swapEndian() {
+        Reading::swapGLMVec3Endian(position);
+        Reading::swapGLMVec3Endian(normal);
+        Reading::swapGLMVec2Endian(uv);
+        for (int i = 0; i < MAX_BONE_INFLUENCE; i++) {
+            Reading::swapBasicEndian(m_BoneIDs + i, sizeof(int));
+            Reading::swapBasicEndian(m_Weights + i, sizeof(int));
+        }
+    }
+    void Vertex::swapEndian() {
+        Reading::swapGLMVec3Endian(position);
+        Reading::swapGLMVec3Endian(normal);
+        Reading::swapGLMVec2Endian(uv);
+        Reading::swapGLMVec3Endian(tangent);
+    }
+    void VertexNT::swapEndian() {
+        Reading::swapGLMVec3Endian(position);
+        Reading::swapGLMVec3Endian(normal);
+        Reading::swapGLMVec2Endian(uv);
+    }
+    template <typename V_Type>
+    void MeshData<V_Type>::swapEndian() {
+        for (auto& vertex : vertices) {
+            vertex.swapEndian();
+        }
+        for (auto& index : indices) {
+            Reading::swapBasicEndian(&index, sizeof(uint32_t));
+        }
+    }
+    template <typename V_Type>
+    void MeshData<V_Type>::readFromFile(std::ifstream& inFile) {
+        uint64_t size;
+        Reading::UInt64FromFile(inFile, size);
+        vertices.resize(size);
+        inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(V_Type));
+
+        Reading::UInt64FromFile(inFile, size);
+        indices.resize(size);
+        inFile.read(reinterpret_cast<char*>(&indices[0]), size * sizeof(uint32_t));
+    }
+    template <typename V_Type>
+    void MeshData<V_Type>::readFromFileSwapEndian(std::ifstream& inFile) {
+        uint64_t size;
+        Reading::UInt64FromFileSwapEndian(inFile, size);
+        vertices.resize(size);
+        inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(V_Type));
+
+        Reading::UInt64FromFileSwapEndian(inFile, size);
+        indices.resize(size);
+        inFile.read(reinterpret_cast<char*>(&indices[0]), size * sizeof(uint32_t));
+
+        swapEndian();
     }
 }

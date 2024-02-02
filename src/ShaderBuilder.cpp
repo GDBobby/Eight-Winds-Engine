@@ -472,64 +472,64 @@ bool ShaderBlock::SpirvHelper::BuildFlaggedVert(bool hasNormal, uint16_t boneCou
 std::string ShaderBlock::buildVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance) {
 	std::string shaderString;
 	if (hasNormal) {
-		for (int i = 0; i < vertexTangentInput.size(); i++) {
-			shaderString += vertexTangentInput[i];
+		for (int i = 0; i < VertexShaderText::vertexTangentInput.size(); i++) {
+			shaderString += VertexShaderText::vertexTangentInput[i];
 		}
-		for (int i = 0; i < vertexTangentOutput.size(); i++) {
-			shaderString += vertexTangentOutput[i];
+		for (int i = 0; i < VertexShaderText::vertexTangentOutput.size(); i++) {
+			shaderString += VertexShaderText::vertexTangentOutput[i];
 		}
 	}
 	else {
-		for (int i = 0; i < vertexNNInput.size(); i++) {
-			shaderString += vertexNNInput[i];
+		for (int i = 0; i < VertexShaderText::vertexNNInput.size(); i++) {
+			shaderString += VertexShaderText::vertexNNInput[i];
 		}
-		for (int i = 0; i < vertexNNOutput.size(); i++) {
-			shaderString += vertexNNOutput[i];
+		for (int i = 0; i < VertexShaderText::vertexNNOutput.size(); i++) {
+			shaderString += VertexShaderText::vertexNNOutput[i];
 		}
 	}
-	for (int i = 0; i < vertexEntry.size(); i++) {
-		shaderString += vertexEntry[i];
+	for (int i = 0; i < VertexShaderText::vertexEntry.size(); i++) {
+		shaderString += VertexShaderText::vertexEntry[i];
 	}
 	if (instanced) {
 		
 
 		if(largeInstance){
-			for (int i = 0; i < vertexInstanceBuffersFirstHalf.size(); i++) {
-				shaderString += vertexInstanceBuffersFirstHalf[i];
+			for (int i = 0; i < VertexShaderText::vertexInstanceBuffersFirstHalf.size(); i++) {
+				shaderString += VertexShaderText::vertexInstanceBuffersFirstHalf[i];
 			}
 		}
 		else {
-			for (int i = 0; i < vertexSmallInstanceBuffersFirstHalf.size(); i++) {
-				shaderString += vertexSmallInstanceBuffersFirstHalf[i];
+			for (int i = 0; i < VertexShaderText::vertexSmallInstanceBuffersFirstHalf.size(); i++) {
+				shaderString += VertexShaderText::vertexSmallInstanceBuffersFirstHalf[i];
 			}
 		}
 		shaderString += std::to_string(boneCount) + ";";
-		for (int i = 0; i < vertexInstanceBuffersSecondHalf.size(); i++) {
-			shaderString += vertexInstanceBuffersSecondHalf[i];
+		for (int i = 0; i < VertexShaderText::vertexInstanceBuffersSecondHalf.size(); i++) {
+			shaderString += VertexShaderText::vertexInstanceBuffersSecondHalf[i];
 		}
 		if (hasNormal) {
-			for (int i = 0; i < vertexTangentInstancingMainExit.size(); i++) {
-				shaderString += vertexTangentInstancingMainExit[i];
+			for (int i = 0; i < VertexShaderText::vertexTangentInstancingMainExit.size(); i++) {
+				shaderString += VertexShaderText::vertexTangentInstancingMainExit[i];
 			}
 		}
 		else {
-			for (int i = 0; i < vertexNNInstancingMainExit.size(); i++) {
-				shaderString += vertexNNInstancingMainExit[i];
+			for (int i = 0; i < VertexShaderText::vertexNNInstancingMainExit.size(); i++) {
+				shaderString += VertexShaderText::vertexNNInstancingMainExit[i];
 			}
 		}
 	}
 	else {
-		for (int i = 0; i < vertexNoInstanceBuffers.size(); i++) {
-			shaderString += vertexNoInstanceBuffers[i];
+		for (int i = 0; i < VertexShaderText::vertexNoInstanceBuffers.size(); i++) {
+			shaderString += VertexShaderText::vertexNoInstanceBuffers[i];
 		}
 		if (hasNormal) {
-			for (int i = 0; i < vertexTangentNoInstancingMainExit.size(); i++) {
-				shaderString += vertexTangentNoInstancingMainExit[i];
+			for (int i = 0; i < VertexShaderText::vertexTangentNoInstancingMainExit.size(); i++) {
+				shaderString += VertexShaderText::vertexTangentNoInstancingMainExit[i];
 			}
 		}
 		else {
-			for (int i = 0; i < vertexNNNoInstancingMainExit.size(); i++) {
-				shaderString += vertexNNNoInstancingMainExit[i];
+			for (int i = 0; i < VertexShaderText::vertexNNNoInstancingMainExit.size(); i++) {
+				shaderString += VertexShaderText::vertexNNNoInstancingMainExit[i];
 			}
 		}
 	}
@@ -573,42 +573,42 @@ std::vector<const char*> ShaderBlock::buildFragmentShader(MaterialFlags flags, b
 	//std::string shaderString;
 	//shaderString += version;
 	if(!hasBumps){
-		for (int i = 0; i < fragNNEntry.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::fragNNEntry.size(); i++) {
 			//shaderString += fragNNEntry[i];
-			retVec.push_back(fragNNEntry[i].c_str());
+			retVec.push_back(FragmentShaderText::fragNNEntry[i].c_str());
 		}
 		if (hasNormal) {
 			//shaderString += "layout (location = 3) in vec3 fragTangentWorld;";
 			retVec.push_back("layout (location = 3) in vec3 fragTangentWorld;");
 		}
 		//shaderString += fragExit;
-		retVec.push_back(fragExit.c_str());
+		retVec.push_back(FragmentShaderText::fragExit.c_str());
 
-		for (int i = 0; i < dataBindings.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::dataBindings.size(); i++) {
 			//shaderString += dataBindings[i];
-			retVec.push_back(dataBindings[i].c_str());
+			retVec.push_back(FragmentShaderText::dataBindings[i].c_str());
 		}
-		for (int i = 0; i < functionBlock.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::functionBlock.size(); i++) {
 			//shaderString += functionBlock[i];
-			retVec.push_back(functionBlock[i].c_str());
+			retVec.push_back(FragmentShaderText::functionBlock[i].c_str());
 		}
 
 		addBindings(retVec, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones);
 
 		if (hasNormal) {
-			for (int i = 0; i < calcNormalFunction.size(); i++) {
+			for (int i = 0; i < FragmentShaderText::calcNormalFunction.size(); i++) {
 				//shaderString += calcNormalFunction[i];
-				retVec.push_back(calcNormalFunction[i].c_str());
+				retVec.push_back(FragmentShaderText::calcNormalFunction[i].c_str());
 			}
 		}
 
-		for (int i = 0; i < mainEntryBlock[0].size(); i++) {
+		for (int i = 0; i < FragmentShaderText::mainEntryBlock[0].size(); i++) {
 			//shaderString += mainEntryBlock[0][i];
-			retVec.push_back(mainEntryBlock[0][i].c_str());
+			retVec.push_back(FragmentShaderText::mainEntryBlock[0][i].c_str());
 		}
-		for (int i = 0; i < mainSecondBlockNN.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::mainSecondBlockNN.size(); i++) {
 			//shaderString += mainSecondBlockNN[i];
-			retVec.push_back(mainSecondBlockNN[i].c_str());
+			retVec.push_back(FragmentShaderText::mainSecondBlockNN[i].c_str());
 		}
 		if (hasNormal) {
 			//shaderString += "vec3 normal = calculateNormal();";
@@ -634,17 +634,17 @@ std::vector<const char*> ShaderBlock::buildFragmentShader(MaterialFlags flags, b
 			//shaderString += "float metal = 0.0;";
 			retVec.push_back("float metal = 0.0;");
 		}
-		for (int i = 0; i < mainThirdBlock.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::mainThirdBlock.size(); i++) {
 			//shaderString += mainThirdBlock[i];
-			retVec.push_back(mainThirdBlock[i].c_str());
+			retVec.push_back(FragmentShaderText::mainThirdBlock[i].c_str());
 		}
-		for (int i = 0; i < pointLightLoop.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::pointLightLoop.size(); i++) {
 			//shaderString += pointLightLoop[i];
-			retVec.push_back(pointLightLoop[i].c_str());
+			retVec.push_back(FragmentShaderText::pointLightLoop[i].c_str());
 		}
-		for (int i = 0; i < sunCalculation.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::sunCalculation.size(); i++) {
 			//shaderString += sunCalculation[i];
-			retVec.push_back(sunCalculation[i].c_str());
+			retVec.push_back(FragmentShaderText::sunCalculation[i].c_str());
 		}
 
 		if (hasAO) {
@@ -665,31 +665,31 @@ std::vector<const char*> ShaderBlock::buildFragmentShader(MaterialFlags flags, b
 		retVec.push_back("outColor = vec4(color, 1.0);}");
 	}
 	else { //if hasBumps, mostly doing a second block because bumpmap changes the uv variable name from fragTexCoord to fragTexCoord
-		for (int i = 0; i < fragBumpEntry.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::fragBumpEntry.size(); i++) {
 			//shaderString += fragBumpEntry[i];
-			retVec.push_back(fragBumpEntry[i].c_str());
+			retVec.push_back(FragmentShaderText::fragBumpEntry[i].c_str());
 		}
 		//shaderString += fragExit;
-		retVec.push_back(fragExit.c_str());
-		for (int i = 0; i < dataBindings.size(); i++) {
+		retVec.push_back(FragmentShaderText::fragExit.c_str());
+		for (int i = 0; i < FragmentShaderText::dataBindings.size(); i++) {
 			//shaderString += dataBindings[i];
-			retVec.push_back(dataBindings[i].c_str());
+			retVec.push_back(FragmentShaderText::dataBindings[i].c_str());
 		}
-		for (int i = 0; i < functionBlock.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::functionBlock.size(); i++) {
 			//shaderString += functionBlock[i];
-			retVec.push_back(functionBlock[i].c_str());
+			retVec.push_back(FragmentShaderText::functionBlock[i].c_str());
 		}
 		//bump map should not have bones, but leaving it in regardless
 		addBindings(retVec, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones);
 
-		for (int i = 0; i < parallaxMapping.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::parallaxMapping.size(); i++) {
 			//shaderString += parallaxMapping[i];
-			retVec.push_back(parallaxMapping[i].c_str());
+			retVec.push_back(FragmentShaderText::parallaxMapping[i].c_str());
 		}
 		//entering void main()
-		for (int i = 0; i < mainEntryBlock[1].size(); i++) {
+		for (int i = 0; i < FragmentShaderText::mainEntryBlock[1].size(); i++) {
 			//shaderString += mainEntryBlock[1][i];
-			retVec.push_back(mainEntryBlock[1][i].c_str());
+			retVec.push_back(FragmentShaderText::mainEntryBlock[1][i].c_str());
 		}
 		if (!hasNormal) {
 			printf("BUMP FRAGMENT SHADER SHOULD ALWAYS HAVE NORMAL \n");
@@ -713,14 +713,14 @@ std::vector<const char*> ShaderBlock::buildFragmentShader(MaterialFlags flags, b
 			//shaderString += "float metal = 0.0f;";
 			retVec.push_back("float metal = 0.0;");
 		}
-		for (int i = 0; i < mainThirdBlock.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::mainThirdBlock.size(); i++) {
 			//shaderString += mainThirdBlock[i];
-			retVec.push_back(mainThirdBlock[i].c_str());
+			retVec.push_back(FragmentShaderText::mainThirdBlock[i].c_str());
 		}
 
-		for (int i = 0; i < bumpSunCalculation.size(); i++) {
+		for (int i = 0; i < FragmentShaderText::bumpSunCalculation.size(); i++) {
 			//shaderString += bumpSunCalculation[i];
-			retVec.push_back(bumpSunCalculation[i].c_str());
+			retVec.push_back(FragmentShaderText::bumpSunCalculation[i].c_str());
 		}
 
 		if (hasAO) {
@@ -804,7 +804,7 @@ void ShaderBlock::addBindings(std::vector<const char*>& retVec, bool hasNormal, 
 	uint8_t currentBinding = hasBumps;
 
 	//shaderString += firstHalfBinding[hasBones];
-	retVec.push_back(firstHalfBinding[hasBones].c_str());
+	retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
 	//shaderString += std::to_string(currentBinding);
 	//retVec.emplace_back(std::to_string(currentBinding).c_str());
 	getNumberAsCString(retVec, currentBinding);
@@ -812,7 +812,7 @@ void ShaderBlock::addBindings(std::vector<const char*>& retVec, bool hasNormal, 
 	printf("~~~~~ CURRENT BINDING : %s \n", retVec.back());
 	currentBinding++;
 	//shaderString += secondHalfBinding;
-	retVec.push_back(secondHalfBinding.c_str());
+	retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
 	//shaderString += "albedoSampler;";
 	retVec.push_back("albedoSampler;");
 
@@ -820,46 +820,46 @@ void ShaderBlock::addBindings(std::vector<const char*>& retVec, bool hasNormal, 
 
 	if (hasNormal) {
 		//shaderString += firstHalfBinding[hasBones];
-		retVec.push_back(firstHalfBinding[hasBones].c_str());
+		retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
 		//shaderString += std::to_string(currentBinding);
 		getNumberAsCString(retVec, currentBinding);
 		currentBinding++;
 		//shaderString += secondHalfBinding;
-		retVec.push_back(secondHalfBinding.c_str());
+		retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
 		//shaderString += "normalSampler;";
 		retVec.push_back("normalSampler;");
 	}
 	if (hasRough) {
 		//shaderString += firstHalfBinding[hasBones];
-		retVec.push_back(firstHalfBinding[hasBones].c_str());
+		retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
 		//shaderString += std::to_string(currentBinding);
 		getNumberAsCString(retVec, currentBinding);
 		currentBinding++;
 		//shaderString += secondHalfBinding;
-		retVec.push_back(secondHalfBinding.c_str());
+		retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
 		//shaderString += "roughSampler;";
 		retVec.push_back("roughSampler;");
 	}
 
 	if (hasMetal) {
 		//shaderString += firstHalfBinding[hasBones];
-		retVec.push_back(firstHalfBinding[hasBones].c_str());
+		retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
 		//shaderString += std::to_string(currentBinding);
 		getNumberAsCString(retVec, currentBinding);
 		currentBinding++;
 		//shaderString += secondHalfBinding;
-		retVec.push_back(secondHalfBinding.c_str());
+		retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
 		//shaderString += "metalSampler;";
 		retVec.push_back("metalSampler;");
 	}
 	if (hasAO) {
 		//shaderString += firstHalfBinding[hasBones];
-		retVec.push_back(firstHalfBinding[hasBones].c_str());
+		retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
 		//shaderString += std::to_string(currentBinding);
 		getNumberAsCString(retVec, currentBinding);
 		currentBinding++;
 		//shaderString += secondHalfBinding;
-		retVec.push_back(secondHalfBinding.c_str());
+		retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
 		//shaderString += "amOccSampler;";
 		retVec.push_back("amOccSampler;");
 	}

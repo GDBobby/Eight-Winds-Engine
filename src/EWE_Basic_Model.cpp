@@ -40,16 +40,16 @@ namespace EWE {
 
     std::unique_ptr<EWEModel> Basic_Model::generateQuad(EWEDevice& device, glm::vec2 uvScale) {
         std::vector<Vertex> vertices{
-            {{0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {uvScale.x,uvScale.y}, {1.f, 1.f, 1.f}},
-            {{-0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {0.0f,uvScale.y}, {1.f, 1.f, 1.f}},
-            {{-0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {0.0f,0.f}, {1.f, 1.f, 1.f}},
-            {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}, {1.f, 1.f, 1.f}},
+            {{0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {uvScale.x,uvScale.y}, {1.f, 0.f, 0.f}},
+            {{-0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {0.0f,uvScale.y}, {1.f, 0.f, 0.f}},
+            {{-0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {0.0f,0.f}, {1.f, 0.f, 0.f}},
+            {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}, {1.f, 0.f, 0.f}},
         };
         std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
         return std::make_unique<EWEModel>(device, vertices, indices);
     }
     std::unique_ptr<EWEModel> Basic_Model::generateQuadPNU(EWEDevice& device, glm::vec2 uvScale) {
-        std::vector<AVertexNT> vertices{
+        std::vector<VertexNT> vertices{
             {{0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {uvScale.x,uvScale.y}},
             {{-0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {0.0f,uvScale.y}},
             {{-0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {0.0f,0.f}},

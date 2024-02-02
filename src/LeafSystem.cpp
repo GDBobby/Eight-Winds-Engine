@@ -295,14 +295,22 @@ namespace EWE {
 			throw std::runtime_error("failed to open leaf model");
 		}
 		//printf("before formatingg input file in mesh \n");
-		boost::archive::binary_iarchive binary_input_archive(inFile, boost::archive::no_header);
 		//printf("before synchronizing \n");
 		//binary_input_archive& fileData;
-		ImportData::meshNTSimpleData importMesh;
-		binary_input_archive& importMesh;
+		ImportData::TemplateMeshData<VertexNT> importMesh;
+
+		uint32_t endianTest = 1;
+		bool endian = (*((char*)&endianTest) == 1);
+
+		if (endian) {
+			importMesh.readFromFile(inFile);
+		}
+		else {
+			importMesh.readFromFileSwapEndian(inFile);
+		}
 		inFile.close();
 		//printf("file read successfully \n");
-		leafModel = EWEModel::createMesh(device, importMesh.meshesNTSimple[0].first, importMesh.meshesNTSimple[0].second);
+		leafModel = EWEModel::createMesh(device, importMesh.meshes[0].vertices, importMesh.meshes[0].indices);
 		//printf("leaf model loaded \n");
 	}
 	void LeafSystem::render(FrameInfo& frameInfo) {
@@ -326,8 +334,8 @@ namespace EWE {
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 
 		pipelineConfig.pipelineLayout = pipeLayout;
-		pipelineConfig.bindingDescriptions = LeafVertex::getBindingDescriptions();
-		pipelineConfig.attributeDescriptions = LeafVertex::getAttributeDescriptions();
+		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexNT>();
+		pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
 
 		printf("before loading vert shader \n");
 		glslang::InitializeProcess();

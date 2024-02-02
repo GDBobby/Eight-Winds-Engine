@@ -58,9 +58,7 @@ namespace EWE {
         uint16_t boneCount = 0;
         int32_t handBone = -1;
 
-        void readMeshNTData(std::string filePath, EWEDevice& device, ImportData::meshNTEData& importMesh);
-        void readMeshData(std::string filePath, EWEDevice& device, ImportData::meshEData& importMesh);
-        void readAnimData(std::string filePath, EWEDevice& device, bool partial);
+        void readAnimData(std::string filePath, EWEDevice& device, bool partial, bool endian);
         void loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath);
     };
 }

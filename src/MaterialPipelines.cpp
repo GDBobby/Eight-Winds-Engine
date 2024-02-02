@@ -400,21 +400,21 @@ namespace EWE {
 		}
 		else {
 			if (hasBumps) {
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
-				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
+				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
 
 				materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_bump.vert.spv", flags, pipelineConfig, false)));
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
-				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
+				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
 				materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_Tangent.vert.spv", flags, pipelineConfig, false)));
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertexNT>();
-				pipelineConfig.attributeDescriptions = AVertexNT::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexNT>();
+				pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
 				materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_nn.vert.spv", flags, pipelineConfig, false)));
 			}
 		}
