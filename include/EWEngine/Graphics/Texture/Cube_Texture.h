@@ -1,0 +1,19 @@
+#pragma once
+
+#include <EWEngine/Graphics/Textures/Texture_Manager.h>
+
+namespace EWE {
+	class Cube_Texture : public EWETexture  {
+	private:
+
+	protected:
+		static void createCubeImage(ImageInfo& cubeTexture, EWEDevice& device, std::vector<PixelPeek>& pixelPeek);
+
+		static void createCubeImageView(ImageInfo& cubeTexture, EWEDevice& device);
+		static void createCubeSampler(ImageInfo& cubeTexture, EWEDevice& device);
+
+	public:
+		static TextureID createCubeTexture(EWEDevice& device, std::string texPath);
+	};
+}
+
