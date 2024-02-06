@@ -1,5 +1,4 @@
 #include "EWEngine/Graphics/Model/Vertex.h"
-#include "EWEngine/Data/ReadEWEFromFile.h"
 
 namespace EWE {
 
@@ -206,6 +205,8 @@ namespace EWE {
         Reading::swapGLMVec3Endian(normal);
         Reading::swapGLMVec2Endian(uv);
     }
+    
+    /*
     template <typename V_Type>
     void MeshData<V_Type>::swapEndian() {
         for (auto& vertex : vertices) {
@@ -217,21 +218,24 @@ namespace EWE {
     }
     template <typename V_Type>
     void MeshData<V_Type>::readFromFile(std::ifstream& inFile) {
+        
         uint64_t size;
         Reading::UInt64FromFile(inFile, size);
         vertices.resize(size);
-        inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(V_Type));
+        inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(vertices[0]));
 
         Reading::UInt64FromFile(inFile, size);
         indices.resize(size);
         inFile.read(reinterpret_cast<char*>(&indices[0]), size * sizeof(uint32_t));
+        
     }
     template <typename V_Type>
     void MeshData<V_Type>::readFromFileSwapEndian(std::ifstream& inFile) {
+        
         uint64_t size;
         Reading::UInt64FromFileSwapEndian(inFile, size);
         vertices.resize(size);
-        inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(V_Type));
+        inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(vertices[0]));
 
         Reading::UInt64FromFileSwapEndian(inFile, size);
         indices.resize(size);
@@ -239,4 +243,5 @@ namespace EWE {
 
         swapEndian();
     }
+    */
 }

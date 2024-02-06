@@ -3,6 +3,7 @@
 
 #include "EWEngine/Graphics/Device.hpp"
 #include "EWEngine/Data/TransformInclude.h"
+#include "EWEngine/Data/ReadEWEFromFile.h"
 
 #include <vector>
 #include <map>
@@ -228,11 +229,9 @@ namespace EWE {
         int m_BoneIDs[MAX_BONE_INFLUENCE];
         float m_Weights[MAX_BONE_INFLUENCE];
 
-
-        void swapEndian();
-
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
+        void swapEndian();
     };
     struct boneVertexNoTangent {
         glm::vec3 position;
@@ -370,12 +369,50 @@ namespace EWE {
         MeshData(std::vector<V_Type> const& vertices, std::vector<uint32_t> const& indices) : vertices{ vertices }, indices{ indices } {}
         MeshData(std::pair<std::vector<V_Type>, std::vector<uint32_t>> const& pairData) : vertices{ pairData.first }, indices{ pairData.second } {}
 
+
+
+        void swapEndian() {
+            for (auto& vertex : vertices) {
+                vertex.swapEndian();
+            }
+            for (auto& index : indices) {
+                Reading::swapBasicEndian(&index, sizeof(uint32_t));
+            }
+        }
         //EVENTUALLY swap to a point where attribute descriptions are read, with a switch statement, instead of hard coding the vertex read.
         //this will allow for a vertex to be popped in without writign a specific read statement for it
-        void readFromFile(std::ifstream& inFile);
-        void readFromFileSwapEndian(std::ifstream& inFile);
+        void readFromFile(std::ifstream& inFile) {
+
+            uint64_t size;
+            Reading::UInt64FromFile(inFile, &size);
+            printf("after reading vertex count file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+            vertices.resize(size);
+            printf("vertex size : %lu:%lu \n", sizeof(V_Type), size);
+            inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(V_Type));
+            printf("after reading vertices data file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+            printf("before reading index size \n");
+            Reading::UInt64FromFile(inFile, &size);
+            printf("after reading index count file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+            indices.resize(size);
+            printf("indices size : %lu \n", size);
+            inFile.read(reinterpret_cast<char*>(&indices[0]), size * sizeof(uint32_t));
+            printf("after reading indices data file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+
+        }
+        void readFromFileSwapEndian(std::ifstream& inFile) {
+
+            uint64_t size;
+            Reading::UInt64FromFileSwapEndian(inFile, &size);
+            vertices.resize(size);
+            inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(V_Type));
+
+            Reading::UInt64FromFileSwapEndian(inFile, &size);
+            indices.resize(size);
+            inFile.read(reinterpret_cast<char*>(&indices[0]), size * sizeof(uint32_t));
+
+            swapEndian();
+        }
 
     protected:
-        void swapEndian();
     };
 }

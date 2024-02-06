@@ -1,5 +1,4 @@
 #include "EWEngine/Data/EWE_Import.h"
-#include "EWEngine/Data/ReadEWEFromFile.h"
 
 #include <thread>
 
@@ -223,7 +222,7 @@ namespace EWE {
         Reading::UIntFromFileSwapEndian(inFile, &boneID);
         Reading::GLMMat4FromFileSwapEndian(inFile, &boneTransform);
     }
-
+    /*
     template <typename V_Type>
     void ImportData::TemplateMeshData<V_Type>::readFromFile(std::ifstream& inFile) {
         std::getline(inFile, versionTracker, '\r');
@@ -259,7 +258,7 @@ namespace EWE {
             //mesh.swapEndian();
         }
     }
-
+    */
 
     void ImportData::AnimData::readFromFile(std::ifstream& inFile) {
         std::getline(inFile, versionTracker);

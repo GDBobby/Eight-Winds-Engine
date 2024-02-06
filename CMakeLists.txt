@@ -98,32 +98,12 @@ else()
 	message(STATUS "Using vulkan lib at: ${Vulkan_LIB}")
 endif()
 
-
-# 3. Set BOOST_SDK_PATH in .env.cmake to target specific boost version
-if (DEFINED BOOST_SDK_PATH)
-  set(BOOST_INCLUDE_DIR "${BOOST_SDK_PATH}") # 1.1 Make sure this include path is correct
-  set(BOOST_LIB "${BOOST_SDK_PATH}/stage/lib") # 1.2 Make sure lib path is correct
-  set(BOOST_FOUND "True")
-else()
-  message(STATUS "boost path undefined in .env")
-  find_package(Boost REQUIRED) # throws error if could not find boost
-  message(STATUS "Found Boost: $ENV{BOOST_SDK}")
-  find_package(Boost COMPONENTS serialization REQUIRED)
-  target_link_libraries(${PROJECT_NAME} PRIVATE Boost::serialization)
-endif()
-if (NOT BOOST_FOUND)
-	message(FATAL_ERROR "Could not find Boost library!")
-else()
-	message(STATUS "Using Boost lib at: ${BOOST_LIB}")
-endif()
-
 message(STATUS "including directories")
 target_include_directories(${PROJECT_NAME} PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	$<INSTALL_INTERFACE:include>
 	
 	${Vulkan_INCLUDE_DIR}
-	${BOOST_INCLUDE_DIR}
 	${rapidjson_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/external/include
 	
@@ -131,7 +111,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 message(STATUS "linking directories")
 target_link_directories(${PROJECT_NAME} PUBLIC
 	${Vulkan_LIB}
-	${BOOST_LIB}
 )
 
 message(STATUS "linking libs")

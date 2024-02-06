@@ -4,6 +4,7 @@
 
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Graphics/Model/Vertex.h"
+#include "EWEngine/Data/ReadEWEFromFile.h"
 
 #include <fstream>
 #include <vector>
@@ -36,8 +37,43 @@ namespace EWE {
             }
             TemplateMeshData() {}
 
-            void readFromFile(std::ifstream& inFile);
-            void readFromFileSwapEndian(std::ifstream& inFile);
+            void readFromFile(std::ifstream& inFile) {
+                std::getline(inFile, versionTracker, (char)0);
+                if (strcmp(versionTracker.c_str(), EXPECTED_IMPORT_VERSION)) {
+                    printf("incorrect import version : %s \n", versionTracker.c_str());
+                    throw std::runtime_error("incorrect import version");
+                }
+                if (inFile.peek() == '\n') {
+                    printf(" foudn null after version \n");
+                    inFile.seekg(1, std::ios::cur);
+                }
+                printf("after reading version file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+
+                uint64_t size;
+                Reading::UInt64FromFile(inFile, &size);
+                printf("after reading mesh count file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+                printf("size of meshes : %lu \n", size);
+                meshes.resize(size);
+                for (auto& mesh : meshes) {
+                    mesh.readFromFile(inFile);
+                }
+
+            }
+            void readFromFileSwapEndian(std::ifstream& inFile) {
+                std::getline(inFile, versionTracker);
+                if (versionTracker != EXPECTED_IMPORT_VERSION) {
+                    printf("incorrect import version \n");
+                    throw std::runtime_error("incorrect import version");
+                }
+
+                uint64_t size;
+                Reading::UInt64FromFileSwapEndian(inFile, &size);
+                meshes.resize(size);
+                for (auto& mesh : meshes) {
+                    mesh.readFromFileSwapEndian(inFile);
+                    //mesh.swapEndian();
+                }
+            }
         };
 
         struct AnimData {

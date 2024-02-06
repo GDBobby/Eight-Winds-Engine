@@ -51,6 +51,9 @@ namespace EWE {
 
         void UInt64FromFile(std::ifstream& inFile, uint64_t* value) {
             inFile.read(reinterpret_cast<char*>(value), sizeof(uint64_t));
+            for (uint8_t i = 0; i < sizeof(uint64_t); i++) {
+                printf("\t %d : %d \n", i, *(((char*)value) + i));
+            }
         }
         void FloatFromFile(std::ifstream& inFile, float* value) {
             inFile.read(reinterpret_cast<char*>(value), sizeof(float));
