@@ -136,15 +136,15 @@ namespace EWE {
 			static VkPipelineRenderingCreateInfo* pipelineRenderingInfoStatic;
 		};
 
-		EWEPipeline(EWEDevice& device, const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo);
-		EWEPipeline(EWEDevice& device, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo);
-		EWEPipeline(EWEDevice& device, const std::string& vertFilePath, MaterialFlags flags, const PipelineConfigInfo& configInfo, bool hasBones);
-		EWEPipeline(EWEDevice& device, uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo);
+		EWEPipeline(EWEDevice& device, std::string const& vertFilepath, std::string const& fragFilepath, PipelineConfigInfo const& configInfo);
+		EWEPipeline(EWEDevice& device, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, PipelineConfigInfo const& configInfo);
+		EWEPipeline(EWEDevice& device, std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones);
+		EWEPipeline(EWEDevice& device, uint16_t boneCount, MaterialFlags flags, PipelineConfigInfo const& configInfo);
 
 		~EWEPipeline();
 
-		EWEPipeline(const EWEPipeline&) = delete;
-		EWEPipeline& operator=(const EWEPipeline&) = delete;
+		EWEPipeline(EWEPipeline const&) = delete;
+		EWEPipeline& operator=(EWEPipeline const&) = delete;
 
 		void bind(VkCommandBuffer commandBuffer);
 		static void defaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
@@ -168,7 +168,7 @@ namespace EWE {
 		VkShaderModule vertShaderModule;
 		VkShaderModule fragShaderModule;
 
-		void createGraphicsPipeline(const PipelineConfigInfo& configInfo);
+		void createGraphicsPipeline(PipelineConfigInfo const& configInfo);
 
 	};
 

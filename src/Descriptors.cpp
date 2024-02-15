@@ -21,8 +21,8 @@ namespace EWE {
         return *this;
     }
 
-    std::unique_ptr<EWEDescriptorSetLayout> EWEDescriptorSetLayout::Builder::build() const {
-        return std::make_unique<EWEDescriptorSetLayout>(eweDevice, bindings);
+    EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::build() const {
+        return new EWEDescriptorSetLayout(eweDevice, bindings);
     }
 
     // *************** Descriptor Set Layout *********************
@@ -50,6 +50,15 @@ namespace EWE {
 
     EWEDescriptorSetLayout::~EWEDescriptorSetLayout() {
         vkDestroyDescriptorSetLayout(eweDevice.device(), descriptorSetLayout, nullptr);
+#ifdef _DEBUG
+        printf("probably have memory leaks currently, address this ASAP \n");
+        //the reason i have this print statement (feb 2024)
+        //i changed the builder to return a new pointer instead of a unique pointer
+        //all deconstruction must be followed by delete. 
+        //if this is printed, and it is not preceded by delete, it is a memory leak
+        //the print is being put in, instead of immediately addressing the issue because i have multiple other bugs im dealing with currently
+        //that all come before deconstruction time
+#endif
     }
 
     // *************** Descriptor Pool Builder *********************
@@ -252,9 +261,9 @@ namespace EWE {
         return *this;
     }
 
-    bool EWEDescriptorWriter::build(VkDescriptorSet& set) {
+    VkDescriptorSet EWEDescriptorWriter::build() {
 #if DESCRIPTOR_DEBUGGING
-        return buildPrint(set);
+        return buildPrint();
 #else
 
         bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set);
@@ -265,13 +274,15 @@ namespace EWE {
         }
         //printf("active descriptors after addition : %d \n", activeDescriptors);
         if (!success) {
-            return false;
+            throw std::runtime_error("failed to construct descriptor set");
+            return VK_NULL_HANDLE;
         }
         overwrite(set);
-        return true;
+        return set;
 #endif
     }
-    bool EWEDescriptorWriter::buildPrint(VkDescriptorSet& set) {
+    VkDescriptorSet EWEDescriptorWriter::buildPrint() {
+        VkDescriptorSet set;
         bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set);
 
         activeDescriptors++;
@@ -284,10 +295,11 @@ namespace EWE {
         }
         //printf("active descriptors after addition : %d \n", activeDescriptors);
         if (!success) {
-            return false;
+            throw std::runtime_error("failed to construct descriptor set");
+            return VK_NULL_HANDLE;
         }
         overwrite(set);
-        return true;
+        return set;
     }
 
     void EWEDescriptorWriter::overwrite(VkDescriptorSet& set) {

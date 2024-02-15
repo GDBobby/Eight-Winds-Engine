@@ -1,7 +1,7 @@
 #include "EWEngine/SkeletonHandlerBase.h"
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
-#include "EWEngine/Graphics/Textures/Texture_Manager.h"
-#include "EWEngine/Graphics/Textures/Material_Textures.h"
+#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Material_Textures.h"
 
 #include <thread>
 

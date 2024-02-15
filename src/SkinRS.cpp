@@ -1,6 +1,6 @@
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
-#include "EWEngine/Graphics/Textures/Texture_Manager.h"
-#include "EWEngine/Graphics/Textures/Material_Textures.h"
+#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Material_Textures.h"
 
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
@@ -60,7 +60,6 @@ namespace EWE {
 			pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
 
 			int64_t bindedSkeletonID = -1;
-			int32_t currentlyBindedTexture = -1;
 
 			for (auto& skeleDataRef : instanced.second.skeletonData) {
 				//printf("instance count? - %d:%d \n", skeleDataRef.first, instancedBuffers.at(skeleDataRef.first).getInstanceCount());
@@ -80,10 +79,7 @@ namespace EWE {
 					pipe->bindDescriptor(1, instancedBuffers.at(skeleDataRef.first).getDescriptor());
 				}
 				for (auto& skeleTextureRef : skeleDataRef.second) {
-					if (currentlyBindedTexture != skeleTextureRef.textureID) {
-						currentlyBindedTexture = skeleTextureRef.textureID;
-						pipe->bindDescriptor(2, Texture_Manager::getDescriptorSet(currentlyBindedTexture));
-					}
+					pipe->bindTextureDescriptor(2, skeleTextureRef.textureID);
 
 					for (auto& meshRef : skeleTextureRef.meshes) {
 						//meshRef->BindAndDrawInstanceNoBuffer(frameInfo.cmdBuf, actorCount.at(instanced.first));
@@ -95,8 +91,8 @@ namespace EWE {
 			}
 		}
 		//printf("after indexed drawing \n");
-		for (auto iter = instancedBuffers.begin(); iter != instancedBuffers.end(); iter++) {
-			iter->second.resetInstanceCount();
+		for (auto& instancedBuffer : instancedBuffers) {
+			instancedBuffer.second.resetInstanceCount();
 		}
 
 	}
@@ -109,16 +105,24 @@ namespace EWE {
 			pipe->bindPipeline();
 
 			pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
-			int32_t currentlyBindedTexture = -1;
 
 			for (auto& skeleDataRef : boned.second.skeletonData) {
-				if (!pushConstants.contains(skeleDataRef.first) || (pushConstants.at(skeleDataRef.first).count == 0)) {
-#ifdef _DEBUG
+				if (!pushConstants.contains(skeleDataRef.first)) {
+//#ifdef _DEBUG
 					//std::cout << "this skeleton doesn't have push constants - skeletonID : " << skeleDataRef.first << std::endl;
 					//std::cout << "push count is 0 : " << std::endl;
-#endif
+//#endif
 					continue;
 				}
+
+				auto& skelePush = pushConstants.at(skeleDataRef.first);
+				if (skelePush.count == 0) {
+//#ifdef _DEBUG
+					//std::cout << "push count is 0 : " << std::endl;
+//#endif
+					continue;
+				}
+
 #ifdef _DEBUG
 				if (!buffers.contains(skeleDataRef.first)) {
 					printf("buffer at %d does not exist \n", skeleDataRef.first);
@@ -128,22 +132,17 @@ namespace EWE {
 				pipe->bindDescriptor(1, buffers.at(skeleDataRef.first).getDescriptor());
 
 				for (auto& skeleTextureRef : skeleDataRef.second) {
-					if (currentlyBindedTexture != skeleTextureRef.textureID) {
-						currentlyBindedTexture = skeleTextureRef.textureID;
-
-						pipe->bindDescriptor(2, Texture_Manager::getDescriptorSet(currentlyBindedTexture));
-					}
+					pipe->bindTextureDescriptor(2, skeleTextureRef.textureID);
 
 					//race condition here for deletion of push constant
 					for (auto& meshRef : skeleTextureRef.meshes) {
 						//printf("for each mesh in non-instanced \n");
 						//meshRef->BindAndDrawInstanceNoBuffer(frameInfo.cmdBuf, actorCount.at(instanced.first));
 						pipe->bindModel(meshRef);
-
 #if RENDER_DEBUG
-						printf("before drawing to pipeline : %d \n", boned.first);
+						printf("before drawing to noninstanced skin pipeline : %d \n", boned.first);
 #endif
-						for (auto& pushData : pushConstants.at(skeleDataRef.first).data) {
+						for (auto& pushData : skelePush.data) {
 							pipe->pushAndDraw(pushData);
 						}
 					}
@@ -203,13 +202,38 @@ namespace EWE {
 		*/
 
 	}
+	void SkinRenderSystem::addSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, TextureID texID, EWEModel* modelPtr, SkeletonID skeletonID) {
+
+		auto textureMeshStructPair = skeleRef.find(skeletonID);
+
+		if (textureMeshStructPair != skeleRef.end()) {
+			bool foundATextureMatch = false;
+			for (auto& textureRef : textureMeshStructPair->second) {
+				if (textureRef.textureID == texID) {
+					foundATextureMatch = true;
+					textureRef.meshes.push_back(modelPtr);
+					break;
+				}
+			}
+			if (!foundATextureMatch) {
+				textureMeshStructPair->second.emplace_back(texID, std::vector<EWEModel*>{modelPtr});
+			}
+		}
+		else {
+			auto emplaceRet = skeleRef.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
+			emplaceRet.first->second.emplace_back(texID, std::vector<EWEModel*>{modelPtr});
+		}
+	}
+
 	void SkinRenderSystem::addSkeleton(MaterialTextureInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced) {
 #ifdef _DEBUG
 		if (skinnedMainObject == nullptr) {
 			printf("skinned main object is nullptr \n");
 			throw std::exception("skinned main object is nullptr");
 		}
+		printf("adding skeleton \n");
 #endif
+
 		materialInfo.materialFlags |= MaterialF_hasBones;
 
 		if (instanced) {
@@ -217,119 +241,68 @@ namespace EWE {
 
 			uint32_t instancedFlags = (boneCount << 16) + materialInfo.materialFlags;
 
-			if (skinnedMainObject->instancedData.find(instancedFlags) == skinnedMainObject->instancedData.end()) {
+			auto instancedDataIter = skinnedMainObject->instancedData.find(instancedFlags);
 
-				skinnedMainObject->createInstancedBuffer(skeletonID, boneCount);
+			skinnedMainObject->createInstancedBuffer(skeletonID, boneCount);
 
-				skinnedMainObject->createInstancedPipe(instancedFlags, boneCount, materialInfo.materialFlags);
-				skinnedMainObject->instancedData.at(instancedFlags).skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
-				//auto& secondRef = 
-				skinnedMainObject->instancedData.at(instancedFlags).skeletonData.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
-				//secondRef.meshes.push_back(modelPtr);
+			if (instancedDataIter == skinnedMainObject->instancedData.end()) {
+				SkinRS::PipelineStruct& instancedPipe = skinnedMainObject->createInstancedPipe(instancedFlags, boneCount, materialInfo.materialFlags);
+				instancedPipe.skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{SkinRS::TextureMeshStruct{ materialInfo.textureID, std::vector<EWEModel*>{modelPtr} }});
 			}
 			else {
-
-				auto& skeleRef = skinnedMainObject->instancedData.at(instancedFlags).skeletonData;
-				if (skeleRef.find(skeletonID) != skeleRef.end()) {
-					bool foundATextureMatch = false;
-					for (auto& textureRef : skeleRef.at(skeletonID)) {
-						if (textureRef.textureID == materialInfo.textureID) {
-							foundATextureMatch = true;
-							textureRef.meshes.push_back(modelPtr);
-							break;
-						}
-					}
-					if (!foundATextureMatch) {
-						skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
-					}
-				}
-				else {
-					skeleRef.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
-					skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
-				}
+				addSkeletonToStructs(instancedDataIter->second.skeletonData, materialInfo.textureID, modelPtr, skeletonID);
 			}
 		}
 		else {
+			auto boneDataIter = skinnedMainObject->boneData.find(materialInfo.materialFlags);
 			skinnedMainObject->createBoneBuffer(skeletonID, boneCount);
+			if (boneDataIter == skinnedMainObject->boneData.end()) {
 
-			if (skinnedMainObject->boneData.find(materialInfo.materialFlags) == skinnedMainObject->boneData.end()) {
-
-				skinnedMainObject->createBonePipe(materialInfo.materialFlags);
-				skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
-				//auto& secondRef = 
-				skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
-				//secondRef.meshes.push_back(modelPtr);
+				SkinRS::PipelineStruct& bonePipe = skinnedMainObject->createBonePipe(materialInfo.materialFlags);
+				bonePipe.skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{SkinRS::TextureMeshStruct{ materialInfo.textureID, std::vector<EWEModel*>{modelPtr} }});
 			}
 			else {
-
-				auto& skeleRef = skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData;
-				if (skeleRef.find(skeletonID) != skeleRef.end()) {
-					bool foundATextureMatch = false;
-					for (auto& textureRef : skeleRef.at(skeletonID)) {
-						if (textureRef.textureID == materialInfo.textureID) {
-							foundATextureMatch = true;
-							textureRef.meshes.push_back(modelPtr);
-							break;
-						}
-					}
-					if (!foundATextureMatch) {
-						skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
-					}
-				}
-				else {
-					skeleRef.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
-					skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
-				}
+				addSkeletonToStructs(boneDataIter->second.skeletonData, materialInfo.textureID, modelPtr, skeletonID);
 			}
 		}
 	}
 	void SkinRenderSystem::addWeapon(MaterialTextureInfo& materialInfo, EWEModel* modelPtr, SkeletonID skeletonID, SkeletonID ownerID) {
 		//need this to reference the owner buffer
-		if (skinnedMainObject->buffers.find(skeletonID) == skinnedMainObject->buffers.end()) {
+
+
+		if (!skinnedMainObject->buffers.contains(skeletonID)) {
 			std::cout << "creating reference buffer \n";
 			skinnedMainObject->createReferenceBuffer(skeletonID, ownerID);
 		}
-		if (skinnedMainObject->boneData.find(materialInfo.materialFlags) == skinnedMainObject->boneData.end()) {
 
-			skinnedMainObject->createBonePipe(materialInfo.materialFlags);
-			skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
+		auto boneDataIter = skinnedMainObject->boneData.find(materialInfo.materialFlags);
+
+		if (boneDataIter == skinnedMainObject->boneData.end()) {
+
+			SkinRS::PipelineStruct& retPipe = skinnedMainObject->createBonePipe(materialInfo.materialFlags);
+			auto emplaceRet = retPipe.skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
 			//auto& secondRef = 
-			skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
+			emplaceRet.first->second.emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
 			//secondRef.meshes.push_back(modelPtr);
 		}
 		else {
-
-			auto& skeleRef = skinnedMainObject->boneData.at(materialInfo.materialFlags).skeletonData;
-			if (skeleRef.find(skeletonID) != skeleRef.end()) {
-				bool foundATextureMatch = false;
-				for (auto& textureRef : skeleRef.at(skeletonID)) {
-					if (textureRef.textureID == materialInfo.textureID) {
-						foundATextureMatch = true;
-						textureRef.meshes.push_back(modelPtr);
-						break;
-					}
-				}
-				if (!foundATextureMatch) {
-					skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
-				}
-			}
-			else {
-				skeleRef.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
-				skeleRef.at(skeletonID).emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
-			}
+			addSkeletonToStructs(boneDataIter->second.skeletonData, materialInfo.textureID, modelPtr, skeletonID);
 		}
 	}
 
 	void SkinRenderSystem::removeSkeleton(SkeletonID skeletonID) {
 		for (auto& instanced : skinnedMainObject->instancedData) {
-			if (instanced.second.skeletonData.find(skeletonID) != instanced.second.skeletonData.end()) {
-				for (auto& textureRef : instanced.second.skeletonData.at(skeletonID)) {
-					//skinnedMainObject->cleanTheseTextures.push_back(textureRef.textureID);
-				}
-				//texture erasure here, if i decide to do it that way
-			}
+			//auto skeletonDataIter = instanced.second.skeletonData.find(skeletonID);
+			//if (skeletonDataIter != instanced.second.skeletonData.end()) {
+			//	for (auto& textureRef : skeletonDataIter->second){
+			//		//skinnedMainObject->cleanTheseTextures.push_back(textureRef.textureID);
+			//	}
+			//	//texture erasure here, if i decide to do it that way
+			//}
 			if (instanced.second.skeletonData.erase(skeletonID) > 0) {
+#ifdef _DEBUG
 				printf("erasing an instanced skeleton : %d \n", skeletonID);
+#endif
 				if (instanced.second.skeletonData.size() == 0) {
 #ifdef _DEBUG
 					printf("erasing a instanced skin pipeline :%d \n", instanced.first);
@@ -339,8 +312,16 @@ namespace EWE {
 					//need to remove textures, 
 					//or have textures remove themself, probably the better option
 					//currently, texture data will remain forever
+
+					//that comment was written when i first wrote this, in maybe oct 2023. in feb 2024 im not sure if this is still an issue. worth chekcing into
+					//i believe im manually erasing textures before removing a skeleton. not sure tho
 				}
 			}
+#ifdef _DEBUG
+			else {
+				printf("attempting to remove a skeleton that does not exist \n");
+			}
+#endif
 		}
 		for (auto& boned : skinnedMainObject->boneData) {
 			//if (instanced.second.skeletonData.find(skeletonID) != instanced.second.skeletonData.end()) {

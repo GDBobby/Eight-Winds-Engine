@@ -4,9 +4,9 @@
 #include "vulkan/vulkan.h"
 
 typedef uint8_t MaterialFlags;
-typedef uint16_t TextureID;
-#ifndef TEXTURE_UNBINDED
-#define TEXTURE_UNBINDED UINT16_MAX
+typedef VkDescriptorSet TextureDesc;
+#ifndef TEXTURE_UNBINDED_DESC
+#define TEXTURE_UNBINDED_DESC VK_NULL_HANDLE
 #endif
 #ifndef MAX_MATERIAL_TEXTURE_COUNT
 #define MAX_MATERIAL_TEXTURE_COUNT 6
@@ -19,10 +19,10 @@ typedef uint32_t PipelineID;
 
 struct MaterialTextureInfo {
 	MaterialFlags materialFlags;
-	TextureID textureID;
+	TextureDesc textureID;
 	//MaterialTextureInfo() {}
 	MaterialTextureInfo() {}
-	MaterialTextureInfo(MaterialFlags flags, TextureID texID) : materialFlags{ flags }, textureID{ texID } {}
+	MaterialTextureInfo(MaterialFlags flags, TextureDesc texID) : materialFlags{ flags }, textureID{ texID } {}
 };
 
 enum MaterialAttributes : uint8_t {

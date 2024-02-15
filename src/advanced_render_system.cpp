@@ -3,7 +3,7 @@
 #include "EWEngine/Systems/PipelineSystem.h"
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
-#include "EWEngine/Graphics/Textures/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Texture_Manager.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -13,6 +13,7 @@
 #include <array>
 #include <stdexcept>
 #include <iostream>
+#include <set>
 
 
 
@@ -714,33 +715,4 @@ namespace EWE {
 		//printf("after rendering the grid \n");
 	}
 #endif
-
-	/* this is old af, one of the first things i did in this engine. id like to revisit it at some point
-	inline void AdvancedRenderSystem::renderRocks(FrameInfo& frameInfo) {
-		//simple gameObjects and playerObjects use the same pipeline
-		//std::cout << "field size : " << frameInfo.rockField.size() << std::endl;
-		//unsigned int rockCount = 0;
-		
-		for (int i = 0; i < frameInfo.rockField.size(); i++) {
-
-			//std::cout << "currentPosition size : " << frameInfo.rockField[i].currentPosition.size() << std::endl;
-			for (int j = 0; j < frameInfo.rockField[i].currentPosition.size(); j++) {
-				//std::cout << "predraw simple" << std::endl;
-				SimplePushConstantData push{ glm::mat4{1.f}, glm::mat3{1.f} };
-				glm::vec3 tempPosition = frameInfo.rockField[i].trackPositions[frameInfo.rockField[i].currentPosition[j]];
-				push.modelMatrix[3].x = tempPosition.x;
-				push.modelMatrix[3].y = tempPosition.y;
-				push.modelMatrix[3].z = tempPosition.z;
-
-				vkCmdPushConstants(frameInfo.frameInfo.cmdBuf, simpleLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SimplePushConstantData), &push);
-				frameInfo.rockModel.bind(frameInfo.frameInfo.cmdBuf);
-				frameInfo.rockModel.draw(frameInfo.frameInfo.cmdBuf);
-				//ockCount++;
-				//std::cout << "post draw simple" << std::endl;
-			}
-		}
-		
-		//std::cout << "rock count : " << rockCount << std::endl;
-	}
-	*/
 }

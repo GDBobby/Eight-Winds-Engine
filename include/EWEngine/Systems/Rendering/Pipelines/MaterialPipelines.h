@@ -107,7 +107,7 @@ namespace EWE{
 		static VkPipelineCache instanceSkinPipelineCache;
 
 		static void getPipeCache(EWEDevice& device, bool hasBones, bool instanced, VkPipelineCache& outCache);
-		static void createPipe(EWEDevice& device, uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags);
+		static MaterialPipelines* createPipe(EWEDevice& device, uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags);
 	};
 }
 

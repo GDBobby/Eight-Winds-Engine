@@ -47,7 +47,7 @@ namespace EWE {
 			
 			uint32_t work_group_size;
 
-			std::array<std::unique_ptr<EWEDescriptorSetLayout>, 4> fftDSLs;
+			std::array<EWEDescriptorSetLayout*, 4> fftDSLs = {nullptr, nullptr, nullptr, nullptr};
 			std::unique_ptr<EWEBuffer> parameterBuffer;
 			//VkDescriptorSet parameterDescriptors;
 
@@ -60,6 +60,7 @@ namespace EWE {
 
 			//need to run precomputeTwiddle here
 			OceanFFT(uint16_t ocean_resolution, EWEDevice& device);
+			~OceanFFT();
 			void createDSLs(EWEDevice& device, std::shared_ptr<EWEDescriptorPool> oceanPool);
 
 			//NEVER USED? WTF

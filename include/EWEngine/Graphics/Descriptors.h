@@ -22,7 +22,7 @@ namespace EWE {
                 VkDescriptorType descriptorType,
                 VkShaderStageFlags stageFlags,
                 uint32_t count = 1);
-            std::unique_ptr<EWEDescriptorSetLayout> build() const;
+            EWEDescriptorSetLayout* build() const;
 
         private:
             EWEDevice& eweDevice;
@@ -123,11 +123,11 @@ namespace EWE {
         EWEDescriptorWriter& writeBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
         EWEDescriptorWriter& writeImage(uint32_t binding, VkDescriptorImageInfo* imageInfo);
 
-        bool build(VkDescriptorSet& set);
+        VkDescriptorSet build();
         void overwrite(VkDescriptorSet& set);
 
     private:
-        bool buildPrint(VkDescriptorSet& set);
+        VkDescriptorSet buildPrint();
         EWEDescriptorSetLayout& setLayout;
         EWEDescriptorPool& pool;
         std::vector<VkWriteDescriptorSet> writes;

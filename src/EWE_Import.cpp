@@ -5,24 +5,6 @@
 #define MODEL_PATH "models\\"
 
 namespace EWE {
-    template <typename T>
-    void ImportData::readData(TemplateMeshData<T>& data, std::string meshPath, bool endian) {
-        //printf("starting up mesh thread :%s \n", meshPath.c_str());
-        std::ifstream inFile(meshPath, std::ifstream::binary);
-        //inFile.open();
-        if (!inFile.is_open()) {
-            printf("failed to open : %s \n", meshPath.c_str());
-            //std throw
-        }
-        if (endian) {
-            data.readFromFile(inFile);
-        }
-        else {
-            data.readFromFileSwapEndian(inFile);
-        }
-        inFile.close();
-        //printf("file read successfully \n");
-    }
 
     /*
     ImportData ImportData::loadDataThreaded(std::string importPath) {
@@ -182,7 +164,7 @@ namespace EWE {
 
 
     void ImportData::NameExportData::readFromFile(std::ifstream& inFile) {
-        std::getline(inFile, versionTracker);
+        std::getline(inFile, versionTracker, (char)0);
         if (versionTracker != EXPECTED_IMPORT_VERSION) {
             printf("incorrect import version \n");
             throw std::runtime_error("incorrect import version");
@@ -192,25 +174,25 @@ namespace EWE {
         inFile.read((char*)&size, sizeof(uint64_t));
         for (uint64_t i = 0; i < size; i++) {
             meshNames.emplace_back("");
-            std::getline(inFile, meshNames.back());
+            std::getline(inFile, meshNames.back(), (char)0);
         }
 
         inFile.read((char*)&size, sizeof(uint64_t));
         for (uint64_t i = 0; i < size; i++) {
             meshNTNames.emplace_back("");
-            std::getline(inFile, meshNTNames.back());
+            std::getline(inFile, meshNTNames.back(), (char)0);
         }
 
         inFile.read((char*)&size, sizeof(uint64_t));
         for (uint64_t i = 0; i < size; i++) {
             meshSimpleNames.emplace_back("");
-            std::getline(inFile, meshSimpleNames.back());
+            std::getline(inFile, meshSimpleNames.back(), (char)0);
         }
 
         inFile.read((char*)&size, sizeof(uint64_t));
         for (uint64_t i = 0; i < size; i++) {
             meshNTSimpleNames.emplace_back("");
-            std::getline(inFile, meshNTSimpleNames.back());
+            std::getline(inFile, meshNTSimpleNames.back(), (char)0);
         }
     }
 
@@ -261,7 +243,7 @@ namespace EWE {
     */
 
     void ImportData::AnimData::readFromFile(std::ifstream& inFile) {
-        std::getline(inFile, versionTracker);
+        std::getline(inFile, versionTracker, (char)0);
         if (versionTracker != EXPECTED_IMPORT_VERSION) {
             printf("incorrect import version \n");
             throw std::runtime_error("incorrect import version");
@@ -290,7 +272,7 @@ namespace EWE {
         Reading::IntFromFile(inFile, &handBone);
     }
     void ImportData::AnimData::readFromFileSwapEndian(std::ifstream& inFile) {
-        std::getline(inFile, versionTracker);
+        std::getline(inFile, versionTracker, (char)0);
         if (versionTracker != EXPECTED_IMPORT_VERSION) {
             printf("incorrect import version \n");
             throw std::runtime_error("incorrect import version");
@@ -324,24 +306,24 @@ namespace EWE {
     }
 
     void ImportData::FullAnimData::readFromFile(std::ifstream& inFile) {
-        std::getline(inFile, versionTracker);
+        std::getline(inFile, versionTracker, (char)0);
         if (versionTracker != EXPECTED_IMPORT_VERSION) {
             printf("incorrect import version \n");
             throw std::runtime_error("incorrect import version");
         }
 
         uint64_t size;
-        inFile.read((char*)&size, sizeof(uint64_t));
+        Reading::UInt64FromFile(inFile, &size);
         animations.resize(size);
 
         for (auto& animationDuration : animations) {
-            inFile.read((char*)&size, sizeof(uint64_t));
+            Reading::UInt64FromFile(inFile, &size);
             animationDuration.resize(size);
 
             for (auto& boneCount : animationDuration) {
-                inFile.read((char*)&size, sizeof(uint64_t));
+                Reading::UInt64FromFile(inFile, &size);
                 boneCount.resize(size);
-                inFile.read((char*)boneCount.data(), size * sizeof(glm::mat4));
+                inFile.read(reinterpret_cast<char*>(&boneCount[0]), size * sizeof(glm::mat4));
             }
         }
         Reading::IntFromFile(inFile, &handBone);

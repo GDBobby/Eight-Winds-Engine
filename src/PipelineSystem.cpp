@@ -1,6 +1,6 @@
 #include "EWEngine/Systems/PipelineSystem.h"
 
-#include "EWEngine/Graphics/Textures/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Texture_Manager.h"
 
 namespace EWE {
 	std::unordered_map<PipelineID, std::unique_ptr<PipelineSystem>> PipelineSystem::pipelineSystem{};

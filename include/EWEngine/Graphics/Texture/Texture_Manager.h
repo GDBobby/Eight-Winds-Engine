@@ -2,7 +2,7 @@
 
 #include <EWEngine/Data/EngineDataTypes.h>
 
-#include <EWEngine/Graphics/Textures/Texture.h>
+#include <EWEngine/Graphics/Texture/Texture.h>
 
 #include <EWEngine/Data/MemoryTypeBucket.h>
 
@@ -36,9 +36,9 @@ namespace EWE {
 		//MAYBE default stage flags to FRAG stage
 		void addComponent(std::string const& texPath, VkShaderStageFlags stageFlags, bool mipmaps);
 
-		TextureID build();
+		TextureDesc build();
 
-		static TextureID createSimpleTexture(std::string texPath, bool global, bool mipmaps, VkShaderStageFlags shaderStage);
+		static TextureDesc createSimpleTexture(std::string texPath, bool global, bool mipmaps, VkShaderStageFlags shaderStage);
 	};
 
 	class Texture_Manager {
@@ -47,7 +47,7 @@ namespace EWE {
 		friend struct Texture_Builder;
 
 	protected:
-		std::vector<TextureID> sceneIDs; //keeping track so i can remove them later
+		std::vector<TextureDesc> sceneIDs; //keeping track so i can remove them later
 		EWEDevice& device;
 
 		//int32_t createSimpleVertTexture(EWEDevice& device, std::string texPath);
@@ -59,7 +59,7 @@ namespace EWE {
 
 		struct ImageTracker {
 			ImageInfo imageInfo;
-			std::unordered_set<TextureID> usedInTexture{};
+			std::unordered_set<TextureDesc> usedInTexture{};
 			ImageTracker(EWEDevice& device, std::string const& path, bool mipmap) : imageInfo{device, path, mipmap} {}
 			ImageTracker() : imageInfo{} {}
 		};
@@ -67,14 +67,14 @@ namespace EWE {
 		std::unordered_map<std::string, ImageTracker*> imageMap{};
 
 		//EWEDescriptorPool::freeDescriptors(DescriptorPool_Global, descriptorSets);
-		std::unordered_map<TextureID, VkDescriptorSet> textureMap{};
+		//std::unordered_map<TextureID, VkDescriptorSet> textureMap{};
 		std::unordered_map<std::string, MaterialTextureInfo> existingMaterials{};
-		std::unordered_map<TextureID, ImageTracker*> deletionMap;
+		std::unordered_map<TextureDesc, std::vector<ImageTracker*>> textureImages;
 		
 
-		TextureID skyboxID;
+		TextureDesc skyboxID;
 
-		TextureID currentTextureCount{ 0 };
+		uint32_t currentTextureCount{ 0 };
 
 		friend class Cube_Texture;
 		friend class Material_Texture;
@@ -90,12 +90,12 @@ namespace EWE {
 		void buildSetLayouts();
 
 		void clearSceneTextures();
-		void removeMaterialTexture(TextureID removeID);
+		void removeMaterialTexture(TextureDesc removeID);
 		void cleanup();
 
 		static Texture_Manager* getTextureManagerPtr() { return textureManagerPtr; }
-		static VkDescriptorSet* getDescriptorSet(TextureID textureID);
-		static VkDescriptorSet* getSkyboxDescriptorSet() { return &textureManagerPtr->textureMap.at(textureManagerPtr->skyboxID); }
+		//static VkDescriptorSet* getDescriptorSet(TextureID textureID);
+		//static VkDescriptorSet* getSkyboxDescriptorSet() { return &textureManagerPtr->textureMap.at(textureManagerPtr->skyboxID); }
 
 
 		static ImageTracker* constructImageTracker(std::string const& path, bool mipmap);

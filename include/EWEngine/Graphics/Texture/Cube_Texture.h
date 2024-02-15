@@ -1,6 +1,6 @@
 #pragma once
 
-#include <EWEngine/Graphics/Textures/Texture_Manager.h>
+#include <EWEngine/Graphics/Texture/Texture_Manager.h>
 
 namespace EWE {
 	class Cube_Texture : public EWETexture  {

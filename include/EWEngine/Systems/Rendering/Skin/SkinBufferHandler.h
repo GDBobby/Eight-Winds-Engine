@@ -11,6 +11,7 @@ namespace EWE {
 	public:
 
 		InstancedSkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint16_t maxActorCount);
+
 		void writeData(glm::mat4* modelMatrix, void* finalBoneMatrices);
 		void changeMaxActorCount(EWEDevice& device, uint16_t actorCount);
 		void flush();
@@ -34,12 +35,22 @@ namespace EWE {
 
 	private:
 		struct InnerBufferStruct {
-			std::unique_ptr<EWEBuffer> model{};
-			std::unique_ptr<EWEBuffer> bone{};
+			EWEBuffer* model;
+			EWEBuffer* bone;
 			VkDescriptorSet descriptor{};
 
 			InnerBufferStruct(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize);
+			~InnerBufferStruct() {
+				delete model;
+				delete bone;
+				delete descriptor;
+			}
 
+			//changeActorCount should be done extremely infrequently. like, only on scene swaps.
+			//if a more frequent change is required, instancing is recommended, even if the actor count is low.
+			//	if a frequent change from 1-2 or 1 through 3 is required, maybe, MAYBE, MAYBE, 
+			//	allocate the higher number and adjust this to ignore the additional memory when not necessary.
+			//	i don't know if additional adjustments would be required or not, benchmarking against instancing is recommended
 			void changeActorCount(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize);
 			void buildDescriptor(uint16_t maxActorCount);
 
@@ -64,11 +75,15 @@ namespace EWE {
 		//put a pointer to bufferstruct pointer in each actor
 	protected:
 		struct InnerBufferStruct {
-			std::unique_ptr<EWEBuffer> bone;
+			EWEBuffer* bone;
 			VkDescriptorSet descriptor;
 			uint16_t currentActorCount = 0;
 
 			InnerBufferStruct(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize);
+			~InnerBufferStruct() {
+				delete bone;
+				delete descriptor;
+			}
 
 			void changeActorCount(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize);
 			void buildDescriptor();

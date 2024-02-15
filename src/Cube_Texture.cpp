@@ -1,4 +1,4 @@
-#include "EWEngine/Graphics/Textures/Cube_Texture.h"
+#include "EWEngine/Graphics/Texture/Cube_Texture.h"
 
 namespace EWE {
 
@@ -40,16 +40,10 @@ namespace EWE {
 
         EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(tmPtr->device, VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
 
-        VkDescriptorSet cubeDesc;
         descBuilder.writeImage(0, &cubeImage.descriptorImageInfo);
-        if (!descBuilder.build(cubeDesc)) {
-            //returnValue = false;
-            printf("failed to construct cube descriptor\n");
-            throw std::runtime_error("failed to construct cube descriptor");
-        }
 
         //cubeVector.emplace_back(EWETexture(eweDevice, texPath, tType_cube));
-        tmPtr->textureMap.emplace(tmPtr->currentTextureCount, cubeDesc);
+        tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descBuilder.build());
         
         tmPtr->skyboxID = tmPtr->currentTextureCount;
         return tmPtr->currentTextureCount++;

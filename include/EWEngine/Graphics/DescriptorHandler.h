@@ -47,7 +47,7 @@ namespace EWE {
     private:
         DescriptorHandler() {}
 
-        static std::unordered_map<LDSL_Enum, std::unique_ptr<EWEDescriptorSetLayout>> descriptorSetLayouts;
+        static std::unordered_map<LDSL_Enum, EWEDescriptorSetLayout*> descriptorSetLayouts;
         static std::unordered_map<DescSet_Enum, std::vector<VkDescriptorSet>> descriptorSets;
         //static std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> pipeDescSetLayouts;
 

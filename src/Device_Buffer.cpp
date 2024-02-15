@@ -15,7 +15,20 @@ namespace EWE {
      *
      * @return VkResult of the buffer mapping call
      */
-    VkDeviceSize EWEBuffer::getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment) {
+    VkDeviceSize EWEBuffer::getAlignment(VkDeviceSize instanceSize) {
+
+        if (((usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) == VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) ||
+            ((usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) == VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
+            ) {
+            minOffsetAlignment = 1;
+        }
+        else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
+            minOffsetAlignment = eweDevice.getProperties().limits.minUniformBufferOffsetAlignment;
+        }
+        else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
+            minOffsetAlignment = eweDevice.getProperties().limits.minStorageBufferOffsetAlignment;
+        }
+
         if (minOffsetAlignment > 0) {
             //printf("get alignment size : %lu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
             return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
@@ -27,19 +40,8 @@ namespace EWE {
         : eweDevice{ device }, usageFlags{ usageFlags }, memoryPropertyFlags{ memoryPropertyFlags } {
 
         //buffer_info.buffer = VK_NULL_HANDLE; //not sure if necessary??
-        if (((usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) == VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) ||
-            ((usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) == VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
-            ) {
-            minOffsetAlignment = 1;
-        }
-        else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
-            minOffsetAlignment = device.getProperties().limits.minUniformBufferOffsetAlignment;
-        }
-        else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
-            minOffsetAlignment = device.getProperties().limits.minStorageBufferOffsetAlignment;
-        }
 
-        alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
+        alignmentSize = getAlignment(instanceSize);
         bufferSize = alignmentSize * instanceCount;
         device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
     }

@@ -78,7 +78,26 @@ FetchContent_Declare(
 	GIT_TAG 2945a96
 	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/include/tinyobjloader"
 )
+
+#glslang
 FetchContent_MakeAvailable(tinyobj)
+
+set(BUILD_SHARED_LIBS FALSE)
+set(BUILD_EXTERNAL TRUE)
+set(ENABLE_GLSLANG_BINARIES TRUE)
+set(ENABLE_CTEST FALSE)
+set(ENABLE_HLSL FALSE)
+set(GLSLANG_TESTS FALSE)
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/include/notvulkan/glslang")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/include/notvulkan/glslang")
+
+set(GLSLANG_LIBS
+	OSDependent
+	SPIRV
+	glslang
+)
+
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES} ${SOURCES_C} ${HEADER_FILES} ${HEADER_FILES_PP})
 
@@ -119,32 +138,32 @@ message(STATUS "linking libs")
 target_link_libraries(${PROJECT_NAME} 
 	glfw
 	vulkan-1
-	#vulkan
+	${GLSLANG_LIBS}
 
-	$<$<CONFIG:Debug>:
-	 SPVRemapperd
-	 GenericCodeGend
-	 glslangd
-	 glslang-default-resource-limitsd
-	 MachineIndependentd
-	 OGLCompilerd
-	 OSDependentd
-	 SPIRVd
-	 SPIRV-Toolsd
-	 SPIRV-Tools-optd
-	>
-	$<$<CONFIG:Release>:
-	 SPVRemapper
-	 GenericCodeGen
-	 glslang
-	 glslang-default-resource-limits
-	 MachineIndependent
-	 OGLCompiler
-	 OSDependent
-	 SPIRV
-	 SPIRV-Tools
-	 SPIRV-Tools-opt
-	>
+	#$<$<CONFIG:Debug>:
+	# SPVRemapperd
+	# GenericCodeGend
+	# glslangd
+	# glslang-default-resource-limitsd
+	# MachineIndependentd
+	# OGLCompilerd
+	# OSDependentd
+	# SPIRVd
+	# SPIRV-Toolsd
+	# SPIRV-Tools-optd
+	#>
+	#$<$<CONFIG:Release>:
+	# SPVRemapper
+	# GenericCodeGen
+	# glslang
+	# glslang-default-resource-limits
+	# MachineIndependent
+	# OGLCompiler
+	# OSDependent
+	# SPIRV
+	# SPIRV-Tools
+	# SPIRV-Tools-opt
+	#>
 	
 )
 

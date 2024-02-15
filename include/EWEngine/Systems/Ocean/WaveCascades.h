@@ -2,7 +2,7 @@
 #include "OceanStructs.h"
 #include "OceanFFT.h"
 
-#include "EWEngine/Graphics/Textures/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Texture_Manager.h"
 #include <array>
 
 namespace EWE {
@@ -56,11 +56,11 @@ namespace EWE {
 
 
 		public:
-			WaveCascades(EWEDevice& device, OceanFFT& oceanFFT, uint16_t ocean_resolution, VkDescriptorBufferInfo* gaussianNoise, std::shared_ptr<EWEDescriptorPool> oceanPool, std::array<std::unique_ptr<EWEDescriptorSetLayout>, 6>& cascadeDSLs, VkDescriptorBufferInfo* spectrumBufferInfo, VkDescriptorBufferInfo* timeBufferInfo);
+			WaveCascades(EWEDevice& device, OceanFFT& oceanFFT, uint16_t ocean_resolution, VkDescriptorBufferInfo* gaussianNoise, std::shared_ptr<EWEDescriptorPool> oceanPool, std::array<EWEDescriptorSetLayout*, 6>& cascadeDSLs, VkDescriptorBufferInfo* spectrumBufferInfo, VkDescriptorBufferInfo* timeBufferInfo);
 
 			void constructBuffers(uint16_t ocean_resolution);
 
-			void constructDescriptors(std::shared_ptr<EWEDescriptorPool> oceanPool, std::array<std::unique_ptr<EWEDescriptorSetLayout>, 6>& cascadeDSLs, VkDescriptorBufferInfo* spectrumBufferInfo, VkDescriptorBufferInfo* gaussianNoise, VkDescriptorBufferInfo* timeBufferInfo);
+			void constructDescriptors(std::shared_ptr<EWEDescriptorPool> oceanPool, std::array<EWEDescriptorSetLayout*, 6>& cascadeDSLs, VkDescriptorBufferInfo* spectrumBufferInfo, VkDescriptorBufferInfo* gaussianNoise, VkDescriptorBufferInfo* timeBufferInfo);
 
 			void Dispose() {
 				//paramsBuffer.release();

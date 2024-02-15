@@ -1,6 +1,6 @@
 #include "EWEngine/Graphics/EWE_Object.h"
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
-#include "EWEngine/Graphics/Textures/Material_Textures.h"
+#include "EWEngine/Graphics/Texture/Material_Textures.h"
 
 namespace EWE {
     EweObject::EweObject(std::string objectPath, EWEDevice& device, bool globalTextures) {

@@ -3,7 +3,7 @@
 #include "EWEngine/Data/VertexShaderText.h"
 #include "EWEngine/resources/LoadingString.h"
 
-#include <chrono>
+//#include <chrono>
 
 /*
 void ShaderBlock::BatchCreateFragmentShader(std::vector<MaterialFlags> flagVector) {
@@ -238,8 +238,9 @@ std::vector<uint32_t> ShaderBlock::getVertexShader(bool hasNormal, uint16_t bone
 
 }
 bool ShaderBlock::SpirvHelper::BuildFlaggedFrag(MaterialFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
+
 	glslang::TShader shader(EShLangFragment);
-	glslang::TProgram program;
+	glslang::TProgram program{};
 	TBuiltInResource Resources{};
 	InitResources(Resources);
 

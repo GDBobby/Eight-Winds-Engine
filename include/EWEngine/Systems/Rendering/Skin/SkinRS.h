@@ -4,7 +4,7 @@
 
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Graphics/Pipeline.h"
-#include "EWEngine/Graphics/Textures/Material_Textures.h"
+#include "EWEngine/Graphics/Texture/Material_Textures.h"
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
 #include "EWEngine/Systems/Rendering/Skin/SupportingStructs.h"
@@ -39,6 +39,8 @@ namespace EWE {
 		}
 
 		static void addSkeleton(MaterialTextureInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced);
+		static void addSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, TextureID texID, EWEModel* modelPtr, SkeletonID skeletonID);
+
 		static void addWeapon(MaterialTextureInfo& materialInfo, EWEModel* meshes, SkeletonID skeletonID, SkeletonID ownerID);
 
 		static void removeSkeleton(SkeletonID skeletonID);
@@ -55,7 +57,7 @@ namespace EWE {
 
 		static SkinBufferHandler* getSkinBuffer(SkeletonID skeletonID) {
 #ifdef _DEBUG
-			if (skinnedMainObject->buffers.find(skeletonID) == skinnedMainObject->buffers.end()) {
+			if (!skinnedMainObject->buffers.contains(skeletonID)) {
 				printf("trying to get a pointer to a skin buffer that doesn't exist : %d \n", skeletonID);
 				//most likely cause is its in the instanced buffer
 				throw std::exception("trying to get a pointer to a skin buffer that doesn't exist");
@@ -65,7 +67,7 @@ namespace EWE {
 		}
 		InstancedSkinBufferHandler* getInstancedSkinBuffer(SkeletonID skeletonID) {
 #ifdef _DEBUG
-			if (instancedBuffers.find(skeletonID) == instancedBuffers.end()) {
+			if (!instancedBuffers.contains(skeletonID)) {
 				printf("trying to get a pointer to an instanced skin buffer that doesn't exist : %d \n", skeletonID);
 				//most likely cause is its in the non-instanced buffer map
 				throw std::exception("trying to get a pointer to an instanced skin buffer that doesn't exist");
@@ -91,22 +93,23 @@ namespace EWE {
 		}
 
 		static void setPushData(SkeletonID skeletonID, void* pushData, uint8_t pushSize) {
-			if (skinnedMainObject->pushConstants.find(skeletonID) == skinnedMainObject->pushConstants.end()) {
+			auto pushIterData = skinnedMainObject->pushConstants.find(skeletonID);
+			if (pushIterData == skinnedMainObject->pushConstants.end()) {
 				skinnedMainObject->pushConstants.emplace(skeletonID, SkinRS::PushConstantStruct{ pushData, pushSize });
 				//pushConstants[skeletonID] = { pushData, pushSize };
 			}
 			else {
-				
-				skinnedMainObject->pushConstants.at(skeletonID).addData(pushData, pushSize);
+				pushIterData->second.addData(pushData, pushSize);
 			}
 		}
 		static void removePushData(SkeletonID skeletonID, void* pushRemoval) {
-			if (skinnedMainObject->pushConstants.find(skeletonID) == skinnedMainObject->pushConstants.end()) {
+			auto pushIterData = skinnedMainObject->pushConstants.find(skeletonID);
+			if (pushIterData == skinnedMainObject->pushConstants.end()) {
 				std::cout << "invalid push to remove \n";
 				throw std::runtime_error("invalid push to remove");
 			}
 			else {
-				skinnedMainObject->pushConstants.at(skeletonID).remove(pushRemoval);
+				pushIterData->second.remove(pushRemoval);
 			}
 		}
 
@@ -114,41 +117,41 @@ namespace EWE {
 
 		void createInstancedBuffer(SkeletonID skeletonID, uint16_t boneCount) {
 #ifdef _DEBUG
-			if (instancedBuffers.find(skeletonID) != instancedBuffers.end()) {
+			if (instancedBuffers.contains(skeletonID)) {
 				return;
-				printf("creating a buffer that already exist \n");
-				throw std::exception("creating a buffer that already exist ");
+				//printf("creating a buffer that already exist \n");
+				//throw std::exception("creating a buffer that already exist ");
 			}
 #endif
 			//instancedBuffersCreated += 2;
 			instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ device, boneCount, 2000});
 		}
 		void createBoneBuffer(SkeletonID skeletonID, uint16_t boneCount) {
-			if (buffers.find(skeletonID) != buffers.end()) {
+			if (buffers.contains(skeletonID)) {
 				return;
-				printf("creating a buffer that already exist \n");
-				throw std::runtime_error("creating a buffer that already exist ");
+				//printf("creating a buffer that already exist \n");
+				//throw std::runtime_error("creating a buffer that already exist ");
 			}
 			//buffersCreated += 2;
+#ifdef _DEBUG
 			printf("creating bone buffer \n");
+#endif
 			buffers.emplace(skeletonID, SkinBufferHandler{ device, boneCount, 1});
 		}
 		void createReferenceBuffer(SkeletonID skeletonID, SkeletonID referenceID) {
-			if (buffers.find(skeletonID) != buffers.end()) {
+			if (buffers.contains(skeletonID)) {
 				return;
-				printf("creating a buffer that already exist \n");
-				throw std::runtime_error("creating a buffer that already exist ");
+				//printf("creating a buffer that already exist \n");
+				//throw std::runtime_error("creating a buffer that already exist ");
 			}
 			buffers.emplace(skeletonID, SkinBufferHandler{ 1, buffers.at(referenceID).getInnerPtr() });
 		}
 
-		void createInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, MaterialFlags textureFlags) {
-			instancedData.emplace(instancedFlags,
-				SkinRS::PipelineStruct{ boneCount, textureFlags, device }
-			);
+		SkinRS::PipelineStruct& createInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, MaterialFlags textureFlags) {
+			return instancedData.try_emplace(instancedFlags, boneCount, textureFlags, device).first->second;
 		}
-		void createBonePipe(MaterialFlags boneFlags) {
-			boneData.emplace(boneFlags, SkinRS::PipelineStruct{ boneFlags, device });
+		SkinRS::PipelineStruct& createBonePipe(MaterialFlags boneFlags) {
+			return boneData.try_emplace(boneFlags, boneFlags, device).first->second;
 		}
 
 		uint32_t skinID = 0;

@@ -1,5 +1,11 @@
 #pragma once
-#include <glslang/SPIRV/GlslangToSpv.h>
+//#include <glslang/SPIRV/GlslangToSpv.h>
+
+
+#include <notvulkan/glslang/glslang/Public/ShaderLang.h>
+#include <notvulkan/glslang/glslang/Include/intermediate.h>
+//we're specifically not using the glslang included by Vulkan to avoid build conflicts. Specifically, 
+#include <notvulkan/glslang/SPIRV/GlslangToSpv.h>
 
 #include <stdint.h>
 #include <string>

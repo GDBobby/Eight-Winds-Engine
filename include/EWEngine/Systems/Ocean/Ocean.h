@@ -24,7 +24,9 @@ namespace EWE {
 
 			float lengthScale[3] = { 250, 17, 5 };
 			std::map<Pipe_Enum, EWE_Compute_Pipeline> ocean_compute_pipelines;
-			std::array<std::unique_ptr<EWEDescriptorSetLayout>, 6> cascadeDSLs;
+			std::array<EWEDescriptorSetLayout*, 6> cascadeDSLs = {
+				nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
+			};
 
 			std::shared_ptr<EWEDescriptorPool> oceanPool;
 
@@ -40,7 +42,7 @@ namespace EWE {
 		//RENDER BEGIN
 			std::unique_ptr<EWEPipeline> renderPipeline;
 			VkPipelineLayout renderPipeLayout;
-			std::unique_ptr<EWEDescriptorSetLayout> renderParamsDSL;
+			EWEDescriptorSetLayout* renderParamsDSL{nullptr};
 			std::array<std::unique_ptr<EWEBuffer>, 2> renderParamsBuffer;
 
 			std::vector<VkDescriptorSet> renderParamsDescriptorSets;
@@ -59,50 +61,7 @@ namespace EWE {
 
 			void initializeDSLs();
 
-			void getGaussNoise() {
-				std::string filename = "textures/compute/gaussian_noise.bob";
-				//use filesystem to find file, if not, generate
-
-				std::ifstream file{ filename, std::ios::binary };
-				if (file.is_open()) {
-					file.seekg(0, std::ios::end);
-					std::streampos fileSize = file.tellg();
-					file.seekg(0, std::ios::beg);
-
-					// Calculate the number of uint64_t values in the file
-					size_t numValues = fileSize / (sizeof(float) * 2);
-
-					// Resize the result vector to accommodate the data
-					gaussianNoise.resize(numValues);
-
-					// Read the binary data into the vector
-					file.read(reinterpret_cast<char*>(&gaussianNoise[0]), fileSize);
-
-					// Close the file
-					file.close();
-				}
-				else {
-					gaussianNoise.resize(noise_resolution * noise_resolution);
-					std::default_random_engine m_engine{ static_cast<std::uint32_t>(std::random_device{}()) };
-					std::uniform_real_distribution<float> distribution{ 0.f, 1.f};// = std::uniform_real_distribution<float>;
-
-					uint64_t index = 0;
-					for (int i = 0; i < noise_resolution; i++) {
-						for (int j = 0; j < noise_resolution; j++) {
-
-							gaussianNoise[index][0] = GaussianRandom(m_engine, distribution);
-							gaussianNoise[index][1] = GaussianRandom(m_engine, distribution);
-
-							//std::cout << "gauss index:values  - " << index << gaussianNoise[index][0] << ":" << gaussianNoise[index][1] << std::endl;
-							index++;
-						}
-					}
-					std::ofstream out_file{ "textures/compute/gaussian_noise.bob", std::ios::binary };
-					out_file.write(reinterpret_cast<const char*>(gaussianNoise.data()), gaussianNoise.size() * sizeof(float) * 2);
-					out_file.close();
-					
-				}
-			}
+			void getGaussNoise();
 			float GaussianRandom(std::default_random_engine& randE, std::uniform_real_distribution<float>& distribution) {
 
 				return std::cos(2 * 3.14159265358979323846f * distribution(randE)) * std::sqrt(-2.f * std::log(distribution(randE)));
@@ -110,6 +69,7 @@ namespace EWE {
 
 		public:
 			Ocean(EWEDevice& device);
+			~Ocean();
 
 			void InitializeTwiddle(VkCommandBuffer cmdBuf);
 			void InitialiseCascades(VkCommandBuffer cmdBuf);

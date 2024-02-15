@@ -1,4 +1,4 @@
-#include "EWEngine/Graphics/Textures/Texture.h"
+#include "EWEngine/Graphics/Texture/Texture.h"
 
 #include <string>
 #include <iostream>
@@ -19,7 +19,7 @@ namespace EWE {
         }
     }
 
-    std::unordered_map<TextureDSLInfo, std::unique_ptr<EWEDescriptorSetLayout>> TextureDSLInfo::descSetLayouts;
+    std::unordered_map<TextureDSLInfo, EWEDescriptorSetLayout*> TextureDSLInfo::descSetLayouts;
 
 
     void TextureDSLInfo::setStageTextureCount(VkShaderStageFlags stageFlag, uint8_t textureCount) {
@@ -69,7 +69,7 @@ namespace EWE {
         }
     }
 
-    std::unique_ptr<EWEDescriptorSetLayout> TextureDSLInfo::buildDSL(EWEDevice& device) {
+    EWEDescriptorSetLayout* TextureDSLInfo::buildDSL(EWEDevice& device) {
         uint32_t currentBinding = 0;
         VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //this is 1
         EWEDescriptorSetLayout::Builder dslBuilder{ device };
@@ -102,27 +102,31 @@ namespace EWE {
         TextureDSLInfo dslInfo{};
         dslInfo.setStageTextureCount(stageFlag, 1);
         if (descSetLayouts.contains(dslInfo)) {
-            return descSetLayouts.at(dslInfo).get();
+            return descSetLayouts.at(dslInfo);
         }
         EWEDescriptorSetLayout::Builder dslBuilder{ device };
         dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlag);
         auto emplaceRet = descSetLayouts.emplace(dslInfo, dslBuilder.build());
 
-        return emplaceRet.first->second.get();
+        return emplaceRet.first->second;
     }
 
     EWEDescriptorSetLayout* TextureDSLInfo::getDescSetLayout(EWEDevice& device) {
+        auto dslIter = descSetLayouts.find(*this);
+        if (dslIter != descSetLayouts.end()) {
+			return dslIter->second;
+		}
 
-        if (descSetLayouts.contains(*this)) {
-            return descSetLayouts.find(*this)->second.get();
-        }
+#ifdef _DEBUG
         auto emplaceRet = descSetLayouts.try_emplace(*this, buildDSL(device));
         if (!emplaceRet.second) {
             printf("failed to create dynamic desc set layout \n");
             throw std::runtime_error("failed to create dynamic desc set layout");
         }
-
-        return emplaceRet.first->second.get();
+        return emplaceRet.first->second;
+#else
+        return descSetLayouts.try_emplace(*this, buildDSL(device)).first->second;
+#endif
     }
 
     ImageInfo::ImageInfo(EWEDevice& device, PixelPeek& pixelPeek, bool mipmap) {

@@ -63,12 +63,12 @@ namespace EWE {
 		uint8_t stageCounts[SUPPORTED_STAGE_COUNT] = { 0,0,0,0, 0,0,0,0, 0 };
 		void setStageTextureCount(VkShaderStageFlags stageFlag, uint8_t textureCount);
 
-		std::unique_ptr<EWEDescriptorSetLayout> buildDSL(EWEDevice& device);
+		EWEDescriptorSetLayout* buildDSL(EWEDevice& device);
 
 		TextureDSLInfo() {}
-		static std::unordered_map<TextureDSLInfo, std::unique_ptr<EWEDescriptorSetLayout>> descSetLayouts;
 		EWEDescriptorSetLayout* getDescSetLayout(EWEDevice& device);
 
+		static std::unordered_map<TextureDSLInfo, EWEDescriptorSetLayout*> descSetLayouts;
 		static EWEDescriptorSetLayout* getSimpleDSL(EWEDevice& device, VkShaderStageFlags stageFlag);
 
 		bool operator==(TextureDSLInfo const& other) const {

@@ -1,4 +1,4 @@
-#include "EWEngine/Graphics/Textures/Material_Textures.h"
+#include "EWEngine/Graphics/Texture/Material_Textures.h"
 
 
 #ifndef TEXTURE_DIR

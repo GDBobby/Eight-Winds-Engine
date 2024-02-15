@@ -40,7 +40,7 @@ namespace EWE {
         static EWEBuffer* createAndInitBuffer(EWEDevice& device, void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 
     private:
-        static VkDeviceSize getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment);
+        VkDeviceSize getAlignment(VkDeviceSize instanceSize);
 
         EWEDevice& eweDevice;
         void* mapped = nullptr;

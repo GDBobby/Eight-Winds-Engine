@@ -198,15 +198,16 @@ namespace EWE {
 		createGraphicsPipeline(configInfo);
 	}
 
-	EWEPipeline::EWEPipeline(EWEDevice& device, const std::string& vertFilePath, MaterialFlags flags, const PipelineConfigInfo& configInfo, bool hasBones) : eweDevice{ device } {
+	EWEPipeline::EWEPipeline(EWEDevice& device, std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones) : eweDevice{ device } {
 
-		if (shaderModuleMap.find(vertFilePath) == shaderModuleMap.end()) {
+		auto vertModuleIter = shaderModuleMap.find(vertFilePath);
+		if (vertModuleIter == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilePath);
 			Pipeline_Helper_Functions::createShaderModule(eweDevice, vertCode, &vertShaderModule);
-			shaderModuleMap[vertFilePath] = vertShaderModule;
+			shaderModuleMap.try_emplace(vertFilePath, vertShaderModule);
 		}
 		else {
-			vertShaderModule = shaderModuleMap[vertFilePath];
+			vertShaderModule = vertModuleIter->second;
 		}
 		std::string fragPath = SHADER_DIR;
 		fragPath += "dynamic\\" + std::to_string(flags);
@@ -214,13 +215,15 @@ namespace EWE {
 			fragPath += "b";
 		}
 		fragPath += ".frag.spv";
-		if (shaderModuleMap.find(fragPath) == shaderModuleMap.end()) {
+
+		auto fragModuleIter = shaderModuleMap.find(fragPath);
+		if (fragModuleIter == shaderModuleMap.end()) {
 			Pipeline_Helper_Functions::createShaderModule(eweDevice, ShaderBlock::getFragmentShader(flags, hasBones), &fragShaderModule);
 			fragPath = SHADER_DIR + fragPath;
-			shaderModuleMap[fragPath] = fragShaderModule;
+			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 		}
 		else {
-			fragShaderModule = shaderModuleMap[fragPath];
+			fragShaderModule = fragModuleIter->second;
 		}
 
 		createGraphicsPipeline(configInfo);

@@ -6,7 +6,7 @@ namespace EWE {
 
 
 
-	std::unordered_map<LDSL_Enum, std::unique_ptr<EWEDescriptorSetLayout>> DescriptorHandler::descriptorSetLayouts;
+	std::unordered_map<LDSL_Enum, EWEDescriptorSetLayout*> DescriptorHandler::descriptorSetLayouts;
 
 	std::unordered_map<DescSet_Enum, std::vector<VkDescriptorSet>> DescriptorHandler::descriptorSets;
 	//std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> DescriptorHandler::pipeDescSetLayouts;
@@ -15,6 +15,9 @@ namespace EWE {
 
     void DescriptorHandler::cleanup(EWEDevice& device) {
         printf("before descriptor handler cleanup \n");
+        for (auto& dsl : descriptorSetLayouts) {
+            delete dsl.second;
+        }
         descriptorSetLayouts.clear();
         printf("after desc set layouts \n");
         for (auto& descriptorSet : descriptorSets) {
@@ -71,13 +74,17 @@ namespace EWE {
     }
 
     VkDescriptorSetLayout DescriptorHandler::getDescSetLayout(LDSL_Enum whichDescSet, EWEDevice& device) {
-        if (descriptorSetLayouts.find(whichDescSet) != descriptorSetLayouts.end()) {
-            return descriptorSetLayouts[whichDescSet]->getDescriptorSetLayout();
+        {
+            auto foundDSL = descriptorSetLayouts.find(whichDescSet);
+            if (foundDSL != descriptorSetLayouts.end()) {
+                return foundDSL->second->getDescriptorSetLayout();
+            }
         }
         //printf("constructing LDSL : %d \n", whichDescSet);
+        EWEDescriptorSetLayout* dsl;
         switch (whichDescSet) {
         case LDSL_global: {
-            descriptorSetLayouts[LDSL_global] = EWEDescriptorSetLayout::Builder(device)
+            dsl = EWEDescriptorSetLayout::Builder(device)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
                 .build();
@@ -85,20 +92,20 @@ namespace EWE {
         }
         case LDSL_boned: {
             //printf("CREATING LDSL_boned \n");
-            descriptorSetLayouts[LDSL_boned] = EWEDescriptorSetLayout::Builder(device)
+            dsl = EWEDescriptorSetLayout::Builder(device)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .build();
             break;
         }
         case LDSL_smallInstance: { //supports bone+instancing
-            descriptorSetLayouts[whichDescSet] = EWEDescriptorSetLayout::Builder(device)
+            dsl = EWEDescriptorSetLayout::Builder(device)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .build();
             break;
         }
         case LDSL_largeInstance: { //supports bone+instancing
-            descriptorSetLayouts[whichDescSet] = EWEDescriptorSetLayout::Builder(device)
+            dsl = EWEDescriptorSetLayout::Builder(device)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .build();
@@ -110,7 +117,7 @@ namespace EWE {
         }
         }
         //printf("returning LDSL : %d \n", whichDescSet);
-        return descriptorSetLayouts[whichDescSet]->getDescriptorSetLayout();
+        return descriptorSetLayouts.emplace(whichDescSet, dsl).first->second->getDescriptorSetLayout();
     }
     /*
     std::vector<VkDescriptorSetLayout>* DescriptorHandler::getPipeDescSetLayout(PipeDescSetLayouts_Enum PDLe, EWEDevice& device) {
@@ -209,17 +216,13 @@ namespace EWE {
         printf("init global descriptors \n");
         DescriptorHandler::getDescSetLayout(LDSL_global, device);
         DescriptorHandler::getDescSetLayout(LDSL_boned, device);
+        descriptorSets.emplace(DS_global, std::vector<VkDescriptorSet>{});
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             //printf("init ars descriptors, loop : %d \n", i);
-            descriptorSets[DS_global].push_back(VkDescriptorSet{});
-            if (!
-                EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_global), DescriptorPool_Global)
-                .writeBuffer(0, bufferMap[Buff_ubo][i]->descriptorInfo())
-                .writeBuffer(1, bufferMap[Buff_gpu][i]->descriptorInfo())
-                .build(descriptorSets[DS_global].back())
-                ) {
-                printf("global desc failure \n");
-            }
+            descriptorSets.at(DS_global).emplace_back(EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_global), DescriptorPool_Global)
+                .writeBuffer(0, bufferMap.at(Buff_ubo)[i]->descriptorInfo())
+                .writeBuffer(1, bufferMap.at(Buff_gpu)[i]->descriptorInfo())
+                .build());
         }
     }
     void DescriptorHandler::initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap) {

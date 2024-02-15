@@ -102,6 +102,11 @@ namespace EWE {
 		RigidRenderingSystem::destruct();
 		MaterialPipelines::cleanupStaticVariables(eweDevice);
 
+		for (auto& dsl : TextureDSLInfo::descSetLayouts) {
+			delete dsl.second;
+		}
+		TextureDSLInfo::descSetLayouts.clear();
+
 		for (auto& bufferType : bufferMap) {
 			for (auto& buffer : bufferType.second) {
 				delete buffer;

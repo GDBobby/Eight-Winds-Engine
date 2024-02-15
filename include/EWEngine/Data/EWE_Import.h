@@ -126,7 +126,23 @@ namespace EWE {
         NameExportData nameExport;
 
         template <typename T>
-        static void readData(TemplateMeshData<T>& data, std::string meshPath, bool endian);
+        static void readData(TemplateMeshData<T>& data, std::string meshPath, bool endian) {
+            //printf("starting up mesh thread :%s \n", meshPath.c_str());
+            std::ifstream inFile(meshPath, std::ifstream::binary);
+            //inFile.open();
+            if (!inFile.is_open()) {
+                printf("failed to open : %s \n", meshPath.c_str());
+                //std throw
+            }
+            if (endian) {
+                data.readFromFile(inFile);
+            }
+            else {
+                data.readFromFileSwapEndian(inFile);
+            }
+            inFile.close();
+            //printf("file read successfully \n");
+        }
 
         //static ImportData loadDataThreaded(std::string importPath);
 

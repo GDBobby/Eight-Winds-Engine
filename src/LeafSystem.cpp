@@ -1,6 +1,6 @@
 #include "EWEngine/LoadingScreen/LeafSystem.h"
 
-#include "EWEngine/Graphics/Textures/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Texture_Manager.h"
 
 namespace EWE {
 	LeafSystem::LeafSystem(EWEDevice& device) : ranDev{}, randomGen{ ranDev() }, ellipseRatioDistribution{ 1.f,2.f }, rotRatioDistribution{ 1.f, 4.f },
@@ -14,21 +14,18 @@ namespace EWE {
 
 		leafBuffer.reserve(MAX_FRAMES_IN_FLIGHT);
 		leafBufferData.reserve(MAX_FRAMES_IN_FLIGHT);
-		transformDescriptor.resize(MAX_FRAMES_IN_FLIGHT, VK_NULL_HANDLE);
+		transformDescriptor.reserve(MAX_FRAMES_IN_FLIGHT);
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			leafBuffer.emplace_back(new EWEBuffer(device, sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 			leafBuffer[i]->map();
 			leafBufferData.emplace_back(reinterpret_cast<float*>(leafBuffer[i]->getMappedMemory()));
-
-			if (!
+			transformDescriptor.emplace_back(
 				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
 				.writeBuffer(0, leafBuffer[i]->descriptorInfo())
-				.build(transformDescriptor[i])
-				) {
-				printf("loading desc set failure \n");
-			}
+				.build()
+			);
 		}
 
 		leafs.resize(LEAF_COUNT);

@@ -45,6 +45,16 @@ namespace EWE {
 			std::cout << "Derivative_Data: " << sizeof(Derivative_Data) << '\n';
 			*/
 		}
+		Ocean::~Ocean() {
+			if (renderParamsDSL) {
+				delete renderParamsDSL;
+			}
+			for (auto& cascadeDSL : cascadeDSLs) {
+				if (cascadeDSL) {
+					delete cascadeDSL;
+				}
+			}
+		}
 
 		void Ocean::InitializeTwiddle(VkCommandBuffer cmdBuf) {
 			oceanFFT.precompute(cmdBuf);
@@ -267,33 +277,23 @@ namespace EWE {
 
 			renderParamsDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 			for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-				if (!
-					EWEDescriptorWriter(*renderParamsDSL, *oceanPool)
+				renderParamsDescriptorSets[i] = EWEDescriptorWriter(*renderParamsDSL, *oceanPool)
 					.writeBuffer(0, renderParamsBuffer[0]->descriptorInfo())
 					.writeBuffer(1, renderParamsBuffer[1]->descriptorInfo())
 					//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
-					.build(renderParamsDescriptorSets[i])
-					) {
-					printf("monster desc failure \n");
-					throw std::runtime_error("failed to create monster descriptor set");
-				}
+					.build();
 			}
 
 			for (uint8_t x = 0; x < 3; x++) {
 				renderTextureDescriptorSets[x].resize(MAX_FRAMES_IN_FLIGHT);
 				const auto imageInfos = cascade[x].getImageInfo();
 				for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-					if (!
-						EWEDescriptorWriter(*cascadeDSLs[5], *oceanPool)
+					renderTextureDescriptorSets[x][i] = EWEDescriptorWriter(*cascadeDSLs[5], *oceanPool)
 						.writeImage(0, imageInfos[0])
 						.writeImage(1, imageInfos[1])
 						.writeImage(2, imageInfos[2])
 						//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
-						.build(renderTextureDescriptorSets[x][i])
-						) {
-						printf("monster desc failure \n");
-						throw std::runtime_error("failed to create monster descriptor set");
-					}
+						.build();
 				}
 			}
 
@@ -422,5 +422,50 @@ namespace EWE {
 
 			//std::cout << " ~~~~~~~~~~~ ENDING OCEAN RENDER ~~~~~~~~~~~~~" << std::endl;
 		}
-	}
+
+		void Ocean::getGaussNoise() {
+			std::string filename = "textures/compute/gaussian_noise.bob";
+			//use filesystem to find file, if not, generate
+
+			std::ifstream file{ filename, std::ios::binary };
+			if (file.is_open()) {
+				file.seekg(0, std::ios::end);
+				std::streampos fileSize = file.tellg();
+				file.seekg(0, std::ios::beg);
+
+				// Calculate the number of uint64_t values in the file
+				size_t numValues = fileSize / (sizeof(float) * 2);
+
+				// Resize the result vector to accommodate the data
+				gaussianNoise.resize(numValues);
+
+				// Read the binary data into the vector
+				file.read(reinterpret_cast<char*>(&gaussianNoise[0]), fileSize);
+
+				// Close the file
+				file.close();
+			}
+			else {
+				gaussianNoise.resize(noise_resolution * noise_resolution);
+				std::default_random_engine m_engine{ static_cast<std::uint32_t>(std::random_device{}()) };
+				std::uniform_real_distribution<float> distribution{ 0.f, 1.f };// = std::uniform_real_distribution<float>;
+
+				uint64_t index = 0;
+				for (int i = 0; i < noise_resolution; i++) {
+					for (int j = 0; j < noise_resolution; j++) {
+
+						gaussianNoise[index][0] = GaussianRandom(m_engine, distribution);
+						gaussianNoise[index][1] = GaussianRandom(m_engine, distribution);
+
+						//std::cout << "gauss index:values  - " << index << gaussianNoise[index][0] << ":" << gaussianNoise[index][1] << std::endl;
+						index++;
+					}
+				}
+				std::ofstream out_file{ "textures/compute/gaussian_noise.bob", std::ios::binary };
+				out_file.write(reinterpret_cast<const char*>(gaussianNoise.data()), gaussianNoise.size() * sizeof(float) * 2);
+				out_file.close();
+
+			}
+		}
+	}//ocean namespace
 }

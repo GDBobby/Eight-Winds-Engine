@@ -1,4 +1,4 @@
-#include "EWEngine/Graphics/Textures/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Texture_Manager.h"
 
 #ifndef TEXTURE_DIR
 #define TEXTURE_DIR "textures/"
@@ -61,7 +61,7 @@ namespace EWE {
 
     
 
-    TextureID Texture_Builder::build() {
+    TextureDesc Texture_Builder::build() {
         auto tmPtr = Texture_Manager::getTextureManagerPtr();
         
         //size_t myHash = Texture_Manager::hashTexture(paths);
@@ -103,32 +103,30 @@ namespace EWE {
         }
 
         if (uniqueDescriptor) {
-            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
             EWEDescriptorWriter descBuilder(*dslInfo.getDescSetLayout(device), DescriptorPool_Global);
+            TextureDesc retDesc = descBuilder.build();
             for (uint16_t i = 0; i < imageInfos.size(); i++) {
                 descBuilder.writeImage(i, imageInfos[i]->imageInfo.getDescriptorImageInfo());
-                imageInfos[i]->usedInTexture.insert(tmPtr->currentTextureCount);
+                imageInfos[i]->usedInTexture.insert(retDesc);
             }
-            if (!descBuilder.build(descriptorSet)) {
-                //returnValue = false;
-                printf("failed to construct texture descriptor\n");
-                throw std::runtime_error("failed to construct texture descriptor");
-            }
-            tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descriptorSet);
+            tmPtr->textureImages.try_emplace(retDesc, imageInfos);
+            //tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descBuilder.build());
+            //tmPtr->deletionMap.emplace(tmPtr->currentTextureCount, );
             if (!global) {
-                tmPtr->sceneIDs.push_back(tmPtr->currentTextureCount);
+                tmPtr->sceneIDs.push_back(retDesc);
             }
-            return tmPtr->currentTextureCount++;
+            tmPtr->currentTextureCount++;
+            return retDesc;
         }
         else {
             
 
-            std::unordered_set<TextureID> containedTextures{imageInfos[0]->usedInTexture};
+            std::unordered_set<TextureDesc> containedTextures{imageInfos[0]->usedInTexture};
             if (containedTextures.size() == 1) {
                 return *imageInfos[0]->usedInTexture.begin();
             }
 
-            for (TextureID i = 1; i < imageInfos.size(); i++) {
+            for (uint32_t i = 1; i < imageInfos.size(); i++) {
                 for (auto iter = containedTextures.begin(); iter != containedTextures.end();) {
                     if (!imageInfos[i]->usedInTexture.contains(*iter)) {
                         iter = containedTextures.erase(iter);
@@ -155,7 +153,7 @@ namespace EWE {
     }
 
 
-    TextureID Texture_Builder::createSimpleTexture(std::string path, bool global, bool mipmaps, VkShaderStageFlags shaderStage) {
+    TextureDesc Texture_Builder::createSimpleTexture(std::string path, bool global, bool mipmaps, VkShaderStageFlags shaderStage) {
         Texture_Manager* tmPtr = Texture_Manager::getTextureManagerPtr();
 
         Texture_Manager::ImageTracker* imageInfo;
@@ -168,46 +166,42 @@ namespace EWE {
             auto tempImageInfo = tmPtr->imageMap.find(texPath);
             if (tempImageInfo != tmPtr->imageMap.end()) {
                 imageInfo = tempImageInfo->second;
+                for (auto iter = imageInfo->usedInTexture.begin(); iter != imageInfo->usedInTexture.end(); iter++) {
+                    auto const& imageData = tmPtr->textureImages.at(*iter);
+                    for (auto const& existingImage : imageData) {
+                        if (existingImage->usedInTexture.size() == 1) {
+                            return *iter;
+                        }
+                    }
+                }
+
+                if (imageInfo->usedInTexture.size() == 0) {
+                    //its possible that the textures were loaded in a different order
+                    //not adding a catch for that
+                    printf("descriptor was declared non-unique, but no match was found \n");
+                }
+                throw std::runtime_error("was not unique, but no match found");
+                //warnign silencing, this should never happen
+                return 0;
             }
             else {
                 uniqueImage = true;
                 imageInfo = Texture_Manager::constructImageTracker(texPath, mipmaps);
-            }
-        }
 
-        if (uniqueImage) {
-            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-            EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(tmPtr->device, shaderStage), DescriptorPool_Global);
+                EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(tmPtr->device, shaderStage), DescriptorPool_Global);
+                TextureDesc retDesc = descBuilder.build();
 
-            descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
-            imageInfo->usedInTexture.insert(tmPtr->currentTextureCount);
-            
-            if (!descBuilder.build(descriptorSet)) {
-                //returnValue = false;
-                printf("failed to construct texture descriptor\n");
-                throw std::runtime_error("failed to construct texture descriptor");
-            }
-            tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descriptorSet);
-            if (!global) {
-                tmPtr->sceneIDs.push_back(tmPtr->currentTextureCount);
-            }
-            return tmPtr->currentTextureCount++;
-        }
-        else {
-            for (auto iter = imageInfo->usedInTexture.begin(); iter != imageInfo->usedInTexture.end(); iter++) {
-                if (tmPtr->deletionMap.at(*iter)->usedInTexture.size() == 1) {
-                    return *iter;
+                descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
+                imageInfo->usedInTexture.insert(retDesc);
+                tmPtr->textureImages.try_emplace(retDesc, std::vector<Texture_Manager::ImageTracker*>{imageInfo});
+
+                //tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descBuilder.build());
+                if (!global) {
+                    tmPtr->sceneIDs.push_back(retDesc);
                 }
+                tmPtr->currentTextureCount++;
+                return retDesc;
             }
-            
-            if (imageInfo->usedInTexture.size() == 0) {
-                //its possible that the textures were loaded in a different order
-                //not adding a catch for that
-                printf("descriptor was declared non-unique, but no match was found \n");
-                throw std::runtime_error("was not unique, but no match found");
-            }
-            //warnign silencing, this should never happen
-            return 0;
         }
     }
 
@@ -230,9 +224,9 @@ namespace EWE {
             imageTrackerBucket.freeDataChunk(image.second);
         }
         imageMap.clear();
-        deletionMap.clear();
+        textureImages.clear();
         //printf("before clear \n");
-        textureMap.clear();
+        //textureMap.clear();
         //printf("after clear \n");
         //printf("after texture map cleanup \n");
         //tracker = 0;
@@ -258,36 +252,37 @@ namespace EWE {
             removeMaterialTexture(sceneID);
 
 
-            ImageTracker* imageTracker = deletionMap.at(sceneID);
+            std::vector<ImageTracker*>& imageTrackers = textureImages.at(sceneID);
+            for (auto& imageTracker : imageTrackers) {
 #ifdef _DEBUG
-            if (imageTracker->usedInTexture.erase(sceneID) != 0) {
-                printf("descriptor is using an image that isn't used in descriptor? \n");
-                throw std::runtime_error("tracked texture doesn't exist");
-            }
-#else
-            deletionmap.at(sceneID)->usedInTexture.erase(sceneID);
-#endif
-            if (imageTracker->usedInTexture.size() == 0) {
-                imageTracker->imageInfo.destroy(device);
-                for (auto iter = imageMap.begin(); iter != imageMap.end(); iter++) {
-                    if (iter->second == imageTracker) {
-                        imageMap.erase(iter);
-                        break;
-                    }
+                if (imageTracker->usedInTexture.erase(sceneID) != 0) {
+                    printf("descriptor is using an image that isn't used in descriptor? \n");
+                    throw std::runtime_error("tracked texture doesn't exist");
                 }
-                imageTracker->~ImageTracker();
-                imageTrackerBucket.freeDataChunk(imageTracker);
+#else
+                imageTracker->usedInTexture.erase(sceneID);
+#endif
+                if (imageTracker->usedInTexture.size() == 0) {
+                    imageTracker->imageInfo.destroy(device);
+                    for (auto iter = imageMap.begin(); iter != imageMap.end(); iter++) {
+                        if (iter->second == imageTracker) {
+                            imageMap.erase(iter);
+                            break;
+                        }
+                    }
+                    imageTracker->~ImageTracker();
+                    imageTrackerBucket.freeDataChunk(imageTracker);
 
-                deletionMap.erase(sceneID);
+                    textureImages.erase(sceneID);
+                }
             }
-
-            textureMap.erase(sceneID);
+            //textureMap.erase(sceneID);
         }
         sceneIDs.clear();
         printf("clear mode textures end \n");
 
     }
-    void Texture_Manager::removeMaterialTexture(TextureID removeID) {
+    void Texture_Manager::removeMaterialTexture(TextureDesc removeID) {
         for (auto iter = existingMaterials.begin(); iter != existingMaterials.end(); iter++) {
             if (iter->second.textureID == removeID) {
                 existingMaterials.erase(iter);
@@ -296,7 +291,8 @@ namespace EWE {
             }
         }
     }
-    VkDescriptorSet* Texture_Manager::getDescriptorSet(TextureID textureID) {
+    /*
+    VkDescriptorSet* Texture_Manager::getDescriptorSet(TextureDesc textureID) {
         //printf("descriptor set ~ %d \n", textureID);
 
 #ifdef _DEBUG
@@ -311,11 +307,11 @@ namespace EWE {
 #endif
         return &textureManagerPtr->textureMap.at(textureID);
     }
+    */
     Texture_Manager::ImageTracker* Texture_Manager::constructImageTracker(std::string const& path, bool mipmap) {
         ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
 
         new(imageTracker) ImageTracker(textureManagerPtr->device, path, true);
-
 
         return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
     }

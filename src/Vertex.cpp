@@ -116,7 +116,7 @@ namespace EWE {
         attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(boneVertex, uv) });
         attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertex, tangent) });
         attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertex, m_BoneIDs) });
-        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertex, m_Weights) });
+        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(boneVertex, m_Weights) });
 
         return attributeDescriptions;
     }
@@ -127,7 +127,7 @@ namespace EWE {
         attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertexNoTangent, normal) });
         attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(boneVertexNoTangent, uv) });
         attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertexNoTangent, m_BoneIDs) });
-        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertexNoTangent, m_Weights) });
+        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(boneVertexNoTangent, m_Weights) });
 
         return attributeDescriptions;
     }

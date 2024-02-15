@@ -21,6 +21,14 @@ namespace EWE {
 
 			
 		}
+		OceanFFT::~OceanFFT() {
+			for (auto& fftDSL : fftDSLs) {
+				if (fftDSL) {
+					delete fftDSL;
+				}
+			}
+		}
+
 		void OceanFFT::createDSLs(EWEDevice& device, std::shared_ptr<EWEDescriptorPool> oceanPool) {
 			
 			std::cout << "PRECOMPUTE DESCRIPTOR" << std::endl;
@@ -48,7 +56,14 @@ namespace EWE {
 				.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
 				.build();
 
-			fft_pipelines.emplace(Pipe_horizontal_inverse_fft, EWE_Compute_Pipeline::createPipeline(device, { fftDSLs[1]->getDescriptorSetLayout(), fftDSLs[2]->getDescriptorSetLayout() }, "horizontal_step_inverse_FFT.comp.spv"));
+			fft_pipelines.emplace(
+				Pipe_horizontal_inverse_fft, 
+				EWE_Compute_Pipeline::createPipeline(
+					device, 
+					{ fftDSLs[1]->getDescriptorSetLayout(), fftDSLs[2]->getDescriptorSetLayout() }, 
+					"horizontal_step_inverse_FFT.comp.spv"
+				)
+			);
 			fft_pipelines.emplace(Pipe_vertical_inverse_fft, EWE_Compute_Pipeline::createPipeline(device, { fftDSLs[1]->getDescriptorSetLayout(), fftDSLs[2]->getDescriptorSetLayout()}, "vertical_step_inverse_FFT.comp.spv"));
 			std::cout << "after inverse pipes" << std::endl;
 
@@ -59,18 +74,13 @@ namespace EWE {
 				 .build();
 				fft_pipelines.emplace(Pipe_precompute_twiddle, EWE_Compute_Pipeline::createPipeline(device, { fftDSLs[3]->getDescriptorSetLayout() }, "twiddle_and_indices.comp.spv"));
 			}
-
-			if (!
-				EWEDescriptorWriter(*fftDSLs[3].get(), *oceanPool)
+			twiddleDescriptorSet = EWEDescriptorWriter(*fftDSLs[3], *oceanPool)
 				.writeImage(0, precomputedData.getDescriptor())
 				.writeBuffer(1, parameterBuffer->descriptorInfo())
-				.build(twiddleDescriptorSet)
-				) {
-				printf("twiddle desc failure \n");
-				throw std::runtime_error("failed to create twiddle descriptor set");
-			}
+				.build();
 			
 		}
+
 		void OceanFFT::precompute(VkCommandBuffer cmdBuf) {
 			fft_pipelines.at(Pipe_precompute_twiddle).bind(cmdBuf);
 			vkCmdBindDescriptorSets(cmdBuf,
