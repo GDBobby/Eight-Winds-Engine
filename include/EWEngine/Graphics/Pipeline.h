@@ -20,7 +20,7 @@
 namespace EWE {
 
 
-	enum Pipeline_Enum {
+	enum Pipeline_Enum : PipelineID {
 		Pipe_pointLight,
 		Pipe_textured,
 		Pipe_alpha,
@@ -41,7 +41,7 @@ namespace EWE {
 
 		Pipe_MAX_COUNT,
 	};
-	enum PipeLayout_Enum {
+	enum PipeLayout_Enum : uint32_t { //uint32_t is the same as PipelineID, but using uint32_t to avoid confusion
 		PL_pointLight,
 		PL_lightning,
 		PL_spikyBall,
@@ -59,9 +59,6 @@ namespace EWE {
 		PL_loading,
 
 		PL_nineUI,
-		PL_orbOverlay,
-		PL_ExpBar,
-		PL_castleHealth,
 
 		PL_MAX_COUNT,
 	};

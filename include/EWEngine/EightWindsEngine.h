@@ -108,19 +108,15 @@ namespace EWE {
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		void initGlobalBuffers();
 
-		void updatePipelines() {
-			advancedRS.updatePipelines();
-		}
-
 		FrameInfo beginRender();
 //#define RENDER_OBJECT_DEBUG
 
-		void draw2DObjects(FrameInfo frameInfo);
-		void draw3DObjects(FrameInfo frameInfo, double dt);
-		void drawText(FrameInfo frameInfo, double dt);
-		void drawObjects(FrameInfo frameInfo, double dt);
+		void draw2DObjects(FrameInfo& frameInfo);
+		void draw3DObjects(FrameInfo& frameInfo, double dt);
+		void drawText(FrameInfo& frameInfo, double dt);
+		void drawObjects(FrameInfo& frameInfo, double dt);
 
-		void endRender(FrameInfo frameInfo);
+		void endRender(FrameInfo& frameInfo);
 
 		void loadingScreen();
 

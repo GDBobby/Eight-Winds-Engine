@@ -21,7 +21,6 @@ namespace EWE {
 	protected:
 		double currentTime = 0.0;
 		double saveTime = 5.0; //every 5 seconds, overkill?
-		FrameInfo frameInfo;
 
 		void SaveShader();
 	};

@@ -101,14 +101,16 @@ namespace EWE {
     EWEDescriptorSetLayout* TextureDSLInfo::getSimpleDSL(EWEDevice& device, VkShaderStageFlags stageFlag) {
         TextureDSLInfo dslInfo{};
         dslInfo.setStageTextureCount(stageFlag, 1);
-        if (descSetLayouts.contains(dslInfo)) {
-            return descSetLayouts.at(dslInfo);
+
+        {
+            auto dslIter = descSetLayouts.find(dslInfo);
+            if (dslIter != descSetLayouts.end()) {
+                return dslIter->second;
+            }
         }
         EWEDescriptorSetLayout::Builder dslBuilder{ device };
         dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlag);
-        auto emplaceRet = descSetLayouts.emplace(dslInfo, dslBuilder.build());
-
-        return emplaceRet.first->second;
+        return descSetLayouts.emplace(dslInfo, dslBuilder.build()).first->second;
     }
 
     EWEDescriptorSetLayout* TextureDSLInfo::getDescSetLayout(EWEDevice& device) {

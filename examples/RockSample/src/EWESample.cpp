@@ -1,9 +1,10 @@
 #include "EWESample.h"
 
 #include "GUI/MainMenuMM.h"
-#include "GUI/ShaderGenerationMM.h"
+//#include "GUI/ShaderGenerationMM.h"
 //#include "GUI/ControlsMM.h"
-#include <EWEngine/systems/StaticRendering/StaticRenderingSystem.h>
+#include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
+#include <EWEngine/Graphics/Texture/Cube_Texture.h>
 
 #include "GUI/MenuEnums.h"
 
@@ -73,8 +74,8 @@ namespace EWE {
 				//loading entry?
 				vkDeviceWaitIdle(ewEngine.eweDevice.device());
 				currentScenePtr->exit();
-				ewEngine.objectManager.clearSceneObjects();
-				EWETexture::clearSceneTextures();
+				ewEngine.objectManager.clearSceneObjects(ewEngine.eweDevice);
+				Texture_Manager::getTextureManagerPtr()->clearSceneTextures();
 				//loading entry?
 				if (currentScene != scene_exitting) {
 					currentScenePtr = scenes.at(currentScene).get();
@@ -121,7 +122,7 @@ namespace EWE {
 	}
 
 	void EWESample::loadGlobalObjects() {
-		TextureID skyboxID = EWETexture::addGlobalTexture(ewEngine.eweDevice, "nasa/", EWETexture::tType_cube);
+		TextureDesc skyboxID = Cube_Texture::createCubeTexture(ewEngine.eweDevice, "nasa/");
 
 		//i dont even know if the engine will work if this isnt constructed
 		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(ewEngine.eweDevice, 100.f), skyboxID };
@@ -151,13 +152,12 @@ namespace EWE {
 			ewEngine.objectManager.pointLights[i].transform.translation.z *= 5.f;
 			ewEngine.objectManager.pointLights[i].transform.translation.y += 1.f;
 		}
-		ewEngine.advancedRS.updatePipelines(ewEngine.objectManager, ewEngine.eweRenderer.getPipelineInfo());
 	}
 	void EWESample::addModulesToMenuManager(float screenWidth, float screenHeight) {
 		menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>(screenWidth, screenHeight));
 		menuManager.menuModules.at(menu_main)->labels[1].string = "1.0.0";
-		menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(windowPtr, screenWidth, screenHeight));
-		Shader::InputBox::giveGLFWCallbacks(MenuManager::staticMouseCallback, MenuManager::staticKeyCallback);
+		//menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(windowPtr, screenWidth, screenHeight));
+		//Shader::InputBox::giveGLFWCallbacks(MenuManager::staticMouseCallback, MenuManager::staticKeyCallback);
 	}
 
 	bool EWESample::processClick() {

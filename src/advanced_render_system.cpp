@@ -50,59 +50,6 @@ namespace EWE {
 		printf("end of ARS deconstructor \n");
 #endif
 	}
-	void AdvancedRenderSystem::updatePipelines() {
-
-		std::set<Pipeline_Enum> pipeSet;
-
-#if false//LEVEL_BUILDER
-		pipeList.push_back(Pipe_textured);
-		pipeList.push_back(Pipe_fbx);
-		pipeList.push_back(Pipe_sprite);
-		pipeList.push_back(Pipe_bobTrans);
-		pipeList.push_back(Pipe_grid);
-
-
-#endif
-
-		//i need a better way of doing this lol
-		if (objectManager.texturedGameObjects.size() > 0) {
-			pipeSet.emplace(Pipe_textured);
-		}
-		if (objectManager.grassField.size() > 0) {
-			pipeSet.emplace(Pipe_grass);
-		}
-		if (objectManager.skybox.first) {
-			pipeSet.emplace(Pipe_skybox);
-		}
-
-		//pipeList.push_back(Pipe_boneWeapon);
-		pipeSet.emplace(Pipe_textured);
-		/* i need a better way of doing this
-		pipeList.push_back(Pipe_spikyBall);
-		pipeList.push_back(Pipe_alpha);
-		pipeList.push_back(Pipe_visualEffect);
-		pipeList.push_back(Pipe_sprite);
-		pipeList.push_back(Pipe_lightning);
-		pipeList.push_back(Pipe_orbOverlay);
-		*/
-		
-
-#if DRAWING_POINTS
-		if (objectManager.pointLights.size() > 0) {
-			pipeList.push_back(Pipe_pointLights);
-		}
-#endif
-
-		for (auto& pipe : pipeSet) {
-			//PipelineManager::initPipelines(pipe, eweDevice);
-		}
-		//if (PipelineManager::pipelines.find(Pipe_2d) == PipelineManager::pipelines.end()) {
-		//	PipelineManager::initPipelines(pipeRenderInfo, Pipe_2d, eweDevice);
-		//	PipelineManager::initPipelines(pipeRenderInfo, Pipe_NineUI, eweDevice);
-		//}
-
-		//printf("returning from update pipelines \n");
-	}
 
 	void AdvancedRenderSystem::renderGameObjects(FrameInfo &frameInfo, float time) {
 #if DEBUGGING_PIPELINES

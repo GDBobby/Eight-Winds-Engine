@@ -1,9 +1,10 @@
 #include "FloatingRockSystem.h"
+#include <EWEngine/Systems/Rendering/Pipelines/Pipe_SimpleTextured.h>
 
 namespace EWE {
 	FloatingRock::FloatingRock(EWEDevice& device) {
 		rockModel = EWEModel::createModelFromFile(device, "Rock1.obj");
-		rockTextureID = EWETexture::addGlobalTexture(device, "rock.jpg");
+		rockTextureID = Texture_Builder::createSimpleTexture("rock.jpg", true, true, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		//RANDOM NUMBER GENERATOR
 		std::random_device r;
@@ -68,27 +69,16 @@ namespace EWE {
 		}
 	}
 	void FloatingRock::render(FrameInfo& frameInfo) {
-		PipelineManager::pipelines.at(Pipe_textured)->bind(frameInfo.cmdIndexPair.first);
+		//PipelineManager::pipelines.at(Pipe_textured)->bind(frameInfo.cmdIndexPair.first);
+		PipelineSystem::setFrameInfo(frameInfo);
+		auto pipe = PipelineSystem::at(Pipe_textured);
 
-		vkCmdBindDescriptorSets(
-			frameInfo.cmdIndexPair.first,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			PipelineManager::pipeLayouts.at(PL_textured),
-			0, 1,
-			DescriptorHandler::getDescSet(DS_global, frameInfo.cmdIndexPair.second),
-			0, nullptr
-		);
-		vkCmdBindDescriptorSets(
-			frameInfo.cmdIndexPair.first,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			PipelineManager::pipeLayouts.at(PL_textured),
-			1, 1,
-			EWETexture::getDescriptorSets(rockTextureID, frameInfo.cmdIndexPair.second),
-			0, nullptr
-		);
+		pipe->bindPipeline();
 
+		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+		pipe->bindDescriptor(1, &rockTextureID);
 
-		rockModel->bind(frameInfo.cmdIndexPair.first);
+		pipe->bindModel(rockModel.get());
 		SimplePushConstantData push{ glm::mat4{1.f}, glm::mat3{1.f} };
 		for (int i = 0; i < rockField.size(); i++) {
 
@@ -99,8 +89,7 @@ namespace EWE {
 				push.modelMatrix[3].y = tempPosition.y;
 				push.modelMatrix[3].z = tempPosition.z;
 
-				vkCmdPushConstants(frameInfo.cmdIndexPair.first, PipelineManager::pipeLayouts.at(PL_textured), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SimplePushConstantData), &push);
-				rockModel->draw(frameInfo.cmdIndexPair.first);
+				pipe->pushAndDraw(&push);
 				//ockCount++;
 				//std::cout << "post draw simple" << std::endl;
 			}

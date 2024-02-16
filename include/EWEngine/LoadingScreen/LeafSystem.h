@@ -94,8 +94,8 @@ namespace EWE {
 		std::vector<EWEBuffer*> leafBuffer{};
 		std::vector<VkDescriptorSet> transformDescriptor{};
 
-		VkShaderModule vertexShaderModule;
-		VkShaderModule fragmentShaderModule;
+		VkShaderModule vertexShaderModule{VK_NULL_HANDLE};
+		VkShaderModule fragmentShaderModule{VK_NULL_HANDLE};
 
 		/*
 		//POSITION:

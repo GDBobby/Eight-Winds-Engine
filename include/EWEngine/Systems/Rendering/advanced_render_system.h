@@ -33,7 +33,6 @@ namespace EWE {
 #if LEVEL_BUILDER
 		void renderBuilderObjects(FrameInfo& frameInfo);
 #endif
-		void updatePipelines();
 
 		bool shouldRenderPoints = false;
 		//uint32_t uiTextureID = 0;

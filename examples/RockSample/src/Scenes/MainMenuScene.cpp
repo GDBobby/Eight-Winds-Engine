@@ -1,5 +1,7 @@
 #include "MainMenuScene.h"
 
+#include <EWEngine/Systems/Rendering/Pipelines/Pipe_SimpleTextured.h>
+
 namespace EWE {
 	MainMenuScene::MainMenuScene(EightWindsEngine& ewEngine)
 		: ewEngine{ ewEngine }, 
@@ -14,11 +16,7 @@ namespace EWE {
 
 	void MainMenuScene::load() {
 		menuManager.giveMenuFocus();
-
-		
-
-		ewEngine.advancedRS.updatePipelines(ewEngine.objectManager, ewEngine.eweRenderer.getPipelineInfo());
-		printf("after updating pipelines load menu objects, returning \n");
+		PipelineSystem::emplace(Pipe_textured, new Pipe_SimpleTextured(ewEngine.eweDevice));
 	}
 	void MainMenuScene::entry() {
 		soundEngine->stopMusic();
@@ -47,17 +45,14 @@ namespace EWE {
 		//printf("render main menu scene \n");
 
 		
-		auto cmdBufFrameIndex = ewEngine.beginRender();
-		if (cmdBufFrameIndex.first != VK_NULL_HANDLE) {
+		auto frameInfo = ewEngine.beginRender();
+		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 			//printf("drawing \n");
-			ewEngine.drawObjects(cmdBufFrameIndex, dt);
-			FrameInfo frameInfo;
-			frameInfo.cmdIndexPair = cmdBufFrameIndex;
-			frameInfo.time = static_cast<float>(dt);
+			ewEngine.drawObjects(frameInfo, dt);
 			rockSystem.update();
 			rockSystem.render(frameInfo);
 			//printf("after displaying render info \n");
-			ewEngine.endRender(cmdBufFrameIndex);
+			ewEngine.endRender(frameInfo);
 			//std::cout << "after ending render \n";
 			return false;
 		}

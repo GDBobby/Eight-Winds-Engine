@@ -218,8 +218,11 @@ namespace EWE {
 
     void Texture_Manager::cleanup() {
         //call at end of program
-        //printf("beginning of texture cleanup \n");
+#if DECONSTRUCTION_DEBUG
+        printf("beginning of texture cleanup \n");
+#endif
         //uint32_t tracker = 0;
+
         for (auto& image : imageMap) {
             //printf("%d tracking \n", tracker++);
             image.second->imageInfo.destroy(device);
@@ -228,6 +231,7 @@ namespace EWE {
         }
         imageMap.clear();
         textureImages.clear();
+        existingMaterials.clear();
         //printf("before clear \n");
         //textureMap.clear();
         //printf("after clear \n");
@@ -237,7 +241,9 @@ namespace EWE {
 
 
         //globalPool.reset();
+#if DECONSTRUCTION_DEBUG
         printf("end of texture cleanup \n");
+#endif
     }
 
     //return value <flags, textureID>
@@ -269,6 +275,7 @@ namespace EWE {
                     imageTracker->imageInfo.destroy(device);
                     for (auto iter = imageMap.begin(); iter != imageMap.end(); iter++) {
                         if (iter->second == imageTracker) {
+                            
                             imageMap.erase(iter);
                             break;
                         }

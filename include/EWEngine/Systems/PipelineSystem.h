@@ -18,8 +18,10 @@ namespace EWE {
 		static VkCommandBuffer cmdBuf;
 #ifdef _DEBUG
 		static PipelineID currentPipe;
-#endif
+		PipelineSystem(PipelineID pipeID) : myID{pipeID} {}
+#else
 		PipelineSystem() {}
+#endif
 		virtual void createPipeLayout(EWEDevice& device) = 0;
 		virtual void createPipeline(EWEDevice& device) = 0;
 
@@ -31,7 +33,6 @@ namespace EWE {
 			if (pipelineSystem.find(pipeID) != pipelineSystem.end()) {
 				throw std::runtime_error("attempting to emplace a pipe with an existing id");
 			}
-			pipeSys->myID = pipeID;
 #endif
 			pipelineSystem.emplace(pipeID, pipeSys);
 		}

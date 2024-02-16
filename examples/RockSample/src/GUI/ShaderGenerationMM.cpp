@@ -1,5 +1,6 @@
-#include "ShaderGenerationMM.h"
 
+/*
+#include "ShaderGenerationMM.h"
 namespace EWE {
 	ShaderGenerationMM::ShaderGenerationMM(GLFWwindow* windowPtr, float screenWidth, float screenHeight) :
 		shaderGraph{windowPtr, screenWidth, screenHeight}
@@ -72,3 +73,4 @@ namespace EWE {
 
 
 }
+*/

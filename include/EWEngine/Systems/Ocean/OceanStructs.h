@@ -5,7 +5,7 @@
 
 namespace EWE {
     namespace Ocean {
-        enum Pipe_Enum {
+        enum Pipe_Enum : uint16_t {
             Pipe_precompute_twiddle = 0,
 
             Pipe_permute,

@@ -214,7 +214,7 @@ namespace EWE {
 	void MaterialPipelines::cleanupStaticVariables(EWEDevice& device) {
 
 #if DECONSTRUCTION_DEBUG
-		printf("begin deconstructing pipeline manager \n");
+		printf("begin deconstructing material pipelines \n");
 #endif
 		for(auto& pipe : materialPipelines) {
 			delete pipe.second;

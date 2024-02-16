@@ -108,6 +108,7 @@ namespace EWE {
 			delete dsl.second;
 		}
 		TextureDSLInfo::descSetLayouts.clear();
+		Texture_Manager::getTextureManagerPtr()->cleanup();
 
 		for (auto& bufferType : bufferMap) {
 			for (auto& buffer : bufferType.second) {
@@ -303,16 +304,16 @@ namespace EWE {
 
 		return frameInfo;
 	}
-	void EightWindsEngine::draw2DObjects(FrameInfo frameInfo) {
+	void EightWindsEngine::draw2DObjects(FrameInfo& frameInfo) {
 		advancedRS.render2DGameObjects(frameInfo, menuManager.getMenuActive());
 	}
-	void EightWindsEngine::drawObjects(FrameInfo frameInfo, double dt) {
+	void EightWindsEngine::drawObjects(FrameInfo& frameInfo, double dt) {
 		PipelineSystem::setFrameInfo(frameInfo);
 		draw3DObjects(frameInfo, dt);
 		draw2DObjects(frameInfo);
 		drawText(frameInfo, dt);
 	}
-	void EightWindsEngine::draw3DObjects(FrameInfo frameInfo, double dt) {
+	void EightWindsEngine::draw3DObjects(FrameInfo& frameInfo, double dt) {
 		timeTracker = glm::mod(timeTracker + dt, glm::two_pi<double>());
 
 		if (pointLightsEnabled) {
@@ -341,7 +342,7 @@ namespace EWE {
 
 	}
 
-	void EightWindsEngine::drawText(FrameInfo frameInfo, double dt) {
+	void EightWindsEngine::drawText(FrameInfo& frameInfo, double dt) {
 		uiHandler.beginTextRender();
 #if BENCHMARKING
 		if (displayingRenderInfo) {
@@ -357,7 +358,7 @@ namespace EWE {
 		uiHandler.endTextRender(frameInfo.cmdBuf);
 	}
 
-	void EightWindsEngine::endRender(FrameInfo frameInfo) {
+	void EightWindsEngine::endRender(FrameInfo& frameInfo) {
 		//printf("end render \n");
 
 

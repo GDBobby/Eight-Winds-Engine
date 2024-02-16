@@ -14,7 +14,6 @@ namespace EWE {
 	void ShaderGenerationScene::load() {
 		menuManager.giveMenuFocus();
 
-		ewEngine.advancedRS.updatePipelines(ewEngine.objectManager, ewEngine.eweRenderer.getPipelineInfo());
 		printf("after updating pipelines load menu objects, returning \n");
 	}
 	void ShaderGenerationScene::entry() {
@@ -35,18 +34,18 @@ namespace EWE {
 		//printf("render main menu scene \n");
 
 
-		auto cmdBufFrameIndex = ewEngine.beginRender();
-		if (cmdBufFrameIndex.first != VK_NULL_HANDLE) {
+		auto frameInfo = ewEngine.beginRender();
+		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 			//printf("drawing \n");
-			ewEngine.draw2DObjects(cmdBufFrameIndex);
-			ewEngine.drawText(cmdBufFrameIndex, dt);
+			ewEngine.draw2DObjects(frameInfo);
+			ewEngine.drawText(frameInfo, dt);
 
 			currentTime += dt;
-			if (frameInfo.time >= saveTime) {
+			if (currentTime >= saveTime) {
 				SaveShader();
 			}
 
-			ewEngine.endRender(cmdBufFrameIndex);
+			ewEngine.endRender(frameInfo);
 			return false;
 		}
 		return true;

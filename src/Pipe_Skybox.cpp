@@ -3,7 +3,12 @@
 #include "EWEngine/Graphics/Texture/Texture.h"
 
 namespace EWE {
-	Pipe_Skybox::Pipe_Skybox(EWEDevice& device) : PipelineSystem{} {
+	Pipe_Skybox::Pipe_Skybox(EWEDevice& device)
+#ifdef _DEBUG
+		: PipelineSystem{ Pipe_skybox } {
+#else
+	{
+#endif
 
 		createPipeline(device);
 	}
