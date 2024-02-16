@@ -1,6 +1,7 @@
 
 #include <EWEngine/imgui/imGuiHandler.h>
 
+#include <EWEngine/Graphics/Pipeline.h>
 
 namespace EWE {
 	ImGUIHandler::ImGUIHandler(GLFWwindow* window, EWEDevice& device, uint32_t imageCount) : device{ device } {
@@ -23,18 +24,18 @@ namespace EWE {
 		init_info.QueueFamily = device.getGraphicsIndex();
 		init_info.Queue = device.graphicsQueue();
 		init_info.PipelineCache = nullptr;
-		init_info.poolID = imguiPoolID;
 		init_info.Allocator = nullptr;
 		init_info.MinImageCount = imageCount;
 		init_info.ImageCount = imageCount;
 		init_info.CheckVkResultFn = check_vk_result;
 		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+		init_info.PipelineRenderingCreateInfo = *EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic;
 		
 
 		//if an issue, address this first
 		init_info.UseDynamicRendering = true;
 
-		ImGui_ImplVulkan_Init(&init_info, VK_NULL_HANDLE);
+		ImGui_ImplVulkan_Init(&init_info);
 
 		//uploadFonts();
 		//printf("end of imgui constructor \n");
@@ -43,7 +44,7 @@ namespace EWE {
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
-		EWEDescriptorPool::DestructPool(imguiPoolID);
+		EWEDescriptorPool::DestructPool(DescriptorPool_imgui);
 		printf("imguihandler deconstructed \n");
 	}
 

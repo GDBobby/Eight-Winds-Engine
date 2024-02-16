@@ -191,7 +191,8 @@ namespace EWE {
 	}
     void EWEDescriptorPool::DestructPool(DescriptorPool_ID poolID) {
 #if _DEBUG
-        if (pools.find(poolID) == pools.end()) {
+        printf("deconstructing pool : %d \n", poolID);
+        if (!pools.contains(poolID)) {
             printf("destructing pool that doesn't exist \n");
             throw std::runtime_error("destructing pool that doesn't exist \n");
         }

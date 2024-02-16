@@ -27,6 +27,8 @@
 
 #define ENGINE_VERSION "1.0.0.0"
 
+#define RENDER_DEBUG false
+
 
 namespace EWE {
 	inline void stdcoutamat4(glm::mat4& theMatrix, std::string matrixName) {
@@ -325,23 +327,16 @@ namespace EWE {
 		}
 
 		camera.ViewTargetDirect(frameInfo.index);
-#ifdef RENDER_OBJECT_DEBUG
+#if RENDER_DEBUG
 		std::cout << "before rendering game objects \n";
 #endif
 		advancedRS.renderGameObjects(frameInfo, timeTracker);
-#ifdef RENDER_OBJECT_DEBUG
+#if RENDER_DEBUG
 		std::cout << "before skin render \n";
 #endif
 		skinnedRS.render(frameInfo);
-#ifdef RENDER_OBJECT_DEBUG
-		std::cout << "render 2d game objects \n";
-#endif
-#ifdef RENDER_OBJECT_DEBUG
-		std::cout << "before text render \n";
-#endif
-
-#ifdef RENDER_OBJECT_DEBUG
-		std::cout << "after rendering game objects \n";
+#if RENDER_DEBUG
+		std::cout << "end draw3dObjects \n";
 #endif
 
 	}
@@ -354,7 +349,7 @@ namespace EWE {
 		}
 #endif
 
-#ifdef RENDER_OBJECT_DEBUG
+#if RENDER_DEBUG
 		std::cout << "before drawing menu \n";
 #endif
 		uiHandler.drawOverlayText(frameInfo.cmdBuf, displayingRenderInfo);

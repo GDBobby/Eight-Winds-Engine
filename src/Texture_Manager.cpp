@@ -104,11 +104,14 @@ namespace EWE {
 
         if (uniqueDescriptor) {
             EWEDescriptorWriter descBuilder(*dslInfo.getDescSetLayout(device), DescriptorPool_Global);
-            TextureDesc retDesc = descBuilder.build();
             for (uint16_t i = 0; i < imageInfos.size(); i++) {
                 descBuilder.writeImage(i, imageInfos[i]->imageInfo.getDescriptorImageInfo());
-                imageInfos[i]->usedInTexture.insert(retDesc);
             }
+            TextureDesc retDesc = descBuilder.build();
+            for (auto& imageInfo : imageInfos) {
+                imageInfo->usedInTexture.insert(retDesc);
+            }
+
             tmPtr->textureImages.try_emplace(retDesc, imageInfos);
             //tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descBuilder.build());
             //tmPtr->deletionMap.emplace(tmPtr->currentTextureCount, );
@@ -189,9 +192,9 @@ namespace EWE {
                 imageInfo = Texture_Manager::constructImageTracker(texPath, mipmaps);
 
                 EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(tmPtr->device, shaderStage), DescriptorPool_Global);
+                descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
                 TextureDesc retDesc = descBuilder.build();
 
-                descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
                 imageInfo->usedInTexture.insert(retDesc);
                 tmPtr->textureImages.try_emplace(retDesc, std::vector<Texture_Manager::ImageTracker*>{imageInfo});
 
@@ -255,7 +258,7 @@ namespace EWE {
             std::vector<ImageTracker*>& imageTrackers = textureImages.at(sceneID);
             for (auto& imageTracker : imageTrackers) {
 #ifdef _DEBUG
-                if (imageTracker->usedInTexture.erase(sceneID) != 0) {
+                if (imageTracker->usedInTexture.erase(sceneID) == 0) {
                     printf("descriptor is using an image that isn't used in descriptor? \n");
                     throw std::runtime_error("tracked texture doesn't exist");
                 }

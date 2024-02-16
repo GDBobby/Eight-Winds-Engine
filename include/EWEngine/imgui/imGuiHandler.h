@@ -97,7 +97,6 @@ namespace EWE {
 		}
 		*/
 		EWEDevice& device;
-        DescriptorPool_ID imguiPoolID;
 		VkRenderPass imGuiRenderPass;
 
 	};
