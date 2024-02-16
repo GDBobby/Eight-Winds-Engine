@@ -26,7 +26,7 @@ namespace EWE {
 
     struct MaterialRenderInfo {
         MaterialPipelines* pipe;
-        std::unordered_map<TextureID, std::vector<MaterialObjectInfo>> materialMap{};
+        std::unordered_map<TextureDesc, std::vector<MaterialObjectInfo>> materialMap{};
         MaterialRenderInfo(MaterialFlags flags, EWEDevice& device) : pipe{MaterialPipelines::getMaterialPipe(flags, device)} {
 
         }
@@ -69,11 +69,11 @@ namespace EWE {
         void addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo);
         void addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
 
-        void addMaterialObjectFromTexID(TextureID copyID, TransformComponent* ownerTransform, bool* drawablePtr);
+        void addMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr);
 
-        void removeByTransform(TextureID textureID, TransformComponent* ownerTransform);
+        void removeByTransform(TextureDesc textureID, TransformComponent* ownerTransform);
 
-        std::vector<TextureID> checkAndClearTextures();
+        std::vector<TextureDesc> checkAndClearTextures();
 
         static void render(FrameInfo const& frameInfo);
         void renderMemberMethod(FrameInfo const& frameInfo);

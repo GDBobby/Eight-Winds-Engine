@@ -34,7 +34,7 @@ namespace EWE {
 		//std::vector<SpotLight> spotLights;
 
 		//global right now because i only have 1, need to make it scene based
-		std::pair<std::unique_ptr<EWEModel>, TextureID> skybox{}; //model and textureID
+		std::pair<std::unique_ptr<EWEModel>, TextureDesc> skybox{}; //model and textureID
 
 
 		void initCollision() {
@@ -55,7 +55,7 @@ namespace EWE {
 		//std::pair<MaterialFlags, TextureID> targetTexturePair{0,0};
 		//uint32_t maxTargets = 0;
 		//uint32_t currentActiveTargets = 0;
-		TextureID grassTextureID{TEXTURE_UNBINDED};
+		TextureDesc grassTextureID{TEXTURE_UNBINDED_DESC};
 #if LEVEL_BUILDER
 		void clearBuilders();
 		void resetBuilders();

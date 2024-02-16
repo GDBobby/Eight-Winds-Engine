@@ -4,7 +4,7 @@
 #include "EWEngine/EWE_GameObject.h"
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
 
-#include <list>
+#include <unordered_set>
 
 //need instancing here
 
@@ -12,10 +12,10 @@ namespace EWE {
 
 	class EweObject {
 	public:
-        EweObject(const EweObject& other) : transform{}, ownedTextureIDs{ other.ownedTextureIDs } {
+        EweObject(const EweObject& other) : transform{}, ownedTextures{ other.ownedTextures } {
             printf("ewe copy construction \n");
             auto matInstance = RigidRenderingSystem::getRigidRSInstance();
-            for (auto iter = ownedTextureIDs.begin(); iter != ownedTextureIDs.end(); iter++) {
+            for (auto iter = ownedTextures.begin(); iter != ownedTextures.end(); iter++) {
                 //printf("adding material from tex id %d \n", *iter);
                 matInstance->addMaterialObjectFromTexID(*iter, &transform, &drawable);
             }
@@ -24,7 +24,7 @@ namespace EWE {
 			printf("ewe copy operator \n");
             if (this != &other) {
                 this->transform = other.transform;
-                this->ownedTextureIDs = other.ownedTextureIDs;
+                this->ownedTextures = other.ownedTextures;
                 this->meshes = other.meshes;
                 this->drawable = other.drawable;
 			}
@@ -33,7 +33,7 @@ namespace EWE {
         EweObject(EweObject&& other) noexcept {
             printf("move operation \n");
             this->transform = other.transform;
-            this->ownedTextureIDs = other.ownedTextureIDs;
+            this->ownedTextures = other.ownedTextures;
             this->meshes = other.meshes;
             this->drawable = other.drawable;
         }
@@ -45,7 +45,7 @@ namespace EWE {
 		TransformComponent transform{};
         std::vector<std::shared_ptr<EWEModel>> meshes{};
         bool drawable = true;
-        std::list<int32_t> ownedTextureIDs{};
+        std::unordered_set<TextureDesc> ownedTextures{};
 
 
         //void deTexturize();

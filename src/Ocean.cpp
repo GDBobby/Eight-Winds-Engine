@@ -409,7 +409,7 @@ namespace EWE {
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				renderPipeLayout,
 				5, 1,
-				Texture_Manager::getDescriptorSet(foam),
+				&foam,
 				0, nullptr
 			);
 			//std::cout << "after foam desc OCEAN \n";

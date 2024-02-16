@@ -19,10 +19,10 @@ typedef uint32_t PipelineID;
 
 struct MaterialTextureInfo {
 	MaterialFlags materialFlags;
-	TextureDesc textureID;
+	TextureDesc texture;
 	//MaterialTextureInfo() {}
 	MaterialTextureInfo() {}
-	MaterialTextureInfo(MaterialFlags flags, TextureDesc texID) : materialFlags{ flags }, textureID{ texID } {}
+	MaterialTextureInfo(MaterialFlags flags, TextureDesc texID) : materialFlags{ flags }, texture{ texID } {}
 };
 
 enum MaterialAttributes : uint8_t {

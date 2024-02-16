@@ -46,7 +46,7 @@ namespace EWE {
 		}
 #endif
 		pipe->bind(cmdBuf);
-		bindedTexture = TEXTURE_UNBINDED;
+		bindedTexture = TEXTURE_UNBINDED_DESC;
 	}
 	void PipelineSystem::bindModel(EWEModel* model) {
 		bindedModel = model;
@@ -75,9 +75,9 @@ namespace EWE {
 		
 	}
 	//EWETexture::getDescriptorSets(tileSet.tileSetTexture, frameIndex)
-	void PipelineSystem::bindTextureDescriptor(uint8_t descSlot, TextureID texID) {
+	void PipelineSystem::bindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
 		if (bindedTexture != texID) {
-			bindDescriptor(descSlot, Texture_Manager::getDescriptorSet(texID));
+			bindDescriptor(descSlot, &texID);
 			bindedTexture = texID;
 		}
 	}

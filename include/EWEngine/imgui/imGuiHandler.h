@@ -47,7 +47,7 @@ namespace EWE {
 		void rebuild() {
 			//ImGui_ImplVulkanH_CreateWindow(device.getInstance(), device.getPhysicalDevice(), device.device(), &g_MainWindowData, g_QueueFamily, nullptr, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
 		}
-        void addTexture(TextureID eweTexID) {
+        void addTexture(TextureDesc eweTex) {
 
         }
 

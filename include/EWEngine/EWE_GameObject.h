@@ -38,7 +38,7 @@ namespace EWE {
 
 		TransformComponent transform{};
 
-		TextureID textureID{ 0 };
+		TextureDesc textureID{ TEXTURE_UNBINDED_DESC };
 		//int16_t textureFlags = -1;
 
 		//optional pointer components

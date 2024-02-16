@@ -23,7 +23,7 @@ namespace EWE {
 
 
 	}
-	bool StaticRenderSystem::addStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureID textureIDs, TransformComponent& transform) {
+	bool StaticRenderSystem::addStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureDesc texture, TransformComponent& transform) {
 
 		return false;
 	}

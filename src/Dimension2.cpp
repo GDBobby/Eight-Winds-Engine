@@ -96,7 +96,7 @@ namespace EWE {
 
 		dimension2Ptr->pipe2d->bind(cmdBuffer);
 		dimension2Ptr->model2D->bind(cmdBuffer);
-		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED;
+		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED_DESC;
 		dimension2Ptr->frameIndex = frameIndex;
 		dimension2Ptr->cmdBuffer = cmdBuffer;
 	}
@@ -106,45 +106,45 @@ namespace EWE {
 #endif
 		dimension2Ptr->pipe9->bind(cmdBuffer);
 		dimension2Ptr->nineUIModel->bind(cmdBuffer);
-		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED;
+		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED_DESC;
 		dimension2Ptr->frameIndex = frameIndex;
 		dimension2Ptr->cmdBuffer = cmdBuffer;
 	}
 
-	void Dimension2::bindTexture2DUI(TextureID textureID) {
-		if (textureID != dimension2Ptr->bindedTexture) {
+	void Dimension2::bindTexture2DUI(TextureDesc texture) {
+		if (texture != dimension2Ptr->bindedTexture) {
 			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
-				Texture_Manager::getDescriptorSet(textureID),
+				&texture,
 				0, nullptr
 			);
-			dimension2Ptr->bindedTexture = textureID;
+			dimension2Ptr->bindedTexture = texture;
 		}
 	}
-	void Dimension2::bindTexture2D(TextureID textureID) {
-		if (textureID != dimension2Ptr->bindedTexture) {
+	void Dimension2::bindTexture2D(TextureDesc texture) {
+		if (texture != dimension2Ptr->bindedTexture) {
 			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
-				Texture_Manager::getDescriptorSet(textureID),
+				&texture,
 				0, nullptr
 			);
-			dimension2Ptr->bindedTexture = textureID;
+			dimension2Ptr->bindedTexture = texture;
 		}
 	}
-	void Dimension2::bindTexture9(TextureID textureID) {
-		if (textureID != dimension2Ptr->bindedTexture) {
+	void Dimension2::bindTexture9(TextureDesc texture) {
+		if (texture != dimension2Ptr->bindedTexture) {
 			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_9,
 				0, 1,
-				Texture_Manager::getDescriptorSet(textureID),
+				&texture,
 				0, nullptr
 			);
-			dimension2Ptr->bindedTexture = textureID;
+			dimension2Ptr->bindedTexture = texture;
 		}
 	}
 

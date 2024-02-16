@@ -57,7 +57,7 @@ namespace EWE {
 		void render(FrameInfo& frameInfo);
 
 		std::unique_ptr<EWEModel> leafModel;
-		TextureID leafTextureID = 0;
+		TextureDesc leafTextureID = 0;
 
 	protected:
 		void createPipeline(EWEDevice& device);

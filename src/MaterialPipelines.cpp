@@ -12,7 +12,7 @@ namespace EWE {
 
 	void MaterialPipelines::bindPipeline() {
 		pipeline->bind(cmdBuf);
-		bindedTexture = TEXTURE_UNBINDED;
+		bindedTexture = TEXTURE_UNBINDED_DESC;
 		bindedModel = nullptr;
 	}
 	void MaterialPipelines::bindModel(EWEModel* model) {
@@ -29,9 +29,9 @@ namespace EWE {
 		);
 	}
 
-	void MaterialPipelines::bindTextureDescriptor(uint8_t descSlot, TextureID texID) {
+	void MaterialPipelines::bindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
 		if (bindedTexture != texID) {
-			bindDescriptor(descSlot, Texture_Manager::getDescriptorSet(texID));
+			bindDescriptor(descSlot, &texID);
 			bindedTexture = texID;
 		}
 	}

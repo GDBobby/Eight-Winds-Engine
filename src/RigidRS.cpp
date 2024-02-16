@@ -51,7 +51,7 @@ namespace EWE {
             materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
         }
 
-        materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.textureID).push_back(renderInfo);
+        materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).push_back(renderInfo);
     }
     void RigidRenderingSystem::addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
         if (modelPtr == nullptr) {
@@ -62,10 +62,10 @@ namespace EWE {
         if (!materialMap.contains(materialInfo.materialFlags)) {
             materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
         }
-        materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.textureID).emplace_back(ownerTransform, modelPtr, drawable);
+        materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).emplace_back(ownerTransform, modelPtr, drawable);
 
     }
-    void RigidRenderingSystem::addMaterialObjectFromTexID(TextureID copyID, TransformComponent* ownerTransform, bool* drawablePtr) {
+    void RigidRenderingSystem::addMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr) {
         for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
             for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
                 if (iterTexID->first == copyID) {
@@ -83,7 +83,7 @@ namespace EWE {
             }
         }
     }
-    void RigidRenderingSystem::removeByTransform(TextureID textureID, TransformComponent* ownerTransform) {
+    void RigidRenderingSystem::removeByTransform(TextureDesc textureID, TransformComponent* ownerTransform) {
         for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
             for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
                 if (iterTexID->first == textureID) {
@@ -98,8 +98,8 @@ namespace EWE {
 
         }
     }
-    std::vector<TextureID> RigidRenderingSystem::checkAndClearTextures() {
-        std::vector<TextureID> returnVector;
+    std::vector<TextureDesc> RigidRenderingSystem::checkAndClearTextures() {
+        std::vector<TextureDesc> returnVector;
         for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
 
             //bool removedTexID = false;

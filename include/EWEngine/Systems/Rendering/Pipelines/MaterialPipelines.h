@@ -47,7 +47,7 @@ namespace EWE{
 
 		void bindModel(EWEModel* model);
 		void bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet);
-		void bindTextureDescriptor(uint8_t descSlot, TextureID texID);
+		void bindTextureDescriptor(uint8_t descSlot, TextureDesc texID);
 
 		void push(void* push);
 		void pushAndDraw(void* push);
@@ -58,7 +58,7 @@ namespace EWE{
 		uint16_t pipeLayoutIndex;
 		EWEPipeline* pipeline;
 		EWEModel* bindedModel = nullptr;
-		TextureID bindedTexture = TEXTURE_UNBINDED;
+		TextureDesc bindedTexture{ TEXTURE_UNBINDED_DESC };
 
 
 		//static portion

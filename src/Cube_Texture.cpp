@@ -6,11 +6,25 @@ namespace EWE {
 #define SKYBOX_DIR "textures/skybox/"
 #endif
 
-    TextureID Cube_Texture::createCubeTexture(EWEDevice& device, std::string texPath) {
+    TextureDesc Cube_Texture::createCubeTexture(EWEDevice& device, std::string texPath) {
+        auto tmPtr = Texture_Manager::getTextureManagerPtr();
+        {
+            auto foundImage = tmPtr->imageMap.find(texPath);
+            if (foundImage != tmPtr->imageMap.end()) {
+#ifdef _DEBUG
+                if (foundImage->second->usedInTexture.size() != 1) {
+                    //im trusting the user here to not cube images in multiple descriptors
+                    //if the application has a need for cube images to be in multipel descriptors, this will need to be reworked
+                    //the rework should be as simple as rewriting the return for this scope
+                    throw std::runtime_error("cube image used in multiple descriptors");
+                }
+#endif
+                return *foundImage->second->usedInTexture.begin();
+            }
+        }
         const std::array<std::string, 6> cubeNames = {
             "px", "nx", "py", "ny", "pz", "nz"
         };
-        auto tmPtr = Texture_Manager::getTextureManagerPtr();
         std::vector<PixelPeek> pixelPeeks{};
         pixelPeeks.reserve(6);
 
@@ -28,7 +42,8 @@ namespace EWE {
             
         }
         
-         auto cubeImage = Texture_Manager::constructEmptyImageTracker(texPath)->imageInfo;
+        Texture_Manager::ImageTracker* cubeTracker = Texture_Manager::constructEmptyImageTracker(texPath);
+        ImageInfo& cubeImage = cubeTracker->imageInfo;
 
         createCubeImage(cubeImage, device, pixelPeeks);
         createCubeImageView(cubeImage, device);
@@ -41,12 +56,16 @@ namespace EWE {
         EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(tmPtr->device, VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
 
         descBuilder.writeImage(0, &cubeImage.descriptorImageInfo);
+        TextureDesc retDesc = descBuilder.build();
+        tmPtr->textureImages.try_emplace(retDesc, std::vector<Texture_Manager::ImageTracker*>{cubeTracker});
+        tmPtr->imageMap.emplace(texPath, cubeTracker);
 
         //cubeVector.emplace_back(EWETexture(eweDevice, texPath, tType_cube));
-        tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descBuilder.build());
+        //tmPtr->textureMap.emplace(tmPtr->currentTextureCount, );
         
-        tmPtr->skyboxID = tmPtr->currentTextureCount;
-        return tmPtr->currentTextureCount++;
+        tmPtr->skyboxID = retDesc;
+        tmPtr->currentTextureCount++;
+        return retDesc;
     }
 
     void Cube_Texture::createCubeImage(ImageInfo& cubeTexture, EWEDevice& device, std::vector<PixelPeek>& pixelPeek) {

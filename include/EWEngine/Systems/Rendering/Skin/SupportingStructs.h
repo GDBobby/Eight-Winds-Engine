@@ -7,10 +7,10 @@
 namespace EWE {
 	namespace SkinRS {
 		struct TextureMeshStruct {
-			TextureID textureID;
+			TextureDesc texture;
 			std::vector<EWEModel*> meshes;
-			TextureMeshStruct(TextureID textureID) : textureID{ textureID }, meshes{} {}
-			TextureMeshStruct(TextureID textureID, std::vector<EWEModel*> meshes) : textureID{ textureID }, meshes{ meshes } {}
+			TextureMeshStruct(TextureDesc texture) : texture{ texture }, meshes{} {}
+			TextureMeshStruct(TextureDesc texture, std::vector<EWEModel*> meshes) : texture{ texture }, meshes{ meshes } {}
 		};
 		struct PushConstantStruct {
 			std::vector<void*> data{};

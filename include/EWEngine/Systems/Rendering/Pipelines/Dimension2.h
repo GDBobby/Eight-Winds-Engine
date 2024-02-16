@@ -20,7 +20,7 @@ namespace EWE {
 		std::unique_ptr<EWEPipeline> pipe9;
 		VkPipelineLayout PL_2d;
 		VkPipelineLayout PL_9;
-		TextureID bindedTexture;
+		TextureDesc bindedTexture;
 		VkPipelineCache cache;
 		std::unique_ptr<EWEModel> model2D;
 		std::unique_ptr<EWEModel> nineUIModel;
@@ -34,9 +34,9 @@ namespace EWE {
 		static void bindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
 		static void bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
 
-		static void bindTexture2DUI(TextureID textureID);
-		static void bindTexture2D(TextureID textureID);
-		static void bindTexture9(TextureID  textureID);
+		static void bindTexture2DUI(TextureDesc texture);
+		static void bindTexture2D(TextureDesc texture);
+		static void bindTexture9(TextureDesc texture);
 
 		static void pushAndDraw(Simple2DPushConstantData& push);
 		static void pushAndDraw(NineUIPushConstantData& push);

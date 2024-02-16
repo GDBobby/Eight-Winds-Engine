@@ -15,15 +15,15 @@ namespace EWE {
             printf("Deconstructing player skeleton \n");
         }
 #endif
-        std::vector<std::unique_ptr<EWEModel>> meshes; //this will hold the vertex/index buffers
-        std::vector<std::unique_ptr<EWEModel>> meshesNT;
-        std::vector<TextureID> textureIDs;
-        std::vector<TextureID> textureNTIDs;
+        std::vector<std::unique_ptr<EWEModel>> meshes{}; //this will hold the vertex/index buffers
+        std::vector<std::unique_ptr<EWEModel>> meshesNT{};
+        std::vector<TextureDesc> textureIDs{};
+        std::vector<TextureDesc> textureNTIDs{};
 
         std::vector<std::pair<MaterialFlags, //pipeline flags
-            std::vector<std::pair<TextureID, //textureID
+            std::vector<std::pair<TextureDesc, //texture
             std::vector<EWEModel* //meshPtr
-            >>>>> pipePairs;
+            >>>>> pipePairs{};
 
         //pipePairs.first == MaterialFlags
         //pipePairs.second = textureVector
@@ -44,14 +44,14 @@ namespace EWE {
     protected:
         std::vector< //which animation
             std::vector< //which animation frame
-            std::map<uint32_t, glm::mat4>>> partialAnimationData; //the bone transform
+            std::map<uint32_t, glm::mat4>>> partialAnimationData{}; //the bone transform
 
         std::vector< //which animation
             std::vector< //which animation frame
-            std::vector<glm::mat4>>> fullAnimationData; //the bone transform
+            std::vector<glm::mat4>>> fullAnimationData{}; //the bone transform
 
-        std::vector<glm::mat4> finalMatrix;
-        std::vector<glm::mat4> defaultMatrix; //a more natural T-Pose
+        std::vector<glm::mat4> finalMatrix{};
+        std::vector<glm::mat4> defaultMatrix{}; //a more natural T-Pose
         glm::mat4 swordMatrix{ 1.f };
 
         uint32_t mySkeletonID = 0;

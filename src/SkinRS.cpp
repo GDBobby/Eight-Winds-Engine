@@ -79,7 +79,7 @@ namespace EWE {
 					pipe->bindDescriptor(1, instancedBuffers.at(skeleDataRef.first).getDescriptor());
 				}
 				for (auto& skeleTextureRef : skeleDataRef.second) {
-					pipe->bindTextureDescriptor(2, skeleTextureRef.textureID);
+					pipe->bindTextureDescriptor(2, skeleTextureRef.texture);
 
 					for (auto& meshRef : skeleTextureRef.meshes) {
 						//meshRef->BindAndDrawInstanceNoBuffer(frameInfo.cmdBuf, actorCount.at(instanced.first));
@@ -132,7 +132,7 @@ namespace EWE {
 				pipe->bindDescriptor(1, buffers.at(skeleDataRef.first).getDescriptor());
 
 				for (auto& skeleTextureRef : skeleDataRef.second) {
-					pipe->bindTextureDescriptor(2, skeleTextureRef.textureID);
+					pipe->bindTextureDescriptor(2, skeleTextureRef.texture);
 
 					//race condition here for deletion of push constant
 					for (auto& meshRef : skeleTextureRef.meshes) {
@@ -202,26 +202,26 @@ namespace EWE {
 		*/
 
 	}
-	void SkinRenderSystem::addSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, TextureID texID, EWEModel* modelPtr, SkeletonID skeletonID) {
+	void SkinRenderSystem::addSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, TextureDesc tex, EWEModel* modelPtr, SkeletonID skeletonID) {
 
 		auto textureMeshStructPair = skeleRef.find(skeletonID);
 
 		if (textureMeshStructPair != skeleRef.end()) {
 			bool foundATextureMatch = false;
 			for (auto& textureRef : textureMeshStructPair->second) {
-				if (textureRef.textureID == texID) {
+				if (textureRef.texture == tex) {
 					foundATextureMatch = true;
 					textureRef.meshes.push_back(modelPtr);
 					break;
 				}
 			}
 			if (!foundATextureMatch) {
-				textureMeshStructPair->second.emplace_back(texID, std::vector<EWEModel*>{modelPtr});
+				textureMeshStructPair->second.emplace_back(tex, std::vector<EWEModel*>{modelPtr});
 			}
 		}
 		else {
 			auto emplaceRet = skeleRef.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
-			emplaceRet.first->second.emplace_back(texID, std::vector<EWEModel*>{modelPtr});
+			emplaceRet.first->second.emplace_back(tex, std::vector<EWEModel*>{modelPtr});
 		}
 	}
 
@@ -247,10 +247,10 @@ namespace EWE {
 
 			if (instancedDataIter == skinnedMainObject->instancedData.end()) {
 				SkinRS::PipelineStruct& instancedPipe = skinnedMainObject->createInstancedPipe(instancedFlags, boneCount, materialInfo.materialFlags);
-				instancedPipe.skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{SkinRS::TextureMeshStruct{ materialInfo.textureID, std::vector<EWEModel*>{modelPtr} }});
+				instancedPipe.skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{SkinRS::TextureMeshStruct{ materialInfo.texture, std::vector<EWEModel*>{modelPtr} }});
 			}
 			else {
-				addSkeletonToStructs(instancedDataIter->second.skeletonData, materialInfo.textureID, modelPtr, skeletonID);
+				addSkeletonToStructs(instancedDataIter->second.skeletonData, materialInfo.texture, modelPtr, skeletonID);
 			}
 		}
 		else {
@@ -259,10 +259,10 @@ namespace EWE {
 			if (boneDataIter == skinnedMainObject->boneData.end()) {
 
 				SkinRS::PipelineStruct& bonePipe = skinnedMainObject->createBonePipe(materialInfo.materialFlags);
-				bonePipe.skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{SkinRS::TextureMeshStruct{ materialInfo.textureID, std::vector<EWEModel*>{modelPtr} }});
+				bonePipe.skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{SkinRS::TextureMeshStruct{ materialInfo.texture, std::vector<EWEModel*>{modelPtr} }});
 			}
 			else {
-				addSkeletonToStructs(boneDataIter->second.skeletonData, materialInfo.textureID, modelPtr, skeletonID);
+				addSkeletonToStructs(boneDataIter->second.skeletonData, materialInfo.texture, modelPtr, skeletonID);
 			}
 		}
 	}
@@ -282,11 +282,11 @@ namespace EWE {
 			SkinRS::PipelineStruct& retPipe = skinnedMainObject->createBonePipe(materialInfo.materialFlags);
 			auto emplaceRet = retPipe.skeletonData.emplace(skeletonID, std::vector<SkinRS::TextureMeshStruct>{});
 			//auto& secondRef = 
-			emplaceRet.first->second.emplace_back(materialInfo.textureID, std::vector<EWEModel*>{modelPtr});
+			emplaceRet.first->second.emplace_back(materialInfo.texture, std::vector<EWEModel*>{modelPtr});
 			//secondRef.meshes.push_back(modelPtr);
 		}
 		else {
-			addSkeletonToStructs(boneDataIter->second.skeletonData, materialInfo.textureID, modelPtr, skeletonID);
+			addSkeletonToStructs(boneDataIter->second.skeletonData, materialInfo.texture, modelPtr, skeletonID);
 		}
 	}
 

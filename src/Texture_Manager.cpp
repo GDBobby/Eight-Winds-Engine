@@ -284,7 +284,7 @@ namespace EWE {
     }
     void Texture_Manager::removeMaterialTexture(TextureDesc removeID) {
         for (auto iter = existingMaterials.begin(); iter != existingMaterials.end(); iter++) {
-            if (iter->second.textureID == removeID) {
+            if (iter->second.texture == removeID) {
                 existingMaterials.erase(iter);
                 break;
 

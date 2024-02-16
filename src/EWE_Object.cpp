@@ -23,10 +23,8 @@ namespace EWE {
     EweObject::~EweObject() {
         auto materialInstance = RigidRenderingSystem::getRigidRSInstance();
 
-        ownedTextureIDs.sort(); //dgaf bout sorting but need it for std::list::unique()
-        ownedTextureIDs.unique();
         //printf("before removing textures \n");
-        for (auto iter = ownedTextureIDs.begin(); iter != ownedTextureIDs.end(); iter++) {
+        for (auto iter = ownedTextures.begin(); iter != ownedTextures.end(); iter++) {
             materialInstance->removeByTransform(*iter, &transform);
         }
         //printf("after removing textures \n");
@@ -134,7 +132,7 @@ namespace EWE {
                         else {
                             returnPair = textureTracker.meshNames[j];
                             textureTracker.meshNames.push_back(returnPair);
-                            ownedTextureIDs.push_back(returnPair.textureID);
+                            ownedTextures.emplace(returnPair.texture);
                             break;
                         }
                     }
@@ -147,7 +145,7 @@ namespace EWE {
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNames.push_back(returnPair);
-            ownedTextureIDs.push_back(returnPair.textureID);
+            ownedTextures.emplace(returnPair.texture);
             
         }
         //printf("after mesh texutres \n");
@@ -159,7 +157,7 @@ namespace EWE {
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTNames.push_back(returnPair);
-            ownedTextureIDs.push_back(returnPair.textureID);
+            ownedTextures.emplace(returnPair.texture);
             
         }
         //printf("after mesh nt texutres \n");
@@ -174,7 +172,7 @@ namespace EWE {
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshSimpleNames.push_back(returnPair);
-            ownedTextureIDs.push_back(returnPair.textureID);
+            ownedTextures.emplace(returnPair.texture);
             
         }
 
@@ -186,7 +184,7 @@ namespace EWE {
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTSimpleNames.push_back(returnPair);
-            ownedTextureIDs.push_back(returnPair.textureID);
+            ownedTextures.emplace(returnPair.texture);
             
         }
     }

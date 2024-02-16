@@ -8,7 +8,7 @@ namespace EWE {
 	std::unique_ptr<EWEModel> MenuModule::model2D;
 	std::unique_ptr<EWEModel> MenuModule::nineUIModel;
 
-	std::map<MenuTextureEnum, TextureID> MenuModule::textureIDs{};
+	std::map<MenuTextureEnum, TextureDesc> MenuModule::textures{};
 
 	std::queue<uint16_t> MenuModule::clickReturns{};
 
@@ -17,18 +17,18 @@ namespace EWE {
 	void MenuModule::initTextures(EWEDevice& eweDevice) {
 		//these textures are deleted in EWETexture, when the program is cleaning itself up on close
 
-		textureIDs.emplace(MT_NineUI, Texture_Builder::createSimpleTexture( "UI/NineUI.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textureIDs.emplace(MT_NineFade, Texture_Builder::createSimpleTexture( "UI/NineFade.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textureIDs.emplace(MT_Slider, Texture_Builder::createSimpleTexture( "UI/clickyBox.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textureIDs.emplace(MT_BracketButton, Texture_Builder::createSimpleTexture( "UI/bracketButton.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textureIDs.emplace(MT_Bracket, Texture_Builder::createSimpleTexture( "UI/bracketSlide.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textureIDs.emplace(MT_Unchecked, Texture_Builder::createSimpleTexture( "UI/unchecked.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textureIDs.emplace(MT_Checked, Texture_Builder::createSimpleTexture( "UI/checked.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textures.emplace(MT_NineUI, Texture_Builder::createSimpleTexture( "UI/NineUI.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textures.emplace(MT_NineFade, Texture_Builder::createSimpleTexture( "UI/NineFade.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textures.emplace(MT_Slider, Texture_Builder::createSimpleTexture( "UI/clickyBox.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textures.emplace(MT_BracketButton, Texture_Builder::createSimpleTexture( "UI/bracketButton.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textures.emplace(MT_Bracket, Texture_Builder::createSimpleTexture( "UI/bracketSlide.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textures.emplace(MT_Unchecked, Texture_Builder::createSimpleTexture( "UI/unchecked.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		textures.emplace(MT_Checked, Texture_Builder::createSimpleTexture( "UI/checked.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
 		//textureIDs.emplace(MT_background, Texture_Builder::createSimpleTexture( "UI/mainPageBG.png"));
-		textureIDs.emplace(MT_Button, Texture_Builder::createSimpleTexture( "UI/ButtonUp.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		{
-			textureIDs.emplace(MT_Base, Texture_Builder::createSimpleTexture("UI/menuBase.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		}
+		textures.emplace(MT_Button, Texture_Builder::createSimpleTexture( "UI/ButtonUp.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		
+		textures.emplace(MT_Base, Texture_Builder::createSimpleTexture("UI/menuBase.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
+		
 
 		model2D = Basic_Model::generate2DQuad(eweDevice);
 		nineUIModel = Basic_Model::generateNineUIQuad(eweDevice);
@@ -124,13 +124,13 @@ namespace EWE {
 			push.color = glm::vec3{ 1.f };
 			for (auto& object : checkBoxes) {
 				if (object.isChecked) {
-					Dimension2::bindTexture2DUI(textureIDs[MT_Checked]);
+					Dimension2::bindTexture2DUI(textures[MT_Checked]);
 					object.render(push);
 				}
 			}
 			for (auto& object : checkBoxes) {
 				if (!object.isChecked) {
-					Dimension2::bindTexture2DUI(textureIDs[MT_Unchecked]);
+					Dimension2::bindTexture2DUI(textures[MT_Unchecked]);
 					object.render(push);
 				}
 			}
@@ -138,16 +138,16 @@ namespace EWE {
 
 		if (sliders.size() > 0) {
 			push.color = glm::vec3(1.f);
-			Dimension2::bindTexture2DUI(textureIDs[MT_Slider]);
+			Dimension2::bindTexture2DUI(textures[MT_Slider]);
 
 			for (auto& object : sliders) {
 				object.render(push, 0);
 			}
-			Dimension2::bindTexture2DUI(textureIDs[MT_BracketButton]);
+			Dimension2::bindTexture2DUI(textures[MT_BracketButton]);
 			for (auto& object : sliders) {
 				object.render(push, 1);
 			}
-			Dimension2::bindTexture2DUI(textureIDs[MT_Bracket]);
+			Dimension2::bindTexture2DUI(textures[MT_Bracket]);
 			for (auto& object : sliders) {
 				object.render(push, 2);
 			}
@@ -156,7 +156,7 @@ namespace EWE {
 		if (controlBoxes.size() > 0) {
 			//printf("before draw objects control boxes \n");
 			push.color = glm::vec3(1.f);
-			Dimension2::bindTexture2DUI(textureIDs[MT_Button]);
+			Dimension2::bindTexture2DUI(textures[MT_Button]);
 			for (auto& object : controlBoxes) {
 				object.render(push);
 			}
@@ -168,7 +168,7 @@ namespace EWE {
 			//not considering for texture ordering
 			push.color = glm::vec3(1.f);
 			for (int i = 0; i < images.size(); i++) {
-				Dimension2::bindTexture2DUI(images[i].textureID);
+				Dimension2::bindTexture2DUI(images[i].texture);
 				push.scaleOffset = glm::vec4(images[i].transform.scale, images[i].transform.translation);
 				Dimension2::pushAndDraw(push);
 			}
@@ -178,7 +178,7 @@ namespace EWE {
 		NineUIPushConstantData push{};
 		if (comboBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : comboBoxes) {
 				object.render(push);
 			}
@@ -186,7 +186,7 @@ namespace EWE {
 
 		if (dropBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : dropBoxes) {
 				object.render(push);
 			}
@@ -197,7 +197,7 @@ namespace EWE {
 			push.offset.z = 1.f;
 			push.offset.w = 1.f;
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : clickText) {
 				object.render(push);
 			}
@@ -205,13 +205,13 @@ namespace EWE {
 
 		if (typeBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : typeBoxes) {
 				object.render(push);
 			}
 		}
 		if (controlBoxes.size() > 0) {
-			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : controlBoxes) {
 				object.render(push);
 			}
@@ -220,12 +220,12 @@ namespace EWE {
 
 		if (menuBars.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textureIDs[MT_NineUI]);
+			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : menuBars) {
 				object.render(push, 0);
 			}
 
-			Dimension2::bindTexture9(textureIDs[MT_NineFade]);
+			Dimension2::bindTexture9(textures[MT_NineFade]);
 			for (auto& object : menuBars) {
 				object.render(push, 1);
 			}

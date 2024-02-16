@@ -8,7 +8,7 @@ namespace EWE {
 		static StaticRenderSystem* skinnedMainObject;
 		struct GPUStruct {
 			std::unique_ptr<EWEModel> modelData;
-			TextureID textureIDs;
+			TextureDesc texture;
 			std::vector<TransformID> transformIDs{};
 		};
 		struct PipelineStruct {
@@ -37,7 +37,7 @@ namespace EWE {
 			delete skinnedMainObject;
 		}
 
-		static bool addStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureID textureIDs, TransformComponent& transform);
+		static bool addStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureDesc texture, TransformComponent& transform);
 		static bool addStaticToBack();
 
 

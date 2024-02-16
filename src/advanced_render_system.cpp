@@ -200,7 +200,7 @@ namespace EWE {
 		auto pipe = PipelineSystem::at(Pipe_skybox);
 		pipe->bindPipeline();
 		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
-		pipe->bindDescriptor(1, Texture_Manager::getDescriptorSet(objectManager.skybox.second));
+		pipe->bindDescriptor(1, &objectManager.skybox.second);
 
 		pipe->bindModel(objectManager.skybox.first.get());
 		pipe->drawModel();
@@ -221,7 +221,7 @@ namespace EWE {
 
 
 			//std::cout << "post-bind textured" << std::endl;
-			int currentBindedTextureID = -1;
+			TextureDesc currentBindedTextureID = TEXTURE_UNBINDED_DESC;
 
 			SimplePushConstantData push{};
 			//std::cout << "textured game o bject size : " << objectManager.texturedGameObjects.size() << std::endl;
@@ -230,13 +230,13 @@ namespace EWE {
 				if (textureGameObject.isTarget && (!textureGameObject.activeTarget)) {
 					continue;
 				}
-				if ((textureGameObject.textureID == TEXTURE_UNBINDED) || (textureGameObject.model == nullptr)) {
+				if ((textureGameObject.textureID == TEXTURE_UNBINDED_DESC) || (textureGameObject.model == nullptr)) {
 					std::cout << "why does a textured game object have no texture, or no model?? " << std::endl;
 					continue;
 				}
 				else if (textureGameObject.textureID != currentBindedTextureID) {
 
-					pipe->bindDescriptor(0, Texture_Manager::getDescriptorSet(textureGameObject.textureID));
+					pipe->bindDescriptor(0, &textureGameObject.textureID);
 
 					currentBindedTextureID = textureGameObject.textureID;
 				}
@@ -311,7 +311,7 @@ namespace EWE {
 		PipelineSystem* pipe = PipelineSystem::at(Pipe_grass);
 		pipe->bindPipeline();
 		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
-		pipe->bindDescriptor(1, Texture_Manager::getDescriptorSet(objectManager.grassTextureID));
+		pipe->bindDescriptor(1, &objectManager.grassTextureID);
 
 
 		UVScrollingPushData push{ glm::vec2{glm::mod(time / 6.f, 1.f), glm::mod(time / 9.f, 1.f)} };

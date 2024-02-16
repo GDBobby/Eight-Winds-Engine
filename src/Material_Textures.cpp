@@ -108,7 +108,7 @@ namespace EWE {
         //printf("constructng texture from smart \n");
         //textureMap.emplace(returnID, EWETexture{ texPath, device, pixelPeek, tType_material, flags });
 
-        TextureID retID = tBuilder.build();
+        TextureDesc retID = tBuilder.build();
 
         tmPtr->existingMaterials.try_emplace(texPath, flags, retID);
         //existingMaterialIDs[texPath] = std::pair<MaterialFlags, int32_t>{ flags, returnID };

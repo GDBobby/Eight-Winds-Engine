@@ -54,7 +54,7 @@ namespace EWE {
 
 			std::unique_ptr<EWEModel> oceanModel;
 
-			TextureID foam = 0;
+			TextureDesc foam = 0;
 		//RENDER END
 
 			float time = 0.f;

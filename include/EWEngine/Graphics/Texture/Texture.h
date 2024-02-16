@@ -93,29 +93,3 @@ namespace EWE {
 			return seed;
 		}
 	};
-namespace EWE{
-	class EWETexture {
-
-// ~~~~~~~~~~~~~~~~~~~~~ individual class portion ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	public:
-		EWETexture(EWEDevice& device, std::vector<PixelPeek>& pixelPeek, TextureDSLInfo& dslInfo);
-
-		void addImage(EWEDevice& device, PixelPeek& pixelPeek);
-	protected:
-		
-
-		//this should only be used if youre redefining the construction of a texture. check Cube_Texture for an example
-		EWETexture() {}
-
-
-	protected:
-
-
-		std::vector<VkDescriptorSet> descriptorSets{};
-		
-		friend class Material_Texture;
-		friend class Sprite_Texture;
-		friend class UI_Texture;
-		friend class Texture_Manager;
-	};
-}
