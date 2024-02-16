@@ -23,6 +23,7 @@ build/
 *.exe
 x64/
 .vs/
+.vscode/
 buildCopy/
 build_backup
 CmakeFiles/

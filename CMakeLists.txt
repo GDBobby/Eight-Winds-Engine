@@ -71,17 +71,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(stb)
 
-
+#tinyobj
 FetchContent_Declare(
 	tinyobj
 	GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader
 	GIT_TAG 2945a96
 	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/include/tinyobjloader"
 )
-
-#glslang
 FetchContent_MakeAvailable(tinyobj)
 
+#glslang
 set(BUILD_SHARED_LIBS FALSE)
 set(BUILD_EXTERNAL TRUE)
 set(ENABLE_GLSLANG_BINARIES TRUE)
@@ -139,32 +138,6 @@ target_link_libraries(${PROJECT_NAME}
 	glfw
 	vulkan-1
 	${GLSLANG_LIBS}
-
-	#$<$<CONFIG:Debug>:
-	# SPVRemapperd
-	# GenericCodeGend
-	# glslangd
-	# glslang-default-resource-limitsd
-	# MachineIndependentd
-	# OGLCompilerd
-	# OSDependentd
-	# SPIRVd
-	# SPIRV-Toolsd
-	# SPIRV-Tools-optd
-	#>
-	#$<$<CONFIG:Release>:
-	# SPVRemapper
-	# GenericCodeGen
-	# glslang
-	# glslang-default-resource-limits
-	# MachineIndependent
-	# OGLCompiler
-	# OSDependent
-	# SPIRV
-	# SPIRV-Tools
-	# SPIRV-Tools-opt
-	#>
-	
 )
 
 if(EWE_EXAMPLES)
