@@ -1,4 +1,4 @@
-#include "EWEngine/gui/GraphicsMM.h"
+#include "EWEngine/GUI/GraphicsMM.h"
 
 namespace EWE {
 	GraphicsMM::GraphicsMM(float screenWidth, float screenHeight) {
@@ -90,18 +90,18 @@ namespace EWE {
 
 	void GraphicsMM::processClick(double xpos, double ypos) {
 		//UIComponentTypes returnValues.first, int8_t returnValues.second
-		std::pair<UIComponentTypes, int8_t> returnValues = MenuModule::checkClick(xpos, ypos);
+		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
 
 		//callbacks[returnValues.first].call(returnValues.second);
 
 		if (returnValues.first == UIT_Checkbox) {
 			switch (returnValues.second) {
 			case 0: {
-				SettingsJSON::tempSettings.pointLights = checkBoxes[1].isChecked;
+				SettingsJSON::tempSettings.pointLights = checkBoxes[0].isChecked;
 				break;
 			}
 			case 1: {
-				SettingsJSON::tempSettings.renderInfo = checkBoxes[2].isChecked;
+				SettingsJSON::tempSettings.renderInfo = checkBoxes[1].isChecked;
 			}
 			}
 			//return MCR_none;

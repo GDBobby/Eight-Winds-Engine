@@ -1,7 +1,12 @@
 #include "EWESample.h"
 
 #include "GUI/MainMenuMM.h"
+//#include "GUI/ShaderGenerationMM.h"
 //#include "GUI/ControlsMM.h"
+#include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
+#include <EWEngine/Graphics/Texture/Cube_Texture.h>
+
+#include "GUI/MenuEnums.h"
 
 
 #include <chrono>
@@ -10,7 +15,8 @@ namespace EWE {
 	EWESample::EWESample(EightWindsEngine& ewEngine) :
 		ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
-		soundEngine{SoundEngine::getSoundEngineInstance()}
+		soundEngine{SoundEngine::getSoundEngineInstance()},
+		windowPtr{ewEngine.mainWindow.getGLFWwindow()}
  {
 		float screenWidth = ewEngine.uiHandler.getScreenWidth();
 		float screenHeight = ewEngine.uiHandler.getScreenHeight();
@@ -24,10 +30,14 @@ namespace EWE {
 		loadGlobalObjects();
 		currentScene = scene_mainmenu;
 		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine));
+		scenes.emplace(scene_shaderGen, std::make_unique<ShaderGenerationScene>(ewEngine));
 		//scenes.emplace(scene_)
 		currentScenePtr = scenes.at(currentScene).get();
 		currentScenePtr->load();
-		
+
+		StaticRenderSystem::initStaticRS(ewEngine.eweDevice, 1, 1);
+		StaticRenderSystem::destructStaticRS();
+
 		ewEngine.endEngineLoadScreen();
 	}
 	EWESample::~EWESample() {
@@ -36,7 +46,7 @@ namespace EWE {
 	void EWESample::mainThread() {
 		auto mainThreadCurrentTime = std::chrono::high_resolution_clock::now();
 		renderRefreshRate = static_cast<double>(SettingsJSON::settingsData.FPS);
-		std::chrono::steady_clock::time_point newTime;
+		std::chrono::high_resolution_clock::time_point newTime;
 		double mainThreadTimeTracker = 0.0;
 		if (SettingsJSON::settingsData.FPS == 0) {
 			//small value, for effectively uncapped frame rate
@@ -64,8 +74,8 @@ namespace EWE {
 				//loading entry?
 				vkDeviceWaitIdle(ewEngine.eweDevice.device());
 				currentScenePtr->exit();
-				ewEngine.objectManager.clearSceneObjects();
-				EWETexture::clearSceneTextures();
+				ewEngine.objectManager.clearSceneObjects(ewEngine.eweDevice);
+				Texture_Manager::getTextureManagerPtr()->clearSceneTextures();
 				//loading entry?
 				if (currentScene != scene_exitting) {
 					currentScenePtr = scenes.at(currentScene).get();
@@ -112,10 +122,10 @@ namespace EWE {
 	}
 
 	void EWESample::loadGlobalObjects() {
-		TextureID skyboxID = EWETexture::addGlobalTexture(ewEngine.eweDevice, "nasa/", EWETexture::tType_cube);
+		TextureDesc skyboxID = Cube_Texture::createCubeTexture(ewEngine.eweDevice, "nasa/");
 
 		//i dont even know if the engine will work if this isnt constructed
-		ewEngine.objectManager.skybox = { EWEModel::createSkyBox(ewEngine.eweDevice, 100.f), skyboxID };
+		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(ewEngine.eweDevice, 100.f), skyboxID };
 
 		//point lights are off by default
 		std::vector<glm::vec3> lightColors{
@@ -142,11 +152,12 @@ namespace EWE {
 			ewEngine.objectManager.pointLights[i].transform.translation.z *= 5.f;
 			ewEngine.objectManager.pointLights[i].transform.translation.y += 1.f;
 		}
-		ewEngine.advancedRS.updatePipelines(ewEngine.objectManager, ewEngine.eweRenderer.getPipelineInfo());
 	}
 	void EWESample::addModulesToMenuManager(float screenWidth, float screenHeight) {
-		menuManager.menuModules[menu_main] = std::make_unique<MainMenuMM>(screenWidth, screenHeight);
-		menuManager.menuModules[menu_main]->labels[1].string = "1.0.0";
+		menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>(screenWidth, screenHeight));
+		menuManager.menuModules.at(menu_main)->labels[1].string = "1.0.0";
+		//menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(windowPtr, screenWidth, screenHeight));
+		//Shader::InputBox::giveGLFWCallbacks(MenuManager::staticMouseCallback, MenuManager::staticKeyCallback);
 	}
 
 	bool EWESample::processClick() {
@@ -158,7 +169,7 @@ namespace EWE {
 			return false;
 		}
 		soundEngine->playEffect(0);
-		MenuClickReturn processMCR = clickReturns.front();
+		uint16_t processMCR = clickReturns.front();
 		while (clickReturns.size() > 0) {
 			clickReturns.pop();
 		}
@@ -219,9 +230,19 @@ namespace EWE {
 				}
 				break;
 			}
+			case MCR_swapToShaderGen: {
+				currentScene = scene_shaderGen;
+				wantsToChangeScene = true;
+				break;
+			}
+			case MCR_swapToMainMenu: {
+				currentScene = scene_mainmenu;
+				wantsToChangeScene = true;
+				break;
+			}
 			case MCR_none: {
 				printf("returned MCR_Return \n");
-				throw std::exception("this should nto be returned");
+				throw std::runtime_error("this should nto be returned");
 				break;
 			}
 			default: {

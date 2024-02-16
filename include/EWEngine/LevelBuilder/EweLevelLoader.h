@@ -1,10 +1,9 @@
 /*
 #pragma once
 
-#include "graphics/EWE_texture.h"
 #include "EWE_GameObject.h"
 #include "ObjectManager.h"
-#include "graphics/EWE_FrameInfo.h"
+#include "EWEngine/graphicsEWE_FrameInfo.h"
 
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>

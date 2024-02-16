@@ -1,13 +1,13 @@
 #include "EWEngine/GUI/Overlay.h"
 
 namespace EWE {
-	OverlayBase::OverlayBase(std::shared_ptr<TextOverlay> textOverlay, float screenWidth, float screenHeight) : textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{screenHeight} {
+	OverlayBase::OverlayBase(float screenWidth, float screenHeight) : screenWidth{ screenWidth }, screenHeight{screenHeight} {
 
 	}
 	void OverlayBase::drawText() {
 		if (isActive) {
 			for (int i = 0; i < textStructs.size(); i++) {
-				textOverlay->addText(textStructs[i]);
+				TextOverlay::staticAddText(textStructs[i]);
 			}
 		}
 	}

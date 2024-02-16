@@ -31,7 +31,7 @@ int main() {
 		}
 		else {
 			printf("try catch error \n \n");
-			printf(e.what());
+			printf("string error : %s", e.what());
 			printf("\n \n");
 
 			//just blasting it on all channels lol

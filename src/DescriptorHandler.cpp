@@ -1,84 +1,125 @@
-#include "EWEngine/graphics/DescriptorHandler.h"
+#include "EWEngine/Graphics/DescriptorHandler.h"
 
+#include <stdexcept>
 
 namespace EWE {
 
 
 
-	std::map<LDSL_Enum, std::unique_ptr<EWEDescriptorSetLayout>> DescriptorHandler::descriptorSetLayouts;
+	std::unordered_map<LDSL_Enum, EWEDescriptorSetLayout*> DescriptorHandler::descriptorSetLayouts;
 
-	std::map<DescSet_Enum, std::vector<VkDescriptorSet>> DescriptorHandler::descriptorSets;
-	std::map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> DescriptorHandler::pipeDescSetLayouts;
+	std::unordered_map<DescSet_Enum, std::vector<VkDescriptorSet>> DescriptorHandler::descriptorSets;
+	//std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> DescriptorHandler::pipeDescSetLayouts;
 
-    std::vector<VkDescriptorSetLayout> DescriptorHandler::dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
+    //std::vector<VkDescriptorSetLayout> DescriptorHandler::dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
+
+    void DescriptorHandler::cleanup(EWEDevice& device) {
+        printf("before descriptor handler cleanup \n");
+        for (auto& dsl : descriptorSetLayouts) {
+            delete dsl.second;
+        }
+        descriptorSetLayouts.clear();
+        printf("after desc set layouts \n");
+        for (auto& descriptorSet : descriptorSets) {
+            EWEDescriptorPool::freeDescriptors(DescriptorPool_Global, descriptorSet.second);
+            //globalPool->freeDescriptors(descriptorSet.second);
+        }
+        printf("After freeing  descritpors \n");
+        descriptorSets.clear();
+        printf("after desc sets \n");
+        /*
+        printf("before cleaning pipeDescSetLayouts, size : %d \n", pipeDescSetLayouts.size());
+        for (auto iter = pipeDescSetLayouts.begin(); iter != pipeDescSetLayouts.end(); iter++) {
+            printf("\t iterfirst(%d) size : %d \n", iter->first, iter->second.size());
+        }
+        for (auto iter = pipeDescSetLayouts.begin(); iter != pipeDescSetLayouts.end(); iter++) {
+            for (int i = 0; i < iter->second.size(); i++) {
+                if (iter->second[i] != VK_NULL_HANDLE) {
+                    printf("destroying pipeDescSetLayouts, iter(iter first: i) - (%d:%d) \n", iter->first, i);
+                    vkDestroyDescriptorSetLayout(device.device(), iter->second[i], nullptr);
+                }
+                else {
+                    printf("why is pipe desc set layout[%d] nullhandle, but exists? \n", i);
+                }
+            }
+        }
+
+        printf("after pipedesc set layouts \n");
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < dynamicMaterialPipeDescSetLayouts[i].size(); j++) {
+                if (dynamicMaterialPipeDescSetLayouts[i][j] != VK_NULL_HANDLE) {
+                    vkDestroyDescriptorSetLayout(device.device(), dynamicMaterialPipeDescSetLayouts[i][j], nullptr);
+                }
+                else {
+                    printf("why is dynamicMaterialPipeDescSetLayouts[%d][%d] nullhandle, but exists? \n", i, j);
+                }
+            }
+        }
+        */
+        //pipeDescSetLayouts.clear();
+        printf("after descriptor handler cleanup \n");
+    }
+
+    EWEDescriptorSetLayout& DescriptorHandler::getLDSL(LDSL_Enum whichLDSL) {
+        if (whichLDSL == LDSL_pointLight && descriptorSetLayouts.find(LDSL_pointLight) == descriptorSetLayouts.end()) {
+            printf("returning global instead of point LDSL \n");
+            return *(descriptorSetLayouts[LDSL_global]);
+        }
+#if _DEBUG
+        else if (descriptorSetLayouts.find(whichLDSL) == descriptorSetLayouts.end()) {
+            printf("failed to find LDSL : %d \n", whichLDSL);
+        }
+#endif
+        return *(descriptorSetLayouts[whichLDSL]);
+    }
 
     VkDescriptorSetLayout DescriptorHandler::getDescSetLayout(LDSL_Enum whichDescSet, EWEDevice& device) {
-        if (descriptorSetLayouts.find(whichDescSet) != descriptorSetLayouts.end()) {
-            return descriptorSetLayouts[whichDescSet]->getDescriptorSetLayout();
+        {
+            auto foundDSL = descriptorSetLayouts.find(whichDescSet);
+            if (foundDSL != descriptorSetLayouts.end()) {
+                return foundDSL->second->getDescriptorSetLayout();
+            }
         }
         //printf("constructing LDSL : %d \n", whichDescSet);
+        EWEDescriptorSetLayout* dsl;
         switch (whichDescSet) {
         case LDSL_global: {
-            descriptorSetLayouts[LDSL_global] = EWEDescriptorSetLayout::Builder(device)
+            dsl = EWEDescriptorSetLayout::Builder(device)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
                 .build();
             break;
         }
-        /*
-        case DSL_pointLight: {
-            descriptorSetLayouts[DSL_pointLight] = EWEDescriptorSetLayout::Builder(device)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
-                .build();
-            break;
-        }
-        */
         case LDSL_boned: {
             //printf("CREATING LDSL_boned \n");
-            descriptorSetLayouts[LDSL_boned] = EWEDescriptorSetLayout::Builder(device)
+            dsl = EWEDescriptorSetLayout::Builder(device)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .build();
             break;
         }
         case LDSL_smallInstance: { //supports bone+instancing
-            descriptorSetLayouts[whichDescSet] = EWEDescriptorSetLayout::Builder(device)
+            dsl = EWEDescriptorSetLayout::Builder(device)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .build();
             break;
         }
         case LDSL_largeInstance: { //supports bone+instancing
-            descriptorSetLayouts[whichDescSet] = EWEDescriptorSetLayout::Builder(device)
+            dsl = EWEDescriptorSetLayout::Builder(device)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                 .build();
             break;
         }
-        /*
-        case LDSL_bonePIndex: {
-            descriptorSetLayouts[LDSL_bonePIndex] = EWEDescriptorSetLayout::Builder(device)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .build();
-            break;
-        }
-        */
-        /*
-        case LDSL_boneWeapon: {
-            descriptorSetLayouts[LDSL_boneWeapon] = EWEDescriptorSetLayout::Builder(device)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .build();
-            break;
-        }
-        */
         default: {
             printf("TRYING TO CREATE A LAYOUT THAT DOES NOT HAVE SUPPORT : %d \n", whichDescSet);
             //throw std::
         }
         }
         //printf("returning LDSL : %d \n", whichDescSet);
-        return descriptorSetLayouts[whichDescSet]->getDescriptorSetLayout();
+        return descriptorSetLayouts.emplace(whichDescSet, dsl).first->second->getDescriptorSetLayout();
     }
-
+    /*
     std::vector<VkDescriptorSetLayout>* DescriptorHandler::getPipeDescSetLayout(PipeDescSetLayouts_Enum PDLe, EWEDevice& device) {
         if (pipeDescSetLayouts.find(PDLe) != pipeDescSetLayouts.end()) {
             return &pipeDescSetLayouts[PDLe];
@@ -116,14 +157,6 @@ namespace EWE {
             pipeDescSetLayouts[PDSL_2d].push_back(EWETexture::getSimpleDescriptorSetLayout());
             break;
         }
-        /*
-        case PDSL_boneWeapon: {
-            pipeDescSetLayouts[PDSL_boneWeapon].push_back(getDescSetLayout(LDSL_global, device));
-            pipeDescSetLayouts[PDSL_boneWeapon].push_back(EWETexture::getMaterialDescriptorSetLayout());
-            pipeDescSetLayouts[PDSL_boneWeapon].push_back(getDescSetLayout(LDSL_boneWeapon, device));
-            break;
-        }
-        */
         case PDSL_visualEffect: {
             pipeDescSetLayouts[PDSL_visualEffect].push_back(getDescSetLayout(LDSL_global, device));
             pipeDescSetLayouts[PDSL_visualEffect].push_back(EWETexture::getSimpleDescriptorSetLayout());
@@ -151,61 +184,48 @@ namespace EWE {
     }
 
     std::vector<VkDescriptorSetLayout>* DescriptorHandler::getDynamicPipeDescSetLayout(uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device) {
-        //printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2)));
-        if (dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].size() == 0) {
-            dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_global, device));
+        //printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
+        if (dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].size() == 0) {
+            dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_global, device));
 #ifdef _DEBUG
             printf("getting dynamic PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
 #endif
             //testing if this is faster, if not return if(hasbones)
             if (hasBones && instanced) {
                 //printf("Pushing back LDSL instanced monster \n");
-                dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_largeInstance, device));
+                dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_largeInstance, device));
 
             }
             else if (hasBones) {
-                dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_boned, device));
+                dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].push_back(getDescSetLayout(LDSL_boned, device));
             }
             else if (instanced) {
                 printf("currrently not supporting instancing without bones, THROWING ERROR \n");
-                throw std::exception("instanced but doesn't have bones? \n");
+                throw std::runtime_error("instanced but doesn't have bones?");
             }
-            dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].push_back(EWETexture::getDynamicDescriptorSetLayout(textureCount));
+            dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].push_back(EWETexture::getDynamicDescriptorSetLayout(textureCount));
         }
         //if (instanced) {
-            //printf("returning instanced PDSL size : %d \n", dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))].size());
+            //printf("returning instanced PDSL size : %d \n", dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].size());
         //}
-        return &dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_SMART_TEXTURE_COUNT) + (instanced * (MAX_SMART_TEXTURE_COUNT * 2))];
+        return &dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))];
     }
+    */
 
-
-    void DescriptorHandler::initGlobalDescriptors(std::shared_ptr<EWEDescriptorPool> globalPool, std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap, EWEDevice& device) {
+    void DescriptorHandler::initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap, EWEDevice& device) {
         printf("init global descriptors \n");
         DescriptorHandler::getDescSetLayout(LDSL_global, device);
         DescriptorHandler::getDescSetLayout(LDSL_boned, device);
+        descriptorSets.emplace(DS_global, std::vector<VkDescriptorSet>{});
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             //printf("init ars descriptors, loop : %d \n", i);
-            descriptorSets[DS_global].push_back(VkDescriptorSet{});
-            if (!
-                EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_global), *globalPool)
-                .writeBuffer(0, bufferMap[Buff_ubo][i]->descriptorInfo())
-                .writeBuffer(1, bufferMap[Buff_gpu][i]->descriptorInfo())
-                .build(descriptorSets[DS_global].back())
-                ) {
-                printf("global desc failure \n");
-            }
-
-            descriptorSets[DS_loading].push_back(VkDescriptorSet{});
-            if (!
-                EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), *globalPool)
-                .writeBuffer(0, bufferMap[Buff_loading][i]->descriptorInfo())
-                .build(descriptorSets[DS_loading].back())
-                ) {
-                printf("loading desc set failure \n");
-            }
+            descriptorSets.at(DS_global).emplace_back(EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_global), DescriptorPool_Global)
+                .writeBuffer(0, bufferMap.at(Buff_ubo)[i]->descriptorInfo())
+                .writeBuffer(1, bufferMap.at(Buff_gpu)[i]->descriptorInfo())
+                .build());
         }
     }
-    void DescriptorHandler::initDescriptors(std::shared_ptr<EWEDescriptorPool> globalPool, std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>>& bufferMap) {
+    void DescriptorHandler::initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap) {
 
         //printf("initializing VkDescriptorSets \n");
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -236,5 +256,13 @@ namespace EWE {
             */
         }
         //printf("returning from init VkDescriptorSets \n");
+    }
+    VkDescriptorSet* DescriptorHandler::getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
+#if _DEBUG
+        if (!descriptorSets.contains(whichDescSet)) {
+            printf("failed to find DescSet in getDescSet : %d \n", whichDescSet);
+        }
+#endif
+        return &descriptorSets[whichDescSet][whichFrameIndex];
     }
 }

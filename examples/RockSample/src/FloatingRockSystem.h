@@ -1,10 +1,9 @@
 #pragma once
 
-#include <EWEngine/graphics/EWE_FrameInfo.h>
-#include <EWEngine/graphics/PushConstants.h>
-#include <EWEngine/EWE_Model.h>
-#include <EWEngine/graphics/EWE_Pipeline.h>
-#include <EWEngine/systems/SkinRendering/SkinRenderSystem.h>
+#include <EWEngine/Graphics/PushConstants.h>
+#include <EWEngine/Graphics/Model/Model.h>
+#include <EWEngine/Graphics/Pipeline.h>
+#include <EWEngine/Systems/Rendering/Skin/SkinRS.h>
 
 //#include <glm/glm.hpp>
 
@@ -31,7 +30,7 @@ namespace EWE {
 		void render(FrameInfo& frameInfo);
 	private:
 		std::unique_ptr<EWEModel> rockModel;
-		TextureID rockTextureID{ 0 };
+		TextureDesc rockTextureID{ 0 };
 
 		struct RockTrack {
 			std::vector<unsigned int> currentPosition;

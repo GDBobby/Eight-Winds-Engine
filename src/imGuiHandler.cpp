@@ -1,9 +1,10 @@
-/*
-#include "imGuiHandler.h"
 
+#include <EWEngine/imgui/imGuiHandler.h>
+
+#include <EWEngine/Graphics/Pipeline.h>
 
 namespace EWE {
-	ImGUIHandler::ImGUIHandler(GLFWwindow* window, EWEDevice& eweDevice, uint32_t imageCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo) : device{ EWEDevice } {
+	ImGUIHandler::ImGUIHandler(GLFWwindow* window, EWEDevice& device, uint32_t imageCount) : device{ device } {
 		//printf("imgui handler constructor \n");
 
 		IMGUI_CHECKVERSION();
@@ -17,42 +18,46 @@ namespace EWE {
 
 		ImGui_ImplGlfw_InitForVulkan(window, true);
 		ImGui_ImplVulkan_InitInfo init_info = {};
-		init_info.Instance = eweDevice.getInstance();
-		init_info.PhysicalDevice = eweDevice.getPhysicalDevice();
-		init_info.Device = eweDevice.device();
-		init_info.QueueFamily = eweDevice.getGraphicsIndex();
-		init_info.Queue = eweDevice.graphicsQueue();
+		init_info.Instance = device.getInstance();
+		init_info.PhysicalDevice = device.getPhysicalDevice();
+		init_info.Device = device.device();
+		init_info.QueueFamily = device.getGraphicsIndex();
+		init_info.Queue = device.graphicsQueue();
 		init_info.PipelineCache = nullptr;
-		init_info.DescriptorPool = descriptorPool;
 		init_info.Allocator = nullptr;
 		init_info.MinImageCount = imageCount;
 		init_info.ImageCount = imageCount;
 		init_info.CheckVkResultFn = check_vk_result;
 		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-		ImGui_ImplVulkan_Init(&init_info, renderPass);
+		init_info.PipelineRenderingCreateInfo = *EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic;
+		
 
-		uploadFonts();
+		//if an issue, address this first
+		init_info.UseDynamicRendering = true;
+
+		ImGui_ImplVulkan_Init(&init_info);
+
+		//uploadFonts();
 		//printf("end of imgui constructor \n");
 	}
+	ImGUIHandler::~ImGUIHandler() {
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+		EWEDescriptorPool::DestructPool(DescriptorPool_imgui);
+		printf("imguihandler deconstructed \n");
+	}
 
-	void ImGUIHandler::beforeRender() {
+	void ImGUIHandler::beginRender() {
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 	}
-	void ImGUIHandler::afterRender(VkCommandBuffer cmdBuf) {
+	void ImGUIHandler::endRender(VkCommandBuffer cmdBuf) {
 		ImGui::Render();
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf);
 	}
 
-	void ImGUIHandler::uploadFonts() {
-		VkCommandBuffer cmdBuff = device.beginSingleTimeCommands();
-		ImGui_ImplVulkan_CreateFontsTexture(cmdBuff);
-		device.endSingleTimeCommands(cmdBuff);
-
-		//clear font textures from cpu data
-		ImGui_ImplVulkan_DestroyFontUploadObjects();
-	}
 
 	void ImGUIHandler::createDescriptorPool() {
 		VkDescriptorPoolSize pool_sizes[] = {
@@ -71,13 +76,14 @@ namespace EWE {
 		VkDescriptorPoolCreateInfo pool_info = {};
 		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-		pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
-		pool_info.pPoolSizes = pool_sizes;
-		if (vkCreateDescriptorPool(device.device(), &pool_info, nullptr, &descriptorPool) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create imgui descriptor pool");
-		}
 
+		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+		pool_info.maxSets = 0;
+		for (int i = 0; i < pool_info.poolSizeCount; i++) {
+			pool_info.maxSets += pool_sizes[i].descriptorCount;
+		}
+		//pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+		pool_info.pPoolSizes = pool_sizes;
+		EWEDescriptorPool::AddPool(DescriptorPool_imgui, device, pool_info);
 	}
 }
-*/

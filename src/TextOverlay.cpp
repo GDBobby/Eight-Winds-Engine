@@ -1,6 +1,6 @@
 
-#include "EWEngine/graphics/EWE_Renderer.h"
-#include "EWEngine/graphics/TextOverlay.h"
+#include "EWEngine/Graphics/Renderer.h"
+#include "EWEngine/Graphics/TextOverlay.h"
 
 #include <stdexcept>
 //#include <iostream>
@@ -12,6 +12,9 @@ namespace EWE {
 
 	stb_fontchar TextOverlay::stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
 
+	TextOverlay* TextOverlay::textOverlayPtr{ nullptr };
+
+
 	TextOverlay::TextOverlay(
 		EWEDevice& device,
 		float framebufferwidth,
@@ -19,6 +22,13 @@ namespace EWE {
 		VkPipelineRenderingCreateInfo const& pipelineInfo
 	) : eweDevice{ device }, frameBufferWidth{ framebufferwidth }, frameBufferHeight{ framebufferheight }, scale{ frameBufferWidth / DEFAULT_WIDTH }
 	{
+		if (textOverlayPtr == nullptr) {
+			textOverlayPtr = this;
+		}
+		else {
+			printf("double initializing textoverlay \n");
+			throw std::runtime_error("double init on textoverlay");
+		}
 		//printf("text overlay construction \n");
 
 		cmdBuffers.resize(MAX_FRAMES_IN_FLIGHT);
@@ -605,6 +615,10 @@ namespace EWE {
 		}
 		return textWidth;
 	}
+	void TextOverlay::staticAddText(TextStruct textStruct) {
+		textOverlayPtr->addText(textStruct);
+	}
+
 	void TextOverlay::addText(TextStruct textStruct) {
 		const uint32_t firstChar = STB_FONT_consolas_24_latin1_FIRST_CHAR;
 
@@ -767,8 +781,7 @@ namespace EWE {
 			VkDeviceSize offsets = 0;
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffer, &offsets);
 			vkCmdBindVertexBuffers(commandBuffer, 1, 1, &buffer, &offsets);
-			for (uint32_t j = 0; j < numLetters; j++)
-			{
+			for (uint32_t j = 0; j < numLetters; j++) {
 				vkCmdDraw(commandBuffer, 4, 1, j * 4, 0);
 			}
 

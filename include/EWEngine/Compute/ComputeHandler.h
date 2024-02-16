@@ -1,7 +1,7 @@
 /*
 #pragma once
 
-#include "../graphics/EWE_Device.hpp"
+#include "EWEngine/Graphics/Device.hpp"
 
 namespace EWE {
 class ComputeHandler {

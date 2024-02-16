@@ -1,9 +1,9 @@
 #pragma once
 
-#include "EWE_model.h"
+#include "EWEngine/Graphics/Model/Model.h"
 #include <memory>
-#include "Data/TransformInclude.h"
-#include "Data/EngineDataTypes.h"
+#include "EWEngine/Data/TransformInclude.h"
+#include "EWEngine/Data/EngineDataTypes.h"
 
 
 namespace EWE {
@@ -38,7 +38,7 @@ namespace EWE {
 
 		TransformComponent transform{};
 
-		TextureID textureID{ 0 };
+		TextureDesc textureID{ TEXTURE_UNBINDED_DESC };
 		//int16_t textureFlags = -1;
 
 		//optional pointer components

@@ -1,4 +1,4 @@
-#include "EWEngine/systems/SyncHub.h"
+#include "EWEngine/Systems/SyncHub.h"
 
 
 #include <future>
@@ -133,6 +133,13 @@ namespace EWE {
 			throw std::runtime_error("failed to allocate command buffers!");
 		}
 	}
+	void SyncHub::waitOnTransferFence() {
+		VkResult vkResult = vkWaitForFences(device, 1, &singleTimeFence, VK_TRUE, UINT64_MAX);
+		if (vkResult != VK_SUCCESS) {
+			printf("failed to wait for fences : %d \n", vkResult);
+			throw std::runtime_error("Failed to wait for fence in endSingleTimeCommands");
+		}
+	}
 	void SyncHub::createSyncObjects() {
 		VkSemaphoreCreateInfo semaphoreInfo = {};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -145,7 +152,7 @@ namespace EWE {
 		for (uint8_t i = 0; i < 5; i++) {
 			if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &oceanSemaphores[i]) != VK_SUCCESS) {
 				std::cout << "OCEAN SEMAPHORE CREATE FAILURE \n";
-				throw std::exception("ocean create semaphore fialrue \n");
+				throw std::runtime_error("ocean create semaphore fialrue \n");
 			}
 		}
 
@@ -153,7 +160,7 @@ namespace EWE {
 			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &graphicsToComputeTransferSemaphore) != VK_SUCCESS
 			) {
 			std::cout << "failed to create compute graphics transfer fence \n";
-			throw std::exception("fence creation failure \n");
+			throw std::runtime_error("fence creation failure \n");
 		}
 		
 
@@ -187,7 +194,7 @@ namespace EWE {
 		vkResult = vkWaitForFences(device, 1, &oceanFlightFence, VK_TRUE, UINT64_MAX);
 		if (vkResult != VK_SUCCESS) {
 			printf("failed to wait for fences : %d \n", vkResult);
-			throw std::exception("Failed to wait for compute fence");
+			throw std::runtime_error("Failed to wait for compute fence");
 		}
 		vkResetFences(device, 1, &oceanFlightFence);
 
@@ -255,7 +262,7 @@ namespace EWE {
 		VkResult vkResult = vkWaitForFences(device, 1, &computeInFlightFence, VK_TRUE, UINT64_MAX);
 		if (vkResult != VK_SUCCESS) {
 			printf("failed to wait for fences : %d \n", vkResult);
-			throw std::exception("Failed to wait for compute fence");
+			throw std::runtime_error("Failed to wait for compute fence");
 		}
 		vkResetFences(device, 1, &computeInFlightFence);
 
@@ -319,19 +326,19 @@ namespace EWE {
 		//std::cout << "after transfer submit \n";
 		if (vkResult != VK_SUCCESS) {
 			printf("failed to queue submit : %d \n", vkResult);
-			throw std::exception("Failed to queue submit in endSingleTimeCommands");
+			throw std::runtime_error("Failed to queue submit in endSingleTimeCommands");
 		}
 		vkResult = vkWaitForFences(device, 1, &singleTimeFence, VK_TRUE, UINT64_MAX);
 		if (vkResult != VK_SUCCESS) {
 			printf("failed to wait for fences : %d \n", vkResult);
-			throw std::exception("Failed to wait for fence in endSingleTimeCommands");
+			throw std::runtime_error("Failed to wait for fence in endSingleTimeCommands");
 		}
 		vkResetFences(device, 1, &singleTimeFence);
 
 		vkResult = vkQueueWaitIdle(transferQueue);
 		if (vkResult != VK_SUCCESS) {
 			printf("failed to queue wait idle : %d \n", vkResult);
-			throw std::exception("Failed to wait idle in endSingleTimeCommands");
+			throw std::runtime_error("Failed to wait idle in endSingleTimeCommands");
 		}
 
 		{
@@ -429,8 +436,12 @@ namespace EWE {
 		//std::cout << "immediately after submitting graphics \n";
 
 		if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to submit draw command buffer : " << vkResult << std::endl;
-			throw std::runtime_error("failed to submit draw command buffer!");
+			std::string errorString = "failed to submit draw command buffer : ";
+			errorString += std::to_string(vkResult);
+			std::cout << errorString << std::endl;
+
+
+			throw std::runtime_error(errorString);
 		}
 		/*
 		if (oceanComputing) {

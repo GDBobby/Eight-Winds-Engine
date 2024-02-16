@@ -1,95 +1,30 @@
 #pragma once
 
 #include "UIComponents.h"
+#include "UIComponentsHigher.h"
+#include "EWEngine/Graphics/Model/Basic_Model.h"
+#include "EWEngine/GUI/MenuEnums.h"
 //#include "../../Game/InputHandler.h"
 
 #include <queue>
 
 namespace EWE {
-	enum MenuClickReturn {
-		MCR_none = 0,
-		MCR_ExitProgram,
-		MCR_switchToLB, //LB = levelBuilder
-		MCR_sensChange,
-		MCR_switchToLocalPlay,
-		MCR_switchToObstacle,
-		//MCR_createHostLobby, //i only need this if im going to change game state on host lobby
-		MCR_switchGameToMenu,
-		MCR_initiateNetPlay,
-		//MCR_obstacleReset,
-		MCR_returnInputFocus,
-		MCR_LadderCancel,
-		MCR_swapToPlaySelection,
-		MCR_ObstacleReset,
-		MCR_SaveReturn,
-		MCR_DiscardReturn,
-
-		MCR_EscapePressed,
-		MCR_SpearSelect,
-		MCR_KatanaSelect,
-
-		MCR_swapToEndless,
-
-	};
-	enum MenuStates {
-		menu_main,
-		//menu_controls,
-		menu_audio_settings,
-		menu_graphics_settings,
-		menu_main_play_selection,
-		menu_play,
-		menu_lobby,
-		menu_lobby_list,
-
-		menu_ladder,
-		menu_target_selection,
-		menu_target_completion,
-		menu_target_leaderboard,
-
-		menu_level_builder,
-
-		menu_controls,
-
-		menu_character_select,
-
-		menu_size, //oversize check? idk if i need this
-	};
-
-	enum MenuTextureEnum {
-		//this is the drawing order
-		MT_NineUI, //nineUI
-		MT_NineFade,
-		MT_Slider,
-		MT_BracketButton,
-		MT_Bracket,
-		MT_Unchecked,
-
-		MT_Button,
-		MT_Checked,
-		MT_Base,
-
-		MT_Kill,
-		//MT_background,
-		//MO_GameUI,
-		//game ui needs to be after the other objects
-
-		//just pushing this in for access, DO NOT ASSIGN OBJECTS BY THIS, ONLY TEXTURE
-
-		MT_size, //using this to store MO_GameUI texture //but why tho
-	};
 
 	//big ol enum to key the menu??
 
 
 	//holds an entire menu and handles all components
 	//interaction between moduels and engine is handled in UIHandler
-	struct MenuModule {
+	class MenuModule {
+	public:
 		struct UIImageStruct {
-			TextureID textureID{0};
+			TextureDesc texture{TEXTURE_UNBINDED_DESC};
 			Transform2dComponent transform{};
 			UIImageStruct() {}
-			UIImageStruct(TextureID textureID, Transform2dComponent& transform) : textureID{ textureID }, transform{ transform } {}
+			UIImageStruct(TextureDesc texture, Transform2dComponent& transform) : texture{ texture }, transform{ transform } {}
 		};
+		static std::unique_ptr<EWEModel> model2D;
+		static std::unique_ptr<EWEModel> nineUIModel;
 
 
 		static void (*changeMenuStateFromMM)(uint8_t, unsigned char);
@@ -97,11 +32,9 @@ namespace EWE {
 			changeMenuStateFromMM(menuStates, gameState);
 		}
 
-		static std::map<MenuTextureEnum, uint16_t>  textureIDs;
-		static std::unique_ptr<EWEModel> model2D;
-		static std::unique_ptr<EWEModel> nineUIModel;
+		static std::map<MenuTextureEnum, TextureDesc> textures;
 
-		static std::queue<MenuClickReturn> clickReturns;
+		static std::queue<uint16_t> clickReturns;
 
 		static void initTextures(EWEDevice& eweDevice);
 
@@ -111,7 +44,7 @@ namespace EWE {
 		}
 		//MenuModule(MenuStates menuState, float screenWidth, float screenHeight);
 
-		~MenuModule() {
+		virtual ~MenuModule() {
 			printf("deconstructing menu module \n");
 			if (childWindow) { //why am i destructing???? nothing should be moving
 				childWindow->~MenuModule();
@@ -207,7 +140,7 @@ namespace EWE {
 		/* on hold fornow
 		void processClickCallbacks(double xpos, double ypos) {
 
-			std::pair<UIComponentTypes, int8_t> returnValues = MenuModule::checkClick(xpos, ypos);
+			std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
 			if (returnValues.second < 0) {
 				return;
 			}
@@ -238,17 +171,17 @@ namespace EWE {
 		}
 		*/
 		virtual void processClick(double xpos, double ypos) = 0;
-		std::pair<UIComponentTypes, int8_t> checkClick(double xpos, double ypos);
+		std::pair<UIComponentTypes, int16_t> checkClick(double xpos, double ypos);
 
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
 
 		virtual void drawText(TextOverlay* textOverlay);
-		void drawObjects(VkCommandBuffer cmdBuf, uint8_t frameIndex, bool background);
+		virtual void drawNewObjects();
+		//void drawObjects(FrameInfo2D& frameInfo);
 
-		int32_t lastBindedTexture = -1;
-
-		bool drawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0); }
-		void drawNineUI(VkCommandBuffer cmdBuf, uint8_t frameIndex);
+		bool drawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0) || (menuBars.size() > 0); }
+		virtual void drawNewNine();
+		//void drawNineUI(FrameInfo2D& frameInfo);
 
 
 		static std::string getInputName(int keycode);

@@ -23,9 +23,9 @@ build/
 *.exe
 x64/
 .vs/
+.vscode/
 buildCopy/
 build_backup
-EightWinds.dir/
 CmakeFiles/
 release/
 debug/
@@ -36,3 +36,6 @@ shaders/debugging/
 New Text Document.txt
 debug/
 build/
+Projects/
+debuggers/
+external/

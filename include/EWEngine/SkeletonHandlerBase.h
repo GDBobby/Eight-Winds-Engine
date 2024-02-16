@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Data/EWEImport.h"
-#include "Data/EngineDataTypes.h"
+#include "EWEngine/Data/EWE_Import.h"
+#include "EWEngine/Data/EngineDataTypes.h"
 
 
 namespace EWE {
@@ -15,17 +15,17 @@ namespace EWE {
             printf("Deconstructing player skeleton \n");
         }
 #endif
-        std::vector<std::unique_ptr<EWEModel>> meshes; //this will hold the vertex/index buffers
-        std::vector<std::unique_ptr<EWEModel>> meshesNT;
-        std::vector<TextureID> textureIDs;
-        std::vector<TextureID> textureNTIDs;
+        std::vector<std::unique_ptr<EWEModel>> meshes{}; //this will hold the vertex/index buffers
+        std::vector<std::unique_ptr<EWEModel>> meshesNT{};
+        std::vector<TextureDesc> textureIDs{};
+        std::vector<TextureDesc> textureNTIDs{};
 
-        std::vector<std::pair<ShaderFlags, //pipeline flags
-            std::vector<std::pair<TextureID, //textureID
+        std::vector<std::pair<MaterialFlags, //pipeline flags
+            std::vector<std::pair<TextureDesc, //texture
             std::vector<EWEModel* //meshPtr
-            >>>>> pipePairs;
+            >>>>> pipePairs{};
 
-        //pipePairs.first == ShaderFlags
+        //pipePairs.first == MaterialFlags
         //pipePairs.second = textureVector
         //pipePairs.second[0].second == meshID
         //so the drawing would look like this
@@ -44,23 +44,21 @@ namespace EWE {
     protected:
         std::vector< //which animation
             std::vector< //which animation frame
-            std::map<uint32_t, glm::mat4>>> partialAnimationData; //the bone transform
+            std::map<uint32_t, glm::mat4>>> partialAnimationData{}; //the bone transform
 
         std::vector< //which animation
             std::vector< //which animation frame
-            std::vector<glm::mat4>>> fullAnimationData; //the bone transform
+            std::vector<glm::mat4>>> fullAnimationData{}; //the bone transform
 
-        std::vector<glm::mat4> finalMatrix;
-        std::vector<glm::mat4> defaultMatrix; //a more natural T-Pose
+        std::vector<glm::mat4> finalMatrix{};
+        std::vector<glm::mat4> defaultMatrix{}; //a more natural T-Pose
         glm::mat4 swordMatrix{ 1.f };
 
         uint32_t mySkeletonID = 0;
         uint16_t boneCount = 0;
         int32_t handBone = -1;
 
-        void readMeshNTData(std::string filePath, EWEDevice& device, ImportData::meshNTEData& importMesh);
-        void readMeshData(std::string filePath, EWEDevice& device, ImportData::meshEData& importMesh);
-        void readAnimData(std::string filePath, EWEDevice& device, bool partial);
-        void loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<std::pair<ShaderFlags, TextureID>>, std::vector<std::pair<ShaderFlags, TextureID>>>& textureTracker, std::string texturePath);
+        void readAnimData(std::string filePath, EWEDevice& device, bool partial, bool endian);
+        void loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath);
     };
 }

@@ -1,11 +1,12 @@
-#include "EWEngine/data/ShaderBuilder.h"
-#include "EWEngine/data/ShaderText.h"
+#include "EWEngine/Data/ShaderBuilder.h"
+#include "EWEngine/Data/FragmentShaderText.h"
+#include "EWEngine/Data/VertexShaderText.h"
 #include "EWEngine/resources/LoadingString.h"
 
-#include <chrono>
+//#include <chrono>
 
-void ShaderBlock::BatchCreateFragmentShader(std::vector<ShaderFlags> flagVector) {
-	/*
+/*
+void ShaderBlock::BatchCreateFragmentShader(std::vector<MaterialFlags> flagVector) {
 	std::vector<std::pair<uint8_t, std::string>> needShader;
 	for (int i = 0; i < flagVector.size(); i++) {
 		std::string subPath = SHADER_PATH;
@@ -29,8 +30,11 @@ void ShaderBlock::BatchCreateFragmentShader(std::vector<ShaderFlags> flagVector)
 		file.write(reinterpret_cast<const char*>(spirv.data()), spirv.size() * sizeof(uint32_t));
 		file.close();
 	}
-	*/
 }
+	*/
+
+char* ShaderBlock::buffers{nullptr};
+uint8_t ShaderBlock::buffersUsed = 0;
 
 std::vector<uint32_t> ShaderBlock::getLoadingVertShader() {
 
@@ -108,7 +112,7 @@ std::vector<uint32_t> ShaderBlock::getLoadingFragShader() {
 	}
 	else {
 		printf("failed to compile loading frag shader \n");
-		throw std::exception("failed to compile shader");
+		throw std::runtime_error("failed to compile shader");
 		//throw std run time error
 	}
 
@@ -117,7 +121,7 @@ std::vector<uint32_t> ShaderBlock::getLoadingFragShader() {
 
 }
 
-std::vector<uint32_t> ShaderBlock::getFragmentShader(ShaderFlags flags, bool hasBones) {
+std::vector<uint32_t> ShaderBlock::getFragmentShader(MaterialFlags flags, bool hasBones) {
 	/*
 	auto print_msg_to_printf = [](spv_message_level_t, const char*, const spv_position_t&, const char* m) {
 			printf("\t SPIRV Validator : error: %s \n", m);
@@ -163,7 +167,7 @@ std::vector<uint32_t> ShaderBlock::getFragmentShader(ShaderFlags flags, bool has
 	}
 	else {
 		printf("failed to compile shader : %d \n", flags);
-		throw std::exception("failed to compile shader");
+		throw std::runtime_error("failed to compile shader");
 		//throw std run time error
 	}
 	/*
@@ -233,26 +237,30 @@ std::vector<uint32_t> ShaderBlock::getVertexShader(bool hasNormal, uint16_t bone
 
 
 }
-bool ShaderBlock::SpirvHelper::BuildFlaggedFrag(ShaderFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
+bool ShaderBlock::SpirvHelper::BuildFlaggedFrag(MaterialFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
+
 	glslang::TShader shader(EShLangFragment);
-	glslang::TProgram program;
-	const char* shaderStrings[1];
+	glslang::TProgram program{};
 	TBuiltInResource Resources{};
 	InitResources(Resources);
 
 	// Enable SPIR-V and Vulkan rules when parsing GLSL
-	EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDebugInfo | EShMsgEnhanced);
-	const std::string tempString = buildFragmentShader(flags, hasBones); //this won't allow the string to be destroyed right?
-	shaderStrings[0] = tempString.c_str();
-	shader.setStrings(shaderStrings, 1);
+	EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDebugInfo | EShMsgEnhanced | EShMsgCascadingErrors);
+	const std::vector<const char*> fragString = buildFragmentShader(flags, hasBones); //this won't allow the string to be destroyed right?
+	printf("immediately after building shader string \n");
 
-	// printf("parsing shader \n");
+	//const char* ptrBuffer = tempString.c_str();
+	//const char* const* shaderStrings = &ptrBuffer;
+	shader.setStrings(fragString.data(), fragString.size());
+
+	printf("parsing shader \n");
 	if (!shader.parse(&Resources, 450, false, messages)) {
 		puts(shader.getInfoLog());
 		puts(shader.getInfoDebugLog());
 		printf("shader parse failed \n");
 		return false;  // something didn't work
 	}
+	printf("after parsing \n");
 
 	program.addShader(&shader);
 
@@ -391,7 +399,7 @@ bool ShaderBlock::SpirvHelper::LoadingFragSPV(std::vector<unsigned int>& spirv) 
 	//printf("compiling \n");
 	glslang::GlslangToSpv(*program.getIntermediate(EShLangFragment), spirv);
 	std::string shaderFileName = SHADER_DYNAMIC_PATH;
-	shaderFileName = "loading.frag.spv";
+	shaderFileName += "loading.frag.spv";
 	std::ofstream outShader{ shaderFileName, std::ios::binary };
 
 	if (outShader.is_open()) {
@@ -465,64 +473,64 @@ bool ShaderBlock::SpirvHelper::BuildFlaggedVert(bool hasNormal, uint16_t boneCou
 std::string ShaderBlock::buildVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance) {
 	std::string shaderString;
 	if (hasNormal) {
-		for (int i = 0; i < vertexTangentInput.size(); i++) {
-			shaderString += vertexTangentInput[i];
+		for (int i = 0; i < VertexShaderText::vertexTangentInput.size(); i++) {
+			shaderString += VertexShaderText::vertexTangentInput[i];
 		}
-		for (int i = 0; i < vertexTangentOutput.size(); i++) {
-			shaderString += vertexTangentOutput[i];
+		for (int i = 0; i < VertexShaderText::vertexTangentOutput.size(); i++) {
+			shaderString += VertexShaderText::vertexTangentOutput[i];
 		}
 	}
 	else {
-		for (int i = 0; i < vertexNNInput.size(); i++) {
-			shaderString += vertexNNInput[i];
+		for (int i = 0; i < VertexShaderText::vertexNNInput.size(); i++) {
+			shaderString += VertexShaderText::vertexNNInput[i];
 		}
-		for (int i = 0; i < vertexNNOutput.size(); i++) {
-			shaderString += vertexNNOutput[i];
+		for (int i = 0; i < VertexShaderText::vertexNNOutput.size(); i++) {
+			shaderString += VertexShaderText::vertexNNOutput[i];
 		}
 	}
-	for (int i = 0; i < vertexEntry.size(); i++) {
-		shaderString += vertexEntry[i];
+	for (int i = 0; i < VertexShaderText::vertexEntry.size(); i++) {
+		shaderString += VertexShaderText::vertexEntry[i];
 	}
 	if (instanced) {
 		
 
 		if(largeInstance){
-			for (int i = 0; i < vertexInstanceBuffersFirstHalf.size(); i++) {
-				shaderString += vertexInstanceBuffersFirstHalf[i];
+			for (int i = 0; i < VertexShaderText::vertexInstanceBuffersFirstHalf.size(); i++) {
+				shaderString += VertexShaderText::vertexInstanceBuffersFirstHalf[i];
 			}
 		}
 		else {
-			for (int i = 0; i < vertexSmallInstanceBuffersFirstHalf.size(); i++) {
-				shaderString += vertexSmallInstanceBuffersFirstHalf[i];
+			for (int i = 0; i < VertexShaderText::vertexSmallInstanceBuffersFirstHalf.size(); i++) {
+				shaderString += VertexShaderText::vertexSmallInstanceBuffersFirstHalf[i];
 			}
 		}
 		shaderString += std::to_string(boneCount) + ";";
-		for (int i = 0; i < vertexInstanceBuffersSecondHalf.size(); i++) {
-			shaderString += vertexInstanceBuffersSecondHalf[i];
+		for (int i = 0; i < VertexShaderText::vertexInstanceBuffersSecondHalf.size(); i++) {
+			shaderString += VertexShaderText::vertexInstanceBuffersSecondHalf[i];
 		}
 		if (hasNormal) {
-			for (int i = 0; i < vertexTangentInstancingMainExit.size(); i++) {
-				shaderString += vertexTangentInstancingMainExit[i];
+			for (int i = 0; i < VertexShaderText::vertexTangentInstancingMainExit.size(); i++) {
+				shaderString += VertexShaderText::vertexTangentInstancingMainExit[i];
 			}
 		}
 		else {
-			for (int i = 0; i < vertexNNInstancingMainExit.size(); i++) {
-				shaderString += vertexNNInstancingMainExit[i];
+			for (int i = 0; i < VertexShaderText::vertexNNInstancingMainExit.size(); i++) {
+				shaderString += VertexShaderText::vertexNNInstancingMainExit[i];
 			}
 		}
 	}
 	else {
-		for (int i = 0; i < vertexNoInstanceBuffers.size(); i++) {
-			shaderString += vertexNoInstanceBuffers[i];
+		for (int i = 0; i < VertexShaderText::vertexNoInstanceBuffers.size(); i++) {
+			shaderString += VertexShaderText::vertexNoInstanceBuffers[i];
 		}
 		if (hasNormal) {
-			for (int i = 0; i < vertexTangentNoInstancingMainExit.size(); i++) {
-				shaderString += vertexTangentNoInstancingMainExit[i];
+			for (int i = 0; i < VertexShaderText::vertexTangentNoInstancingMainExit.size(); i++) {
+				shaderString += VertexShaderText::vertexTangentNoInstancingMainExit[i];
 			}
 		}
 		else {
-			for (int i = 0; i < vertexNNNoInstancingMainExit.size(); i++) {
-				shaderString += vertexNNNoInstancingMainExit[i];
+			for (int i = 0; i < VertexShaderText::vertexNNNoInstancingMainExit.size(); i++) {
+				shaderString += VertexShaderText::vertexNNNoInstancingMainExit[i];
 			}
 		}
 	}
@@ -549,216 +557,417 @@ std::string ShaderBlock::buildVertexShader(bool hasNormal, uint16_t boneCount, b
 	return shaderString;
 }
 
-std::string ShaderBlock::buildFragmentShader(ShaderFlags flags, bool hasBones) {
+std::vector<const char*> ShaderBlock::buildFragmentShader(MaterialFlags flags, bool hasBones) {
 	//printf("building fragment shader :%d \n", flags);
 	//bool hasTangents = flags & 32; //if it has a normal map, it has tangents
 	//bool hasBones = flags & 128;
-	//bool instanced = ShaderFlags & 64;
+	//bool instanced = MaterialFlags & 64;
+
+	std::vector<const char*> retVec{};
+
 	bool hasBumps = flags & 16;
 	bool hasNormal = flags & 8;
 	bool hasRough = flags & 4;
 	bool hasMetal = flags & 2;
 	bool hasAO = flags & 1;
 	//building tangent frag
-	std::string shaderString;
+	//std::string shaderString;
 	//shaderString += version;
 	if(!hasBumps){
-		for (int i = 0; i < fragNNEntry.size(); i++) {
-			shaderString += fragNNEntry[i];
+		for (int i = 0; i < FragmentShaderText::fragNNEntry.size(); i++) {
+			//shaderString += fragNNEntry[i];
+			retVec.push_back(FragmentShaderText::fragNNEntry[i].c_str());
 		}
 		if (hasNormal) {
-			shaderString += "layout (location = 3) in vec3 fragTangentWorld;";
+			//shaderString += "layout (location = 3) in vec3 fragTangentWorld;";
+			retVec.push_back("layout (location = 3) in vec3 fragTangentWorld;");
 		}
-		shaderString += fragExit;
+		//shaderString += fragExit;
+		retVec.push_back(FragmentShaderText::fragExit.c_str());
 
-		for (int i = 0; i < dataBindings.size(); i++) {
-			shaderString += dataBindings[i];
+		for (int i = 0; i < FragmentShaderText::dataBindings.size(); i++) {
+			//shaderString += dataBindings[i];
+			retVec.push_back(FragmentShaderText::dataBindings[i].c_str());
 		}
-		for (int i = 0; i < functionBlock.size(); i++) {
-			shaderString += functionBlock[i];
+		for (int i = 0; i < FragmentShaderText::functionBlock.size(); i++) {
+			//shaderString += functionBlock[i];
+			retVec.push_back(FragmentShaderText::functionBlock[i].c_str());
 		}
-		shaderString += albedoBinding[hasBones];
+
+		addBindings(retVec, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones);
 
 		if (hasNormal) {
-			shaderString += normalBinding[hasBones];
-		}
-		if (hasRough) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal);
-			shaderString += secondHalfBinding;
-			shaderString += "roughSampler;";
-		}
-
-		if (hasMetal) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough);
-			shaderString += secondHalfBinding;
-			shaderString += "metalSampler;";
-		}
-		if (hasAO) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough + hasMetal);
-			shaderString += secondHalfBinding;
-			shaderString += "amOccSampler;";
-		}
-		if (hasNormal) {
-			for (int i = 0; i < calcNormalFunction.size(); i++) {
-				shaderString += calcNormalFunction[i];
+			for (int i = 0; i < FragmentShaderText::calcNormalFunction.size(); i++) {
+				//shaderString += calcNormalFunction[i];
+				retVec.push_back(FragmentShaderText::calcNormalFunction[i].c_str());
 			}
 		}
 
-		for (int i = 0; i < mainEntryBlock[0].size(); i++) {
-			shaderString += mainEntryBlock[0][i];
+		for (int i = 0; i < FragmentShaderText::mainEntryBlock[0].size(); i++) {
+			//shaderString += mainEntryBlock[0][i];
+			retVec.push_back(FragmentShaderText::mainEntryBlock[0][i].c_str());
 		}
-		for (int i = 0; i < mainSecondBlockNN.size(); i++) {
-			shaderString += mainSecondBlockNN[i];
+		for (int i = 0; i < FragmentShaderText::mainSecondBlockNN.size(); i++) {
+			//shaderString += mainSecondBlockNN[i];
+			retVec.push_back(FragmentShaderText::mainSecondBlockNN[i].c_str());
 		}
 		if (hasNormal) {
-			shaderString += "vec3 normal = calculateNormal();";
+			//shaderString += "vec3 normal = calculateNormal();";
+			retVec.push_back("vec3 normal = calculateNormal();");
 		}
 		else {
-			shaderString += "vec3 normal = normalize(fragNormalWorld);";
+			//shaderString += "vec3 normal = normalize(fragNormalWorld);";
+			retVec.push_back("vec3 normal = normalize(fragNormalWorld);");
 		}
 		if (hasRough) {
-			shaderString += "float roughness = texture(roughSampler, fragTexCoord).r;";
+			//shaderString += "float roughness = texture(roughSampler, fragTexCoord).r;";
+			retVec.push_back("float roughness = texture(roughSampler, fragTexCoord).r;");
 		}
 		else {
-			shaderString += "float roughness = 0.5;";
+			//shaderString += "float roughness = 0.5;";
+			retVec.push_back("float roughness = 0.5;");
 		}
 		if (hasMetal) {
-			shaderString += "float metal = texture(metalSampler, fragTexCoord).r;";
+			//shaderString += "float metal = texture(metalSampler, fragTexCoord).r;";
+			retVec.push_back("float metal = texture(metalSampler, fragTexCoord).r;");
 		}
 		else {
-			shaderString += "float metal = 0.0f;";
+			//shaderString += "float metal = 0.0;";
+			retVec.push_back("float metal = 0.0;");
 		}
-		for (int i = 0; i < mainThirdBlock.size(); i++) {
-			shaderString += mainThirdBlock[i];
+		for (int i = 0; i < FragmentShaderText::mainThirdBlock.size(); i++) {
+			//shaderString += mainThirdBlock[i];
+			retVec.push_back(FragmentShaderText::mainThirdBlock[i].c_str());
 		}
-		for (int i = 0; i < pointLightLoop.size(); i++) {
-			shaderString += pointLightLoop[i];
+		for (int i = 0; i < FragmentShaderText::pointLightLoop.size(); i++) {
+			//shaderString += pointLightLoop[i];
+			retVec.push_back(FragmentShaderText::pointLightLoop[i].c_str());
 		}
-		for (int i = 0; i < sunCalculation.size(); i++) {
-			shaderString += sunCalculation[i];
+		for (int i = 0; i < FragmentShaderText::sunCalculation.size(); i++) {
+			//shaderString += sunCalculation[i];
+			retVec.push_back(FragmentShaderText::sunCalculation[i].c_str());
 		}
 
 		if (hasAO) {
-			shaderString += "vec3 ambient = vec3(0.05) * albedo * texture(amOccSampler, fragTexCoord).r;";
+			//shaderString += "vec3 ambient = vec3(0.05) * albedo * texture(amOccSampler, fragTexCoord).r;";
+			retVec.push_back("vec3 ambient = vec3(0.05) * albedo * texture(amOccSampler, fragTexCoord).r;");
 		}
 		else {
-			shaderString += "vec3 ambient = vec3(0.05) * albedo;";
+			//shaderString += "vec3 ambient = vec3(0.05) * albedo;";
+			retVec.push_back("vec3 ambient = vec3(0.05) * albedo;");
 		}
-		shaderString += "vec3 color = ambient + Lo;";
-		shaderString += "color /= (color + vec3(1.0));";
-		shaderString += "color = pow(color, vec3(1.0/2.2));";
-		shaderString += "outColor = vec4(color, 1.0);}";
+		//shaderString += "vec3 color = ambient + Lo;";
+		retVec.push_back("vec3 color = ambient + Lo;");
+		//shaderString += "color /= (color + vec3(1.0));";
+		retVec.push_back("color /= (color + vec3(1.0));");
+		//shaderString += "color = pow(color, vec3(1.0/2.2));";
+		retVec.push_back("color = pow(color, vec3(1.0/2.2));");
+		//shaderString += "outColor = vec4(color, 1.0);}";
+		retVec.push_back("outColor = vec4(color, 1.0);}");
 	}
 	else { //if hasBumps, mostly doing a second block because bumpmap changes the uv variable name from fragTexCoord to fragTexCoord
-		for (int i = 0; i < fragBumpEntry.size(); i++) {
-			shaderString += fragBumpEntry[i];
+		for (int i = 0; i < FragmentShaderText::fragBumpEntry.size(); i++) {
+			//shaderString += fragBumpEntry[i];
+			retVec.push_back(FragmentShaderText::fragBumpEntry[i].c_str());
 		}
-		shaderString += fragExit;
-		for (int i = 0; i < dataBindings.size(); i++) {
-			shaderString += dataBindings[i];
+		//shaderString += fragExit;
+		retVec.push_back(FragmentShaderText::fragExit.c_str());
+		for (int i = 0; i < FragmentShaderText::dataBindings.size(); i++) {
+			//shaderString += dataBindings[i];
+			retVec.push_back(FragmentShaderText::dataBindings[i].c_str());
 		}
-		for (int i = 0; i < functionBlock.size(); i++) {
-			shaderString += functionBlock[i];
+		for (int i = 0; i < FragmentShaderText::functionBlock.size(); i++) {
+			//shaderString += functionBlock[i];
+			retVec.push_back(FragmentShaderText::functionBlock[i].c_str());
 		}
 		//bump map should not have bones, but leaving it in regardless
-		shaderString += albedoBinding[hasBones];
-		if (hasNormal) {
-			shaderString += normalBinding[hasBones];
-		}
-		if (hasRough) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal);
-			shaderString += secondHalfBinding;
-			shaderString += "roughSampler;";
-		}
+		addBindings(retVec, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones);
 
-		if (hasMetal) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough);
-			shaderString += secondHalfBinding;
-			shaderString += "metalSampler;";
-		}
-		if (hasAO) {
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough + hasMetal);
-			shaderString += secondHalfBinding;
-			shaderString += "amOccSampler;";
-		}
-		if (hasBumps) { //should always be getting called here
-			shaderString += firstHalfBinding[hasBones];
-			shaderString += std::to_string(1 + hasNormal + hasRough + hasMetal + hasAO);
-			shaderString += secondHalfBinding;
-			shaderString += "bumpSampler;";
-		}
-
-		for (int i = 0; i < parallaxMapping.size(); i++) {
-			shaderString += parallaxMapping[i];
+		for (int i = 0; i < FragmentShaderText::parallaxMapping.size(); i++) {
+			//shaderString += parallaxMapping[i];
+			retVec.push_back(FragmentShaderText::parallaxMapping[i].c_str());
 		}
 		//entering void main()
-		for (int i = 0; i < mainEntryBlock[1].size(); i++) {
-			shaderString += mainEntryBlock[1][i];
+		for (int i = 0; i < FragmentShaderText::mainEntryBlock[1].size(); i++) {
+			//shaderString += mainEntryBlock[1][i];
+			retVec.push_back(FragmentShaderText::mainEntryBlock[1][i].c_str());
 		}
 		if (!hasNormal) {
 			printf("BUMP FRAGMENT SHADER SHOULD ALWAYS HAVE NORMAL \n");
 			printf("BUMP FRAGMENT SHADER SHOULD ALWAYS HAVE NORMAL \n");
-			shaderString += "vec3 surfaceNormal = normalize(fragNormalWorld);";
+			//shaderString += "vec3 surfaceNormal = normalize(fragNormalWorld);";
+			retVec.push_back("vec3 surfaceNormal = normalize(fragNormalWorld);");
 		}
 		if (hasRough) {
-			shaderString += "float roughness = texture(roughSampler, fragTexCoord).r;";
+			//shaderString += "float roughness = texture(roughSampler, fragTexCoord).r;";
+			retVec.push_back("float roughness = texture(roughSampler, fragTexCoord).r;");
 		}
 		else {
-			shaderString += "float roughness = 0.5;";
+			//shaderString += "float roughness = 0.5;";
+			retVec.push_back("float roughness = 0.5;");
 		}
 		if (hasMetal) {
-			shaderString += "float metal = texture(metalSampler, fragTexCoord).r;";
+			//shaderString += "float metal = texture(metalSampler, fragTexCoord).r;";
+			retVec.push_back("float metal = texture(metalSampler, fragTexCoord).r;");
 		}
 		else {
-			shaderString += "float metal = 0.0f;";
+			//shaderString += "float metal = 0.0f;";
+			retVec.push_back("float metal = 0.0;");
 		}
-		for (int i = 0; i < mainThirdBlock.size(); i++) {
-			shaderString += mainThirdBlock[i];
+		for (int i = 0; i < FragmentShaderText::mainThirdBlock.size(); i++) {
+			//shaderString += mainThirdBlock[i];
+			retVec.push_back(FragmentShaderText::mainThirdBlock[i].c_str());
 		}
 
-		for (int i = 0; i < bumpSunCalculation.size(); i++) {
-			shaderString += bumpSunCalculation[i];
+		for (int i = 0; i < FragmentShaderText::bumpSunCalculation.size(); i++) {
+			//shaderString += bumpSunCalculation[i];
+			retVec.push_back(FragmentShaderText::bumpSunCalculation[i].c_str());
 		}
 
 		if (hasAO) {
-			shaderString += "vec3 ambient = vec3(0.05) * albedo * texture(amOccSampler, fragTexCoord).r;";
+			//shaderString += "vec3 ambient = vec3(0.05) * albedo * texture(amOccSampler, fragTexCoord).r;";
+			retVec.push_back("vec3 ambient = vec3(0.05) * albedo * texture(amOccSampler, fragTexCoord).r;");
 		}
 		else {
-			shaderString += "vec3 ambient = vec3(0.05) * albedo;";
+			//shaderString += "vec3 ambient = vec3(0.05) * albedo;";
+			retVec.push_back("vec3 ambient = vec3(0.05) * albedo;");
 		}
-		shaderString += "vec3 color = ambient + Lo;";
-		shaderString += "color /= (color + vec3(1.0));";
-		shaderString += "color = pow(color, vec3(1.0/2.2));";
-		shaderString += "outColor = vec4(color, 1.0);}";
+		//shaderString += "vec3 color = ambient + Lo;";
+		retVec.push_back("vec3 color = ambient + Lo;");
+		//shaderString += "color /= (color + vec3(1.0));";
+		retVec.push_back("color /= (color + vec3(1.0));");
+		//shaderString += "color = pow(color, vec3(1.0/2.2));";
+		retVec.push_back("color = pow(color, vec3(1.0/2.2));");
+		//shaderString += "outColor = vec4(color, 1.0);}";
+		retVec.push_back("outColor = vec4(color, 1.0);}");
 	}
 
 
 #if DEBUGGING_SHADERS
-	std::string debugShaderPath = "shaders\\debugging\\D_";
+	std::string debugShaderPath = "shaders/debugging/D_";
 	debugShaderPath += std::to_string(flags) + ".frag";
 	std::ofstream debugShader{ debugShaderPath, std::ios::trunc};
 	if (!debugShader.is_open()) {
 		printf("COULD NOT OPEN OR FIND DEBUG SHADER FILE \n");
 	}
 	//printf("inserting new lines : %d \n", shaderString.size());
-	for (int i = 0; i < shaderString.size(); i++) {
-		if ((shaderString[i] == ';') || (shaderString[i] == '{') || (shaderString[i] == '}')) {
-			shaderString.insert(shaderString.begin() + i + 1, '\n');
-			i++;
-		}
+
+	for (auto& cstr : retVec) {
+		debugShader << cstr << '\n';
 	}
+
 	//debugShader.write(shaderString.c_str(), shaderString.length());
-	debugShader << shaderString;
+	//for (int i = 0; i < shaderString.size(); i++) {
+	//	if ((shaderString[i] == ';') || (shaderString[i] == '{') || (shaderString[i] == '}')) {
+	//		shaderString.insert(shaderString.begin() + i + 1, '\n');
+	//		i++;
+	//	}
+	//}
+	//debugShader << shaderString;
 	debugShader.close();
 #endif
 
+	return retVec;
+}
+
+void ShaderBlock::getNumberAsCString(std::vector<const char*>& retVec, uint8_t number) {
+	if (buffers == nullptr) {
+		buffers = reinterpret_cast<char*>(malloc(1024));
+	}
+	char* bufferPtr = buffers + buffersUsed * 4;
+
+	int currentPos = 0;
+
+	if (number >= 100) {
+		bufferPtr[currentPos] = '0' + (number % 100) / 100;
+		number -= number % 100;
+		currentPos++;
+	}
+	if (number >= 10) {
+		bufferPtr[currentPos] = '0' + (number % 10) / 10;
+		number -= number % 10;
+		currentPos++;
+	}
+	bufferPtr[currentPos] = '0' + number;
+	currentPos++;
+	bufferPtr[currentPos] = '\0';
+
+	printf("buffer before emplace : %s \n", bufferPtr);
+
+	auto& backRef = retVec.emplace_back(bufferPtr);
+
+	buffersUsed++;
+
+	
+}
+
+void ShaderBlock::addBindings(std::vector<const char*>& retVec, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones) {
+	uint8_t currentBinding = hasBumps;
+
+	//shaderString += firstHalfBinding[hasBones];
+	retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
+	//shaderString += std::to_string(currentBinding);
+	//retVec.emplace_back(std::to_string(currentBinding).c_str());
+	getNumberAsCString(retVec, currentBinding);
+
+	printf("~~~~~ CURRENT BINDING : %s \n", retVec.back());
+	currentBinding++;
+	//shaderString += secondHalfBinding;
+	retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
+	//shaderString += "albedoSampler;";
+	retVec.push_back("albedoSampler;");
 
 
-	return shaderString;
+
+	if (hasNormal) {
+		//shaderString += firstHalfBinding[hasBones];
+		retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
+		//shaderString += std::to_string(currentBinding);
+		getNumberAsCString(retVec, currentBinding);
+		currentBinding++;
+		//shaderString += secondHalfBinding;
+		retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
+		//shaderString += "normalSampler;";
+		retVec.push_back("normalSampler;");
+	}
+	if (hasRough) {
+		//shaderString += firstHalfBinding[hasBones];
+		retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
+		//shaderString += std::to_string(currentBinding);
+		getNumberAsCString(retVec, currentBinding);
+		currentBinding++;
+		//shaderString += secondHalfBinding;
+		retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
+		//shaderString += "roughSampler;";
+		retVec.push_back("roughSampler;");
+	}
+
+	if (hasMetal) {
+		//shaderString += firstHalfBinding[hasBones];
+		retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
+		//shaderString += std::to_string(currentBinding);
+		getNumberAsCString(retVec, currentBinding);
+		currentBinding++;
+		//shaderString += secondHalfBinding;
+		retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
+		//shaderString += "metalSampler;";
+		retVec.push_back("metalSampler;");
+	}
+	if (hasAO) {
+		//shaderString += firstHalfBinding[hasBones];
+		retVec.push_back(FragmentShaderText::firstHalfBinding[hasBones].c_str());
+		//shaderString += std::to_string(currentBinding);
+		getNumberAsCString(retVec, currentBinding);
+		currentBinding++;
+		//shaderString += secondHalfBinding;
+		retVec.push_back(FragmentShaderText::secondHalfBinding.c_str());
+		//shaderString += "amOccSampler;";
+		retVec.push_back("amOccSampler;");
+	}
+}
+
+
+
+void ShaderBlock::SpirvHelper::InitResources(TBuiltInResource& Resources) {
+	Resources.maxLights = 32;
+	Resources.maxClipPlanes = 6;
+	Resources.maxTextureUnits = 32;
+	Resources.maxTextureCoords = 32;
+	Resources.maxVertexAttribs = 64;
+	Resources.maxVertexUniformComponents = 4096;
+	Resources.maxVaryingFloats = 64;
+	Resources.maxVertexTextureImageUnits = 32;
+	Resources.maxCombinedTextureImageUnits = 80;
+	Resources.maxTextureImageUnits = 32;
+	Resources.maxFragmentUniformComponents = 4096;
+	Resources.maxDrawBuffers = 32;
+	Resources.maxVertexUniformVectors = 128;
+	Resources.maxVaryingVectors = 8;
+	Resources.maxFragmentUniformVectors = 16;
+	Resources.maxVertexOutputVectors = 16;
+	Resources.maxFragmentInputVectors = 15;
+	Resources.minProgramTexelOffset = -8;
+	Resources.maxProgramTexelOffset = 7;
+	Resources.maxClipDistances = 8;
+	Resources.maxComputeWorkGroupCountX = 65535;
+	Resources.maxComputeWorkGroupCountY = 65535;
+	Resources.maxComputeWorkGroupCountZ = 65535;
+	Resources.maxComputeWorkGroupSizeX = 1024;
+	Resources.maxComputeWorkGroupSizeY = 1024;
+	Resources.maxComputeWorkGroupSizeZ = 64;
+	Resources.maxComputeUniformComponents = 1024;
+	Resources.maxComputeTextureImageUnits = 16;
+	Resources.maxComputeImageUniforms = 8;
+	Resources.maxComputeAtomicCounters = 8;
+	Resources.maxComputeAtomicCounterBuffers = 1;
+	Resources.maxVaryingComponents = 60;
+	Resources.maxVertexOutputComponents = 64;
+	Resources.maxGeometryInputComponents = 64;
+	Resources.maxGeometryOutputComponents = 128;
+	Resources.maxFragmentInputComponents = 128;
+	Resources.maxImageUnits = 8;
+	Resources.maxCombinedImageUnitsAndFragmentOutputs = 8;
+	Resources.maxCombinedShaderOutputResources = 8;
+	Resources.maxImageSamples = 0;
+	Resources.maxVertexImageUniforms = 0;
+	Resources.maxTessControlImageUniforms = 0;
+	Resources.maxTessEvaluationImageUniforms = 0;
+	Resources.maxGeometryImageUniforms = 0;
+	Resources.maxFragmentImageUniforms = 8;
+	Resources.maxCombinedImageUniforms = 8;
+	Resources.maxGeometryTextureImageUnits = 16;
+	Resources.maxGeometryOutputVertices = 256;
+	Resources.maxGeometryTotalOutputComponents = 1024;
+	Resources.maxGeometryUniformComponents = 1024;
+	Resources.maxGeometryVaryingComponents = 64;
+	Resources.maxTessControlInputComponents = 128;
+	Resources.maxTessControlOutputComponents = 128;
+	Resources.maxTessControlTextureImageUnits = 16;
+	Resources.maxTessControlUniformComponents = 1024;
+	Resources.maxTessControlTotalOutputComponents = 4096;
+	Resources.maxTessEvaluationInputComponents = 128;
+	Resources.maxTessEvaluationOutputComponents = 128;
+	Resources.maxTessEvaluationTextureImageUnits = 16;
+	Resources.maxTessEvaluationUniformComponents = 1024;
+	Resources.maxTessPatchComponents = 120;
+	Resources.maxPatchVertices = 32;
+	Resources.maxTessGenLevel = 64;
+	Resources.maxViewports = 16;
+	Resources.maxVertexAtomicCounters = 0;
+	Resources.maxTessControlAtomicCounters = 0;
+	Resources.maxTessEvaluationAtomicCounters = 0;
+	Resources.maxGeometryAtomicCounters = 0;
+	Resources.maxFragmentAtomicCounters = 8;
+	Resources.maxCombinedAtomicCounters = 8;
+	Resources.maxAtomicCounterBindings = 1;
+	Resources.maxVertexAtomicCounterBuffers = 0;
+	Resources.maxTessControlAtomicCounterBuffers = 0;
+	Resources.maxTessEvaluationAtomicCounterBuffers = 0;
+	Resources.maxGeometryAtomicCounterBuffers = 0;
+	Resources.maxFragmentAtomicCounterBuffers = 1;
+	Resources.maxCombinedAtomicCounterBuffers = 1;
+	Resources.maxAtomicCounterBufferSize = 16384;
+	Resources.maxTransformFeedbackBuffers = 4;
+	Resources.maxTransformFeedbackInterleavedComponents = 64;
+	Resources.maxCullDistances = 8;
+	Resources.maxCombinedClipAndCullDistances = 8;
+	Resources.maxSamples = 4;
+	Resources.maxMeshOutputVerticesNV = 256;
+	Resources.maxMeshOutputPrimitivesNV = 512;
+	Resources.maxMeshWorkGroupSizeX_NV = 32;
+	Resources.maxMeshWorkGroupSizeY_NV = 1;
+	Resources.maxMeshWorkGroupSizeZ_NV = 1;
+	Resources.maxTaskWorkGroupSizeX_NV = 32;
+	Resources.maxTaskWorkGroupSizeY_NV = 1;
+	Resources.maxTaskWorkGroupSizeZ_NV = 1;
+	Resources.maxMeshViewCountNV = 4;
+	Resources.limits.nonInductiveForLoops = 1;
+	Resources.limits.whileLoops = 1;
+	Resources.limits.doWhileLoops = 1;
+	Resources.limits.generalUniformIndexing = 1;
+	Resources.limits.generalAttributeMatrixVectorIndexing = 1;
+	Resources.limits.generalVaryingIndexing = 1;
+	Resources.limits.generalSamplerIndexing = 1;
+	Resources.limits.generalVariableIndexing = 1;
+	Resources.limits.generalConstantMatrixVectorIndexing = 1;
 }

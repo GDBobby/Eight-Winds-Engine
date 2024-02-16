@@ -4,11 +4,14 @@
 
 #include "Scenes/SceneEnum.h"
 #include "Scenes/MainMenuScene.h"
+#include "Scenes/ShaderGenerationScene.h"
 
 //#include "Scenes/FreeCameraScene.h"
 #include <functional>
 
 namespace EWE {
+
+
 	class EWESample {
 	public:
 		EWESample(EightWindsEngine& ewEngine);

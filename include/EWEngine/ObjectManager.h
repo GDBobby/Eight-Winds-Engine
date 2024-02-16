@@ -1,13 +1,12 @@
 #pragma once
 #include "EWE_GameObject.h"
-#include "graphics/PointLight.h"
-#include "graphics/EWE_Texture.h"
+#include "EWEngine/Graphics/PointLight.h"
 //#include "FloatingRockSystem.h"
 #include "GameObject2D.h"
-//#include "graphics/AssimpModel.h"
-#include "graphics/EWE_Object.h"
+//#include "EWEngine/graphicsAssimpModel.h"
+#include "EWEngine/Graphics/EWE_Object.h"
 #include "Collision.h"
-#include "systems/RigidRendering/RigidRenderSystem.h"
+#include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
 
 namespace EWE {
 	class ObjectManager {
@@ -19,33 +18,29 @@ namespace EWE {
 		//FOR A DAY IN THE FUTURE
 		//std::map<Pipeline_Enum, std::vector<EWEGameObject>> objectMap;
 
-		std::vector<EWEGameObject> texturedGameObjects;
-		std::vector<EWEGameObject> materialGameObjects;
-		std::vector<EWEGameObject> transparentGameObjects;
-		std::vector<EWEGameObject> grassField;
+		std::vector<EWEGameObject> texturedGameObjects{};
+		std::vector<EWEGameObject> materialGameObjects{};
+		std::vector<EWEGameObject> transparentGameObjects{};
+		std::vector<EWEGameObject> grassField{};
 
-		std::vector<EWEGameObject> dynamicGameObjects;
-		std::vector<EweObject> eweObjects;
+		std::vector<EweObject> eweObjects{};
 
 		//this will get strange with transparent objects
 		//std::unordered_map<uint8_t, std::pair<std::function<void(FrameInfo frameInfo)>, std::vector<EweObject>>> renderObjects;
 
-		//std::vector<RockTrack> rockField;
-
-		std::vector<PointLight> pointLights;
+		std::vector<PointLight> pointLights{};
 
 		// not currently active
 		//std::vector<SpotLight> spotLights;
 
 		//global right now because i only have 1, need to make it scene based
-		std::pair<std::unique_ptr<EWEModel>, TextureID> skybox; //model and textureID
+		std::pair<std::unique_ptr<EWEModel>, TextureDesc> skybox{}; //model and textureID
 
 
 		void initCollision() {
 			Collision::collisionObjects.clear();
 			Collision::collisionObjects.push_back(&texturedGameObjects);
 			Collision::collisionObjects.push_back(&materialGameObjects);
-			Collision::collisionObjects.push_back(&dynamicGameObjects);
 		}
 
 #if LEVEL_BUILDER
@@ -57,15 +52,15 @@ namespace EWE {
 		
 #endif
 
-		//std::pair<ShaderFlags, TextureID> targetTexturePair{0,0};
+		//std::pair<MaterialFlags, TextureID> targetTexturePair{0,0};
 		//uint32_t maxTargets = 0;
 		//uint32_t currentActiveTargets = 0;
-		TextureID grassTextureID{65535};
+		TextureDesc grassTextureID{TEXTURE_UNBINDED_DESC};
 #if LEVEL_BUILDER
 		void clearBuilders();
 		void resetBuilders();
 #endif
-		void clearSceneObjects();
+		void clearSceneObjects(EWEDevice& device);
 
 		/*
 		add callbacks, when the first item is added to a vector, bind the pipeline

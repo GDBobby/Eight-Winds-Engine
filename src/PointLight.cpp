@@ -1,4 +1,4 @@
-#include "EWEngine/graphics/PointLight.h"
+#include "EWEngine/Graphics/PointLight.h"
 
 
 

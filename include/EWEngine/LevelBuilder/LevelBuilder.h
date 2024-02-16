@@ -1,14 +1,14 @@
 /*
 #pragma once
 
-#include "../graphics/imGuiHandler.h"
+#include "EWEngine/Graphics/imGuiHandler.h"
 //#include "EWE_model.h"
 #include "../freeCameraController.h"
 #include "../ObjectManager.h"
-#include "../graphics/EWE_camera.h"
+#include "EWEngine/Graphics/EWE_camera.h"
 #include "EweLevelLoader.h"
 
-#include "../graphics/EWE_frame_info.h"
+#include "EWEngine/Graphics/EWE_frame_info.h"
 
 namespace EWE {
 	class BuilderObjects {
@@ -122,7 +122,7 @@ namespace EWE {
 
 		void addMainControls();
 
-		std::shared_ptr<MaterialHandler> materialHandler;
+		std::shared_ptr<RigidRenderingSystem> materialHandler;
 
 		//these need to be one outside of the rendering process, aka before beginFrame(), or after endframe()
 		bool quadWasAdded = false; 

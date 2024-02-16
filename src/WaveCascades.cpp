@@ -1,9 +1,8 @@
-#pragma once
-#include "EWEngine/systems/Graphics/WaveCascades.h"
+#include "EWEngine/Systems/Ocean/WaveCascades.h"
 
 namespace EWE {
 	namespace Ocean {
-		WaveCascades::WaveCascades(EWEDevice& device, OceanFFT& oceanFFT, uint16_t ocean_resolution, VkDescriptorBufferInfo* gaussianNoise, std::shared_ptr<EWEDescriptorPool> oceanPool, std::array<std::unique_ptr<EWEDescriptorSetLayout>, 6>& cascadeDSLs, VkDescriptorBufferInfo* spectrumBufferInfo, VkDescriptorBufferInfo* timeBufferInfo) :
+		WaveCascades::WaveCascades(EWEDevice& device, OceanFFT& oceanFFT, uint16_t ocean_resolution, VkDescriptorBufferInfo* gaussianNoise, std::shared_ptr<EWEDescriptorPool> oceanPool, std::array<EWEDescriptorSetLayout*, 6>& cascadeDSLs, VkDescriptorBufferInfo* spectrumBufferInfo, VkDescriptorBufferInfo* timeBufferInfo) :
 			device{ device },
 			oceanFFT{ oceanFFT },
 			work_group_size{ ocean_resolution / compute_local_work_groups_size },
@@ -43,81 +42,56 @@ namespace EWE {
 			cascade_parameter_buffer->map();
 
 		}
-		void WaveCascades::constructDescriptors(std::shared_ptr<EWEDescriptorPool> oceanPool, std::array<std::unique_ptr<EWEDescriptorSetLayout>, 6>& cascadeDSLs, VkDescriptorBufferInfo* spectrumBufferInfo, VkDescriptorBufferInfo* gaussianNoise, VkDescriptorBufferInfo* timeBufferInfo) {
+		void WaveCascades::constructDescriptors(std::shared_ptr<EWEDescriptorPool> oceanPool, std::array<EWEDescriptorSetLayout*, 6>& cascadeDSLs, VkDescriptorBufferInfo* spectrumBufferInfo, VkDescriptorBufferInfo* gaussianNoise, VkDescriptorBufferInfo* timeBufferInfo) {
 
 			//permute descriptor
-			if (!
-				EWEDescriptorWriter(*oceanFFT.fftDSLs[0], *oceanPool)
+			permute_descriptor = EWEDescriptorWriter(*oceanFFT.fftDSLs[0], *oceanPool)
 				.writeBuffer(0, oceanFFT.parameterBuffer->descriptorInfo())
 				.writeBuffer(1, derivative_buffer[0]->descriptorInfo())
 				.writeBuffer(2, derivative_buffer[1]->descriptorInfo())
 				.writeBuffer(3, derivative_buffer[2]->descriptorInfo())
 				.writeBuffer(4, derivative_buffer[3]->descriptorInfo())
 				//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
-				.build(permute_descriptor)
-				) {
-				printf("permute desc failure \n");
-				throw std::exception("failed to create permute descriptor set");
-			}
-
+				.build();
 
 			//inverse fft descriptor
 			std::cout << "INVERSE FFT DESCRIPTOR" << std::endl;
 			
-			if (!
-				EWEDescriptorWriter(*oceanFFT.fftDSLs[1], *oceanPool)
+			inverse_fft_descriptor = EWEDescriptorWriter(*oceanFFT.fftDSLs[1], *oceanPool)
 				.writeImage(0, oceanFFT.precomputedData.getDescriptor())
 				.writeBuffer(1, oceanFFT.parameterBuffer->descriptorInfo())
 				//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
-				.build(inverse_fft_descriptor)
-				) {
-				printf("inverse fft desc failure \n");
-				throw std::exception("failed to create inverse fft descriptor set");
-			}
+				.build();
 
 			for (uint8_t i = 0; i < 4; i++) {
-				if (!
-					EWEDescriptorWriter(*oceanFFT.fftDSLs[2], *oceanPool)
+				inverse_fft_deriv_descriptor[i] = EWEDescriptorWriter(*oceanFFT.fftDSLs[2], *oceanPool)
 					.writeBuffer(0, derivative_buffer[i]->descriptorInfo())
 					.writeBuffer(1, derivative_buffer[4]->descriptorInfo())
 					//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
-					.build(inverse_fft_deriv_descriptor[i])
-					) {
-					printf("inverse fft desc failure \n");
-					throw std::exception("failed to create inverse fft descriptor set");
-				}
-				if (!
-					EWEDescriptorWriter(*oceanFFT.fftDSLs[2], *oceanPool)
+					.build();
+				
+				inverse_fft_deriv_descriptor[i + 4] = EWEDescriptorWriter(*oceanFFT.fftDSLs[2], *oceanPool)
 					.writeBuffer(0, derivative_buffer[4]->descriptorInfo())
 					.writeBuffer(1, derivative_buffer[i]->descriptorInfo())
 					//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
-					.build(inverse_fft_deriv_descriptor[i + 4])
-					) {
-					printf("inverse fft desc failure \n");
-					throw std::exception("failed to create inverse fft descriptor set");
-				}
+					.build();
+				
 			}
 			
 			//initial spectrum descriptor
 
 			std::cout << "INITIAL SPECTRUM DESCRIPTOR" << std::endl;
-			if (!
-				EWEDescriptorWriter(*cascadeDSLs[0], *oceanPool)
+			initial_spectrum_descriptor = EWEDescriptorWriter(*cascadeDSLs[0], *oceanPool)
 				.writeImage(0, WaveData_Texture.getDescriptor())
 				.writeBuffer(1, gaussianNoise)
 				.writeBuffer(2, cascade_parameter_buffer->descriptorInfo())
 				.writeBuffer(3, spectrumBufferInfo)
 				.writeBuffer(4, derivative_buffer[0]->descriptorInfo())
-				.build(initial_spectrum_descriptor)
-				) {
-				printf("initial spectrum desc failure \n");
-				throw std::exception("failed to create initial spectrum descriptor set");
-			}
+				.build();
 			//time dependent
 
 			std::cout << "TIME DEPENDENT DESCRIPTOR" << std::endl;
-			if (!
-				EWEDescriptorWriter(*cascadeDSLs[1], *oceanPool)
+			time_dependent_descriptor = EWEDescriptorWriter(*cascadeDSLs[1], *oceanPool)
 				.writeImage(0, H0_Texture.getDescriptor())
 				.writeImage(1, WaveData_Texture.getDescriptor())
 				.writeBuffer(2, derivative_buffer[0]->descriptorInfo())
@@ -125,63 +99,35 @@ namespace EWE {
 				.writeBuffer(4, derivative_buffer[2]->descriptorInfo())
 				.writeBuffer(5, derivative_buffer[3]->descriptorInfo())
 				.writeBuffer(6, timeBufferInfo)
-				.build(time_dependent_descriptor)
-				) {
-				printf("time dependent desc failure \n");
-				throw std::exception("failed to create time dependent descriptor set");
-			}
+				.build();
+			
 			//wave texture merger
 
 			std::cout << "TEXTURE MERGE DESCRIPTOR" << std::endl;
-			if (!
-				EWEDescriptorWriter(*cascadeDSLs[2], *oceanPool)
+			
+			texture_merger_descriptor = EWEDescriptorWriter(*cascadeDSLs[2], *oceanPool)
 				.writeBuffer(0, derivative_buffer[0]->descriptorInfo())
 				.writeBuffer(1, derivative_buffer[1]->descriptorInfo())
 				.writeBuffer(2, derivative_buffer[2]->descriptorInfo())
 				.writeBuffer(3, derivative_buffer[3]->descriptorInfo())
 				.writeBuffer(4, timeBufferInfo)
-				.build(texture_merger_descriptor)
-				) {
-				printf("texture merger desc failure \n");
-				throw std::exception("failed to create texture merger descriptor set");
-			}
+				.build();
 			//combined texture binding
-			if (!
-				EWEDescriptorWriter(*cascadeDSLs[4], *oceanPool)
+			merged_texture_descriptor = EWEDescriptorWriter(*cascadeDSLs[4], *oceanPool)
 				.writeImage(0, displacement_Texture.getDescriptor())
 				.writeImage(1, derivative_Texture.getDescriptor())
 				.writeImage(2, turbulence_Texture.getDescriptor())
-				.build(merged_texture_descriptor)
-				) {
-				printf("texture merger desc failure \n");
-				throw std::exception("failed to create texture merger descriptor set");
-			}
-			/*
-			if (!
-				EWEDescriptorWriter(*cascadeDSLs[5], *oceanPool)
-				.writeImage(0, displacement_Texture.getGraphicsDescriptor())
-				.writeImage(1, derivative_Texture.getGraphicsDescriptor())
-				.writeImage(2, turbulence_Texture.getGraphicsDescriptor())
-				.build(merged_texture_descriptor_graphics)
-				) {
-				printf("texture merger desc failure \n");
-				throw std::exception("failed to create texture merger descriptor set");
-			}
-			*/
+				.build();
 
 			//conjugated spectrum
 			std::cout << "CONJUGATED SPECTRUM DESCRIPTOR" << std::endl;
-			if (!
-				EWEDescriptorWriter(*cascadeDSLs[3], *oceanPool)
+			
+			conjugated_spectrum_descriptor = EWEDescriptorWriter(*cascadeDSLs[3], *oceanPool)
 				.writeImage(0, H0_Texture.getDescriptor())
 				.writeImage(1, WaveData_Texture.getDescriptor())
 				.writeBuffer(2, cascade_parameter_buffer->descriptorInfo())
 				.writeBuffer(3, derivative_buffer[4]->descriptorInfo())
-				.build(conjugated_spectrum_descriptor)
-				) {
-				printf("conjugated spectrum desc failure \n");
-				throw std::exception("failed to create conjugated spectrum descriptor set");
-			}
+				.build();
 			std::cout << "after descriptors " << std::endl;
 		}
 
@@ -287,7 +233,7 @@ namespace EWE {
 				pipeLayout,
 				bindIndex, 1,
 				&merged_texture_descriptor,
-				//&renderTextureDescriptorSets[i][cmdIndexPair.second],
+				//&renderTextureDescriptorSets[i][frameInfo.index],
 				0, nullptr
 			);
 		}

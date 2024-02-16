@@ -1,4 +1,4 @@
-#include "EWEngine/systems/Graphics/ocean.h"
+#include "EWEngine/Systems/Ocean/Ocean.h"
 #include "EWEngine/Data/TransformInclude.h"
 
 namespace EWE {
@@ -8,7 +8,7 @@ namespace EWE {
 			oceanFFT{ ocean_resolution, device }
 		{
 			printf("ocean construction \n");
-			throw std::exception("ocean construction not wanted");
+			throw std::runtime_error("ocean construction not wanted");
 			oceanPool =
 				EWEDescriptorPool::Builder(device)
 				.setMaxSets(1000)
@@ -27,9 +27,11 @@ namespace EWE {
 			ocean_push.modelMatrix = transform.mat4();
 
 			oceanModel = EWEModel::createSimpleModelFromFile(device, "ocean.obj");
-			foam = EWETexture::addGlobalTexture(device, "ocean/foam.jpg");
 
-			renderPipeline;
+			//revisit wether this should be global or scene later
+			Texture_Builder::createSimpleTexture( "ocean/foam.jpg", true, true, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+			//renderPipeline;
 
 			initializeDSLs();
 			/*
@@ -42,6 +44,16 @@ namespace EWE {
 			std::cout << "Cascade_Parameters: " << sizeof(Cascade_Parameters) << "\n";
 			std::cout << "Derivative_Data: " << sizeof(Derivative_Data) << '\n';
 			*/
+		}
+		Ocean::~Ocean() {
+			if (renderParamsDSL) {
+				delete renderParamsDSL;
+			}
+			for (auto& cascadeDSL : cascadeDSLs) {
+				if (cascadeDSL) {
+					delete cascadeDSL;
+				}
+			}
 		}
 
 		void Ocean::InitializeTwiddle(VkCommandBuffer cmdBuf) {
@@ -265,33 +277,23 @@ namespace EWE {
 
 			renderParamsDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 			for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-				if (!
-					EWEDescriptorWriter(*renderParamsDSL, *oceanPool)
+				renderParamsDescriptorSets[i] = EWEDescriptorWriter(*renderParamsDSL, *oceanPool)
 					.writeBuffer(0, renderParamsBuffer[0]->descriptorInfo())
 					.writeBuffer(1, renderParamsBuffer[1]->descriptorInfo())
 					//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
-					.build(renderParamsDescriptorSets[i])
-					) {
-					printf("monster desc failure \n");
-					throw std::exception("failed to create monster descriptor set");
-				}
+					.build();
 			}
 
 			for (uint8_t x = 0; x < 3; x++) {
 				renderTextureDescriptorSets[x].resize(MAX_FRAMES_IN_FLIGHT);
 				const auto imageInfos = cascade[x].getImageInfo();
 				for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-					if (!
-						EWEDescriptorWriter(*cascadeDSLs[5], *oceanPool)
+					renderTextureDescriptorSets[x][i] = EWEDescriptorWriter(*cascadeDSLs[5], *oceanPool)
 						.writeImage(0, imageInfos[0])
 						.writeImage(1, imageInfos[1])
 						.writeImage(2, imageInfos[2])
 						//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
-						.build(renderTextureDescriptorSets[x][i])
-						) {
-						printf("monster desc failure \n");
-						throw std::exception("failed to create monster descriptor set");
-					}
+						.build();
 				}
 			}
 
@@ -307,12 +309,16 @@ namespace EWE {
 			pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
 
-			std::vector<VkDescriptorSetLayout> tempDSL = *DescriptorHandler::getPipeDescSetLayout(PDSL_global, device);
-				tempDSL.push_back(renderParamsDSL->getDescriptorSetLayout());
-				tempDSL.push_back(cascadeDSLs[5]->getDescriptorSetLayout());
-				tempDSL.push_back(cascadeDSLs[5]->getDescriptorSetLayout());
-				tempDSL.push_back(cascadeDSLs[5]->getDescriptorSetLayout());
-				tempDSL.push_back(EWETexture::getSimpleDescriptorSetLayout());
+			TextureDSLInfo dslInfo{};
+			dslInfo.setStageTextureCount(VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+			std::vector<VkDescriptorSetLayout> tempDSL = {
+				DescriptorHandler::getDescSetLayout(LDSL_global, device),
+				renderParamsDSL->getDescriptorSetLayout(),
+				cascadeDSLs[5]->getDescriptorSetLayout(),
+				cascadeDSLs[5]->getDescriptorSetLayout(),
+				cascadeDSLs[5]->getDescriptorSetLayout(),
+				dslInfo.getDescSetLayout(device)->getDescriptorSetLayout()
+			};
 
 			pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 			pipelineLayoutInfo.pSetLayouts = tempDSL.data();
@@ -325,8 +331,8 @@ namespace EWE {
 			EWEPipeline::PipelineConfigInfo pipeConfigInfo{};
 			EWEPipeline::defaultPipelineConfigInfo(pipeConfigInfo);
 
-			pipeConfigInfo.attributeDescriptions = EWEModel::simpleVertex::getAttributeDescriptions();
-			pipeConfigInfo.bindingDescriptions = EWEModel::getBindingDescriptions<EWEModel::simpleVertex>();
+			pipeConfigInfo.attributeDescriptions = simpleVertex::getAttributeDescriptions();
+			pipeConfigInfo.bindingDescriptions = EWEModel::getBindingDescriptions<simpleVertex>();
 			pipeConfigInfo.pipelineLayout = renderPipeLayout;
 			pipeConfigInfo.pipelineRenderingInfo = pipeRenderInfo;
 
@@ -359,62 +365,107 @@ namespace EWE {
 			spectrum_parameter_buffer->map();
 		}
 
-		void Ocean::RenderUpdate(std::pair<VkCommandBuffer, uint8_t> cmdIndexPair) {
+		void Ocean::RenderUpdate(FrameInfo frameInfo) {
 			//std::cout << " ~~~~~~~~~~~~ BEGINNING OCEAN RENDER ~~~~~~~~~~~~" << std::endl;
-			renderPipeline->bind(cmdIndexPair.first);
+			renderPipeline->bind(frameInfo.cmdBuf);
 
 			//global descriptor set
 			vkCmdBindDescriptorSets(
-				cmdIndexPair.first,
+				frameInfo.cmdBuf,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				renderPipeLayout,
 				0, 1,
-				DescriptorHandler::getDescSet(DS_global, cmdIndexPair.second),
+				DescriptorHandler::getDescSet(DS_global, frameInfo.index),
 				0,
 				nullptr
 			);
 			//std::cout << "after global desc OCEAN \n";
 
 			vkCmdBindDescriptorSets(
-				cmdIndexPair.first,
+				frameInfo.cmdBuf,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				renderPipeLayout,
 				1, 1,
-				&renderParamsDescriptorSets[cmdIndexPair.second],
+				&renderParamsDescriptorSets[frameInfo.index],
 				0, nullptr
 			);
 			//std::cout << "after params desc OCEAN \n";
 
 			for (uint8_t i = 0; i < 3; i++) {
 				vkCmdBindDescriptorSets(
-					cmdIndexPair.first,
+					frameInfo.cmdBuf,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					renderPipeLayout,
 					2 + i, 1,
-					&renderTextureDescriptorSets[i][cmdIndexPair.second],
+					&renderTextureDescriptorSets[i][frameInfo.index],
 					0, nullptr
 				);
-				//cascade[i].bindMergedTextures(cmdIndexPair.first, renderPipeLayout, 2 + i);
+				//cascade[i].bindMergedTextures(frameInfo.cmdBuf, renderPipeLayout, 2 + i);
 			}
 			//std::cout << "after texture desc OCEAN \n";
 
 			vkCmdBindDescriptorSets(
-				cmdIndexPair.first,
+				frameInfo.cmdBuf,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				renderPipeLayout,
 				5, 1,
-				EWETexture::getDescriptorSets(foam, cmdIndexPair.second),
+				&foam,
 				0, nullptr
 			);
 			//std::cout << "after foam desc OCEAN \n";
 
 			ocean_push.time = time;
-			vkCmdPushConstants(cmdIndexPair.first, renderPipeLayout, VK_SHADER_STAGE_ALL_GRAPHICS, 0, sizeof(Ocean_Draw_Push_Constant), &ocean_push);
+			vkCmdPushConstants(frameInfo.cmdBuf, renderPipeLayout, VK_SHADER_STAGE_ALL_GRAPHICS, 0, sizeof(Ocean_Draw_Push_Constant), &ocean_push);
 
-			oceanModel->bind(cmdIndexPair.first);
-			oceanModel->draw(cmdIndexPair.first);
+			oceanModel->bind(frameInfo.cmdBuf);
+			oceanModel->draw(frameInfo.cmdBuf);
 
 			//std::cout << " ~~~~~~~~~~~ ENDING OCEAN RENDER ~~~~~~~~~~~~~" << std::endl;
 		}
-	}
+
+		void Ocean::getGaussNoise() {
+			std::string filename = "textures/compute/gaussian_noise.bob";
+			//use filesystem to find file, if not, generate
+
+			std::ifstream file{ filename, std::ios::binary };
+			if (file.is_open()) {
+				file.seekg(0, std::ios::end);
+				std::streampos fileSize = file.tellg();
+				file.seekg(0, std::ios::beg);
+
+				// Calculate the number of uint64_t values in the file
+				size_t numValues = fileSize / (sizeof(float) * 2);
+
+				// Resize the result vector to accommodate the data
+				gaussianNoise.resize(numValues);
+
+				// Read the binary data into the vector
+				file.read(reinterpret_cast<char*>(&gaussianNoise[0]), fileSize);
+
+				// Close the file
+				file.close();
+			}
+			else {
+				gaussianNoise.resize(noise_resolution * noise_resolution);
+				std::default_random_engine m_engine{ static_cast<std::uint32_t>(std::random_device{}()) };
+				std::uniform_real_distribution<float> distribution{ 0.f, 1.f };// = std::uniform_real_distribution<float>;
+
+				uint64_t index = 0;
+				for (int i = 0; i < noise_resolution; i++) {
+					for (int j = 0; j < noise_resolution; j++) {
+
+						gaussianNoise[index][0] = GaussianRandom(m_engine, distribution);
+						gaussianNoise[index][1] = GaussianRandom(m_engine, distribution);
+
+						//std::cout << "gauss index:values  - " << index << gaussianNoise[index][0] << ":" << gaussianNoise[index][1] << std::endl;
+						index++;
+					}
+				}
+				std::ofstream out_file{ "textures/compute/gaussian_noise.bob", std::ios::binary };
+				out_file.write(reinterpret_cast<const char*>(gaussianNoise.data()), gaussianNoise.size() * sizeof(float) * 2);
+				out_file.close();
+
+			}
+		}
+	}//ocean namespace
 }

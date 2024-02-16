@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../Graphics/TextOverlay.h"
-#include "../SoundEngine.h"
-#include "../Graphics/EWE_texture.h"
+#include "EWEngine/Graphics/TextOverlay.h"
+#include "EWEngine/Sound_Engine.h"
 //#include "GameUI.h"
 #include "Overlay.h"
 
@@ -44,7 +43,7 @@ namespace EWE{
 		bool escapePressed = false;
 
 		void Benchmarking(double time, double peakTime, double averageTime, double highTime, double avgLogic, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU);
-		void drawMenuMain(VkCommandBuffer commandBuffer, bool displayingRenderInfo);
+		void drawOverlayText(VkCommandBuffer commandBuffer, bool displayingRenderInfo);
 
 		void beginTextRender() {
 			textOverlay->beginTextUpdate();

@@ -45,7 +45,7 @@ namespace EWE {
 			//lbo.sunlightDirection.z = levelImport.sun.direction[2];
 			//lbo.sunlightDirection.w = 0.f;
 			if (levelImport.mapType == LevelExportData::Map_Type::target) {
-				auto tempTextureID = EWETexture::addSmartSceneTexture(device, levelImport.targetPathName, EWETexture::tType_smart);
+				auto tempTextureID = EWETexture::addSceneMaterialTexture(device, levelImport.targetPathName, EWETexture::tType_smart);
 				if ((tempTextureID.first >= 0) && (tempTextureID.second >= 0)) {
 					objectManager->targetTexturePair = tempTextureID;
 				}
@@ -66,7 +66,7 @@ namespace EWE {
 			for (int i = 0; i < levelImport.tangentObjects.size(); i++) {
 				EWETexture::texture_type textureType = levelImport.tangentObjects[i].textureType;
 				if (textureType == EWETexture::tType_smart) {
-					auto textureID = EWETexture::addSmartSceneTexture(device, levelImport.tangentObjects[i].texturePath, EWETexture::tType_smart);
+					auto textureID = EWETexture::addSceneMaterialTexture(device, levelImport.tangentObjects[i].texturePath, EWETexture::tType_smart);
 					if (textureID.second >= 0 && textureID.first >= 0) {
 						objectList[objectCounter] = &objectManager->dynamicBuildObjects;
 						objectManager->dynamicBuildObjects[objectCounter].model = std::make_shared<BuilderModel>(device, levelImport.tangentObjects[i].vertices, levelImport.tangentObjects[i].indices);
@@ -129,7 +129,7 @@ namespace EWE {
 		//lbo.sunlightDirection.w = 0.f;
 		TextureID targetTextureID;
 		if (mapType == LevelExportData::Map_Type::target) {
-			auto tempTextureID = EWETexture::addSmartSceneTexture(device, levelImport.targetPathName, EWETexture::tType_smart);
+			auto tempTextureID = EWETexture::addSceneMaterialTexture(device, levelImport.targetPathName, EWETexture::tType_smart);
 			printf("target texture id? %d \n", tempTextureID.second);
 			if ((tempTextureID.first) >= 0 && (tempTextureID.second >= 0)) {
 				targetTextureID = tempTextureID.second;
@@ -159,20 +159,20 @@ namespace EWE {
 			for (int i = 0; i < levelImport.tangentObjects.size(); i++) {
 				EWETexture::texture_type textureType = levelImport.tangentObjects[i].textureType;
 				if (textureType == EWETexture::tType_smart) {
-					auto textureID = EWETexture::addSmartSceneTexture(device, levelImport.tangentObjects[i].texturePath, textureType);
+					auto textureID = EWETexture::addSceneMaterialTexture(device, levelImport.tangentObjects[i].texturePath, textureType);
 					
 					if ((textureID.second >= 0) && (textureID.first >= 0)) {
-						objectManager->dynamicGameObjects.emplace_back();
-						objectManager->dynamicGameObjects.back().model = EWEModel::createMesh(device, levelImport.tangentObjects[i].vertices, levelImport.tangentObjects[i].indices);
-						objectManager->dynamicGameObjects.back().textureID = textureID.second;
-						objectManager->dynamicGameObjects.back().textureFlags = textureID.first;
-						convertTransform(objectManager->dynamicGameObjects.back().transform, levelImport.tangentObjects[i].bTransform);
+						objectManager->materialGameObjects.emplace_back();
+						objectManager->materialGameObjects.back().model = EWEModel::createMesh(device, levelImport.tangentObjects[i].vertices, levelImport.tangentObjects[i].indices);
+						objectManager->materialGameObjects.back().textureID = textureID.second;
+						objectManager->materialGameObjects.back().textureFlags = textureID.first;
+						convertTransform(objectManager->materialGameObjects.back().transform, levelImport.tangentObjects[i].bTransform);
 						if (objectManager->targetTexturePair.second == textureID.second) {
-							objectManager->dynamicGameObjects.back().isTarget = true;
+							objectManager->materialGameObjects.back().isTarget = true;
 							objectManager->maxTargets++;
 						}
 						else {
-							objectManager->dynamicGameObjects.back().giveCollision();
+							objectManager->materialGameObjects.back().giveCollision();
 						}
 					}
 					else {
@@ -189,17 +189,17 @@ namespace EWE {
 				if (textureType == EWETexture::tType_smart) {
 					auto textureID = EWETexture::addSmartModeTexture(device, levelImport.ntObjects[i].texturePath, textureType);
 					if ((textureID.first >= 0) && (textureID.second >= 0)) {
-						objectManager->dynamicGameObjects.emplace_back();
-						objectManager->dynamicGameObjects.back().model = EWEModel::createMesh(device, levelImport.ntObjects[i].vertices, levelImport.ntObjects[i].indices);
-						objectManager->dynamicGameObjects.back().textureFlags = textureID.first;
-						objectManager->dynamicGameObjects.back().textureID = textureID.second;
-						convertTransform(objectManager->dynamicGameObjects.back().transform, levelImport.ntObjects[i].bTransform);
+						objectManager->materialGameObjects.emplace_back();
+						objectManager->materialGameObjects.back().model = EWEModel::createMesh(device, levelImport.ntObjects[i].vertices, levelImport.ntObjects[i].indices);
+						objectManager->materialGameObjects.back().textureFlags = textureID.first;
+						objectManager->materialGameObjects.back().textureID = textureID.second;
+						convertTransform(objectManager->materialGameObjects.back().transform, levelImport.ntObjects[i].bTransform);
 						if (objectManager->targetTexturePair.second == textureID.second) {
-							objectManager->dynamicGameObjects.back().isTarget = true;
+							objectManager->materialGameObjects.back().isTarget = true;
 							objectManager->maxTargets++;
 						}
 						else {
-							objectManager->dynamicGameObjects.back().giveCollision();
+							objectManager->materialGameObjects.back().giveCollision();
 						}
 					}
 					else {
@@ -248,7 +248,7 @@ namespace EWE {
 					printf("whats this vType? : %d \n", buildModel->vType);
 				}
 			}
-			/*
+			*
 			if (iter->second == &objectManager->builderObjects) {
 				//printf("simple objects \n");
 				//if (((BuilderModel*)iter->second->at(iter->first).model.get())->simpleVertices.size() > 0) {

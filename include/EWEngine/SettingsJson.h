@@ -1,9 +1,8 @@
 #pragma once
 
-//#include "Settings.h"
-#include <rapidjson/document.h>
-#include "rapidjson/prettywriter.h" // for stringify JSON
-#include "rapidjson/error/en.h"
+#include <include/rapidjson/document.h>
+#include <include/rapidjson/prettywriter.h>// for stringify JSON
+#include <include/rapidjson/error/en.h>
 
 
 #include <GLFW/glfw3.h>
@@ -26,7 +25,7 @@ enum class SoundVolume {
 	music,
 	voice,
 
-	overflow,
+	//overflow,
 };
 
 namespace SettingsInfo {
@@ -93,7 +92,7 @@ public:
 		uint8_t voiceVolume{ 50 };
 		std::string selectedDevice{ "default" };
 		uint16_t FPS = 144;
-		bool pointLights = true;
+		bool pointLights = false;
 		bool renderInfo = false;
 
 		void setVolume(int8_t whichVolume, uint8_t value);

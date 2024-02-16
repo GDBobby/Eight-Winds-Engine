@@ -1,19 +1,22 @@
 #pragma once
 
-#include "MainWindow.h"
-#include "graphics/EWE_device.hpp"
-#include "graphics/EWE_renderer.h"
-#include "graphics/EWE_descriptors.h"
+#include "EWEngine/MainWindow.h"
+#include "EWEngine/Graphics/Device.hpp"
+#include "EWEngine/Graphics/Renderer.h"
+#include "EWEngine/Graphics/Descriptors.h"
 
-#include "Systems/SkinRendering/SkinRenderSystem.h"
+#include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
 
-#include "systems/advanced_render_system.h"
-#include "ObjectManager.h"
+#include "EWEngine/Systems/Rendering/advanced_render_system.h"
+#include "EWEngine/ObjectManager.h"
 //#include "LevelBuilder/LevelBuilder.h"
-#include "GUI/UIHandler.h"
-//#include "graphics/imGuiHandler.h"
-#include "loadingscreen/leafsystem.h"
-#include "GUI/MenuManager.h"
+#include "EWEngine/GUI/UIHandler.h"
+//#include "EWEngine/graphicsimGuiHandler.h"
+#include "EWEngine/LoadingScreen/LeafSystem.h"
+#include "EWEngine/GUI/MenuManager.h"
+#include "EWEngine/Systems/PipelineSystem.h"
+
+#include "EWEngine/Graphics/LightBufferObject.h"
 
 #include <functional>
 #include <memory>
@@ -25,7 +28,6 @@
 //#define LOGIC_TIME 0.0001
 
 #define BENCHMARKING_GPU true
-#define THROTTLED true
 
 
 
@@ -59,6 +61,7 @@ namespace EWE {
 
 		AdvancedRenderSystem advancedRS;
 		SkinRenderSystem skinnedRS;
+		Texture_Manager textureManager;
 
 		std::unique_ptr<LeafSystem> leafSystem;
 
@@ -79,7 +82,7 @@ namespace EWE {
 
 		uint32_t beginRoundFrames = 0; //move this out
 
-		std::map<Buffer_Enum, std::vector<std::unique_ptr<EWEBuffer>>> bufferMap;
+		std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>> bufferMap;
 
 		EWECamera camera;
 		EWEGameObject viewerObject{ EWEGameObject::createGameObject() };
@@ -105,16 +108,15 @@ namespace EWE {
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		void initGlobalBuffers();
 
-		void updatePipelines() {
-			advancedRS.updatePipelines(objectManager, eweRenderer.getPipelineInfo());
-		}
-
-		std::pair<VkCommandBuffer, int> beginRender();
+		FrameInfo beginRender();
 //#define RENDER_OBJECT_DEBUG
 
-		void drawObjects(std::pair<VkCommandBuffer, int> cmdIndexPair, double dt);
+		void draw2DObjects(FrameInfo& frameInfo);
+		void draw3DObjects(FrameInfo& frameInfo, double dt);
+		void drawText(FrameInfo& frameInfo, double dt);
+		void drawObjects(FrameInfo& frameInfo, double dt);
 
-		void endRender(std::pair<VkCommandBuffer, int> cmdIndexPair);
+		void endRender(FrameInfo& frameInfo);
 
 		void loadingScreen();
 
