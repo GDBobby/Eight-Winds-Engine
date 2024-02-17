@@ -171,9 +171,14 @@ namespace EWE {
     void EWEDescriptorPool::BuildGlobalPool(EWEDevice& device) {
         uint32_t maxSets = 1000;
         std::vector<VkDescriptorPoolSize> poolSizes{};
-        poolSizes.emplace_back(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 200);
-        poolSizes.emplace_back(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 200);
-        poolSizes.emplace_back(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 600);
+        VkDescriptorPoolSize poolSize;
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = 200;
+        poolSizes.emplace_back(poolSize);
+        poolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        poolSizes.emplace_back(poolSize);
+        poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes.emplace_back(poolSize);
         VkDescriptorPoolCreateFlags poolFlags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
         EWEDescriptorPool::pools.try_emplace(0, device, maxSets, poolFlags, poolSizes);

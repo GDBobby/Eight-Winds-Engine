@@ -103,7 +103,7 @@ namespace EWE {
 		return instancedBonePipelines.at(key);
 	}
 
-	void MaterialPipelines::setFrameInfo(FrameInfo frameInfo) {
+	void MaterialPipelines::setFrameInfo(FrameInfo const& frameInfo) {
 		cmdBuf = frameInfo.cmdBuf;
 		frameIndex = frameInfo.index;
 	}

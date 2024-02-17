@@ -75,7 +75,7 @@ namespace EWE{
 		static MaterialPipelines* at(MaterialFlags flags);
 		static MaterialPipelines* at(SkinInstanceKey skinInstanceKey);
 		static MaterialPipelines* at(uint16_t boneCount, MaterialFlags flags);
-		static void setFrameInfo(FrameInfo frameInfo);
+		static void setFrameInfo(FrameInfo const& frameInfo);
 
 	protected:
 		static std::unordered_map<MaterialFlags, MaterialPipelines*> materialPipelines;

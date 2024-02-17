@@ -12,7 +12,7 @@
 #include <cassert>
 
 #ifndef SHADER_DIR
-#define SHADER_DIR "shaders\\"
+#define SHADER_DIR "shaders/"
 #endif
 
 namespace EWE {
@@ -28,6 +28,7 @@ namespace EWE {
 			std::ifstream shaderFile;
 			shaderFile.open(enginePath, std::ios::binary);
 			if(!shaderFile.is_open()){
+				printf("failed to open shader : %s\n", enginePath.c_str());
 				throw std::runtime_error("failed to open shader file");
 			}
 			shaderFile.seekg(0, std::ios::end);
@@ -169,10 +170,10 @@ namespace EWE {
 		//this is always instanced???
 		bool hasNormal = (flags & MaterialF_hasNormal) > 0;
 		if (hasNormal) {
-			vertPath += "dynamic\\n" + std::to_string(boneCount) + ".vert.spv";
+			vertPath += "dynamic/n" + std::to_string(boneCount) + ".vert.spv";
 		}
 		else {
-			vertPath += "dynamic\\" + std::to_string(boneCount) + ".vert.spv";
+			vertPath += "dynamic/" + std::to_string(boneCount) + ".vert.spv";
 		}
 		if (shaderModuleMap.find(vertPath) == shaderModuleMap.end()) {
 			printf("creating vertex shader - %d:%d \n", boneCount, flags);
@@ -184,7 +185,7 @@ namespace EWE {
 			vertShaderModule = shaderModuleMap[vertPath];
 		}
 		std::string fragPath = SHADER_DIR;
-		fragPath += "dynamic\\" + std::to_string(flags) + "b.frag.spv";
+		fragPath += "dynamic/" + std::to_string(flags) + "b.frag.spv";
 		if (shaderModuleMap.find(fragPath) == shaderModuleMap.end()) {
 			printf("creating fragment shader : %d \n", flags);
 			Pipeline_Helper_Functions::createShaderModule(eweDevice, ShaderBlock::getFragmentShader(flags, true), &fragShaderModule);
@@ -210,7 +211,7 @@ namespace EWE {
 			vertShaderModule = vertModuleIter->second;
 		}
 		std::string fragPath = SHADER_DIR;
-		fragPath += "dynamic\\" + std::to_string(flags);
+		fragPath += "dynamic/" + std::to_string(flags);
 		if (hasBones) {
 			fragPath += "b";
 		}

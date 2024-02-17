@@ -1,18 +1,19 @@
 #include "FloatingRockSystem.h"
 #include <EWEngine/Systems/Rendering/Pipelines/Pipe_SimpleTextured.h>
+#include <EWEngine/Systems/Rendering/Rigid/RigidRS.h>
 
 namespace EWE {
 	FloatingRock::FloatingRock(EWEDevice& device) {
-		rockModel = EWEModel::createModelFromFile(device, "Rock1.obj");
-		rockTextureID = Texture_Builder::createSimpleTexture("rock.jpg", true, true, VK_SHADER_STAGE_FRAGMENT_BIT);
+		rockModel = EWEModel::createModelFromFile(device, "rock.obj");
+		rockTexture = Texture_Builder::createSimpleTexture("rock/rock_albedo.jpg", true, true, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		//RANDOM NUMBER GENERATOR
 		std::random_device r;
 		std::default_random_engine randomGen(r());
-		std::uniform_int_distribution<int> speedDistribution(4, 8); //inverse speed?
-		std::uniform_int_distribution<int> rockDistribution(5, 12);
-		std::uniform_int_distribution<int> trackDistribution(12, 20);
-		unsigned int trackCount = trackDistribution(randomGen);
+		std::uniform_int_distribution<int> speedDistribution(300, 750); //the higher this number is, the slower they'll be. 250 is 1 full rotation per second
+		std::uniform_int_distribution<int> rockDistribution(5, 12); //rocks per track
+		std::uniform_int_distribution<int> trackDistribution(12, 20); //tracks per field (only 1 field)
+		unsigned int trackCount = trackDistribution(randomGen); 
 
 		for (uint16_t i = 0; i < trackCount; i++) {
 			RockTrack tempTrack;
@@ -25,7 +26,7 @@ namespace EWE {
 			//unsigned int rockCount = i;
 			//std::cout << "rock check : " << rockCount << std::endl;
 
-			unsigned int positionAmount = tempTrack.speed * 250;
+			unsigned int positionAmount = tempTrack.speed;
 			for (uint32_t j = 0; j < positionAmount; j++) { //precode positions or na? test both ways
 				float horizontalOffset = glm::two_pi<float>() * j / positionAmount;
 				glm::vec3 tempPosition;
@@ -42,21 +43,18 @@ namespace EWE {
 			}
 
 			for (uint16_t j = 0; j < rockCount; j++) {
-				unsigned int tempPos = (positionAmount * j / rockCount);
-				/*
-				if (j > 0) {
-					if (tempTrack.currentPosition.back() == tempPos) {
-						std::cout << "last pos = current pos ~ trackCount:rockCount  :   " << +i << ":" << +j << std::endl;
-					}
-				}
-				*/
+				uint32_t tempPos = (positionAmount * j / rockCount);
 				tempTrack.currentPosition.push_back(tempPos);
-				//tempTrack.rocksInTrack.back().rock.transform.translation = tempTrack.trackPositions[tempPos];
-
 			}
 			rockField.push_back(tempTrack);
 			//std::cout << "pushback " << std::endl;
 		}
+
+		TransformComponent renderTransform{};
+		renderTransform.scale = glm::vec3{.1f};
+		renderModelMatrix = renderTransform.mat4();
+		renderNormalMatrix = renderTransform.normalMatrix();
+
 	}
 	void FloatingRock::update() {
 		for (auto& rock : rockField) {
@@ -69,17 +67,19 @@ namespace EWE {
 		}
 	}
 	void FloatingRock::render(FrameInfo& frameInfo) {
-		//PipelineManager::pipelines.at(Pipe_textured)->bind(frameInfo.cmdIndexPair.first);
-		PipelineSystem::setFrameInfo(frameInfo);
+
+		 PipelineSystem::setFrameInfo(frameInfo);
 		auto pipe = PipelineSystem::at(Pipe_textured);
 
 		pipe->bindPipeline();
 
 		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
-		pipe->bindDescriptor(1, &rockTextureID);
+		pipe->bindDescriptor(1, &rockTexture);
 
 		pipe->bindModel(rockModel.get());
-		SimplePushConstantData push{ glm::mat4{1.f}, glm::mat3{1.f} };
+
+
+		SimplePushConstantData push{ renderModelMatrix, renderNormalMatrix };
 		for (int i = 0; i < rockField.size(); i++) {
 
 			for (int j = 0; j < rockField[i].currentPosition.size(); j++) {
@@ -94,6 +94,6 @@ namespace EWE {
 				//std::cout << "post draw simple" << std::endl;
 			}
 		}
-
+ 
 	}
 }

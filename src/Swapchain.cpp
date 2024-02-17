@@ -1,4 +1,4 @@
-#include "EWEngine/Graphics/SwapChain.hpp"
+#include "EWEngine/Graphics/Swapchain.hpp"
 
 // std
 #include <array>

@@ -10,6 +10,7 @@
 #include "EWEngine/Systems/Rendering/Skin/SupportingStructs.h"
 
 #include <algorithm>
+#include <unordered_map>
 
 
 namespace EWE {

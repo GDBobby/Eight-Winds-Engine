@@ -30,7 +30,7 @@ namespace EWE {
 		SoundEngine(const SoundEngine&) = delete;
 		SoundEngine& operator=(const SoundEngine&) = delete;
 	public:
-		enum class SoundType {
+		enum class SoundType : uint16_t {
 			Effect,
 			Music,
 			Voice,

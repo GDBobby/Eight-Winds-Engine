@@ -105,15 +105,20 @@ if (DEFINED VULKAN_SDK_PATH)
   set(Vulkan_INCLUDE_DIR "${VULKAN_SDK_PATH}/Include") # 1.1 Make sure this include path is correct
   set(Vulkan_LIB "${VULKAN_SDK_PATH}/Lib") # 1.2 Make sure lib path is correct
   set(Vulkan_FOUND "True")
+  if(UNIX)
+  	set(Vulkan_LIBRARY libvulkan.so) #this hasnt been tested, may not work
+  else()
+	set(Vulkan_LIBRARY vulkan-1) #the windows version should work regardless, but also hasnt been tested yet
+  endif()
 else()
   message(STATUS "Vulkan path undefined in .env")
   find_package(Vulkan REQUIRED) # throws error if could not find Vulkan
-  message(STATUS "Found Vulkan: $ENV{VULKAN_SDK}")
+  message(STATUS "Found Vulkan package:  ${Vulkan_INCLUDE_DIRS}") #this line isnt working
 endif()
 if (NOT Vulkan_FOUND)
 	message(FATAL_ERROR "Could not find Vulkan library!")
 else()
-	message(STATUS "Using vulkan lib at: ${Vulkan_LIB}")
+	message(STATUS "Using vulkan lib at: ${Vulkan_LIBRARY}")
 endif()
 
 message(STATUS "including directories")
@@ -136,7 +141,7 @@ message(STATUS "linking libs")
 
 target_link_libraries(${PROJECT_NAME} 
 	glfw
-	vulkan-1
+	${Vulkan_LIBRARY}
 	${GLSLANG_LIBS}
 )
 
@@ -147,7 +152,12 @@ endif()
 
 if(EWE_PROJECTS)
 	message(STATUS "building projects\n\n")
-	add_subdirectory(Projects)
+
+	if(!UNIX)
+		#currently bugged, linux users will need to manually change this line for now.
+		#ill address this eventually
+		add_subdirectory(Projects)
+	endif()
 endif()
 
 set_target_properties(${PROJECT_NAME}

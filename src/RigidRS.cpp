@@ -48,10 +48,12 @@ namespace EWE {
             throw std::runtime_error("nullptr mesh");
         }
         if (!materialMap.contains(materialInfo.materialFlags)) {
-            materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
+            auto empRet = materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
+            empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
         }
-
-        materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).push_back(renderInfo);
+        else{
+            materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).push_back(renderInfo);
+        }
     }
     void RigidRenderingSystem::addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
         if (modelPtr == nullptr) {
@@ -60,10 +62,12 @@ namespace EWE {
         }
 
         if (!materialMap.contains(materialInfo.materialFlags)) {
-            materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
+            auto empRet = materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
+            empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{MaterialObjectInfo{ownerTransform, modelPtr, drawable}});
         }
-        materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).emplace_back(ownerTransform, modelPtr, drawable);
-
+        else{
+            materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).emplace_back(ownerTransform, modelPtr, drawable);
+        }
     }
     void RigidRenderingSystem::addMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr) {
         for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
@@ -125,6 +129,8 @@ namespace EWE {
 #ifdef _DEBUG
         assert(rigidInstance != nullptr && "material handler instance is nullptr while trying to render with it");
 #endif
+        MaterialPipelines::setFrameInfo(frameInfo);
+
         rigidInstance->renderMemberMethod(frameInfo);
     }
     void RigidRenderingSystem::renderMemberMethod(FrameInfo const& frameInfo){

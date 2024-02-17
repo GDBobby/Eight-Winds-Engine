@@ -60,8 +60,8 @@ namespace EWE {
 		TextureDesc leafTextureID = 0;
 
 	protected:
-		void createPipeline(EWEDevice& device);
-		void createPipeLayout(EWEDevice& device);
+		void createPipeline(EWEDevice& device) final;
+		void createPipeLayout(EWEDevice& device) final;
 
 	private:
 		EWEDevice& device;

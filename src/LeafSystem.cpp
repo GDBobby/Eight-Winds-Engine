@@ -14,7 +14,6 @@ namespace EWE {
 #endif
 
 	{
-		myID = UINT32_MAX;
 
 		leafBuffer.reserve(MAX_FRAMES_IN_FLIGHT);
 		leafBufferData.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -322,7 +321,9 @@ namespace EWE {
 	}
 	void LeafSystem::render(FrameInfo& frameInfo) {
 		setFrameInfo(frameInfo);
+#ifdef _DEBUG
 		currentPipe = myID;
+#endif
 		bindPipeline();
 		bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
 

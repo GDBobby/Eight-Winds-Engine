@@ -40,13 +40,16 @@ namespace EWE {
 
     public:
         static RigidRenderingSystem* getRigidRSInstance() {
+            //this isn't thread safe
             if (rigidInstance == nullptr) {
                 rigidInstance = new RigidRenderingSystem();
             }
             return rigidInstance;
         }
         static void destruct() {
-            delete rigidInstance;
+            if(rigidInstance){
+                delete rigidInstance;
+            }        
         }
     private:
         //RigidRenderingSystem() {}

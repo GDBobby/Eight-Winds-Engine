@@ -42,11 +42,11 @@ namespace EWE {
 		printf("afterr clear texutres \n");
 		Texture_Manager* tmPtr = Texture_Manager::getTextureManagerPtr();
 		for (auto& texture : clearTextures) {
-			printf("each texture : %d \n", texture);
+			//printf("each texture : %lu \n", texture);
 			tmPtr->removeMaterialTexture(texture);
 		}
 		for (int i = 0; i < clearTextures.size(); i++) {
-			printf("each smart texture : %d \n", clearTextures[i]);
+			//printf("each smart texture : %d \n", clearTextures[i]);
 			tmPtr->clearSceneTextures();
 		}
 		printf("after removing play objects \n");

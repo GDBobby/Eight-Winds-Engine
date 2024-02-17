@@ -30,15 +30,20 @@ namespace EWE {
 		void render(FrameInfo& frameInfo);
 	private:
 		std::unique_ptr<EWEModel> rockModel;
-		TextureDesc rockTextureID{ 0 };
+		TextureDesc rockTexture{ TEXTURE_UNBINDED_DESC };
+		glm::mat4 renderModelMatrix{};
+		glm::mat3 renderNormalMatrix{};
 
 		struct RockTrack {
-			std::vector<unsigned int> currentPosition;
+			std::vector<uint32_t> currentPosition{};
+			//std::vector<TransformComponent> transforms{};
+
 			int speed = 1;
 			float radius = 1.0f;
 			float trackTilt = 1.0f;
 			//float trackDriftSpeed = 0.0f; //circular drift, not sure how to handle this yet
-			std::vector<glm::vec3> trackPositions;
+			std::vector<glm::vec3> trackPositions{};
+			bool drawable = true;
 			//glm::vec3 trackOffset{0.f}; //not currently included
 
 			//cos 0 = 1

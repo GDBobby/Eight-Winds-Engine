@@ -2,10 +2,6 @@
 
 #include "EWESample.h"
 
-
-//bruh
-//tencent pls
-
 int main() {
 	SettingsJSON::initializeSettings();
 	EWE::EightWindsEngine ewEngine{"Eight Winds Engine Sample"};
@@ -37,9 +33,11 @@ int main() {
 			//just blasting it on all channels lol
 			std::cerr << e.what() << '\n';
 		}
+		system("pause");
 		return EXIT_FAILURE;
 	}
 	delete eweSample;
 
+	system("pause");
 	return EXIT_SUCCESS;
 }

@@ -22,7 +22,7 @@
 #define DEBUGGING_SHADERS true
 
 
-#define SHADER_DYNAMIC_PATH "shaders\\dynamic\\"
+#define SHADER_DYNAMIC_PATH "shaders/dynamic/"
 
 class ShaderBlock {
 public:

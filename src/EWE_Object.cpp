@@ -47,12 +47,13 @@ namespace EWE {
         }
         */
 
+        meshes.reserve(tempData.meshSimpleExport.meshes.size() + tempData.meshNTSimpleExport.meshes.size()); //a mesh should not have both simple and simpleNT
         for (int i = 0; i < tempData.meshSimpleExport.meshes.size(); i++) {
-            meshes.push_back(EWEModel::createMesh(device, tempData.meshSimpleExport.meshes[i].vertices, tempData.meshSimpleExport.meshes[i].indices));
+            meshes.emplace_back(EWEModel::createMesh(device, tempData.meshSimpleExport.meshes[i].vertices, tempData.meshSimpleExport.meshes[i].indices));
             materialInstance->addMaterialObject(device, textureTracker.meshSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
         for (int i = 0; i < tempData.meshNTSimpleExport.meshes.size(); i++) {
-            meshes.push_back(EWEModel::createMesh(device, tempData.meshNTSimpleExport.meshes[i].vertices, tempData.meshNTSimpleExport.meshes[i].indices));
+            meshes.emplace_back(EWEModel::createMesh(device, tempData.meshNTSimpleExport.meshes[i].vertices, tempData.meshNTSimpleExport.meshes[i].indices));
             materialInstance->addMaterialObject(device, textureTracker.meshNTSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
         /*
@@ -140,7 +141,7 @@ namespace EWE {
                 continue;
             }
             std::string finalDir = objectPath;
-            finalDir += "\\" + importData.meshNames[i];
+            finalDir += "/" + importData.meshNames[i];
             returnPair = Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
@@ -152,7 +153,7 @@ namespace EWE {
         for (int i = 0; i < importData.meshNTNames.size(); i++) {
             importData.meshNTNames[i] = importData.meshNTNames[i].substr(0, importData.meshNTNames[i].find_first_of("."));
             std::string finalDir = objectPath;
-            finalDir += "\\" + importData.meshNTNames[i];
+            finalDir += "/" + importData.meshNTNames[i];
             Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
@@ -166,7 +167,7 @@ namespace EWE {
         for (int i = 0; i < importData.meshSimpleNames.size(); i++) {
             importData.meshSimpleNames[i] = importData.meshSimpleNames[i].substr(0, importData.meshSimpleNames[i].find_first_of("."));
             std::string finalDir = objectPath;
-            finalDir += "\\" + importData.meshSimpleNames[i];
+            finalDir += "/" + importData.meshSimpleNames[i];
             //printf("simple names final Dir : %s \n", finalDir.c_str());
             Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
@@ -179,7 +180,7 @@ namespace EWE {
         for (int i = 0; i < importData.meshNTSimpleNames.size(); i++) {
             importData.meshNTSimpleNames[i] = importData.meshNTSimpleNames[i].substr(0, importData.meshNTSimpleNames[i].find_first_of("."));
             std::string finalDir = objectPath;
-            finalDir += "\\" + importData.meshNTSimpleNames[i];
+            finalDir += "/" + importData.meshNTSimpleNames[i];
             Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 

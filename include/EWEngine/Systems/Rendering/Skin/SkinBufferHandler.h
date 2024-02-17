@@ -43,7 +43,6 @@ namespace EWE {
 			~InnerBufferStruct() {
 				delete model;
 				delete bone;
-				delete descriptor;
 			}
 
 			//changeActorCount should be done extremely infrequently. like, only on scene swaps.
@@ -82,7 +81,6 @@ namespace EWE {
 			InnerBufferStruct(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize);
 			~InnerBufferStruct() {
 				delete bone;
-				delete descriptor;
 			}
 
 			void changeActorCount(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize);

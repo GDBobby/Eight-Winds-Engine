@@ -14,7 +14,7 @@ namespace EWE {
     PixelPeek::PixelPeek(std::string const& path) {
         pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
         if ((!pixels) || ((width * height) <= 0)) {
-            printf("failed to construct pixel peek \n");
+            printf("failed to construct pixel peek : %s \n", path.c_str());
             throw std::runtime_error("failed to load texture image with stb");
         }
     }

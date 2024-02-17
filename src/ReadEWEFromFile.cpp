@@ -1,4 +1,5 @@
 #include "EWEngine/Data/ReadEWEFromFile.h"
+#include <string.h>
 
 namespace EWE {
     namespace Reading {

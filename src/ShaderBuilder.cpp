@@ -67,6 +67,13 @@ std::vector<uint32_t> ShaderBlock::getLoadingVertShader() {
 		inShader.close();
 		return shaderCodeSpirV;
 	}
+	else if(!std::filesystem::exists(SHADER_DYNAMIC_PATH)){
+		printf("shader dynamic path doesn't exist : %s\n", SHADER_DYNAMIC_PATH);
+		std::filesystem::create_directory(SHADER_DYNAMIC_PATH);
+#ifdef _DEBUG
+		printf("should've cr")
+#endif
+	}
 	std::vector<uint32_t> shaderCodeSpirV;
 	if (SpirvHelper::LoadingVertSPV(shaderCodeSpirV)) {
 		//printf("compiled shader to spv successfully \n");
@@ -105,6 +112,10 @@ std::vector<uint32_t> ShaderBlock::getLoadingFragShader() {
 
 		inShader.close();
 		return shaderCodeSpirV;
+	}
+	else if(!std::filesystem::exists(SHADER_DYNAMIC_PATH)){
+		printf("shader dynamic path doesn't exist : %s\n", SHADER_DYNAMIC_PATH);
+		std::filesystem::create_directory(SHADER_DYNAMIC_PATH);
 	}
 	std::vector<uint32_t> shaderCodeSpirV;
 	if (SpirvHelper::LoadingFragSPV(shaderCodeSpirV)) {
@@ -237,6 +248,33 @@ std::vector<uint32_t> ShaderBlock::getVertexShader(bool hasNormal, uint16_t bone
 
 
 }
+
+bool ParseShader(TBuiltInResource& resource, EShMessages& messages, glslang::TShader& shader) {
+	printf("parsing shader \n");
+	try {
+		//failure here COULD mean the glslang compiler is not initiated
+		//debug steps - 
+		//ensure glslang compiler is iniated
+		//if it is, ensure the shader code is correctly written
+		//
+		if (!shader.parse(&resource, 450, false, messages)) {
+			printf("shader parse failed \n");
+
+			printf("info log - \n");
+			printf("\t%s\n", shader.getInfoLog());
+			printf("\ninfo debug log - \n");
+			printf("\t%s\n", shader.getInfoDebugLog());
+
+			return false;  // something didn't work
+		}
+	}
+	catch (const std::exception& except) {
+		printf("error on parse : %s \n", except.what());
+		return false;
+	}
+	return true;
+}
+
 bool ShaderBlock::SpirvHelper::BuildFlaggedFrag(MaterialFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
 
 	glslang::TShader shader(EShLangFragment);
@@ -253,14 +291,9 @@ bool ShaderBlock::SpirvHelper::BuildFlaggedFrag(MaterialFlags flags, bool hasBon
 	//const char* const* shaderStrings = &ptrBuffer;
 	shader.setStrings(fragString.data(), fragString.size());
 
-	printf("parsing shader \n");
-	if (!shader.parse(&Resources, 450, false, messages)) {
-		puts(shader.getInfoLog());
-		puts(shader.getInfoDebugLog());
-		printf("shader parse failed \n");
-		return false;  // something didn't work
+	if(!ParseShader(Resources, messages, shader)){
+		return false;
 	}
-	printf("after parsing \n");
 
 	program.addShader(&shader);
 
@@ -313,19 +346,10 @@ bool ShaderBlock::SpirvHelper::LoadingVertSPV(std::vector<unsigned int>& spirv) 
 	shaderStrings[0] = tempString.c_str();
 	shader.setStrings(shaderStrings, 1);
 
-	printf("parsing shader \n");
-	try {
-		if (!shader.parse(&Resources, 450, false, messages)) {
-			puts(shader.getInfoLog());
-			puts(shader.getInfoDebugLog());
-			printf("shader parse failed \n");
-			return false;  // something didn't work
-		}
-	}
-	catch (const std::exception& except) {
-		printf("error on parse : %s \n", except.what());
+	if(!ParseShader(Resources, messages, shader)){
 		return false;
 	}
+
 	printf("adding shader to program? \n");
 	program.addShader(&shader);
 
@@ -374,17 +398,7 @@ bool ShaderBlock::SpirvHelper::LoadingFragSPV(std::vector<unsigned int>& spirv) 
 	shaderStrings[0] = tempString.c_str();
 	shader.setStrings(shaderStrings, 1);
 
-	// printf("parsing shader \n");
-	try {
-		if (!shader.parse(&Resources, 450, false, messages)) {
-			puts(shader.getInfoLog());
-			puts(shader.getInfoDebugLog());
-			printf("shader parse failed \n");
-			return false;  // something didn't work
-		}
-	}
-	catch (const std::exception& except) {
-		printf("error on parse : %s \n", except.what());
+	if(!ParseShader(Resources, messages, shader)){
 		return false;
 	}
 
@@ -427,12 +441,8 @@ bool ShaderBlock::SpirvHelper::BuildFlaggedVert(bool hasNormal, uint16_t boneCou
 	shaderStrings[0] = tempString.c_str();
 	shader.setStrings(shaderStrings, 1);
 
-	// printf("parsing shader \n");
-	if (!shader.parse(&Resources, 450, false, messages)) {
-		puts(shader.getInfoLog());
-		puts(shader.getInfoDebugLog());
-		printf("shader parse failed \n");
-		return false;  // something didn't work
+	if(!ParseShader(Resources, messages, shader)){
+		return false;
 	}
 
 	program.addShader(&shader);
@@ -535,7 +545,13 @@ std::string ShaderBlock::buildVertexShader(bool hasNormal, uint16_t boneCount, b
 		}
 	}
 #if DEBUGGING_SHADERS
-	std::string debugShaderPath = "shaders\\debugging\\D_";
+	if(!std::filesystem::exists("shaders/debugging")) {
+		printf("debugging directory doesn't exist, creating \n");
+		std::filesystem::create_directories("shaders/debugging");
+	}
+
+
+	std::string debugShaderPath = "shaders/debugging/D_";
 	debugShaderPath += std::to_string(boneCount) + ".vert";
 	std::ofstream debugShader{ debugShaderPath, std::ios::trunc };
 	if (!debugShader.is_open()) {
@@ -744,6 +760,11 @@ std::vector<const char*> ShaderBlock::buildFragmentShader(MaterialFlags flags, b
 
 
 #if DEBUGGING_SHADERS
+	if(!std::filesystem::exists("shaders/debugging")) {
+		printf("debugging directory doesn't exist, creating \n");
+		std::filesystem::create_directories("shaders/debugging");
+	}
+
 	std::string debugShaderPath = "shaders/debugging/D_";
 	debugShaderPath += std::to_string(flags) + ".frag";
 	std::ofstream debugShader{ debugShaderPath, std::ios::trunc};

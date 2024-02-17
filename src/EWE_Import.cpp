@@ -2,7 +2,7 @@
 
 #include <thread>
 
-#define MODEL_PATH "models\\"
+#define MODEL_PATH "models/"
 
 namespace EWE {
 
