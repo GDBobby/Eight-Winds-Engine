@@ -1,13 +1,11 @@
 # Eight-Winds-Engine
 
-First public release!
-The engine still needs quite a few things and I'll be working on it for the forseeable future. 
-* an Editor with GUI will be added at some point
-
+Version 1.1.0
+Boost removed, Engine works on Linux
+I'll improve this readme later.
 
 
 ## Dependencies
-* boost         : https://www.boost.org/
 * GLFW          : https://www.glfw.org/
 * rapidjson     : https://rapidjson.org/
 * stb           : https://github.com/nothings/stb
