@@ -14,19 +14,10 @@ namespace EWE {
 		class Ocean {
 
 			const uint16_t ocean_resolution{ 1024 };
-			const uint16_t noise_resolution{ 256 };
+			const uint16_t cascade_count{ 4 };
 			EWEDevice& device;
-			std::vector<WaveCascades> cascade;
-			OceanFFT oceanFFT;
-			Wave_Settings waveSettings;
 
-			std::vector<std::array<float, 2>> gaussianNoise;
-
-			float lengthScale[3] = { 250, 17, 5 };
-			std::map<Pipe_Enum, EWE_Compute_Pipeline> ocean_compute_pipelines;
-			std::array<EWEDescriptorSetLayout*, 6> cascadeDSLs = {
-				nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
-			};
+			float lengthScale[4] = { 400.f, 17.f, 5.f, 0.f };
 
 			std::shared_ptr<EWEDescriptorPool> oceanPool;
 
@@ -34,45 +25,23 @@ namespace EWE {
 			std::unique_ptr<EWEBuffer> ocean_time_buffer;
 
 			std::unique_ptr<EWEBuffer> spectrum_parameter_buffer;
-			Spectrum_Settings spectrumSettings[2];
-
-			std::unique_ptr<EWEBuffer> gauss_buffer;
+			Spectrum_Settings spectrumSettings;
 
 
 		//RENDER BEGIN
 			std::unique_ptr<EWEPipeline> renderPipeline;
 			VkPipelineLayout renderPipeLayout;
-			EWEDescriptorSetLayout* renderParamsDSL{nullptr};
 			std::array<std::unique_ptr<EWEBuffer>, 2> renderParamsBuffer;
 
-			std::vector<VkDescriptorSet> renderParamsDescriptorSets;
-			std::array<std::vector<VkDescriptorSet>, 3> renderTextureDescriptorSets;
-
-			Ocean_Draw_Push_Constant ocean_push{};
-			Ocean_Ubo ocean_ubo{};
-			Ocean_Material ocean_material{};
 
 			std::unique_ptr<EWEModel> oceanModel;
-
-			TextureDesc foam = 0;
 		//RENDER END
 
 			float time = 0.f;
 
-			void initializeDSLs();
-
-			void getGaussNoise();
-			float GaussianRandom(std::default_random_engine& randE, std::uniform_real_distribution<float>& distribution) {
-
-				return std::cos(2 * 3.14159265358979323846f * distribution(randE)) * std::sqrt(-2.f * std::log(distribution(randE)));
-			}
-
 		public:
 			Ocean(EWEDevice& device);
 			~Ocean();
-
-			void InitializeTwiddle(VkCommandBuffer cmdBuf);
-			void InitialiseCascades(VkCommandBuffer cmdBuf);
 
 			//maybe construct the command buffer here?
 			void ComputeUpdate(std::array<VkCommandBuffer, 5> oceanBuffers, float dt);

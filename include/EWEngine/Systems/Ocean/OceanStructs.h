@@ -5,6 +5,10 @@
 
 namespace EWE {
     namespace Ocean {
+        constexpr uint32_t OCEAN_WAVE_COUNT = 256;
+        constexpr float smallestWaveMultiplier = 4.f;
+        constexpr float minWavesInCascade = 6.f;
+
         enum Pipe_Enum : uint16_t {
             Pipe_precompute_twiddle = 0,
 
@@ -23,156 +27,111 @@ namespace EWE {
 
             Pipe_Enum_size,
         };
-
-
-#define PI 3.1415926535897932384626433832795f
-
-        struct Spectrum_Settings {
-            float scale{};
-            float angle{};
-            float spreadBlend{};
-            float swell{};
-            float alpha{};
-            float peakOmega{};
-            float gamma{};
-            float shortWavesFade{};
+        struct SSSDataBuffer
+        {
+            float mNormalStrength = 1.f;
+            float mSunStrength = 0.f;
+            float mEnvironmentStrength = 0.f;
+            float mFadeDistance = 3.f;
+            float mHeightBias = 0.f;
+            float mSpread = 0.2f;
+            float m__Padding0;
+            float m__Padding1;
+            glm::vec3 mColor{ 0.13333334f, 0.9411765f, 0.6039216f };
+            float  m__Padding2;
+            glm::vec3 mColorMulti{ 0.0f, 0.025490196f, 0.02745098f };
         };
+        struct FoamRenderData
+        {
+            float mUnderwaterFoamParallax{ 1.2f };
+            float mNormalDetail{ 0.5f };
+            float mDensity{ 8.4f };
+            float mUnderwaterTexScale{ 0.2f };
+            float mSharpness{ 0.5f };
+            float  mPersistence{ 0.86f };
+            float  mCoverage{ 0.709f };
+            float  mUnderwater{ 0.36f };
+            float  mBias{ 0.f }; //if there is a foam detail map, remove this
+            //should probably pack bias into the albedo's alpha channel, right now its only reading rgb
+            float m__Padding4[3];
 
-        struct Ocean_Draw_Push_Constant {
-            glm::mat4 modelMatrix{};
-            float time{};
+            glm::vec3 mTint{ 0.66087574f, 0.7406194f, 0.7924528f };
+            float  m__Padding0;
+            glm::vec3 mAlbedo{ 0.49302f, 0.72549f, 1.0f }; //if there is an albedo texture, remove this
+            float m__Padding1; //not sure if this is necessary
+            glm::vec4 mCascadeWeights{ 0.0f, 1.0f, 0.5f, 0.3f };
+            glm::vec4 mNormalWeights{ 1.0f, 0.66f, 0.33f, 0.0f };
         };
-        struct Cascade_Parameters {
-            int size{ 1024 };
-            float lengthScale{};
-            float cutoffHigh{};
-            float cutoffLow{};
-            float gravityAcceleration{9.81f};
-            float depth{500.f};
-        };
-        struct Derivative_Data {
-            glm::vec2 data[5]{};
-        };
+        struct OceanFragmentData
+        {
+            glm::vec4  mLengthScales;
+            float mWindSpeed;
+            float mWaveScale{ 1.f };
+            float mWaveAlignment{ 1.f };
+            float mReferenceWaveHeight{ 1.f };
+            glm::vec2 mWindDirection{ 1.f, 0.f };
 
-        struct Ocean_Ubo {
-            float LengthScale0{};
-            float LengthScale1{};
-            float LengthScale2{};
-            float LOD_scale{1};
-            float SSSBase{};
-            float SSSScale{};
-        };
+            // stuffing these in here for simplicity, remove later
+            float mHorizon_fog{ 0.f };
 
-        struct Ocean_Material {
-            glm::vec4 color{0.03457636f, 0.12297464f, 0.1981132f, 1.f };
-            glm::vec4 foamColor{ 1.f };
-            glm::vec4 SSSColor{ 0.1541919f, 0.8857628f, 0.990566f, 1.f };
-            float SSSStrength{ 0.133f };
-            float roughness{ 0.311f };
-            float roughnessScale{ 0.0044f };
-            float maxGloss{ 0.91f };
-            float FoamBiasLOD0{ 0.84f };
-            float FoamBiasLOD1{ 1.83f };
-            float FoamBiasLOD2{ 2.72f };
-            float FoamScale{ 2.4f };
-            float ContactFoam{ 1.f };
-        };
-
-        struct Ocean_Time_Struct {
-            float lambda{ 0.f };
-            float time{ 0.f };
-            int size{ 0 };
-            float dt{ 0.f };
-        };
-
-        struct Display_Spectrum_Settings {
-            //[Range(0, 1)]
-            float scale{};
-            float windSpeed{};
-            float windDirection{};
-            float fetch{};
-            //[Range(0, 1)]
-            float spreadBlend{};
-            //[Range(0, 1)]
-            float swell{};
-            float peakEnhancement{};
-            float shortWavesFade{};
-        };
-
-        struct Wave_Settings {
-            float gravity{ 9.81f };
-            float depth{ 500.f };
-            //[Range(0, 1)]
-            float lambda{ 1.f };
-            Display_Spectrum_Settings local_display{};
-            Display_Spectrum_Settings swell_display{};
-            std::array<Spectrum_Settings, 2> spectrums{};
-
-            Wave_Settings() {
-                local_display.scale = 1.f;
-                local_display.windSpeed = 0.5f;
-                local_display.windDirection = -29.81f;
-                local_display.fetch = 100000.f;
-                local_display.spreadBlend = 0.198f;
-                local_display.swell = 0.198f;
-                local_display.peakEnhancement = 3.3f;
-                local_display.shortWavesFade = 0.01f;
-
-                swell_display.scale = 0.f;
-                swell_display.windSpeed = 1.f;
-                swell_display.windDirection = 0.f;
-                swell_display.fetch = 300000.f;
-                swell_display.spreadBlend = 1.f;
-                swell_display.swell = 1.f;
-                swell_display.peakEnhancement = 3.3f;
-                swell_display.shortWavesFade = 0.01f;
-
-                FillSettingsStruct();
-            }
-
-
-            /*
-             void SetParametersToShader(ComputeShader shader, int kernelIndex, ComputeBuffer paramsBuffer) {
-                shader.SetFloat(G_PROP, g);
-                shader.SetFloat(DEPTH_PROP, depth);
-
-                FillSettingsStruct(local, ref spectrums[0]);
-                FillSettingsStruct(swell, ref spectrums[1]);
-
-                paramsBuffer.SetData(spectrums);
-                shader.SetBuffer(kernelIndex, SPECTRUMS_PROP, paramsBuffer);
-            }
-            */
-
-            void FillSettingsStruct() {
-                spectrums[0].scale = local_display.scale;
-                spectrums[0].angle = local_display.windDirection / 180.f * PI;
-                spectrums[0].spreadBlend = local_display.spreadBlend;
-                spectrums[0].swell = glm::clamp(local_display.swell, 0.01f, 1.0f);
-                //settings.swell = Mathf.Clamp(display.swell, 0.01f, 1);
-                spectrums[0].alpha = JonswapAlpha(gravity, local_display.fetch, local_display.windSpeed);
-                spectrums[0].peakOmega = JonswapPeakFrequency(gravity, local_display.fetch, local_display.windSpeed);
-                spectrums[0].gamma = local_display.peakEnhancement;
-                spectrums[0].shortWavesFade = local_display.shortWavesFade;
-
-                spectrums[1].scale = swell_display.scale;
-                spectrums[1].angle = swell_display.windDirection / 180.f * PI;
-                spectrums[1].spreadBlend = swell_display.spreadBlend;
-                spectrums[1].swell = glm::clamp(swell_display.swell, 0.01f, 1.0f);
-                //settings.swell = Mathf.Clamp(display.swell, 0.01f, 1);
-                spectrums[1].alpha = JonswapAlpha(gravity, swell_display.fetch, swell_display.windSpeed);
-                spectrums[1].peakOmega = JonswapPeakFrequency(gravity, swell_display.fetch, swell_display.windSpeed);
-                spectrums[1].gamma = swell_display.peakEnhancement;
-                spectrums[1].shortWavesFade = swell_display.shortWavesFade;
-            }
-
-            float JonswapAlpha(float g, float fetch, float windSpeed) {
-                return 0.076f * glm::pow(g * fetch / windSpeed / windSpeed, -0.22f);
-            }
-
-            float JonswapPeakFrequency(float g, float fetch, float windSpeed) {
-                return 22.f * glm::pow(windSpeed * fetch / g / g, -0.33f);
+            OceanFragmentData(const glm::vec4 lengthScale) : mLengthScales{ lengthScale } {
             }
         };
-    }
-}
+        struct IntialFrequencySpectrumPushData {
+
+            glm::vec4 mLengthScale;
+            glm::vec4 mCutoffLow;
+            glm::vec4 mCutoffHigh;
+            float  mDepth;
+
+            IntialFrequencySpectrumPushData() {
+                const float lengthScaleMultiplier = smallestWaveMultiplier * minWavesInCascade / OCEAN_WAVE_COUNT;
+                mLengthScale[0] = 400.f;
+                mLengthScale[1] = mLengthScale[0] * lengthScaleMultiplier;
+                mLengthScale[2] = mLengthScale[1] * lengthScaleMultiplier;
+                mLengthScale[3] = mLengthScale[2] * lengthScaleMultiplier;
+
+                const float highMulti = 2 * glm::pi<float>() * OCEAN_WAVE_COUNT / smallestWaveMultiplier;
+                mCutoffHigh[0] = highMulti / mLengthScale[0];
+                mCutoffHigh[1] = highMulti / mLengthScale[1];
+                mCutoffHigh[2] = highMulti / mLengthScale[2];
+                mCutoffHigh[3] = highMulti / mLengthScale[3];
+
+                const float lowMulti = glm::pi<float>() * 2 * minWavesInCascade;
+#if 0 // ALLOW_OVERLAP
+                mCutoffLow[0] = lowMulti / mLengthScale[0];
+                mCutoffLow[1] = lowMulti / mLengthScale[1];
+                mCutoffLow[2] = lowMulti / mLengthScale[2];
+                mCutoffLow[3] = lowMulti / mLengthScale[3];
+#else
+                mCutoffLow[0] = 0.f;
+                mCutoffLow[1] = glm::max(lowMulti / mLengthScale[1], mCutoffHigh[0]);
+                mCutoffLow[2] = glm::max(lowMulti / mLengthScale[2], mCutoffHigh[1]);
+                mCutoffLow[3] = glm::max(lowMulti / mLengthScale[3], mCutoffHigh[2]);
+#endif
+            }
+        };
+        struct TimeDependentFrequencySpectrumPushData {
+            glm::vec4 mLengthScale;
+            glm::vec4 mCutoffLow;
+            glm::vec4 mCutoffHigh;
+            float  mDepth;
+            float  mTime;
+            TimeDependentFrequencySpectrumPushData(IntialFrequencySpectrumPushData const& ifsData) : mTime{0.f} {
+                memcpy(this, &ifsData, sizeof(glm::vec3) * 3 + sizeof(float));
+
+            }
+        };
+        struct JONSWAP_Parameters
+        {
+            float mScale{ 1.f };
+            float mSpreadBlend{ 1.f };
+            float mSwell{ 0.f };
+            float mWindSpeed{ 5.f };
+            float mPeakEnhancement{ 3.3f };
+            float mShortWavesFade{ 0.1f };
+            float mFetch{ 100.f };
+            float mWindDirection{ -29.81 / 180.f * glm::pi<float>() };
+        };
+    } //namespace ocean
+} //namespace EWE

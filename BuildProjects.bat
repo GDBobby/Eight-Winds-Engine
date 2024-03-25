@@ -17,5 +17,5 @@ cd ../../../../
 mkdir build
 cd build
 
-cmake -S ../ -B . -DEWE_PROJECTS=ON -DEWE_EXAMPLES=off
+cmake -S ../ -B . -DEWE_PROJECTS=ON -DEWE_EXAMPLES=ON
 pause

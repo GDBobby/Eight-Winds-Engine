@@ -31,6 +31,15 @@ include(FetchContent)
 
 
 FetchContent_Declare(
+	stb
+	GIT_REPOSITORY https://github.com/nothings/stb
+	GIT_TAG f4a71b1
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/include/stb"
+)
+FetchContent_MakeAvailable(stb)
+
+
+FetchContent_Declare(
   glfw
   GIT_REPOSITORY https://github.com/glfw/glfw
   GIT_TAG d79afa8
@@ -61,15 +70,6 @@ SET(RAPIDJSON_BUILD_CXX11 OFF)
 SET(RAPIDJSON_BUILD_CXX17 ON)
 
 FetchContent_MakeAvailable(rapidjson)
-
-
-FetchContent_Declare(
-	stb
-	GIT_REPOSITORY https://github.com/nothings/stb
-	GIT_TAG f4a71b1
-	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/include/stb"
-)
-FetchContent_MakeAvailable(stb)
 
 #tinyobj
 FetchContent_Declare(

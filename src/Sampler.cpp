@@ -40,8 +40,8 @@ namespace EWE {
         auto& emplaceRet = storedSamplers.emplace_back(device, samplerInfo);
         return emplaceRet.sampler;
 
-        VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        return VK_NULL_HANDLE;
     }
 
     void Sampler::removeSampler(EWEDevice& device, VkSampler sampler) {

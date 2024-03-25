@@ -4,7 +4,7 @@
 
 namespace EWE {
 	FloatingRock::FloatingRock(EWEDevice& device) {
-		rockModel = EWEModel::createModelFromFile(device, "rock.obj");
+		rockModel = EWEModel::createModelFromFile(device, "rock1.obj");
 		rockTexture = Texture_Builder::createSimpleTexture("rock/rock_albedo.jpg", true, true, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		//RANDOM NUMBER GENERATOR

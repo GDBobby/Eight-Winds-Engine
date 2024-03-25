@@ -71,7 +71,7 @@ std::vector<uint32_t> ShaderBlock::getLoadingVertShader() {
 		printf("shader dynamic path doesn't exist : %s\n", SHADER_DYNAMIC_PATH);
 		std::filesystem::create_directory(SHADER_DYNAMIC_PATH);
 #ifdef _DEBUG
-		printf("should've cr")
+		printf("should've cr");//?
 #endif
 	}
 	std::vector<uint32_t> shaderCodeSpirV;
