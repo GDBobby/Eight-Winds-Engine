@@ -45,16 +45,6 @@ namespace EWE {
         bufferSize = alignmentSize * instanceCount;
         EWEDevice::GetEWEDevice()->createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
     }
-    EWEBuffer* EWEBuffer::construct(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
-        EWEBuffer* ret = reinterpret_cast<EWEBuffer*>(ewe_alloc(sizeof(EWEBuffer), 1));
-        ret->usageFlags = usageFlags;
-        ret->memoryPropertyFlags = memoryPropertyFlags;
-
-        ret->alignmentSize = ret->getAlignment(instanceSize);
-        ret->bufferSize = ret->alignmentSize * instanceCount;
-        EWEDevice::GetEWEDevice()->createBuffer(ret->bufferSize, usageFlags, memoryPropertyFlags, ret->buffer_info.buffer, ret->memory);
-        return ret;
-    }
 
     EWEBuffer::~EWEBuffer() {
         unmap();

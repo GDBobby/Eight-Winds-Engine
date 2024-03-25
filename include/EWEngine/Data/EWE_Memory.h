@@ -17,7 +17,8 @@ void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* 
 
 void ewe_free_internal(void* ptr);
 
-// try to allocate size bytes
+
+//i think function will give a call stack
 #ifndef ewe_alloc
 //user is in charge of construction
 #define ewe_alloc(size, count) ewe_alloc_internal(size, count, __FILE__, __LINE__, __FUNCTION__)
@@ -29,13 +30,28 @@ void ewe_free_internal(void* ptr);
 #endif
 
 template<typename T, typename... Args>
-static T* constructSingular(Args&&... args) {
+static T* ConstructSingular(Args&&... args) {
     void* memory = ewe_alloc(sizeof(T), 1);
     if (memory == nullptr) {
         return nullptr;
     }
     return new (memory) T(std::forward<Args>(args)...);
 }
+/*
+template<typename T, typename... Args>
+static T** ConstructMultiple(uint32_t count, Args&&... args) {
+    void* memory = ewe_alloc(sizeof(T), count);
+    if (memory == nullptr) {
+		return nullptr;
+	}
+    uint64_t memLoc = reinterpret_cast<uint64_t>(memory);
+    T* ret = new (memory) T(std::forward<Args>(args)...);
+    for (uint32_t i = 0; i < count; i++) {
+        memcpy(reinterpret_cast<void*>(memLoc + i * sizeof(T)), , sizeof(T));
+    }
+}
+*/
+
 /*
 * doesnt compile, probably not possible
 template<typename T, typename... Args> 

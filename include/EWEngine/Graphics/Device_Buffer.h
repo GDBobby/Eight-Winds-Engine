@@ -7,7 +7,6 @@ namespace EWE {
     class EWEBuffer {
     public:
         EWEBuffer(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
-        static EWEBuffer* construct(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 
         ~EWEBuffer();
         static void deconstruct(EWEBuffer* deconstructedBuffer);

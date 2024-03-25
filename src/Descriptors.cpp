@@ -22,8 +22,7 @@ namespace EWE {
     }
 
     EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::build() const {
-        EWEDescriptorSetLayout* ret = reinterpret_cast<EWEDescriptorSetLayout*>(ewe_alloc(sizeof(EWEDescriptorSetLayout), 1));
-        ret->construct(bindings);
+        EWEDescriptorSetLayout* ret = constructSingular<EWEDescriptorSetLayout>(bindings);
         return ret;
     }
 

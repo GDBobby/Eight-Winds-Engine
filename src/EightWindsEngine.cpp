@@ -71,7 +71,7 @@ namespace EWE {
 		uiHandler.isActive = false;
 		leafSystem = std::make_unique<LeafSystem>(eweDevice);
 		Dimension2::init(eweDevice);
-		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ewe_alloc(sizeof(Pipe_Skybox), 1)));
+		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(constructSingular<Pipe_Skybox>()));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
 		RigidRenderingSystem::getRigidRSInstance();
@@ -102,7 +102,7 @@ namespace EWE {
 
 
 		RigidRenderingSystem::destruct();
-		MaterialPipelines::cleanupStaticVariables(eweDevice);
+		MaterialPipelines::cleanupStaticVariables();
 
 		for (auto& dsl : TextureDSLInfo::descSetLayouts) {
 			delete dsl.second;

@@ -99,7 +99,7 @@ namespace EWE {
 
 			std::lock_guard<std::mutex> lock(mtx);
 			if (syncHubSingleton == nullptr) {
-				syncHubSingleton = reinterpret_cast<SyncHub*>(ewe_alloc(sizeof(SyncHub), 1));
+				syncHubSingleton = ConstructSingular<SyncHub>();
 				std::cout << "COSTRUCTING SYNCHUB" << std::endl;
 			}
 			return syncHubSingleton;
