@@ -3,10 +3,10 @@
 
 namespace EWE {
     struct Basic_Model {
-        static std::unique_ptr<EWEModel> generateQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f });
-        static std::unique_ptr<EWEModel> generateQuadPNU(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f });
-        static std::unique_ptr<EWEModel> generateSimple3DQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f });
-        static std::unique_ptr<EWEModel> generate3DTileQuad(EWEDevice& device, glm::vec2 uvScale);
+        static std::unique_ptr<EWEModel> generateQuad(glm::vec2 uvScale = glm::vec2{ 1.f });
+        static std::unique_ptr<EWEModel> generateQuadPNU(glm::vec2 uvScale = glm::vec2{ 1.f });
+        static std::unique_ptr<EWEModel> generateSimple3DQuad(glm::vec2 uvScale = glm::vec2{ 1.f });
+        static std::unique_ptr<EWEModel> generate3DTileQuad(glm::vec2 uvScale);
         /*
         static std::unique_ptr<EWEModel> generateSimpleZedQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f }) {
             std::vector<EffectVertex> vertices{
@@ -20,17 +20,17 @@ namespace EWE {
         }
         */
 
-        static std::unique_ptr<EWEModel> generate2DGrid(EWEDevice& device, glm::vec2 scale = { 1.f,1.f });
-        static std::unique_ptr<EWEModel> generate2DQuad(EWEDevice& device, glm::vec2 scale = { 1.f,1.f });
+        static std::unique_ptr<EWEModel> generate2DGrid(glm::vec2 scale = { 1.f,1.f });
+        static std::unique_ptr<EWEModel> generate2DQuad(glm::vec2 scale = { 1.f,1.f });
 
-        static std::unique_ptr<EWEModel> generateNineUIQuad(EWEDevice& device);
+        static std::unique_ptr<EWEModel> generateNineUIQuad();
 
 
         //static std::unique_ptr<EWEModel> generate3DCircle(EWEDevice& device);
 
-        static std::unique_ptr<EWEModel> generateCircle(EWEDevice& device, uint16_t const points, float radius = 0.5f);
+        static std::unique_ptr<EWEModel> generateCircle(uint16_t const points, float radius = 0.5f);
 
-        static std::unique_ptr<EWEModel> createSkyBox(EWEDevice& device, float scale);
+        static std::unique_ptr<EWEModel> createSkyBox(float scale);
     };
 }
 

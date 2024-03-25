@@ -3,7 +3,7 @@
 
 namespace EWE {
 	
-    std::unique_ptr<EWEModel> Basic_Model::generateCircle(EWEDevice& device, uint16_t const points, float radius) {
+    std::unique_ptr<EWEModel> Basic_Model::generateCircle(uint16_t const points, float radius) {
         //utilizing a triangle fan
         if (points < 5) {
             std::cout << "yo wyd? making a circle with too few points : " << points << std::endl;
@@ -35,10 +35,10 @@ namespace EWE {
         indices.push_back(0);
         indices.push_back(points - 1);
         indices.push_back(1);
-        return std::make_unique<EWEModel>(device, vertices, indices);
+        return std::make_unique<EWEModel>(vertices, indices);
     }
 
-    std::unique_ptr<EWEModel> Basic_Model::generateQuad(EWEDevice& device, glm::vec2 uvScale) {
+    std::unique_ptr<EWEModel> Basic_Model::generateQuad(glm::vec2 uvScale) {
         std::vector<Vertex> vertices{
             {{0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {uvScale.x,uvScale.y}, {1.f, 0.f, 0.f}},
             {{-0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {0.0f,uvScale.y}, {1.f, 0.f, 0.f}},
@@ -46,9 +46,9 @@ namespace EWE {
             {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}, {1.f, 0.f, 0.f}},
         };
         std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
-        return std::make_unique<EWEModel>(device, vertices, indices);
+        return std::make_unique<EWEModel>(vertices, indices);
     }
-    std::unique_ptr<EWEModel> Basic_Model::generateQuadPNU(EWEDevice& device, glm::vec2 uvScale) {
+    std::unique_ptr<EWEModel> Basic_Model::generateQuadPNU(glm::vec2 uvScale) {
         std::vector<VertexNT> vertices{
             {{0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {uvScale.x,uvScale.y}},
             {{-0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {0.0f,uvScale.y}},
@@ -56,9 +56,9 @@ namespace EWE {
             {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}},
         };
         std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
-        return std::make_unique<EWEModel>(device, vertices, indices);
+        return std::make_unique<EWEModel>(vertices, indices);
     }
-    std::unique_ptr<EWEModel> Basic_Model::generateSimple3DQuad(EWEDevice& device, glm::vec2 uvScale) {
+    std::unique_ptr<EWEModel> Basic_Model::generateSimple3DQuad(glm::vec2 uvScale) {
         std::vector<EffectVertex> vertices{
             {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
             {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},
@@ -66,10 +66,10 @@ namespace EWE {
             {{0.5f,0.0f, 0.5f}, {uvScale.x,0.f}},
         };
         std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-        return std::make_unique<EWEModel>(device, vertices, indices);
+        return std::make_unique<EWEModel>(vertices, indices);
     }
 
-    std::unique_ptr<EWEModel> Basic_Model::generate3DTileQuad(EWEDevice& device, glm::vec2 uvScale) {
+    std::unique_ptr<EWEModel> Basic_Model::generate3DTileQuad(glm::vec2 uvScale) {
         std::vector<TileVertex> vertices{
             {{uvScale.x,uvScale.y}},
             {{0.0f,uvScale.y}},
@@ -79,10 +79,10 @@ namespace EWE {
             {{uvScale.x,uvScale.y}},
         };
         std::vector<uint32_t> indices{};// 0, 1, 2, 2, 3, 0 };
-        return std::make_unique<EWEModel>(device, vertices, indices);
+        return std::make_unique<EWEModel>(vertices, indices);
     }
 
-    std::unique_ptr<EWEModel> Basic_Model::generate2DGrid(EWEDevice& device, glm::vec2 scale){
+    std::unique_ptr<EWEModel> Basic_Model::generate2DGrid(glm::vec2 scale){
         const float leftX = -1.f * scale.x;
         const float rightX = 1.f * scale.x;
         const float topY = -1.f * scale.y;
@@ -97,10 +97,10 @@ namespace EWE {
             {rightX, botY}
         };
         std::vector<uint32_t> indices{};
-        return std::make_unique<EWEModel>(device, vertices, indices);
+        return std::make_unique<EWEModel>(vertices, indices);
     }
 
-    std::unique_ptr<EWEModel> Basic_Model::generate2DQuad(EWEDevice& device, glm::vec2 scale) {
+    std::unique_ptr<EWEModel> Basic_Model::generate2DQuad(glm::vec2 scale) {
         std::vector<VertexUI> vertices{
             {{-0.5f, -0.5f}, {0.f, 0.f}},
             {{0.5f, -0.5f}, {scale.x, 0.f}},
@@ -108,9 +108,9 @@ namespace EWE {
             {{-0.5f, 0.5f}, {0.f, scale.y}}
         };
         std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-        return std::make_unique<EWEModel>(device, vertices, indices);
+        return std::make_unique<EWEModel>(vertices, indices);
     }
-    std::unique_ptr<EWEModel> Basic_Model::generateNineUIQuad(EWEDevice& device) {
+    std::unique_ptr<EWEModel> Basic_Model::generateNineUIQuad() {
         std::vector<VertexUI> vertices{
             {{-0.5f, -0.5f}, {0.f, 0.f}}, //top left corner
             {{-.5f, -.5f}, {.0625f, .0625f}}, //inner top left corner
@@ -125,9 +125,9 @@ namespace EWE {
             {{-.5f, .5f}, {.0625f, 1.f - .0625f}}, //inner top right
         };
         std::vector<uint32_t> indices{ 1,0,6,1,6,7,1,7,3,1,3,2,1,2,0,5,4,2,5,2,3,5,3,7,5,7,6,5,6,4 };
-        return std::make_unique<EWEModel>(device, vertices, indices);
+        return std::make_unique<EWEModel>(vertices, indices);
     }
-    std::unique_ptr<EWEModel> Basic_Model::createSkyBox(EWEDevice& device, float scale) {
+    std::unique_ptr<EWEModel> Basic_Model::createSkyBox(float scale) {
         //hopefully never have to look at this again
 
         std::vector<skyVertex> vertices = {
@@ -161,6 +161,6 @@ namespace EWE {
         }
 
         //printf("vertex size ? : %d \n", vertices.size());
-        return std::make_unique<EWEModel>(device, vertices, indices);
+        return std::make_unique<EWEModel>(vertices, indices);
     }
 }

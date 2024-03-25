@@ -5,13 +5,23 @@
 #include "EWEngine/Graphics/PushConstants.h"
 
 namespace EWE {
-	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, EWEPipeline* pipeline) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ pipeline } {}
+
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilepath, std::string const& fragFilepath, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertFilepath, fragFilepath, configInfo } {}
+
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertShaderModu, fragShaderModu, configInfo } {}
+
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilePath, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo, bool hasBones) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertFilePath, flags, configInfo, hasBones } {}
+
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, uint16_t boneCount, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ boneCount, flags, configInfo } {}
+
+
+
+
 	MaterialPipelines::~MaterialPipelines() {
-		delete pipeline;
 	}
 
 	void MaterialPipelines::bindPipeline() {
-		pipeline->bind(cmdBuf);
+		pipeline.bind(cmdBuf);
 		bindedTexture = TEXTURE_UNBINDED_DESC;
 		bindedModel = nullptr;
 	}
@@ -330,7 +340,7 @@ namespace EWE {
 		//EWEPipeline* retPipe = new EWEPipeline(device, boneCount, flags, pipelineConfig);
 		SkinInstanceKey key(boneCount, flags);
 
-		auto ret = instancedBonePipelines.try_emplace(key, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(boneCount, flags, pipelineConfig))).first->second;
+		auto ret = instancedBonePipelines.try_emplace(key, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, boneCount, flags, pipelineConfig)).first->second;
 
 		glslang::FinalizeProcess();
 		return ret;
@@ -393,34 +403,33 @@ namespace EWE {
 				//printf("boneVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
 				pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "bone_Tangent.vert.spv", flags, pipelineConfig, true))).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "bone_Tangent.vert.spv", flags, pipelineConfig, true)).first->second;
 
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertexNoTangent>();
 				pipelineConfig.attributeDescriptions = boneVertexNoTangent::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "bone_NT.vert.spv", flags, pipelineConfig, true))).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "bone_NT.vert.spv", flags, pipelineConfig, true)).first->second;
 			}
 		}
 		else {
 			if (hasBumps) {
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
 				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
-
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_bump.vert.spv", flags, pipelineConfig, false))).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "material_bump.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
 				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_Tangent.vert.spv", flags, pipelineConfig, false))).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "material_Tangent.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexNT>();
 				pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_nn.vert.spv", flags, pipelineConfig, false))).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "material_nn.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 		}
 	}

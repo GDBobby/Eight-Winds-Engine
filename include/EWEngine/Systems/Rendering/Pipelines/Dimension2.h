@@ -9,15 +9,15 @@ namespace EWE {
 	class Dimension2 {
 	private: //protected? no dif
 		static Dimension2* dimension2Ptr;
-		Dimension2(EWEDevice& device);
+		Dimension2();
 
 		enum WhichPipe {
 			Pipe_2D,
 			Pipe_NineUI,
 		};
 
-		std::unique_ptr<EWEPipeline> pipe2d;
-		std::unique_ptr<EWEPipeline> pipe9;
+		EWEPipeline* pipe2d;
+		EWEPipeline* pipe9;
 		VkPipelineLayout PL_2d;
 		VkPipelineLayout PL_9;
 		TextureDesc bindedTexture;
@@ -27,9 +27,12 @@ namespace EWE {
 		VkCommandBuffer cmdBuffer;
 		uint8_t frameIndex;
 
+		EWEPipeline::PipelineConfigInfo InitConfigInfo();
+		EWEPipeline::PipelineConfigInfo SecondConfigInfo();
+
 	public:
-		static void init(EWEDevice& device);
-		static void destruct(EWEDevice& device);
+		static void init();
+		static void destruct();
 
 		static void bindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
 		static void bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex);

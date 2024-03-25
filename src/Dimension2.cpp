@@ -7,7 +7,7 @@
 
 namespace EWE {
 	Dimension2* Dimension2::dimension2Ptr{ nullptr };
-	Dimension2::Dimension2(EWEDevice& device) {
+	Dimension2::Dimension2() {
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -20,11 +20,11 @@ namespace EWE {
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-		VkDescriptorSetLayout tempDSL = TextureDSLInfo::getSimpleDSL(device, VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout();
+		VkDescriptorSetLayout tempDSL = TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout();
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &tempDSL;
 
-		if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &PL_2d) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_2d) != VK_SUCCESS) {
 			printf("failed to create 2d pipe layout\n");
 			throw std::runtime_error("Failed to create pipe layout \n");
 		}
@@ -41,7 +41,7 @@ namespace EWE {
 
 		VkPipelineCacheCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-		if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &cache) != VK_SUCCESS) {
+		if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &cache) != VK_SUCCESS) {
 			// handle error
 			printf("failed to create 2d cache \n");
 			throw std::runtime_error("failed to create 2d pipeline cache");
@@ -51,10 +51,10 @@ namespace EWE {
 
 		std::string vertString = "2d.vert.spv";
 		std::string fragString = "2d.frag.spv";
-		pipe2d = std::make_unique<EWEPipeline>(device, vertString, fragString, pipelineConfig);
+		pipe2d = ConstructSingular<EWEPipeline>(vertString, fragString, pipelineConfig);
 
 		pushConstantRange.size = sizeof(NineUIPushConstantData);
-		if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &PL_9) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_9) != VK_SUCCESS) {
 			printf("failed to create 2d pipe layout\n");
 			throw std::runtime_error("Failed to create pipe layout \n");
 		}
@@ -62,31 +62,31 @@ namespace EWE {
 
 		vertString = "NineUI.vert.spv";
 		fragString = "NineUI.frag.spv";
-		pipe9 = std::make_unique<EWEPipeline>(device, vertString, fragString, pipelineConfig);
+		pipe9 = ConstructSingular<EWEPipeline>(vertString, fragString, pipelineConfig);
 
-		model2D = Basic_Model::generate2DQuad(device);
-		nineUIModel = Basic_Model::generateNineUIQuad(device);
+		model2D = Basic_Model::generate2DQuad();
+		nineUIModel = Basic_Model::generateNineUIQuad();
 	}
 
 
-	void Dimension2::init(EWEDevice& device) {
+	void Dimension2::init() {
 		if (dimension2Ptr != nullptr) {
 			printf("initing twice??? \n");
 			throw std::runtime_error("initing twice?");
 			return;
 		}
-		dimension2Ptr = new Dimension2(device);
+		dimension2Ptr = ConstructSingular<Dimension2>();
 	}
-	void Dimension2::destruct(EWEDevice& device) {
-		vkDestroyPipelineCache(device.device(), dimension2Ptr->cache, nullptr);
+	void Dimension2::destruct() {
+		vkDestroyPipelineCache(EWEDevice::GetVkDevice(), dimension2Ptr->cache, nullptr);
 
-		vkDestroyPipelineLayout(device.device(), dimension2Ptr->PL_2d, nullptr);
-		vkDestroyPipelineLayout(device.device(), dimension2Ptr->PL_9, nullptr);
-		dimension2Ptr->pipe2d.reset();
-		dimension2Ptr->pipe9.reset();
+		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_2d, nullptr);
+		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_9, nullptr);
 		dimension2Ptr->model2D.reset();
 		dimension2Ptr->nineUIModel.reset();
-		delete dimension2Ptr;
+		ewe_free(dimension2Ptr->pipe2d);
+		ewe_free(dimension2Ptr->pipe9);
+		ewe_free(dimension2Ptr);
 	}
 
 	void Dimension2::bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {

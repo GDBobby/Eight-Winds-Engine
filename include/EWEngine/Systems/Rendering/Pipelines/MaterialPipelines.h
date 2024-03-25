@@ -40,7 +40,15 @@ namespace EWE{
 	class MaterialPipelines {
 		//object portion
 	public:
-		MaterialPipelines(uint16_t pipeLayoutIndex, EWEPipeline* pipeline);
+		//	EWEPipeline(std::string const& vertFilepath, std::string const& fragFilepath, PipelineConfigInfo const& configInfo);
+		//	EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, PipelineConfigInfo const& configInfo);
+		//	EWEPipeline(std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones);
+		//	EWEPipeline(uint16_t boneCount, MaterialFlags flags, PipelineConfigInfo const& configInfo);
+		MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilepath, std::string const& fragFilepath, EWEPipeline::PipelineConfigInfo const& configInfo);
+		MaterialPipelines(uint16_t pipeLayoutIndex, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, EWEPipeline::PipelineConfigInfo const& configInfo);
+		MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilePath, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo, bool hasBones);
+		MaterialPipelines(uint16_t pipeLayoutIndex, uint16_t boneCount, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo);
+
 		~MaterialPipelines();
 
 		void bindPipeline();
@@ -56,7 +64,7 @@ namespace EWE{
 
 	protected:
 		uint16_t pipeLayoutIndex;
-		EWEPipeline* pipeline;
+		EWEPipeline pipeline;
 		EWEModel* bindedModel = nullptr;
 		TextureDesc bindedTexture{ TEXTURE_UNBINDED_DESC };
 

@@ -42,7 +42,7 @@ namespace EWE {
         static RigidRenderingSystem* getRigidRSInstance() {
             //this isn't thread safe
             if (rigidInstance == nullptr) {
-                rigidInstance = new RigidRenderingSystem();
+                rigidInstance = ConstructSingular<RigidRenderingSystem>();
             }
             return rigidInstance;
         }
