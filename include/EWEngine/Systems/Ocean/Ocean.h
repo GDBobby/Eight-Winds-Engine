@@ -1,6 +1,5 @@
 #pragma once
 #include "OceanFFT.h"
-#include "WaveCascades.h"
 #include "EWEngine/Graphics/Model/Model.h"
 
 //this is largely self-contained, and builds its own systems.
@@ -46,6 +45,7 @@ namespace EWE {
 			void createRenderPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 
 			void transferOceanToGraphics(VkCommandBuffer cmdBuffer) {
+				/*
 				std::vector<VkImage> transferVertImages{};
 				transferVertImages.reserve(3);
 				cascade[0].addVertTransferImages(transferVertImages);
@@ -59,9 +59,11 @@ namespace EWE {
 				cascade[1].addFragTransferImages(transferFragImages);
 				cascade[2].addFragTransferImages(transferFragImages);
 				device.transferImageStage(cmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, transferFragImages);
+				*/
 			}
 
 			void transferGraphicsToOcean(VkCommandBuffer cmdBuf) {
+				/*
 				std::vector<VkImage> transferVertImages{};
 				transferVertImages.reserve(3);
 				cascade[0].addVertTransferImages(transferVertImages);
@@ -75,6 +77,7 @@ namespace EWE {
 				cascade[1].addFragTransferImages(transferFragImages);
 				cascade[2].addFragTransferImages(transferFragImages);
 				device.transferImageStage(cmdBuf, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, transferFragImages);
+				*/
 			}
 		};
 	}

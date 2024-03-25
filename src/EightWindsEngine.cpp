@@ -64,14 +64,14 @@ namespace EWE {
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
 		camera.newViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
 		initGlobalBuffers();
-		DescriptorHandler::initGlobalDescriptors(bufferMap, eweDevice);
+		DescriptorHandler::initGlobalDescriptors(bufferMap);
 		//printf("back to ui handler? \n");
 		advancedRS.takeUIHandlerPtr(&uiHandler);
 		//advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
 		leafSystem = std::make_unique<LeafSystem>(eweDevice);
 		Dimension2::init(eweDevice);
-		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(new Pipe_Skybox(eweDevice)));
+		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ewe_alloc(sizeof(Pipe_Skybox), 1)));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
 		RigidRenderingSystem::getRigidRSInstance();
@@ -98,7 +98,7 @@ namespace EWE {
 #endif
 		printf("after deconstructig level manager \n");
 		vkDestroyQueryPool(eweDevice.device(), queryPool, nullptr);
-		DescriptorHandler::cleanup(eweDevice);
+		DescriptorHandler::cleanup();
 
 
 		RigidRenderingSystem::destruct();
@@ -135,14 +135,8 @@ namespace EWE {
 
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			//allocate buffer memory
-			bufferMap[Buff_ubo][i] = new EWEBuffer(eweDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-			bufferMap[Buff_ubo][i]->map();
-			bufferMap[Buff_gpu][i] = new EWEBuffer(eweDevice, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-			bufferMap[Buff_gpu][i]->map();
-
-			//printf("mapping lbo \n");
-			bufferMap[Buff_gpu][i]->writeToBuffer(&lbo);
-			bufferMap[Buff_gpu][i]->flush();
+			bufferMap[Buff_ubo].emplace_back(EWEBuffer::construct(sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->map();
+			bufferMap[Buff_gpu].emplace_back(EWEBuffer::createAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 
 		}
 		camera.setBuffers(&bufferMap[Buff_ubo]);

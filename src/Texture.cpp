@@ -98,7 +98,7 @@ namespace EWE {
         return dslBuilder.build();
     }
 
-    EWEDescriptorSetLayout* TextureDSLInfo::getSimpleDSL(EWEDevice& device, VkShaderStageFlags stageFlag) {
+    EWEDescriptorSetLayout* TextureDSLInfo::getSimpleDSL(VkShaderStageFlags stageFlag) {
         TextureDSLInfo dslInfo{};
         dslInfo.setStageTextureCount(stageFlag, 1);
 

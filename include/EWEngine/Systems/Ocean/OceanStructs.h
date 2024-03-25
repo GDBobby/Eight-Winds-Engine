@@ -8,6 +8,7 @@ namespace EWE {
         constexpr uint32_t OCEAN_WAVE_COUNT = 256;
         constexpr float smallestWaveMultiplier = 4.f;
         constexpr float minWavesInCascade = 6.f;
+        constexpr float O_PI = 3.14159265358979323846264338327950288f;
 
         enum Pipe_Enum : uint16_t {
             Pipe_precompute_twiddle = 0,
@@ -86,19 +87,19 @@ namespace EWE {
             float  mDepth;
 
             IntialFrequencySpectrumPushData() {
-                const float lengthScaleMultiplier = smallestWaveMultiplier * minWavesInCascade / OCEAN_WAVE_COUNT;
+                const float lengthScaleMultiplier = smallestWaveMultiplier * minWavesInCascade / static_cast<float>(OCEAN_WAVE_COUNT);
                 mLengthScale[0] = 400.f;
                 mLengthScale[1] = mLengthScale[0] * lengthScaleMultiplier;
                 mLengthScale[2] = mLengthScale[1] * lengthScaleMultiplier;
                 mLengthScale[3] = mLengthScale[2] * lengthScaleMultiplier;
 
-                const float highMulti = 2.f * glm::pi<float>() * OCEAN_WAVE_COUNT / smallestWaveMultiplier;
+                const float highMulti = 2.f * O_PI * static_cast<float>(OCEAN_WAVE_COUNT) / smallestWaveMultiplier;
                 mCutoffHigh[0] = highMulti / mLengthScale[0];
                 mCutoffHigh[1] = highMulti / mLengthScale[1];
                 mCutoffHigh[2] = highMulti / mLengthScale[2];
                 mCutoffHigh[3] = highMulti / mLengthScale[3];
 
-                const float lowMulti = glm::pi<float>() * 2 * minWavesInCascade;
+                const float lowMulti = O_PI * 2 * minWavesInCascade;
 #if 0 // ALLOW_OVERLAP
                 mCutoffLow[0] = lowMulti / mLengthScale[0];
                 mCutoffLow[1] = lowMulti / mLengthScale[1];
@@ -132,7 +133,7 @@ namespace EWE {
             float mPeakEnhancement{ 3.3f };
             float mShortWavesFade{ 0.1f };
             float mFetch{ 100.f };
-            float mWindDirection{ -29.81 / 180.f * glm::pi<float>() };
+            float mWindDirection{ -29.81 / 180.f * O_PI };
         };
 
 

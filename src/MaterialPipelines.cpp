@@ -211,7 +211,7 @@ namespace EWE {
 		}
 	}
 
-	void MaterialPipelines::cleanupStaticVariables(EWEDevice& device) {
+	void MaterialPipelines::cleanupStaticVariables() {
 
 #if DECONSTRUCTION_DEBUG
 		printf("begin deconstructing material pipelines \n");
@@ -227,18 +227,18 @@ namespace EWE {
 
 		for (auto& plInfo : materialPipeLayout) {
 			if (plInfo.pipeLayout != VK_NULL_HANDLE) {
-				vkDestroyPipelineLayout(device.device(), plInfo.pipeLayout, nullptr);
+				vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), plInfo.pipeLayout, nullptr);
 			}
 		}
 
 		if (materialPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), materialPipelineCache, nullptr);
+			vkDestroyPipelineCache(EWEDevice::GetVkDevice(), materialPipelineCache, nullptr);
 		}
 		if (skinPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), skinPipelineCache, nullptr);
+			vkDestroyPipelineCache(EWEDevice::GetVkDevice(), skinPipelineCache, nullptr);
 		}
 		if (instanceSkinPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), instanceSkinPipelineCache, nullptr);
+			vkDestroyPipelineCache(EWEDevice::GetVkDevice(), instanceSkinPipelineCache, nullptr);
 		}
 
 #if DECONSTRUCTION_DEBUG
@@ -251,16 +251,16 @@ namespace EWE {
 
 		std::vector<VkDescriptorSetLayout> returnLayouts{};
 
-		returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_global, device));
+		returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_global));
 #ifdef _DEBUG
 		printf("getting dynamic PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
 #endif
 		if (hasBones && instanced) {
-			returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_largeInstance, device));
+			returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_largeInstance));
 
 		}
 		else if (hasBones) {
-			returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_boned, device));
+			returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_boned));
 		}
 		else if (instanced) {
 			printf("currrently not supporting instancing without bones, THROWING ERROR \n");
@@ -330,7 +330,7 @@ namespace EWE {
 		//EWEPipeline* retPipe = new EWEPipeline(device, boneCount, flags, pipelineConfig);
 		SkinInstanceKey key(boneCount, flags);
 
-		auto ret = instancedBonePipelines.try_emplace(key, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, boneCount, flags, pipelineConfig))).first->second;
+		auto ret = instancedBonePipelines.try_emplace(key, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(boneCount, flags, pipelineConfig))).first->second;
 
 		glslang::FinalizeProcess();
 		return ret;

@@ -22,13 +22,15 @@ namespace EWE {
     }
 
     EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::build() const {
-        return new EWEDescriptorSetLayout(eweDevice, bindings);
+        EWEDescriptorSetLayout* ret = reinterpret_cast<EWEDescriptorSetLayout*>(ewe_alloc(sizeof(EWEDescriptorSetLayout), 1));
+        ret->construct(bindings);
+        return ret;
     }
 
     // *************** Descriptor Set Layout *********************
 
-    EWEDescriptorSetLayout::EWEDescriptorSetLayout(EWEDevice& eweDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings)
-        : eweDevice{ eweDevice }, bindings{ bindings } {
+    EWEDescriptorSetLayout::EWEDescriptorSetLayout(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings)
+        : bindings{ bindings } {
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
         for (auto& kv : bindings) {
             setLayoutBindings.push_back(kv.second);
@@ -40,7 +42,27 @@ namespace EWE {
         descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
 
         if (vkCreateDescriptorSetLayout(
-            eweDevice.device(),
+            EWEDevice::GetVkDevice(),
+            &descriptorSetLayoutInfo,
+            nullptr,
+            &descriptorSetLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor set layout!");
+        }
+    }
+    void EWEDescriptorSetLayout::construct(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings) {
+        this->bindings = bindings;
+        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
+        for (auto& kv : bindings) {
+            setLayoutBindings.push_back(kv.second);
+        }
+
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
+        descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
+        descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
+
+        if (vkCreateDescriptorSetLayout(
+            EWEDevice::GetVkDevice(),
             &descriptorSetLayoutInfo,
             nullptr,
             &descriptorSetLayout) != VK_SUCCESS) {
@@ -49,7 +71,7 @@ namespace EWE {
     }
 
     EWEDescriptorSetLayout::~EWEDescriptorSetLayout() {
-        vkDestroyDescriptorSetLayout(eweDevice.device(), descriptorSetLayout, nullptr);
+        vkDestroyDescriptorSetLayout(EWEDevice::GetVkDevice(), descriptorSetLayout, nullptr);
 #ifdef _DEBUG
         printf("probably have memory leaks currently, address this ASAP \n");
         //the reason i have this print statement (feb 2024)

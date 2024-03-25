@@ -70,7 +70,7 @@ namespace EWE{
 		static MaterialPipelines* getInstancedSkinMaterialPipe(uint16_t boneCount, MaterialFlags flags, EWEDevice& device);
 
 		static void initStaticVariables();
-		static void cleanupStaticVariables(EWEDevice& device);
+		static void cleanupStaticVariables();
 
 		static MaterialPipelines* at(MaterialFlags flags);
 		static MaterialPipelines* at(SkinInstanceKey skinInstanceKey);

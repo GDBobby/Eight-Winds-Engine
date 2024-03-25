@@ -72,6 +72,9 @@ namespace EWE {
 #endif
             return eweDevice;
         }
+        static VkDevice GetVkDevice() {
+            return GetEWEDevice()->device();
+        }
 
         VkCommandPool getCommandPool() { return commandPool; }
         VkCommandPool getTransferCommandPool() { return transferCommandPool; }
@@ -180,7 +183,7 @@ namespace EWE {
         uint32_t transferIndex;
 
         //std::thread::id mainThreadID;
-        std::shared_ptr<SyncHub> syncHub;
+        SyncHub* syncHub;
 
         const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
         const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };

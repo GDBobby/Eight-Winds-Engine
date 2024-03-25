@@ -69,7 +69,7 @@ namespace EWE {
 		EWEDescriptorSetLayout* getDescSetLayout(EWEDevice& device);
 
 		static std::unordered_map<TextureDSLInfo, EWEDescriptorSetLayout*> descSetLayouts;
-		static EWEDescriptorSetLayout* getSimpleDSL(EWEDevice& device, VkShaderStageFlags stageFlag);
+		static EWEDescriptorSetLayout* getSimpleDSL(VkShaderStageFlags stageFlag);
 
 		bool operator==(TextureDSLInfo const& other) const {
 			for (int i = 0; i < SUPPORTED_STAGE_COUNT; i++) {

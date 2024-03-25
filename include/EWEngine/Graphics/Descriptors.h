@@ -15,7 +15,7 @@ namespace EWE {
     public:
         class Builder {
         public:
-            Builder(EWEDevice& eweDevice) : eweDevice{ eweDevice } {}
+            Builder() : eweDevice{ eweDevice } {}
 
             Builder& addBinding(
                 uint32_t binding,
@@ -29,7 +29,8 @@ namespace EWE {
             std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
         };
 
-        EWEDescriptorSetLayout(EWEDevice& eweDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings);
+        EWEDescriptorSetLayout(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings);
+        void construct(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings);
         ~EWEDescriptorSetLayout();
         EWEDescriptorSetLayout(const EWEDescriptorSetLayout&) = delete;
         EWEDescriptorSetLayout& operator=(const EWEDescriptorSetLayout&) = delete;
@@ -37,7 +38,6 @@ namespace EWE {
         VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
 
     private:
-        EWEDevice& eweDevice;
         VkDescriptorSetLayout descriptorSetLayout;
         std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 

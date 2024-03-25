@@ -1,4 +1,4 @@
-#include "EWEngine/Data/Memory.h"
+#include "EWEngine/Data/EWE_Memory.h"
 
 
 #ifdef _DEBUG
@@ -88,6 +88,7 @@ void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* 
 	memoryLogFile.close();
 #endif
 	void* ptr = malloc(element_count * element_size);
+
 
 	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), file, line, sourceFunction);
 

@@ -40,7 +40,7 @@ namespace EWE {
 
         //allocated with new, up to the user to delete, or put it in a unique_ptr
 
-        static EWEBuffer* createAndInitBuffer(EWEDevice& device, void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+        static EWEBuffer* createAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 
     private:
         VkDeviceSize getAlignment(VkDeviceSize instanceSize);

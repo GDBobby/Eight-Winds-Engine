@@ -619,7 +619,7 @@ namespace EWE {
         const char** glfwExtensions;
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 #if GPU_LOGGING
-        if (glfwExtensions == NULL) {
+        if (glfwExtensions == nullptr) {
             std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
             logFile << "Failed to get required extensions! " << std::endl;
             logFile.close();

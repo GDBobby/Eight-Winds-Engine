@@ -1,6 +1,6 @@
 #pragma once
 
-#include <EWEngine/Data/Memory.h>
+#include <EWEngine/Data/EWE_Memory.h>
 
 #include <mutex>
 #include <condition_variable>

@@ -76,7 +76,6 @@ namespace EWE {
         VkDeviceSize bufferSize = instanceSize * instanceCount;
         this->instanceCount = instanceCount;
         EWEBuffer stagingBuffer{
-            eweDevice,
             instanceSize,
             instanceCount,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -127,7 +126,6 @@ namespace EWE {
         VkDeviceSize bufferSize = vertexSize * vertexCount;
 
         EWEBuffer stagingBuffer{
-            eweDevice,
             vertexSize,
             vertexCount,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -151,7 +149,6 @@ namespace EWE {
         uint32_t indexSize = 4;
 
         EWEBuffer stagingBuffer{
-            eweDevice,
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -182,7 +179,6 @@ namespace EWE {
         uint32_t indexSize = sizeof(uint32_t);
 
         EWEBuffer stagingBuffer{
-            device,
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -191,7 +187,7 @@ namespace EWE {
 
         stagingBuffer.map();
         stagingBuffer.writeToBuffer((void*)indices.data());
-        EWEBuffer* indexBuffer = ;
+        EWEBuffer* indexBuffer;
         indexBuffer->construct(indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -213,7 +209,6 @@ namespace EWE {
         uint32_t indexSize = sizeof(uint32_t);
 
         EWEBuffer stagingBuffer{
-            eweDevice,
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,

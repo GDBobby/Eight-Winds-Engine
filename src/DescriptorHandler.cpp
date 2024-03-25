@@ -73,7 +73,7 @@ namespace EWE {
         return *(descriptorSetLayouts[whichLDSL]);
     }
 
-    VkDescriptorSetLayout DescriptorHandler::getDescSetLayout(LDSL_Enum whichDescSet, EWEDevice& device) {
+    VkDescriptorSetLayout DescriptorHandler::getDescSetLayout(LDSL_Enum whichDescSet) {
         {
             auto foundDSL = descriptorSetLayouts.find(whichDescSet);
             if (foundDSL != descriptorSetLayouts.end()) {

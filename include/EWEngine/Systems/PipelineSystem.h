@@ -34,6 +34,7 @@ namespace EWE {
 				throw std::runtime_error("attempting to emplace a pipe with an existing id");
 			}
 #endif
+			pipeSys->construct();
 			pipelineSystem.emplace(pipeID, pipeSys);
 		}
 		static void destruct(EWEDevice& device);
@@ -49,7 +50,7 @@ namespace EWE {
 		void drawModel();
 		virtual void drawInstanced(EWEModel* model);
 
-
+		virtual void construct() = 0;
 
 	protected:
 		std::unique_ptr<EWEPipeline> pipe{nullptr};

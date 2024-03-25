@@ -53,6 +53,7 @@ namespace EWE {
         ret->alignmentSize = ret->getAlignment(instanceSize);
         ret->bufferSize = ret->alignmentSize * instanceCount;
         EWEDevice::GetEWEDevice()->createBuffer(ret->bufferSize, usageFlags, memoryPropertyFlags, ret->buffer_info.buffer, ret->memory);
+        return ret;
     }
 
     EWEBuffer::~EWEBuffer() {
@@ -240,7 +241,7 @@ namespace EWE {
         return invalidate(alignmentSize, index * alignmentSize);
     }
 
-    EWEBuffer* EWEBuffer::createAndInitBuffer(EWEDevice& device, void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
+    EWEBuffer* EWEBuffer::createAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
         EWEBuffer* retBuffer = construct(dataSize * dataCount, 1, usageFlags, memoryPropertyFlags);
         
         retBuffer->map();

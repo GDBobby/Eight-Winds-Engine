@@ -4,7 +4,7 @@
 #include <bitset>
 #include <stdexcept>
 
-#include "EWEngine/Data/Memory.h"
+#include "EWEngine/Data/EWE_Memory.h"
 
 namespace EWE {
 	template <std::size_t Size>

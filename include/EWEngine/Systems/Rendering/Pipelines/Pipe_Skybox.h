@@ -5,11 +5,13 @@
 namespace EWE {
 	class Pipe_Skybox : PipelineSystem {
 	public:
-		Pipe_Skybox(EWEDevice& device);
+		Pipe_Skybox();
+
+		void construct() final;
 
 	protected:
-		void createPipeLayout(EWEDevice& device);
-		void createPipeline(EWEDevice& device);
+		void createPipeLayout();
+		void createPipeline();
 	};
 }
 
