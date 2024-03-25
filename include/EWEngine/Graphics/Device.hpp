@@ -15,6 +15,7 @@
 #include <utility>
 
 
+
 #define GPU_LOGGING true
 #define GPU_LOG_FILE "GPULog.log"
 
@@ -52,6 +53,8 @@ namespace EWE {
     //std::vector<VkDeviceQueueCreateInfo> queueInfo;
 
     class EWEDevice {
+        static EWEDevice* eweDevice; //singleton
+
     public:
 
         EWEDevice(MainWindow& window);
@@ -62,6 +65,13 @@ namespace EWE {
         EWEDevice& operator=(const EWEDevice&) = delete;
         EWEDevice(EWEDevice&&) = delete;
         EWEDevice& operator=(EWEDevice&&) = delete;
+
+        static EWEDevice* GetEWEDevice() {
+#ifdef _DEBUG
+            assert(eweDevice && "device is nullptr ??");
+#endif
+            return eweDevice;
+        }
 
         VkCommandPool getCommandPool() { return commandPool; }
         VkCommandPool getTransferCommandPool() { return transferCommandPool; }

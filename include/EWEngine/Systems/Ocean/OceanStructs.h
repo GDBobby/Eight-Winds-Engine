@@ -27,6 +27,7 @@ namespace EWE {
 
             Pipe_Enum_size,
         };
+
         struct SSSDataBuffer
         {
             float mNormalStrength = 1.f;
@@ -91,7 +92,7 @@ namespace EWE {
                 mLengthScale[2] = mLengthScale[1] * lengthScaleMultiplier;
                 mLengthScale[3] = mLengthScale[2] * lengthScaleMultiplier;
 
-                const float highMulti = 2 * glm::pi<float>() * OCEAN_WAVE_COUNT / smallestWaveMultiplier;
+                const float highMulti = 2.f * glm::pi<float>() * OCEAN_WAVE_COUNT / smallestWaveMultiplier;
                 mCutoffHigh[0] = highMulti / mLengthScale[0];
                 mCutoffHigh[1] = highMulti / mLengthScale[1];
                 mCutoffHigh[2] = highMulti / mLengthScale[2];
@@ -132,6 +133,18 @@ namespace EWE {
             float mShortWavesFade{ 0.1f };
             float mFetch{ 100.f };
             float mWindDirection{ -29.81 / 180.f * glm::pi<float>() };
+        };
+
+
+        struct InitialFrequencySpectrumGPUData {
+            VkPipeline pipeline = VK_NULL_HANDLE;
+            VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
+            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+            JONSWAP_Parameters jsp{};
+            IntialFrequencySpectrumPushData pushData{};
+
+            EWEBuffer* jonswapBuffer[2];
+            InitialFrequencySpectrumGPUData();
         };
     } //namespace ocean
 } //namespace EWE

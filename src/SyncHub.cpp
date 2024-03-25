@@ -5,6 +5,8 @@
 #include <assert.h>
 
 namespace EWE {
+	SyncHub* SyncHub::syncHubSingleton{ nullptr };
+
 	void SyncHub::initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool) {
 		this->graphicsQueue = graphicsQueue;
 		this->presentQueue = presentQueue;
@@ -88,6 +90,8 @@ namespace EWE {
 				vkFreeCommandBuffers(device, transferPool, static_cast<uint32_t>(transferBuffers[i].size()), transferBuffers[i].data());
 			}
 		}
+
+		ewe_free(syncHubSingleton);
 #if DECONSTRUCTION_DEBUG
 		printf("end synchub destroy \n");
 #endif

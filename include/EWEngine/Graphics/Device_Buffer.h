@@ -6,8 +6,11 @@ namespace EWE {
 
     class EWEBuffer {
     public:
-        EWEBuffer(EWEDevice& device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+        EWEBuffer(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+        static EWEBuffer* construct(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+
         ~EWEBuffer();
+        static void deconstruct(EWEBuffer* deconstructedBuffer);
 
         EWEBuffer(const EWEBuffer&) = delete;
         EWEBuffer& operator=(const EWEBuffer&) = delete;
@@ -42,7 +45,6 @@ namespace EWE {
     private:
         VkDeviceSize getAlignment(VkDeviceSize instanceSize);
 
-        EWEDevice& eweDevice;
         void* mapped = nullptr;
         VkDescriptorBufferInfo buffer_info;
          

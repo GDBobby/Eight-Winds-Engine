@@ -17,15 +17,9 @@ namespace EWE {
 			const uint16_t cascade_count{ 4 };
 			EWEDevice& device;
 
-			float lengthScale[4] = { 400.f, 17.f, 5.f, 0.f };
+			IntialFrequencySpectrumPushData ifsPushData;
+			
 
-			std::shared_ptr<EWEDescriptorPool> oceanPool;
-
-			Ocean_Time_Struct ocean_time_struct;
-			std::unique_ptr<EWEBuffer> ocean_time_buffer;
-
-			std::unique_ptr<EWEBuffer> spectrum_parameter_buffer;
-			Spectrum_Settings spectrumSettings;
 
 
 		//RENDER BEGIN

@@ -4,6 +4,8 @@
 #include <bitset>
 #include <stdexcept>
 
+#include "EWEngine/Data/Memory.h"
+
 namespace EWE {
 	template <std::size_t Size>
 	class MemoryTypeBucket {
@@ -15,7 +17,8 @@ namespace EWE {
 	public:
 
 		MemoryTypeBucket(size_t elementSize) : elementSize{ elementSize } {
-			reservedMemory = malloc(elementSize * dataChunkTracker.size());
+			reservedMemory = ewe_alloc(elementSize, dataChunkTracker.size());
+			//reservedMemory = malloc(elementSize * dataChunkTracker.size());
 		}
 
 		~MemoryTypeBucket() {

@@ -14,6 +14,9 @@
 #define ENGINE_DIR "../"
 
 namespace EWE {
+    EWEDevice* EWEDevice::eweDevice = nullptr;
+
+
 #ifdef NDEBUG
     const bool enableValidationLayers = false;
 #else
@@ -127,6 +130,7 @@ namespace EWE {
         vkDestroyCommandPool(device_, computeCommandPool, nullptr);
         vkDestroyCommandPool(device_, transferCommandPool, nullptr);
 
+        eweDevice = nullptr;
         vkDestroyDevice(device_, nullptr);
 
         if (enableValidationLayers) {

@@ -23,10 +23,10 @@ namespace EWE {
             minOffsetAlignment = 1;
         }
         else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
-            minOffsetAlignment = eweDevice.getProperties().limits.minUniformBufferOffsetAlignment;
+            minOffsetAlignment = EWEDevice::GetEWEDevice()->getProperties().limits.minUniformBufferOffsetAlignment;
         }
         else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
-            minOffsetAlignment = eweDevice.getProperties().limits.minStorageBufferOffsetAlignment;
+            minOffsetAlignment = EWEDevice::GetEWEDevice()->getProperties().limits.minStorageBufferOffsetAlignment;
         }
 
         if (minOffsetAlignment > 0) {
@@ -36,20 +36,34 @@ namespace EWE {
         return instanceSize;
     }
 
-    EWEBuffer::EWEBuffer(EWEDevice& device,  VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
-        : eweDevice{ device }, usageFlags{ usageFlags }, memoryPropertyFlags{ memoryPropertyFlags } {
+    EWEBuffer::EWEBuffer(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
+        : usageFlags{usageFlags}, memoryPropertyFlags{memoryPropertyFlags} {
 
         //buffer_info.buffer = VK_NULL_HANDLE; //not sure if necessary??
 
         alignmentSize = getAlignment(instanceSize);
         bufferSize = alignmentSize * instanceCount;
-        device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
+        EWEDevice::GetEWEDevice()->createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
+    }
+    EWEBuffer* EWEBuffer::construct(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
+        EWEBuffer* ret = reinterpret_cast<EWEBuffer*>(ewe_alloc(sizeof(EWEBuffer), 1));
+        ret->usageFlags = usageFlags;
+        ret->memoryPropertyFlags = memoryPropertyFlags;
+
+        ret->alignmentSize = ret->getAlignment(instanceSize);
+        ret->bufferSize = ret->alignmentSize * instanceCount;
+        EWEDevice::GetEWEDevice()->createBuffer(ret->bufferSize, usageFlags, memoryPropertyFlags, ret->buffer_info.buffer, ret->memory);
     }
 
     EWEBuffer::~EWEBuffer() {
         unmap();
-        vkDestroyBuffer(eweDevice.device(), buffer_info.buffer, nullptr);
-        vkFreeMemory(eweDevice.device(), memory, nullptr);
+        vkDestroyBuffer(EWEDevice::GetEWEDevice()->device(), buffer_info.buffer, nullptr);
+        vkFreeMemory(EWEDevice::GetEWEDevice()->device(), memory, nullptr);
+    }
+    void deconstruct(EWEBuffer* deconstructedBuffer)
+    {
+        deconstructedBuffer->~EWEBuffer();
+        ewe_free(deconstructedBuffer);
     }
 
     /**
@@ -63,7 +77,7 @@ namespace EWE {
      */
     VkResult EWEBuffer::map(VkDeviceSize size, VkDeviceSize offset) {
         assert(buffer_info.buffer && memory && "Called map on buffer before create");
-        return vkMapMemory(eweDevice.device(), memory, offset, size, 0, &mapped);
+        return vkMapMemory(EWEDevice::GetEWEDevice()->device(), memory, offset, size, 0, &mapped);
     }
 
     /**
@@ -73,7 +87,7 @@ namespace EWE {
      */
     void EWEBuffer::unmap() {
         if (mapped) {
-            vkUnmapMemory(eweDevice.device(), memory);
+            vkUnmapMemory(EWEDevice::GetEWEDevice()->device(), memory);
             mapped = nullptr;
         }
     }
@@ -144,7 +158,7 @@ namespace EWE {
         mappedRange.memory = memory;
         mappedRange.offset = offset;
         mappedRange.size = size;
-        return vkFlushMappedMemoryRanges(eweDevice.device(), 1, &mappedRange);
+        return vkFlushMappedMemoryRanges(EWEDevice::GetEWEDevice()->device(), 1, &mappedRange);
     }
     VkResult EWEBuffer::flushMin(uint64_t offset) {
         VkDeviceSize trueOffset = offset - (offset % minOffsetAlignment);
@@ -156,7 +170,7 @@ namespace EWE {
 #ifdef _DEBUG
         printf("flushing minimal : %lu \n", minOffsetAlignment);
 #endif
-        return vkFlushMappedMemoryRanges(eweDevice.device(), 1, &mappedRange);
+        return vkFlushMappedMemoryRanges(EWEDevice::GetEWEDevice()->device(), 1, &mappedRange);
     }
 
     /**
@@ -176,7 +190,7 @@ namespace EWE {
         mappedRange.memory = memory;
         mappedRange.offset = offset;
         mappedRange.size = size;
-        return vkInvalidateMappedMemoryRanges(eweDevice.device(), 1, &mappedRange);
+        return vkInvalidateMappedMemoryRanges(EWEDevice::GetEWEDevice()->device(), 1, &mappedRange);
     }
 
     /**
@@ -227,7 +241,8 @@ namespace EWE {
     }
 
     EWEBuffer* EWEBuffer::createAndInitBuffer(EWEDevice& device, void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
-        EWEBuffer* retBuffer = new EWEBuffer(device, dataSize * dataCount, 1, usageFlags, memoryPropertyFlags);
+        EWEBuffer* retBuffer = construct(dataSize * dataCount, 1, usageFlags, memoryPropertyFlags);
+        
         retBuffer->map();
         retBuffer->writeToBuffer(data, dataSize * dataCount);
         retBuffer->flush();

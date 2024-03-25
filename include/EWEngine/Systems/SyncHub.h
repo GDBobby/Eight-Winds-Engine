@@ -1,4 +1,7 @@
 #pragma once
+
+#include <EWEngine/Data/Memory.h>
+
 #include <mutex>
 #include <condition_variable>
 #include <vector>
@@ -15,6 +18,8 @@ static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {
 	class SyncHub {
 	private:
+		static SyncHub* syncHubSingleton;
+
 		VkDevice device{};
 		VkQueue graphicsQueue{};
 		VkQueue presentQueue{};
@@ -89,13 +94,13 @@ namespace EWE {
 		};
 		DomCuckSync domCuckSync{};
 	public:		
-		static std::shared_ptr<SyncHub> getSyncHubInstance() {
+		static SyncHub* getSyncHubInstance() {
 			static std::mutex mtx;
-			static std::shared_ptr<SyncHub> syncHubSingleton;
 
 			std::lock_guard<std::mutex> lock(mtx);
-			if (syncHubSingleton.get() == nullptr) {
-				syncHubSingleton.reset(new SyncHub());
+			if (syncHubSingleton == nullptr) {
+				syncHubSingleton = reinterpret_cast<SyncHub*>(ewe_alloc(sizeof(SyncHub), 1));
+				std::cout << "COSTRUCTING SYNCHUB" << std::endl;
 			}
 			return syncHubSingleton;
 		}
