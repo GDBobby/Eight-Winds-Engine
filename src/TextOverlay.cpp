@@ -42,20 +42,20 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
 		printf("deconstrructing textoverlay \n");
 #endif
-
-		vkDestroySampler(eweDevice.device(), sampler, nullptr);
-		vkDestroyImage(eweDevice.device(), image, nullptr);
-		vkDestroyImageView(eweDevice.device(), view, nullptr);
-		vkDestroyBuffer(eweDevice.device(), buffer, nullptr);
-		vkFreeMemory(eweDevice.device(), memory, nullptr);
-		vkFreeMemory(eweDevice.device(), imageMemory, nullptr);
-		vkDestroyShaderModule(eweDevice.device(), vertShaderModule, nullptr);
-		vkDestroyShaderModule(eweDevice.device(), fragShaderModule, nullptr);
-		vkDestroyDescriptorSetLayout(eweDevice.device(), descriptorSetLayout, nullptr);
-		vkDestroyDescriptorPool(eweDevice.device(), descriptorPool, nullptr);
-		vkDestroyPipelineLayout(eweDevice.device(), pipelineLayout, nullptr);
-		vkDestroyPipelineCache(eweDevice.device(), pipelineCache, nullptr);
-		vkDestroyPipeline(eweDevice.device(), pipeline, nullptr);
+		VkDevice const& vkDevice = EWEDevice::GetVkDevice();
+		vkDestroySampler(vkDevice, sampler, nullptr);
+		vkDestroyImage(vkDevice, image, nullptr);
+		vkDestroyImageView(vkDevice, view, nullptr);
+		vkDestroyBuffer(vkDevice, buffer, nullptr);
+		vkFreeMemory(vkDevice, memory, nullptr);
+		vkFreeMemory(vkDevice, imageMemory, nullptr);
+		vkDestroyShaderModule(vkDevice, vertShaderModule, nullptr);
+		vkDestroyShaderModule(vkDevice, fragShaderModule, nullptr);
+		vkDestroyDescriptorSetLayout(vkDevice, descriptorSetLayout, nullptr);
+		vkDestroyDescriptorPool(vkDevice, descriptorPool, nullptr);
+		vkDestroyPipelineLayout(vkDevice, pipelineLayout, nullptr);
+		vkDestroyPipelineCache(vkDevice, pipelineCache, nullptr);
+		vkDestroyPipeline(vkDevice, pipeline, nullptr);
 
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstruction textoverlay \n");
@@ -126,11 +126,11 @@ namespace EWE {
 		VkCommandBufferAllocateInfo cmdBuffAllocateInfo;
 		cmdBuffAllocateInfo.pNext = nullptr;
 		cmdBuffAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		cmdBuffAllocateInfo.commandPool = eweDevice.getTransferCommandPool();
+		cmdBuffAllocateInfo.commandPool = EWEDevice::GetEWEDevice()->getTransferCommandPool();
 		cmdBuffAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		cmdBuffAllocateInfo.commandBufferCount = (uint32_t)cmdBuffers.size();
 
-		if (vkAllocateCommandBuffers(eweDevice.device(), &cmdBuffAllocateInfo, cmdBuffers.data()) != VK_SUCCESS) {
+		if (vkAllocateCommandBuffers(EWEDevice::GetVkDevice(), &cmdBuffAllocateInfo, cmdBuffers.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to alocate cmd bfuer!");
 		}
 
@@ -138,12 +138,12 @@ namespace EWE {
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 		bufferInfo.size = bufferSize;
-		if (vkCreateBuffer(eweDevice.device(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+		if (vkCreateBuffer(EWEDevice::GetVkDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create cmd bfuer!");
 		}
 
 		VkMemoryRequirements memReqs;
-		vkGetBufferMemoryRequirements(eweDevice.device(), buffer, &memReqs);
+		vkGetBufferMemoryRequirements(EWEDevice::GetVkDevice(), buffer, &memReqs);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -151,10 +151,10 @@ namespace EWE {
 		allocInfo.memoryTypeIndex = eweDevice.findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		//allocInfo.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-		if (vkAllocateMemory(eweDevice.device(), &allocInfo, nullptr, &memory) != VK_SUCCESS) {
+		if (vkAllocateMemory(EWEDevice::GetVkDevice(), &allocInfo, nullptr, &memory) != VK_SUCCESS) {
 			throw std::runtime_error("failed to alocate!");
 		}
-		vkBindBufferMemory(eweDevice.device(), buffer, memory, 0);
+		vkBindBufferMemory(EWEDevice::GetVkDevice(), buffer, memory, 0);
 		//std::cout << "bind buffer memory result : " << printInt << std::endl;
 		/*
 		if(vkBindBufferMemory(eweDevice.device(), buffer, memory, 0) != VK_SUCCESS) {
@@ -525,7 +525,7 @@ namespace EWE {
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(vertCode.data());
 		createInfo.flags = 0;
 		//printf("after shader module create info \n");
-		if (vkCreateShaderModule(eweDevice.device(), &createInfo, nullptr, &vertShaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, &vertShaderModule) != VK_SUCCESS) {
 			printf("vert vk create  shader module failed \n");
 			throw std::runtime_error("failed to create shader module");
 		}
@@ -534,7 +534,7 @@ namespace EWE {
 		createInfo.codeSize = fragCode.size();
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(fragCode.data());
 		//printf("setting shader module create info to frag \n");
-		if (vkCreateShaderModule(eweDevice.device(), &createInfo, nullptr, &fragShaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, &fragShaderModule) != VK_SUCCESS) {
 			printf("frag vk create shader module failed \n");
 			throw std::runtime_error("failed to create shader module");
 		}
@@ -581,7 +581,7 @@ namespace EWE {
 
 		//std::make_unique<EWEPipeline>(eweDevice, "texture_shader.vert.spv", "texture_shader.frag.spv", pipelineConfig);
 
-		if (vkCreateGraphicsPipelines(eweDevice.device(), pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(EWEDevice::GetVkDevice(), pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline) != VK_SUCCESS) {
 			printf("failed to create graphics pipeline in textoverlay \n");
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
@@ -590,7 +590,7 @@ namespace EWE {
 	}
 
 	void TextOverlay::addDefaultText(double time, double peakTime, double averageTime, double highTime) {
-		addText(TextStruct{ eweDevice.deviceName, 0, frameBufferHeight - (20.f * scale), TA_left, 1.f });
+		addText(TextStruct{ EWEDevice::GetEWEDevice()->deviceName, 0, frameBufferHeight - (20.f * scale), TA_left, 1.f});
 		//printf("frameBuffer : %d : %d \n", frameBufferWidth, frameBufferHeight);
 		int lastFPS = static_cast<int>(1 / time);
 		int averageFPS = static_cast<int>(1 / averageTime);
@@ -794,14 +794,14 @@ namespace EWE {
 	}
 
 	void TextOverlay::beginTextUpdate() {
-		if (vkMapMemory(eweDevice.device(), memory, 0, VK_WHOLE_SIZE, 0, (void**)&mapped) != VK_SUCCESS) {
+		if (vkMapMemory(EWEDevice::GetVkDevice(), memory, 0, VK_WHOLE_SIZE, 0, (void**)&mapped) != VK_SUCCESS) {
 			throw std::runtime_error("failed to map memory!");
 		};
 		numLetters = 0;
 	}
 
 	void TextOverlay::endTextUpdate() {
-		vkUnmapMemory(eweDevice.device(), memory);
+		vkUnmapMemory(EWEDevice::GetVkDevice(), memory);
 		mapped = nullptr;
 	}
 }

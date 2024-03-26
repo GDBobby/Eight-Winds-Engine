@@ -51,7 +51,7 @@ namespace EWE {
 		struct ImageTracker {
 			ImageInfo imageInfo;
 			std::unordered_set<TextureDesc> usedInTexture{};
-			ImageTracker(std::string const& path, bool mipmap) : imageInfo{device, path, mipmap} {}
+			ImageTracker(std::string const& path, bool mipmap) : imageInfo{path, mipmap} {}
 			ImageTracker() : imageInfo{} {}
 		};
 

@@ -99,7 +99,7 @@ namespace EWE {
     }
 
     std::shared_ptr<EWEDescriptorPool> EWEDescriptorPool::Builder::build() const {
-        return std::make_shared<EWEDescriptorPool>(eweDevice, maxSets, poolFlags, poolSizes);
+        return std::make_shared<EWEDescriptorPool>(maxSets, poolFlags, poolSizes);
     }
 
     // *************** Descriptor Pool *********************
@@ -205,7 +205,7 @@ namespace EWE {
         //EWEDescriptorPool(EWEDevice & eweDevice, uint32_t maxSets,VkDescriptorPoolCreateFlags poolFlags,const std::vector<VkDescriptorPoolSize>&poolSizes);
     }
     void EWEDescriptorPool::AddPool(DescriptorPool_ID poolID, VkDescriptorPoolCreateInfo& pool_info) {
-        EWEDescriptorPool::pools.try_emplace(poolID, device, pool_info);
+        EWEDescriptorPool::pools.try_emplace(poolID, pool_info);
     }
 
     void EWEDescriptorPool::DestructPools() {

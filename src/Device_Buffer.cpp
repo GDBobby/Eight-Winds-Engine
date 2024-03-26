@@ -242,7 +242,7 @@ namespace EWE {
     }
 
     EWEBuffer* EWEBuffer::createAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
-        EWEBuffer* retBuffer = construct(dataSize * dataCount, 1, usageFlags, memoryPropertyFlags);
+        EWEBuffer* retBuffer = ConstructSingular<EWEBuffer>(dataSize * dataCount, 1, usageFlags, memoryPropertyFlags);
         
         retBuffer->map();
         retBuffer->writeToBuffer(data, dataSize * dataCount);

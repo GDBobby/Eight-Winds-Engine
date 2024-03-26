@@ -69,7 +69,7 @@ namespace EWE {
 			hasTextOverlayBeenMade = true;
 			printf("CREATING TEXT OVERLAY\n");
 
-			return new TextOverlay{ eweDevice, static_cast<float>(eweSwapChain->width()), static_cast<float>(eweSwapChain->height()), *eweSwapChain->getPipelineInfo()};
+			return new TextOverlay{static_cast<float>(eweSwapChain->width()), static_cast<float>(eweSwapChain->height()), *eweSwapChain->getPipelineInfo()};
 		}
 
 		//void updateTextOverlay(float time, float peakTime, float averageTime, float minTime, float highTime, VkCommandBuffer commandBuffer);

@@ -93,6 +93,7 @@ void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* 
 	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), file, line, sourceFunction);
 
 	updateMemoryLogFile();
+	return ptr;
 }
 
 void ewe_free_internal(void* ptr) {

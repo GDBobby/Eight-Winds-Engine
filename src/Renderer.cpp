@@ -10,7 +10,7 @@ namespace EWE {
 
 	EWERenderer* EWERenderer::instance{ nullptr };
 
-	EWERenderer::EWERenderer(MainWindow& window, EWECamera& camera) : camera{ camera }, mainWindow{ window }, eweDevice{ device }, syncHub{ SyncHub::getSyncHubInstance() } {
+	EWERenderer::EWERenderer(MainWindow& window, EWECamera& camera) : camera{ camera }, mainWindow{ window }, syncHub{ SyncHub::getSyncHubInstance() } {
 		instance = this;
 		//printf("EWE renderer constructor \n");
 #if GPU_LOGGING
@@ -51,15 +51,15 @@ namespace EWE {
 			extent = mainWindow.getExtent();
 			glfwWaitEvents();
 		}
-		vkDeviceWaitIdle(eweDevice.device());
+		vkDeviceWaitIdle(EWEDevice::GetVkDevice());
 
 
 		if (eweSwapChain == nullptr) {
-			eweSwapChain = std::make_unique<EWESwapChain>(eweDevice, extent, true);
+			eweSwapChain = std::make_unique<EWESwapChain>(extent, true);
 		}
 		else {
 			std::shared_ptr<EWESwapChain> oldSwapChain = std::move(eweSwapChain);
-			eweSwapChain = std::make_unique<EWESwapChain>(eweDevice, extent, true, oldSwapChain);
+			eweSwapChain = std::make_unique<EWESwapChain>(extent, true, oldSwapChain);
 
 			if (!oldSwapChain->compareSwapFormats(*eweSwapChain.get())) {
 				std::cout << "Swap chain image(or depth) format has changed!" << std::endl;
@@ -184,10 +184,8 @@ namespace EWE {
 			}
 		};
 
-		if (eweDevice.getGraphicsIndex() != eweDevice.getPresentIndex()) {
-			image_memory_barrier.srcQueueFamilyIndex = eweDevice.getPresentIndex();
-			image_memory_barrier.dstQueueFamilyIndex = eweDevice.getGraphicsIndex();
-		}
+		image_memory_barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->getPresentIndex();
+		image_memory_barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->getGraphicsIndex();
 
 		vkCmdPipelineBarrier(
 			commandBuffer,
@@ -228,10 +226,8 @@ namespace EWE {
 			  .layerCount = 1,
 			}
 		};
-		if (eweDevice.getGraphicsIndex() != eweDevice.getPresentIndex()) {
-			image_memory_barrier.srcQueueFamilyIndex = eweDevice.getGraphicsIndex();
-			image_memory_barrier.dstQueueFamilyIndex = eweDevice.getPresentIndex();
-		}
+		image_memory_barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->getGraphicsIndex();
+		image_memory_barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->getPresentIndex();
 		//printf("end frame :: get currentCommandBuffer \n");
 
 		vkCmdPipelineBarrier(

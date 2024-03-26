@@ -10,7 +10,7 @@ namespace EWE {
     Texture_Manager* Texture_Manager::textureManagerPtr{ nullptr };
 
 
-    Texture_Builder::Texture_Builder(bool global) : device(device), global(global) {}
+    Texture_Builder::Texture_Builder(bool global) : global(global) {}
 
     void Texture_Builder::addComponent(std::string const& texPath, VkShaderStageFlags stageFlags, bool mipmaps) {
         switch (stageFlags) {
@@ -68,7 +68,7 @@ namespace EWE {
 
         TextureDSLInfo dslInfo{};
         VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //this is 1
-        EWEDescriptorSetLayout::Builder dslBuilder{ device };
+        EWEDescriptorSetLayout::Builder dslBuilder{};
 
         uint16_t imageCount = 0;
         for (uint8_t i = 0; i < 6; i++) {
@@ -103,7 +103,7 @@ namespace EWE {
         }
 
         if (uniqueDescriptor) {
-            EWEDescriptorWriter descBuilder(*dslInfo.getDescSetLayout(device), DescriptorPool_Global);
+            EWEDescriptorWriter descBuilder(*dslInfo.getDescSetLayout(), DescriptorPool_Global);
             for (uint16_t i = 0; i < imageInfos.size(); i++) {
                 descBuilder.writeImage(i, imageInfos[i]->imageInfo.getDescriptorImageInfo());
             }
@@ -191,7 +191,7 @@ namespace EWE {
                 uniqueImage = true;
                 imageInfo = Texture_Manager::constructImageTracker(texPath, mipmaps);
 
-                EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(tmPtr->device, shaderStage), DescriptorPool_Global);
+                EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(shaderStage), DescriptorPool_Global);
                 descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
                 TextureDesc retDesc = descBuilder.build();
 
@@ -225,7 +225,7 @@ namespace EWE {
 
         for (auto& image : imageMap) {
             //printf("%d tracking \n", tracker++);
-            image.second->imageInfo.destroy(device);
+            image.second->imageInfo.destroy();
             image.second->~ImageTracker();
             imageTrackerBucket.freeDataChunk(image.second);
         }
@@ -272,7 +272,7 @@ namespace EWE {
                 imageTracker->usedInTexture.erase(sceneID);
 #endif
                 if (imageTracker->usedInTexture.size() == 0) {
-                    imageTracker->imageInfo.destroy(device);
+                    imageTracker->imageInfo.destroy();
                     for (auto iter = imageMap.begin(); iter != imageMap.end(); iter++) {
                         if (iter->second == imageTracker) {
                             
@@ -321,7 +321,7 @@ namespace EWE {
     Texture_Manager::ImageTracker* Texture_Manager::constructImageTracker(std::string const& path, bool mipmap) {
         ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
 
-        new(imageTracker) ImageTracker(textureManagerPtr->device, path, true);
+        new(imageTracker) ImageTracker(path, true);
 
         return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
     }

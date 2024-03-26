@@ -1,7 +1,7 @@
 #include "EWEngine/Compute/Compute_Texture.h"
 
 #include <fstream>
-
+/*
 namespace EWE {
     void Compute_Texture::createTextureImage() {
         //width[i] = pixelPeek[i].width;
@@ -85,7 +85,7 @@ namespace EWE {
         graphicsImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         graphicsImageInfo.flags = 0; // Optional
 
-        auto graphicsIndex = device.getGraphicsIndex();
+        auto graphicsIndex = EWEDevice::.getGraphicsIndex();
         graphicsImageInfo.queueFamilyIndexCount = 1;
         graphicsImageInfo.pQueueFamilyIndices = &graphicsIndex;
 
@@ -348,3 +348,4 @@ namespace EWE {
     }
 
 }
+*/

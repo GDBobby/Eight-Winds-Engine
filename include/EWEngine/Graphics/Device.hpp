@@ -78,7 +78,7 @@ namespace EWE {
 
         VkFormatProperties GetVkFormatProperties(VkFormat imageFormat) {
             VkFormatProperties formatProperties;
-            vkGetPhysicalDeviceFormatProperties(device.getPhysicalDevice(), imageFormat, &formatProperties);
+            vkGetPhysicalDeviceFormatProperties(getPhysicalDevice(), imageFormat, &formatProperties);
             return formatProperties;
         }
 

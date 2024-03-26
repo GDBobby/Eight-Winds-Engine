@@ -125,7 +125,7 @@ namespace EWE {
 			}
 #endif
 			//instancedBuffersCreated += 2;
-			instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ device, boneCount, 2000});
+			instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ boneCount, 2000});
 		}
 		void createBoneBuffer(SkeletonID skeletonID, uint16_t boneCount) {
 			if (buffers.contains(skeletonID)) {
@@ -137,7 +137,7 @@ namespace EWE {
 #ifdef _DEBUG
 			printf("creating bone buffer \n");
 #endif
-			buffers.emplace(skeletonID, SkinBufferHandler{ device, boneCount, 1});
+			buffers.emplace(skeletonID, SkinBufferHandler{ boneCount, 1});
 		}
 		void createReferenceBuffer(SkeletonID skeletonID, SkeletonID referenceID) {
 			if (buffers.contains(skeletonID)) {
@@ -149,10 +149,10 @@ namespace EWE {
 		}
 
 		SkinRS::PipelineStruct& createInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, MaterialFlags textureFlags) {
-			return instancedData.try_emplace(instancedFlags, boneCount, textureFlags, device).first->second;
+			return instancedData.try_emplace(instancedFlags, boneCount, textureFlags).first->second;
 		}
 		SkinRS::PipelineStruct& createBonePipe(MaterialFlags boneFlags) {
-			return boneData.try_emplace(boneFlags, boneFlags, device).first->second;
+			return boneData.try_emplace(boneFlags, boneFlags).first->second;
 		}
 
 		uint32_t skinID = 0;

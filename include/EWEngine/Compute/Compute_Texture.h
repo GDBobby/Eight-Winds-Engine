@@ -6,7 +6,7 @@
 #include <cmath>
 #include <random>
 #include <array>
-
+/*
 namespace EWE {
 
 	class Compute_Texture {
@@ -127,3 +127,4 @@ namespace EWE {
         VkFormat texel_format = VK_FORMAT_R8G8B8A8_UNORM;
 	};
 }
+*/

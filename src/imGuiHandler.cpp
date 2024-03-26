@@ -4,7 +4,7 @@
 #include <EWEngine/Graphics/Pipeline.h>
 
 namespace EWE {
-	ImGUIHandler::ImGUIHandler(GLFWwindow* window, uint32_t imageCount) : device{ device } {
+	ImGUIHandler::ImGUIHandler(GLFWwindow* window, uint32_t imageCount) {
 		//printf("imgui handler constructor \n");
 
 		IMGUI_CHECKVERSION();
@@ -17,12 +17,13 @@ namespace EWE {
 		createDescriptorPool();
 
 		ImGui_ImplGlfw_InitForVulkan(window, true);
+		EWEDevice* const& device = EWEDevice::GetEWEDevice();
 		ImGui_ImplVulkan_InitInfo init_info = {};
-		init_info.Instance = device.getInstance();
-		init_info.PhysicalDevice = device.getPhysicalDevice();
-		init_info.Device = EWEDevice::GetVkDevice();
-		init_info.QueueFamily = device.getGraphicsIndex();
-		init_info.Queue = device.graphicsQueue();
+		init_info.Instance = device->getInstance();
+		init_info.PhysicalDevice = device->getPhysicalDevice();
+		init_info.Device = device->device();
+		init_info.QueueFamily = device->getGraphicsIndex();
+		init_info.Queue = device->graphicsQueue();
 		init_info.PipelineCache = nullptr;
 		init_info.Allocator = nullptr;
 		init_info.MinImageCount = imageCount;
@@ -84,6 +85,6 @@ namespace EWE {
 		}
 		//pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
 		pool_info.pPoolSizes = pool_sizes;
-		EWEDescriptorPool::AddPool(DescriptorPool_imgui, device, pool_info);
+		EWEDescriptorPool::AddPool(DescriptorPool_imgui, pool_info);
 	}
 }

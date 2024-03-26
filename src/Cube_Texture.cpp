@@ -45,9 +45,9 @@ namespace EWE {
         Texture_Manager::ImageTracker* cubeTracker = Texture_Manager::constructEmptyImageTracker(texPath);
         ImageInfo& cubeImage = cubeTracker->imageInfo;
 
-        createCubeImage(cubeImage, device, pixelPeeks);
-        createCubeImageView(cubeImage, device);
-        createCubeSampler(cubeImage, device);
+        createCubeImage(cubeImage, pixelPeeks);
+        createCubeImageView(cubeImage);
+        createCubeSampler(cubeImage);
 
         cubeImage.descriptorImageInfo.sampler = cubeImage.sampler;
         cubeImage.descriptorImageInfo.imageView = cubeImage.imageView;
@@ -76,7 +76,7 @@ namespace EWE {
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
 
-        device.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        EWEDevice::GetEWEDevice()->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
         vkMapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
         uint64_t memAddress = reinterpret_cast<uint64_t>(data);
         cubeTexture.mipLevels = 1;
@@ -105,10 +105,11 @@ namespace EWE {
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-        device.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeTexture.image, cubeTexture.imageMemory);
+        EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
+        eweDevice->createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeTexture.image, cubeTexture.imageMemory);
 
-        device.transitionImageLayout(cubeTexture.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cubeTexture.mipLevels, 6);
-        device.copyBufferToImage(stagingBuffer, cubeTexture.image, pixelPeek[0].width, pixelPeek[0].height, 6);
+        eweDevice->transitionImageLayout(cubeTexture.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cubeTexture.mipLevels, 6);
+        eweDevice->copyBufferToImage(stagingBuffer, cubeTexture.image, pixelPeek[0].width, pixelPeek[0].height, 6);
 
 
 
@@ -116,7 +117,7 @@ namespace EWE {
         vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
 
         //i gotta do this a 2nd time i guess
-        device.transitionImageLayout(cubeTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cubeTexture.mipLevels, 6, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        eweDevice->transitionImageLayout(cubeTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cubeTexture.mipLevels, 6, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     }
 
     void Cube_Texture::createCubeImageView(ImageInfo& cubeTexture) {
@@ -154,7 +155,7 @@ namespace EWE {
         samplerInfo.addressModeW = samplerInfo.addressModeU;
 
         samplerInfo.anisotropyEnable = VK_TRUE;
-        samplerInfo.maxAnisotropy = device.getProperties().limits.maxSamplerAnisotropy;
+        samplerInfo.maxAnisotropy = EWEDevice::GetEWEDevice()->getProperties().limits.maxSamplerAnisotropy;
 
         samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;

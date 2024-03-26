@@ -71,38 +71,27 @@ namespace EWE {
         }
 
 
-        template <typename T>
-        static std::unique_ptr<EWEModel> createMesh(const std::vector<T>& vertices, const std::vector<uint32_t>& indices) {
-            return std::make_unique<EWEModel>(device, vertices, indices);
+        std::unique_ptr<EWEModel> createMesh(void* verticesData, uint32_t vertexCount, uint64_t sizeOfVertex, std::vector<uint32_t>const& indices) {
+            return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex, indices);
         }
 
-        template <typename T>
-        static std::unique_ptr<EWEModel> createMesh(const std::vector<T>& vertices) {
-            return std::make_unique<EWEModel>(device, vertices);
+        std::unique_ptr<EWEModel> createMesh(void* verticesData, uint32_t vertexCount, uint64_t sizeOfVertex) {
+            return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex);
         }
 
-
-        template<typename T>
-        EWEModel(const std::vector<T>& vertices, const std::vector<uint32_t>& indices) : eweDevice{ device } {
-            vertexCount = static_cast<uint32_t>(vertices.size());
-            assert(vertexCount >= 3 && "vertex count must be at least 3, template");
-            uint32_t vertexSize = sizeof(vertices[0]);
-            VertexBuffers(vertexCount, vertexSize, (void*)vertices.data());
+        EWEModel(void* verticesData, uint32_t vertexCount, uint64_t sizeOfVertex, std::vector<uint32_t> const& indices) {
+            assert(vertexCount >= 3 && "vertex count must be at least 3");
+            VertexBuffers(vertexCount, sizeOfVertex, verticesData);
             createIndexBuffers(indices);
-            //IndexBuffers(indexCount, vertexSize, (void*)indices.data());
         }
-        template<typename T>
-        EWEModel(const std::vector<T>& vertices) {
-            vertexCount = static_cast<uint32_t>(vertices.size());
-            assert(vertexCount >= 3 && "vertex count must be at least 3, template");
-            uint32_t vertexSize = sizeof(vertices[0]);
-            VertexBuffers(vertexCount, vertexSize, (void*)vertices.data());
+
+        EWEModel(void* verticesData, uint32_t vertexCount, uint64_t sizeOfVertex) {
+            assert(vertexCount >= 3 && "vertex count must be at least 3");
+            VertexBuffers(vertexCount, sizeOfVertex, verticesData);
         }
+
 
         void AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data);
-        //void updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf);
-
-        //virtual ~EWEModel() {}
 
 
         EWEModel(const EWEModel&) = delete;

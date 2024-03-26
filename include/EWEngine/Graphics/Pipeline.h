@@ -149,7 +149,7 @@ namespace EWE {
 		static void enableAlphaBlending(PipelineConfigInfo& configInfo);
 
 		static void cleanShaderModules() {
-			VkDevice& vkDevice = EWEDevice::GetVkDevice();
+			VkDevice const& vkDevice = EWEDevice::GetVkDevice();
 			for (auto iter = shaderModuleMap.begin(); iter != shaderModuleMap.end(); iter++) {
 				vkDestroyShaderModule(vkDevice, iter->second, nullptr);
 			}

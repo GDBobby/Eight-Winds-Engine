@@ -44,17 +44,17 @@ namespace EWE {
 		mainWindow{ windowName },
 		eweDevice{ mainWindow },
 		camera{},
-		eweRenderer{ mainWindow, eweDevice, camera },
-		//computeHandler{eweDevice},
+		eweRenderer{ mainWindow, camera },
+		//computeHandler{},
 		objectManager{},
-		//imguiHandler{ mainWindow.getGLFWwindow(), eweDevice, MAX_FRAMES_IN_FLIGHT, eweRenderer.getSwapChainRenderPass() },
+		//imguiHandler{ mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT, eweRenderer.getSwapChainRenderPass() },
 
 		/*2000 is ballparked, if its not set high enough then all textures will be moved, and invalidate the data*/
-		uiHandler{ SettingsJSON::settingsData.getDimensions(), eweDevice, mainWindow.getGLFWwindow(), eweRenderer.makeTextOverlay() },
-		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), eweDevice, mainWindow.getGLFWwindow(), uiHandler.getTextOverlay() },
-		advancedRS{ eweDevice, objectManager, menuManager},
-		skinnedRS{ eweDevice },
-		textureManager{eweDevice}
+		uiHandler{ SettingsJSON::settingsData.getDimensions(), mainWindow.getGLFWwindow(), eweRenderer.makeTextOverlay() },
+		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), mainWindow.getGLFWwindow(), uiHandler.getTextOverlay() },
+		advancedRS{ objectManager, menuManager},
+		skinnedRS{ },
+		textureManager{ }
 	{
 		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = eweRenderer.getPipelineInfo();
 
@@ -69,7 +69,7 @@ namespace EWE {
 		advancedRS.takeUIHandlerPtr(&uiHandler);
 		//advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
-		leafSystem = std::make_unique<LeafSystem>(eweDevice);
+		leafSystem = std::make_unique<LeafSystem>();
 		Dimension2::init();
 		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>()));
 

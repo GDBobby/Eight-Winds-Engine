@@ -15,10 +15,10 @@ namespace EWE {
         std::cout << "weapon object construction : objectPath - " << objectPath << std::endl;
         ImportData tempData = ImportData::loadData(objectPath);
         TextureMapping textureTracker;
-        loadTextures(device, objectPath, tempData.nameExport, textureTracker, globalTextures);
+        loadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
 
         //addToRigidRenderingSystem(device, tempData, textureTracker);
-        addToSkinHandler(device, tempData, textureTracker, ownerID);
+        addToSkinHandler(tempData, textureTracker, ownerID);
     }
     EweObject::~EweObject() {
         auto materialInstance = RigidRenderingSystem::getRigidRSInstance();
@@ -48,6 +48,8 @@ namespace EWE {
         */
 
         meshes.reserve(tempData.meshSimpleExport.meshes.size() + tempData.meshNTSimpleExport.meshes.size()); //a mesh should not have both simple and simpleNT
+
+        uint64_t vertexSize = sizeof(ImportData::meshSimpleExport::);
         for (int i = 0; i < tempData.meshSimpleExport.meshes.size(); i++) {
             meshes.emplace_back(EWEModel::createMesh(tempData.meshSimpleExport.meshes[i].vertices, tempData.meshSimpleExport.meshes[i].indices));
             materialInstance->addMaterialObject(textureTracker.meshSimpleNames[i], &transform, meshes.back().get(), &drawable);
