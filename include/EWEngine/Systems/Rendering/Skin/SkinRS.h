@@ -20,7 +20,7 @@ namespace EWE {
 		
 	public:
 
-		SkinRenderSystem(EWEDevice& device);
+		SkinRenderSystem();
 		~SkinRenderSystem();
 		//~MonsterBoneBufferDescriptorStruct();
 
@@ -89,7 +89,7 @@ namespace EWE {
 				throw std::exception("trying to change the max actor count for a buffer that doesn't exist");
 			}
 #endif
-			buffers.at(skeletonID).changeMaxActorCount(device, maxActorCount);
+			buffers.at(skeletonID).changeMaxActorCount(maxActorCount);
 
 		}
 
@@ -161,8 +161,6 @@ namespace EWE {
 		std::unordered_map<SkeletonID, SkinBufferHandler> buffers{};
 		std::unordered_map<SkeletonID, InstancedSkinBufferHandler> instancedBuffers{};
 		std::unordered_map<SkeletonID, SkinRS::PushConstantStruct> pushConstants{};
-
-		EWEDevice& device;
 
 		//uint32_t buffersCreated = 0;
 		//uint32_t instancedBuffersCreated = 0;

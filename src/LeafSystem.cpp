@@ -3,12 +3,11 @@
 #include "EWEngine/Graphics/Texture/Texture_Manager.h"
 
 namespace EWE {
-	LeafSystem::LeafSystem(EWEDevice& device) : ranDev{}, randomGen{ ranDev() }, ellipseRatioDistribution{ 1.f,2.f }, rotRatioDistribution{ 1.f, 4.f },
+	LeafSystem::LeafSystem() : ranDev{}, randomGen{ ranDev() }, ellipseRatioDistribution{ 1.f,2.f }, rotRatioDistribution{ 1.f, 4.f },
 		angularFrequencyDistribution{ glm::pi<float>(), glm::two_pi<float>() }, initTimeDistribution{ 0.f, 20.f },
 		motionDistribution{ 0, 100 }, ellipseOscDistribution{ 0.75f, 1.25f }, depthVarianceDistribution{ -5.f, 5.f },
 		widthVarianceDistribution{ -80.f, 60.f }, fallSwingVarianceDistribution{ 5.f, 10.f }, initHeightVarianceDistribution{ 2.f, 40.f }, varianceDistribution{ -.5f, .5f },
-		rockDist{ 1.75f, 2.25f },
-		device{device}
+		rockDist{ 1.75f, 2.25f }
 #ifdef _DEBUG
 		, PipelineSystem{Pipe_loading}
 #endif
@@ -21,7 +20,7 @@ namespace EWE {
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			leafBuffer.emplace_back(EWEBuffer::construct(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->map();
+			leafBuffer.emplace_back(ConstructSingular<EWEBuffer>(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->map();
 			leafBufferData.emplace_back(reinterpret_cast<float*>(leafBuffer[i]->getMappedMemory()));
 			transformDescriptor.emplace_back(
 				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
@@ -102,13 +101,14 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
 		printf("begin deconstructing leaf system \n");
 #endif
-		vkDestroyShaderModule(device.device(), vertexShaderModule, nullptr);
-		vkDestroyShaderModule(device.device(), fragmentShaderModule, nullptr);
+		vkDestroyShaderModule(EWEDevice::GetVkDevice(), vertexShaderModule, nullptr);
+		vkDestroyShaderModule(EWEDevice::GetVkDevice(), fragmentShaderModule, nullptr);
 
-		vkDestroyPipelineLayout(device.device(), pipeLayout, nullptr);
+		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), pipeLayout, nullptr);
 
 		for (auto& buffer : leafBuffer) {
-			delete buffer;
+			buffer->~EWEBuffer();
+			ewe_free(buffer);
 		}
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstructing leaf system \n");
@@ -291,7 +291,7 @@ namespace EWE {
 		//could use a buffer and trim instances that are out of view, might be a compute shader kinda thing
 
 	}
-	void LeafSystem::loadLeafModel(EWEDevice& device) {
+	void LeafSystem::loadLeafModel() {
 		//printf("loading leaf model \n");
 		std::ifstream inFile("models/leaf_simpleNTMesh.ewe", std::ifstream::binary);
 		//inFile.open();
@@ -315,7 +315,7 @@ namespace EWE {
 		}
 		inFile.close();
 		//printf("file read successfully \n");
-		leafModel = EWEModel::createMesh(device, importMesh.meshes[0].vertices, importMesh.meshes[0].indices);
+		leafModel = EWEModel::createMesh(importMesh.meshes[0].vertices, importMesh.meshes[0].indices);
 		//printf("leaf model loaded \n");
 	}
 	void LeafSystem::render(FrameInfo& frameInfo) {
@@ -333,8 +333,8 @@ namespace EWE {
 
 		leafModel->BindAndDrawInstanceNoBuffer(cmdBuf, LEAF_COUNT);
 	}
-	void LeafSystem::createPipeline(EWEDevice& device) {
-		createPipeLayout(device);
+	void LeafSystem::createPipeline() {
+		createPipeLayout();
 
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
@@ -346,16 +346,16 @@ namespace EWE {
 
 		printf("before loading vert shader \n");
 		glslang::InitializeProcess();
-		Pipeline_Helper_Functions::createShaderModule(device, ShaderBlock::getLoadingVertShader(), &vertexShaderModule);
+		Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getLoadingVertShader(), &vertexShaderModule);
 
 		printf("before loading frag shader \n");
-		Pipeline_Helper_Functions::createShaderModule(device, ShaderBlock::getLoadingFragShader(), &fragmentShaderModule);
+		Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getLoadingFragShader(), &fragmentShaderModule);
 		printf("after loading creation shaders \n");
 		glslang::FinalizeProcess();
 
-		pipe = std::make_unique<EWEPipeline>(device, vertexShaderModule, fragmentShaderModule, pipelineConfig);
+		pipe = std::make_unique<EWEPipeline>(vertexShaderModule, fragmentShaderModule, pipelineConfig);
 	}
-	void LeafSystem::createPipeLayout(EWEDevice& device) {
+	void LeafSystem::createPipeLayout() {
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
@@ -363,15 +363,15 @@ namespace EWE {
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
 		std::vector<VkDescriptorSetLayout> setLayouts = {
-			DescriptorHandler::getDescSetLayout(LDSL_global, device),
-			TextureDSLInfo::getSimpleDSL(device, VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout(),
-			DescriptorHandler::getDescSetLayout(LDSL_boned, device)
+			DescriptorHandler::getDescSetLayout(LDSL_global),
+			TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout(),
+			DescriptorHandler::getDescSetLayout(LDSL_boned)
 		};
 
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
 		pipelineLayoutInfo.pSetLayouts = setLayouts.data();
 
-		if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipeLayout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout) != VK_SUCCESS) {
 			printf("failed to create leaf pipe layout\n");
 			throw std::runtime_error("Failed to create pipe layout");
 		}

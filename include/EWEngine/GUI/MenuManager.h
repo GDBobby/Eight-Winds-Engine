@@ -26,7 +26,7 @@ namespace EWE {
 		//std::queue<MenuClickReturn> clickReturns;
 		uint8_t currentMenuState = 0;
 
-		MenuManager(float screenWidth, float screenHeight, EWEDevice& eweDevice, GLFWwindow* windowPtr, std::shared_ptr<TextOverlay> textOverlay);
+		MenuManager(float screenWidth, float screenHeight, GLFWwindow* windowPtr, std::shared_ptr<TextOverlay> textOverlay);
 		int8_t whichScene = -1;
 		/*
 		static void DiscardReturnCallback() {

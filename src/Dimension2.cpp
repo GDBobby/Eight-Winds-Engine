@@ -76,6 +76,9 @@ namespace EWE {
 			return;
 		}
 		dimension2Ptr = ConstructSingular<Dimension2>();
+		dimension2Ptr = reinterpret_cast<Dimension2*>(ewe_alloc(sizeof(Dimension2), 1));
+		new(dimension2Ptr) Dimension2();
+
 	}
 	void Dimension2::destruct() {
 		vkDestroyPipelineCache(EWEDevice::GetVkDevice(), dimension2Ptr->cache, nullptr);
@@ -84,6 +87,10 @@ namespace EWE {
 		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_9, nullptr);
 		dimension2Ptr->model2D.reset();
 		dimension2Ptr->nineUIModel.reset();
+
+		dimension2Ptr->pipe2d->~EWEPipeline();
+		dimension2Ptr->pipe9->~EWEPipeline();
+		dimension2Ptr->~Dimension2();
 		ewe_free(dimension2Ptr->pipe2d);
 		ewe_free(dimension2Ptr->pipe9);
 		ewe_free(dimension2Ptr);

@@ -29,12 +29,14 @@ namespace EWE {
 		std::unique_ptr<EWEBuffer> transformBuffer;
 		uint32_t modelLimit;
 
-		StaticRenderSystem(EWEDevice& device, uint32_t pipelineCount, uint32_t modelLimit);
+		StaticRenderSystem(uint32_t pipelineCount, uint32_t modelLimit);
+		~StaticRenderSystem() {}
 
 	public:
-		static void initStaticRS(EWEDevice& device, uint32_t pipelineCount, uint32_t modelLimit);
+		static void initStaticRS(uint32_t pipelineCount, uint32_t modelLimit);
 		static void destructStaticRS() {
-			delete skinnedMainObject;
+			skinnedMainObject->~StaticRenderSystem();
+			ewe_free(skinnedMainObject);
 		}
 
 		static bool addStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureDesc texture, TransformComponent& transform);

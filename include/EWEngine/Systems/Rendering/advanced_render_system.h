@@ -20,7 +20,7 @@ namespace EWE {
 	//descriptorsetlayouts are in a vector vector
 	//the first layert of the vector (vector<vector>>) designates a pipeline
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
-		AdvancedRenderSystem(EWEDevice& device, ObjectManager& objectManager, MenuManager& menuManager);
+		AdvancedRenderSystem(ObjectManager& objectManager, MenuManager& menuManager);
 		~AdvancedRenderSystem();
 
 		AdvancedRenderSystem(const AdvancedRenderSystem&) = delete;
@@ -65,10 +65,6 @@ namespace EWE {
 		void RenderLightning(FrameInfo const& frameInfo);
 
 		void RenderGrass(FrameInfo const& frameInfo, float time);
-
-		//void RenderDynamicMaterials(FrameInfo& frameInfo);
-
-		EWEDevice& eweDevice;
 
 	};
 }

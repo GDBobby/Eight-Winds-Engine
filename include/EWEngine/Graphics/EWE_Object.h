@@ -38,8 +38,8 @@ namespace EWE {
             this->drawable = other.drawable;
         }
 
-        EweObject(std::string objectPath, EWEDevice& device, bool globalTextures);
-        EweObject(std::string objectPath, EWEDevice& device, bool globalTextures, SkeletonID ownerID);
+        EweObject(std::string objectPath, bool globalTextures);
+        EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID);
         ~EweObject();
 
 		TransformComponent transform{};
@@ -62,9 +62,9 @@ namespace EWE {
 
         uint32_t mySkinID = 0;
 
-        void addToRigidRenderingSystem(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker);
-        void addToSkinHandler(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner);
+        void addToRigidRenderingSystem(ImportData& tempData, TextureMapping& textureTracker);
+        void addToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner);
 
-        void loadTextures(EWEDevice& device, std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);
+        void loadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);
 	};
 }

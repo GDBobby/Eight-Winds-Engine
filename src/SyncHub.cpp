@@ -91,6 +91,7 @@ namespace EWE {
 			}
 		}
 
+		syncHubSingleton->~SyncHub();
 		ewe_free(syncHubSingleton);
 #if DECONSTRUCTION_DEBUG
 		printf("end synchub destroy \n");

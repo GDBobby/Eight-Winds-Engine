@@ -76,6 +76,12 @@ namespace EWE {
             return GetEWEDevice()->device();
         }
 
+        VkFormatProperties GetVkFormatProperties(VkFormat imageFormat) {
+            VkFormatProperties formatProperties;
+            vkGetPhysicalDeviceFormatProperties(device.getPhysicalDevice(), imageFormat, &formatProperties);
+            return formatProperties;
+        }
+
         VkCommandPool getCommandPool() { return commandPool; }
         VkCommandPool getTransferCommandPool() { return transferCommandPool; }
         VkCommandPool getComputeCommandPool() {

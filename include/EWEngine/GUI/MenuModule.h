@@ -36,7 +36,7 @@ namespace EWE {
 
 		static std::queue<uint16_t> clickReturns;
 
-		static void initTextures(EWEDevice& eweDevice);
+		static void initTextures();
 
 		MenuModule() {
 			//printf("SHOULD NOT BE USING THE DEFAULT CONSTRUCTOR OF MENU MODULE \n");

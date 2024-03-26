@@ -10,7 +10,7 @@ namespace EWE {
     Texture_Manager* Texture_Manager::textureManagerPtr{ nullptr };
 
 
-    Texture_Builder::Texture_Builder(EWEDevice& device, bool global) : device(device), global(global) {}
+    Texture_Builder::Texture_Builder(bool global) : device(device), global(global) {}
 
     void Texture_Builder::addComponent(std::string const& texPath, VkShaderStageFlags stageFlags, bool mipmaps) {
         switch (stageFlags) {
@@ -210,7 +210,7 @@ namespace EWE {
 
 
 
-    Texture_Manager::Texture_Manager(EWEDevice& device) : device{ device }, imageTrackerBucket { sizeof(ImageTracker) } {
+    Texture_Manager::Texture_Manager() : imageTrackerBucket { sizeof(ImageTracker) } {
         textureManagerPtr = this;
     }
 

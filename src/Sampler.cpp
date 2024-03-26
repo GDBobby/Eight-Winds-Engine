@@ -22,14 +22,14 @@ namespace EWE {
     }
 
 
-    Sampler::SamplerDuplicateTracker::SamplerDuplicateTracker(EWEDevice& device, VkSamplerCreateInfo& samplerInfo) : samplerInfo(samplerInfo) {
-        if (vkCreateSampler(device.device(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
+    Sampler::SamplerDuplicateTracker::SamplerDuplicateTracker(VkSamplerCreateInfo& samplerInfo) : samplerInfo(samplerInfo) {
+        if (vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler");
         }
     }
 
 
-    VkSampler Sampler::getSampler(EWEDevice& device, VkSamplerCreateInfo& samplerInfo) {
+    VkSampler Sampler::getSampler(VkSamplerCreateInfo& samplerInfo) {
         SamplerDuplicateTracker* foundDuplicate = nullptr;
         for (auto& duplicate : storedSamplers) {
             if (bitwiseEqualOperator(duplicate.samplerInfo, samplerInfo)) {
@@ -37,14 +37,14 @@ namespace EWE {
                 return duplicate.sampler;
             }
         }
-        auto& emplaceRet = storedSamplers.emplace_back(device, samplerInfo);
+        auto& emplaceRet = storedSamplers.emplace_back(samplerInfo);
         return emplaceRet.sampler;
 
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         return VK_NULL_HANDLE;
     }
 
-    void Sampler::removeSampler(EWEDevice& device, VkSampler sampler) {
+    void Sampler::removeSampler(VkSampler sampler) {
         for (auto iter = storedSamplers.begin(); iter != storedSamplers.end(); iter++) {
             if (iter->sampler == sampler) {
                 if (iter->tracker.remove()) {

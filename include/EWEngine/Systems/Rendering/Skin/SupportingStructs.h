@@ -47,16 +47,16 @@ namespace EWE {
 			MaterialPipelines* pipeline;
 			std::unordered_map<SkeletonID, std::vector<TextureMeshStruct>> skeletonData; //key is skeletonID
 
-			PipelineStruct(uint16_t boneCount, MaterialFlags materialFlags, EWEDevice& device) :
+			PipelineStruct(uint16_t boneCount, MaterialFlags materialFlags) :
 				//pipeline{ PipelineManager::createInstancedRemote(textureFlags, boneCount, pipeRenderInfo, device) }, 
-				pipeline{ MaterialPipelines::getInstancedSkinMaterialPipe(boneCount, materialFlags, device) },
+				pipeline{ MaterialPipelines::getInstancedSkinMaterialPipe(boneCount, materialFlags) },
 				skeletonData{}
 				//instanced
 			{}
 
-			PipelineStruct(MaterialFlags materialFlags, EWEDevice& device) :
+			PipelineStruct(MaterialFlags materialFlags) :
 				//pipeline{ PipelineManager::createBoneRemote(textureFlags, pipeRenderInfo, device) }, 
-				pipeline{ MaterialPipelines::getMaterialPipe(materialFlags, device) },
+				pipeline{ MaterialPipelines::getMaterialPipe(materialFlags) },
 				skeletonData{}
 				//non instanced
 			{

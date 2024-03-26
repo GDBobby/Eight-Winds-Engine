@@ -3,15 +3,15 @@
 #include "EWEngine/Graphics/Texture/Material_Textures.h"
 
 namespace EWE {
-    EweObject::EweObject(std::string objectPath, EWEDevice& device, bool globalTextures) {
+    EweObject::EweObject(std::string objectPath, bool globalTextures) {
 
         ImportData tempData = ImportData::loadData(objectPath);
         TextureMapping textureTracker;
-        loadTextures(device, objectPath, tempData.nameExport, textureTracker, globalTextures);
+        loadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
 
-        addToRigidRenderingSystem(device, tempData, textureTracker);
+        addToRigidRenderingSystem(tempData, textureTracker);
     }
-    EweObject::EweObject(std::string objectPath, EWEDevice& device, bool globalTextures, SkeletonID ownerID) : mySkinID{ SkinRenderSystem::getSkinID() } {
+    EweObject::EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID) : mySkinID{ SkinRenderSystem::getSkinID() } {
         std::cout << "weapon object construction : objectPath - " << objectPath << std::endl;
         ImportData tempData = ImportData::loadData(objectPath);
         TextureMapping textureTracker;
@@ -29,7 +29,7 @@ namespace EWE {
         }
         //printf("after removing textures \n");
     }
-    void EweObject::addToRigidRenderingSystem(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker) {
+    void EweObject::addToRigidRenderingSystem(ImportData& tempData, TextureMapping& textureTracker) {
 
         RigidRenderingSystem* materialInstance = RigidRenderingSystem::getRigidRSInstance();
 
@@ -49,12 +49,12 @@ namespace EWE {
 
         meshes.reserve(tempData.meshSimpleExport.meshes.size() + tempData.meshNTSimpleExport.meshes.size()); //a mesh should not have both simple and simpleNT
         for (int i = 0; i < tempData.meshSimpleExport.meshes.size(); i++) {
-            meshes.emplace_back(EWEModel::createMesh(device, tempData.meshSimpleExport.meshes[i].vertices, tempData.meshSimpleExport.meshes[i].indices));
-            materialInstance->addMaterialObject(device, textureTracker.meshSimpleNames[i], &transform, meshes.back().get(), &drawable);
+            meshes.emplace_back(EWEModel::createMesh(tempData.meshSimpleExport.meshes[i].vertices, tempData.meshSimpleExport.meshes[i].indices));
+            materialInstance->addMaterialObject(textureTracker.meshSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
         for (int i = 0; i < tempData.meshNTSimpleExport.meshes.size(); i++) {
-            meshes.emplace_back(EWEModel::createMesh(device, tempData.meshNTSimpleExport.meshes[i].vertices, tempData.meshNTSimpleExport.meshes[i].indices));
-            materialInstance->addMaterialObject(device, textureTracker.meshNTSimpleNames[i], &transform, meshes.back().get(), &drawable);
+            meshes.emplace_back(EWEModel::createMesh(tempData.meshNTSimpleExport.meshes[i].vertices, tempData.meshNTSimpleExport.meshes[i].indices));
+            materialInstance->addMaterialObject(textureTracker.meshNTSimpleNames[i], &transform, meshes.back().get(), &drawable);
         }
         /*
         for (int i = 0; i < tempData.meshExport.meshes.size(); i++) {
@@ -78,7 +78,7 @@ namespace EWE {
         }
     }
 
-    void EweObject::addToSkinHandler(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker, SkeletonID skeletonOwner) {
+    void EweObject::addToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, SkeletonID skeletonOwner) {
         if ((tempData.meshNTSimpleExport.meshes.size() > 0) || (tempData.meshSimpleExport.meshes.size() > 0)) {
             printf("weapon can not have simple meshes \n");
             throw std::runtime_error("object can not have both simple meshes");
@@ -115,7 +115,7 @@ namespace EWE {
        
     }
 
-    void EweObject::loadTextures(EWEDevice& device, std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures) {
+    void EweObject::loadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures) {
         //TEXTURES
         //this should be put in a separate function but im too lazy rn
         //printf("before loading ewe textures \n");
@@ -142,7 +142,7 @@ namespace EWE {
             }
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNames[i];
-            returnPair = Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
+            returnPair = Material_Texture::createMaterialTexture(finalDir, globalTextures);
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNames.push_back(returnPair);
@@ -154,7 +154,7 @@ namespace EWE {
             importData.meshNTNames[i] = importData.meshNTNames[i].substr(0, importData.meshNTNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNTNames[i];
-            Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
+            Material_Texture::createMaterialTexture(finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTNames.push_back(returnPair);
@@ -169,7 +169,7 @@ namespace EWE {
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshSimpleNames[i];
             //printf("simple names final Dir : %s \n", finalDir.c_str());
-            Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
+            Material_Texture::createMaterialTexture(finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshSimpleNames.push_back(returnPair);
@@ -181,7 +181,7 @@ namespace EWE {
             importData.meshNTSimpleNames[i] = importData.meshNTSimpleNames[i].substr(0, importData.meshNTSimpleNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNTSimpleNames[i];
-            Material_Texture::createMaterialTexture(device, finalDir, globalTextures);
+            Material_Texture::createMaterialTexture(finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTSimpleNames.push_back(returnPair);

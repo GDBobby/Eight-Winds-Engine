@@ -20,8 +20,8 @@ namespace EWE {
 class EWESwapChain {
     public:
 
-        EWESwapChain(EWEDevice& deviceRef, VkExtent2D windowExtent, bool fullscreen);
-        EWESwapChain(EWEDevice& deviceRef, VkExtent2D windowExtent, bool fullscreen, std::shared_ptr<EWESwapChain> previous);
+        EWESwapChain(VkExtent2D windowExtent, bool fullscreen);
+        EWESwapChain(VkExtent2D windowExtent, bool fullscreen, std::shared_ptr<EWESwapChain> previous);
         ~EWESwapChain();
 
         EWESwapChain(const EWESwapChain &) = delete;

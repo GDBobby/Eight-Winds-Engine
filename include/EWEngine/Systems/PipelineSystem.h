@@ -22,8 +22,8 @@ namespace EWE {
 #else
 		PipelineSystem() {}
 #endif
-		virtual void createPipeLayout(EWEDevice& device) = 0;
-		virtual void createPipeline(EWEDevice& device) = 0;
+		virtual void createPipeLayout() = 0;
+		virtual void createPipeline() = 0;
 
 	public:
 		static void setFrameInfo(FrameInfo frameInfo);
@@ -37,7 +37,7 @@ namespace EWE {
 			pipeSys->construct();
 			pipelineSystem.emplace(pipeID, pipeSys);
 		}
-		static void destruct(EWEDevice& device);
+		static void destruct();
 
 		void bindPipeline();
 

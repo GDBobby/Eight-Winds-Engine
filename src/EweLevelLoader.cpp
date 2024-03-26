@@ -3,7 +3,7 @@
 #include "levelbuilder/EweLevelLoader.h"
 
 namespace EWE {
-	uint32_t EweLevelLoader::loadLevelToBuilder(EWEDevice& device, std::string levelName, ObjectManager* objectManager, std::map<uint32_t, std::map<uint32_t, EWEGameObject>*>& objectList, LightBufferObject& lbo, LevelExportData::Map_Type mapType, TransformComponent& spawnTransform, char* targetPath, uint32_t& targetTimer) {
+	uint32_t EweLevelLoader::loadLevelToBuilder(std::string levelName, ObjectManager* objectManager, std::map<uint32_t, std::map<uint32_t, EWEGameObject>*>& objectList, LightBufferObject& lbo, LevelExportData::Map_Type mapType, TransformComponent& spawnTransform, char* targetPath, uint32_t& targetTimer) {
 		uint32_t objectCounter = 0;
 		if (mapType == LevelExportData::builder) {
 			LevelExportData levelImport;
@@ -107,7 +107,7 @@ namespace EWE {
 		return objectCounter;
 	}
 
-	void EweLevelLoader::loadLevelToTarget(EWEDevice& device, std::string levelName, ObjectManager* objectManager, LightBufferObject& lbo, LevelExportData::Map_Type mapType, TransformComponent& spawnTransform, uint32_t& targetTimer) {
+	void EweLevelLoader::loadLevelToTarget(std::string levelName, ObjectManager* objectManager, LightBufferObject& lbo, LevelExportData::Map_Type mapType, TransformComponent& spawnTransform, uint32_t& targetTimer) {
 		LevelExportData levelImport;
 
 		std::ifstream inFile(levelName, std::ifstream::binary);

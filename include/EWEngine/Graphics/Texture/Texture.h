@@ -43,30 +43,30 @@ namespace EWE {
 		VkDescriptorImageInfo descriptorImageInfo;
 
 
-		void createTextureImage(EWEDevice& device, PixelPeek& pixelPeek, bool mipmapping = true);
+		void createTextureImage(PixelPeek& pixelPeek, bool mipmapping = true);
 
-		void createTextureImageView(EWEDevice& device);
-		void createTextureSampler(EWEDevice& device);
-		void generateMipmaps(EWEDevice& device, VkFormat imageFormat, int width, int height);
+		void createTextureImageView();
+		void createTextureSampler();
+		void generateMipmaps(VkFormat imageFormat, int width, int height);
 
 	public:
 		VkDescriptorImageInfo* getDescriptorImageInfo() {
 			return &descriptorImageInfo;
 		}
-		ImageInfo(EWEDevice& device, PixelPeek& pixelPeek, bool mipmap);
-		ImageInfo(EWEDevice& device, std::string const& path, bool mipmap);
+		ImageInfo(PixelPeek& pixelPeek, bool mipmap);
+		ImageInfo(std::string const& path, bool mipmap);
 		ImageInfo() {}
-		void destroy(EWEDevice& device);
+		void destroy();
 	};
 	struct TextureDSLInfo {
 
 		uint8_t stageCounts[SUPPORTED_STAGE_COUNT] = { 0,0,0,0, 0,0,0,0, 0 };
 		void setStageTextureCount(VkShaderStageFlags stageFlag, uint8_t textureCount);
 
-		EWEDescriptorSetLayout* buildDSL(EWEDevice& device);
+		EWEDescriptorSetLayout* buildDSL();
 
 		TextureDSLInfo() {}
-		EWEDescriptorSetLayout* getDescSetLayout(EWEDevice& device);
+		EWEDescriptorSetLayout* getDescSetLayout();
 
 		static std::unordered_map<TextureDSLInfo, EWEDescriptorSetLayout*> descSetLayouts;
 		static EWEDescriptorSetLayout* getSimpleDSL(VkShaderStageFlags stageFlag);

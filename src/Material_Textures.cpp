@@ -8,7 +8,7 @@
 
 namespace EWE {
 
-    MaterialTextureInfo Material_Texture::createMaterialTexture(EWEDevice& device, std::string texPath, bool global) {
+    MaterialTextureInfo Material_Texture::createMaterialTexture(std::string texPath, bool global) {
 
         const std::array<std::vector<std::string>, MAX_MATERIAL_TEXTURE_COUNT> smartTextureTypes = {
             //ordering it like this is necessary, the engine is set up so that vertex textures are always binded lower than fragment textures.

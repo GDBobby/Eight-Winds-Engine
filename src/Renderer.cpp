@@ -10,7 +10,7 @@ namespace EWE {
 
 	EWERenderer* EWERenderer::instance{ nullptr };
 
-	EWERenderer::EWERenderer(MainWindow& window, EWEDevice& device, EWECamera& camera) : camera{ camera }, mainWindow{ window }, eweDevice{ device }, syncHub{ SyncHub::getSyncHubInstance() } {
+	EWERenderer::EWERenderer(MainWindow& window, EWECamera& camera) : camera{ camera }, mainWindow{ window }, eweDevice{ device }, syncHub{ SyncHub::getSyncHubInstance() } {
 		instance = this;
 		//printf("EWE renderer constructor \n");
 #if GPU_LOGGING

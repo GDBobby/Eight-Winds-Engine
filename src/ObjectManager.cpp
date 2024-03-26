@@ -25,7 +25,7 @@ namespace EWE {
 	}
 
 #endif
-	void ObjectManager::clearSceneObjects(EWEDevice& device) {
+	void ObjectManager::clearSceneObjects() {
 		texturedGameObjects.clear();
 		grassField.clear();
 		printf("clearing ewe objects \n");

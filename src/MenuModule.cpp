@@ -14,7 +14,7 @@ namespace EWE {
 
 	void (*MenuModule::changeMenuStateFromMM)(uint8_t, unsigned char);
 
-	void MenuModule::initTextures(EWEDevice& eweDevice) {
+	void MenuModule::initTextures() {
 		//these textures are deleted in EWETexture, when the program is cleaning itself up on close
 
 		textures.emplace(MT_NineUI, Texture_Builder::createSimpleTexture( "UI/NineUI.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
@@ -30,8 +30,8 @@ namespace EWE {
 		textures.emplace(MT_Base, Texture_Builder::createSimpleTexture("UI/menuBase.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
 		
 
-		model2D = Basic_Model::generate2DQuad(eweDevice);
-		nineUIModel = Basic_Model::generateNineUIQuad(eweDevice);
+		model2D = Basic_Model::generate2DQuad();
+		nineUIModel = Basic_Model::generateNineUIQuad();
 	}
 
 	std::pair<UIComponentTypes, int16_t> MenuModule::checkClick(double xpos, double ypos) {

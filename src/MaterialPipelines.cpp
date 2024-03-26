@@ -118,7 +118,7 @@ namespace EWE {
 		frameIndex = frameInfo.index;
 	}
 
-	void MaterialPipelines::initMaterialPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device, bool hasBump) {
+	void MaterialPipelines::initMaterialPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
 		//layouts
 		//textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))
 		if (materialPipeLayout[dynamicPipeLayoutIndex].pipeLayout == VK_NULL_HANDLE) {
@@ -157,7 +157,7 @@ namespace EWE {
 			pipeLayoutInfo.pushSize = pushConstantRange.size;
 			pipeLayoutInfo.pushStageFlags = pushConstantRange.stageFlags;
 
-			VkResult vkResult = vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout);
+			VkResult vkResult = vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout);
 			if (vkResult != VK_SUCCESS) {
 				printf("failed to create dynamic mat pipelayout layout [%d] \n", textureCount);
 				throw std::runtime_error("Failed to create dynamic mat pipe layout \n");
@@ -165,7 +165,7 @@ namespace EWE {
 		}
 	}
 
-	MaterialPipelines* MaterialPipelines::getMaterialPipe(MaterialFlags flags, EWEDevice& device) {
+	MaterialPipelines* MaterialPipelines::getMaterialPipe(MaterialFlags flags) {
 		{
 			auto foundPipe = materialPipelines.find(flags);
 			if (foundPipe != materialPipelines.end()) {
@@ -201,16 +201,16 @@ namespace EWE {
 		}
 #endif
 
-		initMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, device, hasBumps);
+		initMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, hasBumps);
 
-		//printf("creating new pipeline, dynamicShaderFinding, (key value:%d)-(bones:%d)-(normal:%d)-(rough:%d)-(metal:%d)-(ao:%d) \n", newFlags, hasBones, hasNormal, hasRough, hasMetal, hasAO );
+		//printf("creating pipeline, dynamicShaderFinding, (key value:%d)-(bones:%d)-(normal:%d)-(rough:%d)-(metal:%d)-(ao:%d) \n", newFlags, hasBones, hasNormal, hasRough, hasMetal, hasAO );
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 		pipelineConfig.pipelineLayout = materialPipeLayout[pipeLayoutIndex].pipeLayout;
 
-		getPipeCache(device, hasBones, instanced, pipelineConfig.cache);
+		getPipeCache(hasBones, instanced, pipelineConfig.cache);
 	
-		return createPipe(device, pipeLayoutIndex, pipelineConfig, hasBones, hasNormal, hasBumps, flags);
+		return createPipe(pipeLayoutIndex, pipelineConfig, hasBones, hasNormal, hasBumps, flags);
 
 		//printf("after dynamic shader finding \n");
 	}
@@ -227,11 +227,13 @@ namespace EWE {
 		printf("begin deconstructing material pipelines \n");
 #endif
 		for(auto& pipe : materialPipelines) {
-			delete pipe.second;
+			pipe.second->~MaterialPipelines();
+			ewe_free(pipe.second);
 		}
 		materialPipelines.clear();
 		for (auto& pipe : instancedBonePipelines) {
-			delete pipe.second;
+			pipe.second->~MaterialPipelines();
+			ewe_free(pipe.second);
 		}
 		instancedBonePipelines.clear();
 
@@ -256,7 +258,7 @@ namespace EWE {
 #endif
 	}
 
-	std::vector<VkDescriptorSetLayout> MaterialPipelines::getPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device, bool hasBump) {
+	std::vector<VkDescriptorSetLayout> MaterialPipelines::getPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
 		//printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
 
 		std::vector<VkDescriptorSetLayout> returnLayouts{};
@@ -288,11 +290,11 @@ namespace EWE {
 		return returnLayouts;
 	}
 
-	MaterialPipelines* MaterialPipelines::getInstancedSkinMaterialPipe(uint16_t boneCount, MaterialFlags flags, EWEDevice& device) {
+	MaterialPipelines* MaterialPipelines::getInstancedSkinMaterialPipe(uint16_t boneCount, MaterialFlags flags) {
 
 		SkinInstanceKey skinInstanceKey{ boneCount, flags };
 		if(instancedBonePipelines.contains(skinInstanceKey)){
-			//printf("creating new instanced skin pipeline \n");
+			//printf("creating instanced skin pipeline \n");
 			return instancedBonePipelines.at(skinInstanceKey);
 		}
 
@@ -324,7 +326,7 @@ namespace EWE {
 		if (instanceSkinPipelineCache == VK_NULL_HANDLE) {
 			VkPipelineCacheCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-			if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &instanceSkinPipelineCache) != VK_SUCCESS) {
+			if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &instanceSkinPipelineCache) != VK_SUCCESS) {
 				// handle error
 				printf("failed to create instance skinned material pipeline cache \n");
 				throw std::runtime_error("failed to create instanced skin material pipeline cache");
@@ -337,7 +339,6 @@ namespace EWE {
 		pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
 		glslang::InitializeProcess();
 		
-		//EWEPipeline* retPipe = new EWEPipeline(device, boneCount, flags, pipelineConfig);
 		SkinInstanceKey key(boneCount, flags);
 
 		auto ret = instancedBonePipelines.try_emplace(key, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, boneCount, flags, pipelineConfig)).first->second;
@@ -346,7 +347,7 @@ namespace EWE {
 		return ret;
 	}
 
-	void MaterialPipelines::getPipeCache(EWEDevice& device, bool hasBones, bool instanced, VkPipelineCache& outCache) {
+	void MaterialPipelines::getPipeCache(bool hasBones, bool instanced, VkPipelineCache& outCache) {
 
 		VkPipelineCache retCache;
 		if (instanced) {
@@ -378,7 +379,7 @@ namespace EWE {
 		VkPipelineCacheCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 
-		if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &retCache) != VK_SUCCESS) {
+		if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &retCache) != VK_SUCCESS) {
 			// handle error
 			printf("failed to create material pipeline cache \n");
 			throw std::runtime_error("failed to create material pipeline cache");
@@ -397,7 +398,7 @@ namespace EWE {
 		return;
 	}
 
-	MaterialPipelines* MaterialPipelines::createPipe(EWEDevice& device, uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags) {
+	MaterialPipelines* MaterialPipelines::createPipe(uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags) {
 		if (hasBones) {
 			if (hasNormal) {
 				//printf("boneVertex, flags:%d \n", newFlags);

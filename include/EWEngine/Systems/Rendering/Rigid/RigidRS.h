@@ -27,7 +27,7 @@ namespace EWE {
     struct MaterialRenderInfo {
         MaterialPipelines* pipe;
         std::unordered_map<TextureDesc, std::vector<MaterialObjectInfo>> materialMap{};
-        MaterialRenderInfo(MaterialFlags flags, EWEDevice& device) : pipe{MaterialPipelines::getMaterialPipe(flags, device)} {
+        MaterialRenderInfo(MaterialFlags flags) : pipe{MaterialPipelines::getMaterialPipe(flags)} {
 
         }
         void render(uint8_t frameIndex);
@@ -48,7 +48,8 @@ namespace EWE {
         }
         static void destruct() {
             if(rigidInstance){
-                delete rigidInstance;
+                rigidInstance->~RigidRenderingSystem();
+                ewe_free(rigidInstance);
             }        
         }
     private:
@@ -69,8 +70,8 @@ namespace EWE {
         }
         */
         //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& cleanAndGetMaterialMap();
-        void addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo);
-        void addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
+        void addMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo);
+        void addMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
 
         void addMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr);
 

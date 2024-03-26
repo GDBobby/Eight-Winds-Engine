@@ -115,11 +115,11 @@ namespace EWE {
         device.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
         //printf("before memory mapping \n");
         void* data;
-        vkMapMemory(device.device(), stagingBufferMemory, 0, imageSize, 0, &data);
+        vkMapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
         //printf("memcpy \n");
         memcpy(data, pixels.data(), static_cast<size_t>(imageSize));
         //printf("unmapping \n");
-        vkUnmapMemory(device.device(), stagingBufferMemory);
+        vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory);
         
 
         VkImageCreateInfo imageInfo;
@@ -161,8 +161,8 @@ namespace EWE {
         //i gotta do this a 2nd time i guess
         //eweDevice.transitionImageLayout(image, texel_format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
 
-        vkDestroyBuffer(device.device(), stagingBuffer, nullptr);
-        vkFreeMemory(device.device(), stagingBufferMemory, nullptr);
+        vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
         
         //printf("end of create texture image loop %d \n", i);
 
@@ -280,7 +280,7 @@ namespace EWE {
         viewInfo.subresourceRange.layerCount = 1;
 
 
-        if (vkCreateImageView(device.device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+        if (vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image view!");
         }
         
@@ -298,7 +298,7 @@ namespace EWE {
         viewInfo.subresourceRange.layerCount = 1;
 
 
-        if (vkCreateImageView(device.device(), &viewInfo, nullptr, &graphicsImageView) != VK_SUCCESS) {
+        if (vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &graphicsImageView) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image view!");
         }
     }
@@ -336,11 +336,11 @@ namespace EWE {
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = static_cast<float>(mipLevels);
 
-        if (vkCreateSampler(device.device(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
+        if (vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler!");
         }
         if (settingGraphics) {
-            if (vkCreateSampler(device.device(), &samplerInfo, nullptr, &graphicsSampler) != VK_SUCCESS) {
+            if (vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &graphicsSampler) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create texture sampler!");
             }
         }

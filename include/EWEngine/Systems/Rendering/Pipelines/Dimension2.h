@@ -10,6 +10,7 @@ namespace EWE {
 	private: //protected? no dif
 		static Dimension2* dimension2Ptr;
 		Dimension2();
+		~Dimension2() {}
 
 		enum WhichPipe {
 			Pipe_2D,

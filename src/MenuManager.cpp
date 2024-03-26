@@ -3,7 +3,7 @@
 namespace EWE {
 	MenuManager* MenuManager::menuManagerPtr = nullptr;
 
-	MenuManager::MenuManager(float screenWidth, float screenHeight, EWEDevice& eweDevice, GLFWwindow* windowPtr, std::shared_ptr<TextOverlay> textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
+	MenuManager::MenuManager(float screenWidth, float screenHeight, GLFWwindow* windowPtr, std::shared_ptr<TextOverlay> textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
 		if (menuManagerPtr != nullptr) {
 			printf("created two menu managers? \n");
 			throw std::runtime_error("created two menu managers?");

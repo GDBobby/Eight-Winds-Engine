@@ -1,7 +1,7 @@
 #include "EWEngine/Systems/Rendering/Skin/SkinBufferHandler.h"
 
 namespace EWE {
-	SkinBufferHandler::SkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint8_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount } {
+	SkinBufferHandler::SkinBufferHandler(uint16_t boneCount, uint8_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount } {
 		gpuData.reserve(MAX_FRAMES_IN_FLIGHT);
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			gpuData.emplace_back(device, maxActorCount, boneBlockSize);
@@ -15,7 +15,7 @@ namespace EWE {
 		boneMemOffset += boneBlockSize;
 
 	}
-	void SkinBufferHandler::changeMaxActorCount(EWEDevice& device, uint8_t actorCount) {
+	void SkinBufferHandler::changeMaxActorCount(uint8_t actorCount) {
 		if (maxActorCount == actorCount) {
 			return;
 		}
@@ -24,16 +24,16 @@ namespace EWE {
 			gpuData[i].changeActorCount(device, maxActorCount, boneBlockSize);
 		}
 	}
-	SkinBufferHandler::InnerBufferStruct::InnerBufferStruct(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize) :
+	SkinBufferHandler::InnerBufferStruct::InnerBufferStruct(uint8_t maxActorCount, uint32_t boneBlockSize) :
 		currentActorCount{maxActorCount}
 	{
-		bone->construct(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		bone = ConstructSingular<EWEBuffer>(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 		bone->map();
 
 
 		buildDescriptor();
 	}
-	void SkinBufferHandler::InnerBufferStruct::changeActorCount(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize) {
+	void SkinBufferHandler::InnerBufferStruct::changeActorCount(uint8_t maxActorCount, uint32_t boneBlockSize) {
 		if (maxActorCount == currentActorCount) {
 			return;
 		}
@@ -43,9 +43,7 @@ namespace EWE {
 			throw std::runtime_error("currently not supporting non-instanced actor counts greater than 5");
 		}
 
-		ewe_free(bone);
-		bone->construct(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		bone->map();
+		bone->Reconstruct(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 		EWEDescriptorPool::freeDescriptor(DescriptorPool_Global, &descriptor);
 
 		buildDescriptor();
@@ -60,7 +58,7 @@ namespace EWE {
 
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ INSTANCING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstancedSkinBufferHandler::InstancedSkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint16_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount } {
+	InstancedSkinBufferHandler::InstancedSkinBufferHandler(uint16_t boneCount, uint16_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount } {
 		gpuData.reserve(MAX_FRAMES_IN_FLIGHT);
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			gpuData.emplace_back(device, maxActorCount, boneBlockSize);
@@ -75,7 +73,7 @@ namespace EWE {
 		currentInstanceCount++;
 
 	}
-	void InstancedSkinBufferHandler::changeMaxActorCount(EWEDevice& device, uint16_t actorCount) {
+	void InstancedSkinBufferHandler::changeMaxActorCount(uint16_t actorCount) {
 		if (maxActorCount == actorCount) {
 			return;
 		}
@@ -92,14 +90,14 @@ namespace EWE {
 		boneMemOffset = 0;
 	}
 
-	InstancedSkinBufferHandler::InnerBufferStruct::InnerBufferStruct(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize) {
+	InstancedSkinBufferHandler::InnerBufferStruct::InnerBufferStruct(uint16_t maxActorCount, uint32_t boneBlockSize) {
 
 		//id like to experiment with malloc here, to reduce the amount of mem allocations from 2 to 1.
 		//minimal gain, and i still have bigger fish to fry
 
-		model->construct(sizeof(glm::mat4) * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		model = ConstructSingular<EWEBuffer>(sizeof(glm::mat4) * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-		bone->construct(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		bone = ConstructSingular<EWEBuffer>(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		model->map();
 		bone->map();
@@ -108,12 +106,10 @@ namespace EWE {
 		buildDescriptor(maxActorCount);
 	}
 
-	void InstancedSkinBufferHandler::InnerBufferStruct::changeActorCount(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize) {
-		ewe_free(model);
-		model->construct(sizeof(glm::mat4) * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-			
-		ewe_free(bone);
-		bone->construct(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	void InstancedSkinBufferHandler::InnerBufferStruct::changeActorCount(uint16_t maxActorCount, uint32_t boneBlockSize) {
+		model->Reconstruct(sizeof(glm::mat4) * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+		bone->Reconstruct(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		EWEDescriptorPool::freeDescriptor(DescriptorPool_Global, &descriptor);
 

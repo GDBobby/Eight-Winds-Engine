@@ -69,10 +69,10 @@ namespace EWE {
         }
     }
 
-    EWEDescriptorSetLayout* TextureDSLInfo::buildDSL(EWEDevice& device) {
+    EWEDescriptorSetLayout* TextureDSLInfo::buildDSL() {
         uint32_t currentBinding = 0;
         VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //this is 1
-        EWEDescriptorSetLayout::Builder dslBuilder{ device };
+        EWEDescriptorSetLayout::Builder dslBuilder{};
         for (uint8_t j = 0; j < 6; j++) {
             
             for (uint8_t i = 0; i < stageCounts[j]; i++) {
@@ -108,12 +108,12 @@ namespace EWE {
                 return dslIter->second;
             }
         }
-        EWEDescriptorSetLayout::Builder dslBuilder{ device };
+        EWEDescriptorSetLayout::Builder dslBuilder{};
         dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlag);
         return descSetLayouts.emplace(dslInfo, dslBuilder.build()).first->second;
     }
 
-    EWEDescriptorSetLayout* TextureDSLInfo::getDescSetLayout(EWEDevice& device) {
+    EWEDescriptorSetLayout* TextureDSLInfo::getDescSetLayout() {
         auto dslIter = descSetLayouts.find(*this);
         if (dslIter != descSetLayouts.end()) {
 			return dslIter->second;
@@ -131,9 +131,9 @@ namespace EWE {
 #endif
     }
 
-    ImageInfo::ImageInfo(EWEDevice& device, PixelPeek& pixelPeek, bool mipmap) {
+    ImageInfo::ImageInfo(PixelPeek& pixelPeek, bool mipmap) {
 
-        createTextureImage(device, pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        createTextureImage(pixelPeek, mipmap); //strange to pass in the first, btu whatever
         //printf("after create image \n");
         createTextureImageView(device);
         //printf("after image view \n");
@@ -143,14 +143,14 @@ namespace EWE {
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-    ImageInfo::ImageInfo(EWEDevice& device, std::string const& path, bool mipmap) {
+    ImageInfo::ImageInfo(std::string const& path, bool mipmap) {
         PixelPeek pixelPeek{ path };
 
-        createTextureImage(device, pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        createTextureImage(pixelPeek, mipmap); //strange to pass in the first, btu whatever
         //printf("after create image \n");
-        createTextureImageView(device);
+        createTextureImageView();
         //printf("after image view \n");
-        createTextureSampler(device);
+        createTextureSampler();
 
         descriptorImageInfo.sampler = sampler;
         descriptorImageInfo.imageView = imageView;
@@ -158,19 +158,20 @@ namespace EWE {
     }
 
 
-    void ImageInfo::destroy(EWEDevice& device) {
-        vkDestroySampler(device.device(), sampler, nullptr);
+    void ImageInfo::destroy() {
+        VkDevice const& vkDevice = EWEDevice::GetVkDevice();
+        vkDestroySampler(vkDevice, sampler, nullptr);
         
-        vkDestroyImageView(device.device(), imageView, nullptr);
+        vkDestroyImageView(vkDevice, imageView, nullptr);
         
         //printf("after image view destruction \n");
-        vkDestroyImage(device.device(), image, nullptr);
+        vkDestroyImage(vkDevice, image, nullptr);
         
         //printf("after image destruction \n");
-        vkFreeMemory(device.device(), imageMemory, nullptr);
+        vkFreeMemory(vkDevice, imageMemory, nullptr);
     }
 
-    void ImageInfo::createTextureImage(EWEDevice& device, PixelPeek& pixelPeek, bool mipmapping) {
+    void ImageInfo::createTextureImage(PixelPeek& pixelPeek, bool mipmapping) {
         int width = pixelPeek.width;
         int height = pixelPeek.height;
 
@@ -184,14 +185,14 @@ namespace EWE {
         VkDeviceMemory stagingBufferMemory;
         //printf("before creating buffer \n");
 
-        device.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        EWEDevice::GetEWEDevice()->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
         //printf("before memory mapping \n");
         void* data;
-        vkMapMemory(device.device(), stagingBufferMemory, 0, imageSize, 0, &data);
+        vkMapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
         //printf("memcpy \n");
         memcpy(data, pixelPeek.pixels, static_cast<size_t>(imageSize));
         //printf("unmapping \n");
-        vkUnmapMemory(device.device(), stagingBufferMemory);
+        vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory);
         //printf("freeing pixels \n");
         stbi_image_free(pixelPeek.pixels);
         //printf("after memory mapping \n");
@@ -224,8 +225,8 @@ namespace EWE {
         //i gotta do this a 2nd time i guess
         //eweDevice.transitionImageLayout(image[i], VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels[i]);
 
-        vkDestroyBuffer(device.device(), stagingBuffer, nullptr);
-        vkFreeMemory(device.device(), stagingBufferMemory, nullptr);
+        vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
         //printf("end of create texture image loop %d \n", i);
         
         //printf("before generate mip maps \n");
@@ -235,7 +236,7 @@ namespace EWE {
         //printf("after generate mip maps \n");
     }
 
-    void ImageInfo::createTextureImageView(EWEDevice& device) {
+    void ImageInfo::createTextureImageView() {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = image;
@@ -247,12 +248,12 @@ namespace EWE {
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        if (vkCreateImageView(device.device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+        if (vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image view!");
         }
     }
 
-    void ImageInfo::createTextureSampler(EWEDevice& device) {
+    void ImageInfo::createTextureSampler() {
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 
@@ -282,16 +283,15 @@ namespace EWE {
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = static_cast<float>(mipLevels);
 
-        if (vkCreateSampler(device.device(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
+        if (vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler!");
         }
         
     }
 
-    void ImageInfo::generateMipmaps(EWEDevice& device, VkFormat imageFormat, int width, int height) {
+    void ImageInfo::generateMipmaps(VkFormat imageFormat, int width, int height) {
         // Check if image format supports linear blitting
-        VkFormatProperties formatProperties;
-        vkGetPhysicalDeviceFormatProperties(device.getPhysicalDevice(), imageFormat, &formatProperties);
+        VkFormatProperties formatProperties = EWEDevice::GetEWEDevice()->GetVkFormatProperties(imageFormat);
 
         if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
             throw std::runtime_error("texture image format does not support linear blitting!");

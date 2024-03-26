@@ -35,14 +35,14 @@ namespace EWE {
             //putting the tracker here instead of using a unordered_map<SamplerTracker, VkSampler>
             SamplerTracker tracker{}; 
             
-            SamplerDuplicateTracker(EWEDevice& device, VkSamplerCreateInfo& samplerInfo);
+            SamplerDuplicateTracker(VkSamplerCreateInfo& samplerInfo);
         };
 
         std::vector<SamplerDuplicateTracker> storedSamplers{};
 
     public:
-        VkSampler getSampler(EWEDevice& device, VkSamplerCreateInfo& samplerInfo);
-        void removeSampler(EWEDevice& device, VkSampler sampler);
+        VkSampler getSampler(VkSamplerCreateInfo& samplerInfo);
+        void removeSampler(VkSampler sampler);
 
     };
 }

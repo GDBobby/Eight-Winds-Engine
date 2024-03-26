@@ -46,8 +46,6 @@ namespace EWE {
 	private:
 		static TextOverlay* textOverlayPtr;
 
-		EWEDevice& eweDevice;
-
 		float frameBufferWidth;
 		float frameBufferHeight;
 
@@ -82,7 +80,6 @@ namespace EWE {
 		std::vector<VkCommandBuffer> cmdBuffers;
 
 		TextOverlay(
-			EWEDevice& device,
 			float framebufferwidth,
 			float framebufferheight,
 			VkPipelineRenderingCreateInfo const& pipelineInfo

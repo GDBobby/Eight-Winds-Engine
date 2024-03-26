@@ -56,20 +56,20 @@ struct std::hash<EWE::GrassVertex> {
 namespace EWE {
 
 
-    std::unique_ptr<EWEModel> EWEModel::createModelFromFile(EWEDevice& device, const std::string& filepath) {
+    std::unique_ptr<EWEModel> EWEModel::createModelFromFile(const std::string& filepath) {
         Builder builder{};
         builder.loadModel(filepath);
-        return std::make_unique<EWEModel>(device, builder.vertices, builder.indices);
+        return std::make_unique<EWEModel>(builder.vertices, builder.indices);
     }
-    std::unique_ptr<EWEModel> EWEModel::createSimpleModelFromFile(EWEDevice& device, const std::string& filePath) {
+    std::unique_ptr<EWEModel> EWEModel::createSimpleModelFromFile(const std::string& filePath) {
         SimpleBuilder builder{};
         builder.loadModel(filePath);
-        return std::make_unique<EWEModel>(device, builder.vertices, builder.indices);
+        return std::make_unique<EWEModel>(builder.vertices, builder.indices);
     }
-    std::unique_ptr<EWEModel> EWEModel::createGrassModelFromFile(EWEDevice& device, const std::string& filePath) {
+    std::unique_ptr<EWEModel> EWEModel::createGrassModelFromFile(const std::string& filePath) {
         GrassBuilder builder{};
         builder.loadModel(filePath);
-        return std::make_unique<EWEModel>(device, builder.vertices, builder.indices);
+        return std::make_unique<EWEModel>(builder.vertices, builder.indices);
     }
 
     void EWEModel::AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data) {
@@ -168,7 +168,7 @@ namespace EWE {
         eweDevice.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
 
-    EWEBuffer* EWEModel::createIndexBuffer(EWEDevice& device, std::vector<uint32_t> const& indices) {
+    EWEBuffer* EWEModel::createIndexBuffer(std::vector<uint32_t> const& indices) {
         uint32_t indexCount = static_cast<uint32_t>(indices.size());
 
         if (indexCount == 0) {
@@ -188,7 +188,7 @@ namespace EWE {
         stagingBuffer.map();
         stagingBuffer.writeToBuffer((void*)indices.data());
         EWEBuffer* indexBuffer;
-        indexBuffer->construct(indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        indexBuffer = ConstructSingular<EWEBuffer>(indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
@@ -242,7 +242,7 @@ namespace EWE {
 
     void EWEModel::bind(VkCommandBuffer commandBuffer) {
         // do a second buffer, and switch to it when changign the object
-        //count a couple of frames then delete the old buffer
+        //count a couple of frames then remove the old buffer
         VkBuffer buffers[] = { vertexBuffer->getBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
@@ -459,7 +459,7 @@ namespace EWE {
 
 
     /*
-    std::unique_ptr<EWEModel> EWEModel::LoadGrassField(EWEDevice& device) {
+    std::unique_ptr<EWEModel> EWEModel::LoadGrassField() {
         printf("beginning load grass field \n");
         std::ifstream grassFile{ "..//models//grassField.gs" };
         if (!grassFile.is_open()) {

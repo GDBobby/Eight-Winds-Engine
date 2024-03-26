@@ -9,11 +9,11 @@ namespace EWE {
 		//but objects should be added with the material system, using the albedo only material flag.
 		//i dont really know, but im suspecting that adding an object in without a normal/rough/metal is going to be bad.
 	public:
-		Pipe_SimpleTextured(EWEDevice& device);
+		Pipe_SimpleTextured();
 
 	protected:
-		void createPipeLayout(EWEDevice& device) final;
-		void createPipeline(EWEDevice& device) final;
+		void createPipeLayout() final;
+		void createPipeline() final;
 
 	};
 }

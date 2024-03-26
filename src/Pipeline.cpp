@@ -42,7 +42,7 @@ namespace EWE {
 			shaderFile.close();
 			return returnVec;
 		}
-		void createShaderModule(EWEDevice& device, std::string const& file_path, VkShaderModule* shaderModule) {
+		void createShaderModule(std::string const& file_path, VkShaderModule* shaderModule) {
 			auto data = readFile(file_path);
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -50,40 +50,40 @@ namespace EWE {
 			//printf("template data size : %d \n", data.size());
 			createInfo.pCode = (const uint32_t*)data.data();
 
-			if (vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
+			if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create shader module");
 			}
 		}
-		void createShaderModule(EWEDevice& device, const std::vector<uint32_t>& data, VkShaderModule* shaderModule) {
+		void createShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.codeSize = data.size() * 4;
 			//printf("uint32_t data size : %d \n", data.size());
 			createInfo.pCode = data.data();
 
-			if (vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
+			if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create shader module");
 			}
 		}
 		template <typename T>
-		void createShaderModule(EWEDevice& device, const std::vector<T>& data, VkShaderModule* shaderModule) {
+		void createShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.codeSize = data.size() * sizeof(T);
 			//printf("template data size : %d \n", data.size());
 			createInfo.pCode = (const uint32_t*)data.data();
 
-			if (vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
+			if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create shader module");
 			}
 		}
-		void createShaderModule(EWEDevice& device, const void* data, size_t dataSize, VkShaderModule* shaderModule) {
+		void createShaderModule(const void* data, size_t dataSize, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.codeSize = dataSize;
 			//printf("uint32_t data size : %d \n", data.size());
 			createInfo.pCode = reinterpret_cast<const uint32_t*>(data);
-			VkResult vkResult = vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule);
+			VkResult vkResult = vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 			if (vkResult != VK_SUCCESS) {
 				printf("vkResult : %d \n", vkResult);
 				throw std::runtime_error("failed to create shader module");
@@ -92,14 +92,14 @@ namespace EWE {
 	}
 
 	// ~~~~~~~ COMPUTE PIPELINE ~~~~~~~~~~~~~~~
-	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(EWEDevice& device, std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path) {
+	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path) {
 		EWE_Compute_Pipeline ret;
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(computeDSL.size());
 		pipelineLayoutInfo.pSetLayouts = computeDSL.data();
 
-		if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &ret.pipe_layout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &ret.pipe_layout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create compute pipeline layout!");
 		}
 
@@ -109,31 +109,31 @@ namespace EWE {
 
 		std::string computePath = "compute/";
 		computePath += compute_path;
-		Pipeline_Helper_Functions::createShaderModule(device, computePath, &ret.shader);
+		Pipeline_Helper_Functions::createShaderModule(computePath, &ret.shader);
 		VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
 		computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		computeShaderStageInfo.module = ret.shader;
 		computeShaderStageInfo.pName = "main";
 		pipelineInfo.stage = computeShaderStageInfo;
-		vkCreateComputePipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
+		vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
 		return ret;
 	}
-	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(EWEDevice& device, VkPipelineLayout pipe_layout, std::string compute_path) {
+	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(VkPipelineLayout pipe_layout, std::string compute_path) {
 		EWE_Compute_Pipeline ret;
 		ret.pipe_layout = pipe_layout;
 
 		VkComputePipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 		pipelineInfo.layout = ret.pipe_layout;
-		Pipeline_Helper_Functions::createShaderModule(device, compute_path, &ret.shader);
+		Pipeline_Helper_Functions::createShaderModule(compute_path, &ret.shader);
 		VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
 		computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		computeShaderStageInfo.module = ret.shader;
 		computeShaderStageInfo.pName = "main";
 		pipelineInfo.stage = computeShaderStageInfo;
-		vkCreateComputePipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
+		vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
 		return ret;
 	}
 
@@ -142,10 +142,10 @@ namespace EWE {
 	std::map<std::string, VkShaderModule> EWEPipeline::shaderModuleMap;
 	VkPipelineRenderingCreateInfo* EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic;
 
-	EWEPipeline::EWEPipeline(EWEDevice& device, const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo) : eweDevice{ device } {
+	EWEPipeline::EWEPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo) {
 		if (shaderModuleMap.find(vertFilepath) == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilepath);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, vertCode, &vertShaderModule);
+			Pipeline_Helper_Functions::createShaderModule(vertCode, &vertShaderModule);
 			shaderModuleMap[vertFilepath] = vertShaderModule;
 		}
 		else {
@@ -153,7 +153,7 @@ namespace EWE {
 		}
 		if (shaderModuleMap.find(fragFilepath) == shaderModuleMap.end()) {
 			auto fragCode = Pipeline_Helper_Functions::readFile(fragFilepath);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, fragCode, &fragShaderModule);
+			Pipeline_Helper_Functions::createShaderModule(fragCode, &fragShaderModule);
 			shaderModuleMap[fragFilepath] = fragShaderModule;
 		}
 		else {
@@ -161,11 +161,11 @@ namespace EWE {
 		}
 		createGraphicsPipeline(configInfo);
 	}
-	EWEPipeline::EWEPipeline(EWEDevice& device, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo) : eweDevice{ device }, vertShaderModule{ vertShaderModu }, fragShaderModule{ fragShaderModu } {
+	EWEPipeline::EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo) : vertShaderModule{ vertShaderModu }, fragShaderModule{ fragShaderModu } {
 		createGraphicsPipeline(configInfo);
 	}
 
-	EWEPipeline::EWEPipeline(EWEDevice& device, uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo) : eweDevice{ device } {
+	EWEPipeline::EWEPipeline(uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo) {
 		std::string vertPath = SHADER_DIR;
 		//this is always instanced???
 		bool hasNormal = (flags & MaterialF_hasNormal) > 0;
@@ -199,7 +199,7 @@ namespace EWE {
 		createGraphicsPipeline(configInfo);
 	}
 
-	EWEPipeline::EWEPipeline(EWEDevice& device, std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones) : eweDevice{ device } {
+	EWEPipeline::EWEPipeline(std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones) {
 
 		auto vertModuleIter = shaderModuleMap.find(vertFilePath);
 		if (vertModuleIter == shaderModuleMap.end()) {
@@ -450,7 +450,7 @@ namespace EWE {
 	VkPipelineCache PipelineManager::instanceMaterialPipelineCache = VK_NULL_HANDLE;
 	std::map<uint8_t, std::unique_ptr<EWEPipeline>> PipelineManager::dynamicMaterialPipeline;
 
-	void PipelineManager::initDynamicPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device) {
+	void PipelineManager::initDynamicPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced) {
 		//layouts
 		//textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))
 		if (dynamicMaterialPipeLayout[dynamicPipeLayoutIndex] == VK_NULL_HANDLE) {
@@ -485,7 +485,7 @@ namespace EWE {
 
 			printf("creating dynamic pipe layout with index : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
 
-			VkResult vkResult = vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &dynamicMaterialPipeLayout[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))]);
+			VkResult vkResult = vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &dynamicMaterialPipeLayout[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))]);
 			if (vkResult != VK_SUCCESS) {
 				printf("failed to create dynamic mat pipelayout layout [%d] \n", textureCount);
 				throw std::runtime_error("Failed to create dynamic mat pipe layout \n");
@@ -493,7 +493,7 @@ namespace EWE {
 		}
 	}
 
-	void PipelineManager::updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
+	void PipelineManager::updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 		bool hasBones = flags & 128;
 		bool instanced = flags & 64; //curently creating an outside manager to deal with instanced skinned meshes
 #ifdef _DEBUG
@@ -536,7 +536,7 @@ namespace EWE {
 				VkPipelineCacheCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 
-				if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &materialPipelineCache) != VK_SUCCESS) {
+				if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &materialPipelineCache) != VK_SUCCESS) {
 					// handle error
 					printf("failed to create material pipeline cache \n");
 					throw std::runtime_error("failed to create material pipeline cache");
@@ -585,7 +585,7 @@ namespace EWE {
 		}
 	}
 
-	std::unique_ptr<EWEPipeline> PipelineManager::createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
+	std::unique_ptr<EWEPipeline> PipelineManager::createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 
 #ifdef _DEBUG
 		for (int i = 0; i < dynamicInstancedPipeTracker.size(); i++) {
@@ -626,7 +626,7 @@ namespace EWE {
 		if (instanceMaterialPipelineCache == VK_NULL_HANDLE) {
 			VkPipelineCacheCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-			if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &instanceMaterialPipelineCache) != VK_SUCCESS) {
+			if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &instanceMaterialPipelineCache) != VK_SUCCESS) {
 				// handle error
 				printf("failed to create instance material pipeline cache \n");
 				throw std::runtime_error("failed to create material pipeline cache");
@@ -643,7 +643,7 @@ namespace EWE {
 		
 	}
 
-	std::unique_ptr<EWEPipeline> PipelineManager::createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
+	std::unique_ptr<EWEPipeline> PipelineManager::createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 #ifdef _DEBUG
 		for (int i = 0; i < dynamicBonePipeTracker.size(); i++) {
 			if (flags == dynamicBonePipeTracker[i]) {
@@ -684,7 +684,7 @@ namespace EWE {
 		if (boneMaterialPipelineCache == VK_NULL_HANDLE) {
 			VkPipelineCacheCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-			if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &boneMaterialPipelineCache) != VK_SUCCESS) {
+			if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &boneMaterialPipelineCache) != VK_SUCCESS) {
 				// handle error
 				printf("failed to create bone material pipeline cache \n");
 				throw std::runtime_error("failed to create bone material pipeline cache");
@@ -709,7 +709,7 @@ namespace EWE {
 
 	}
 
-	void PipelineManager::createLoadingPipeline(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
+	void PipelineManager::createLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 		if (loadingPipeline.get() != nullptr) {
 			printf("trying to recreate the loading pipeline \n");
 			return;
@@ -735,7 +735,7 @@ namespace EWE {
 		loadingPipeline = std::make_unique<EWEPipeline>(device, loadingVertShaderModule, loadingFragShaderModule, pipelineConfig);
 	}
 
-	VkPipelineLayout PipelineManager::getPipelineLayout(PipeLayout_Enum ple, EWEDevice& eweDevice) {
+	VkPipelineLayout PipelineManager::getPipelineLayout(PipeLayout_Enum ple) {
 		//if (pipelineLayouts[ple] == VK_NULL_HANDLE) { //this initiates the layout, which may not be equal to VK_NULL_HANDLE at initiation (probably wont -> definitiely wont)
 		//doing it like this because i have pipelayouts that are used in multiple pipelines
 		if (pipeLayouts.find(ple) != pipeLayouts.end()) {
@@ -954,7 +954,7 @@ namespace EWE {
 		}
 	}
 
-	void PipelineManager::initPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo, Pipeline_Enum pipeNeeded, EWEDevice& eweDevice) {
+	void PipelineManager::initPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo, Pipeline_Enum pipeNeeded) {
 
 		if (pipelines.find(pipeNeeded) != pipelines.end()) {
 			return;
@@ -1143,14 +1143,14 @@ namespace EWE {
 		}
 	}
 
-	void PipelineManager::cleanupStaticVariables(EWEDevice& device) {
+	void PipelineManager::cleanupStaticVariables() {
 
 #if DECONSTRUCTION_DEBUG
 		printf("begin deconstructing pipeline manager \n");
 #endif
 		for (int i = 0; i < DYNAMIC_PIPE_LAYOUT_COUNT; i++) {
 			if (dynamicMaterialPipeLayout[i] != VK_NULL_HANDLE) {
-				vkDestroyPipelineLayout(device.device(), dynamicMaterialPipeLayout[i], nullptr);
+				vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dynamicMaterialPipeLayout[i], nullptr);
 			}
 		}
 #ifdef _DEBUG
@@ -1161,7 +1161,7 @@ namespace EWE {
 		}
 #endif
 		for (auto iter = pipeLayouts.begin(); iter != pipeLayouts.end(); iter++) {
-			vkDestroyPipelineLayout(device.device(), iter->second, nullptr);
+			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), iter->second, nullptr);
 		}
 		pipeLayouts.clear();
 		for (int i = 0; i < Pipe_MAX_COUNT; i++) {
@@ -1173,16 +1173,16 @@ namespace EWE {
 		dynamicMaterialPipeline.clear();
 
 		if (materialPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), materialPipelineCache, nullptr);
+			vkDestroyPipelineCache(EWEDevice::GetVkDevice(), materialPipelineCache, nullptr);
 		}
 		if (boneMaterialPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), boneMaterialPipelineCache, nullptr);
+			vkDestroyPipelineCache(EWEDevice::GetVkDevice(), boneMaterialPipelineCache, nullptr);
 		}
 		if (instanceMaterialPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), instanceMaterialPipelineCache, nullptr);
+			vkDestroyPipelineCache(EWEDevice::GetVkDevice(), instanceMaterialPipelineCache, nullptr);
 		}
-		vkDestroyShaderModule(device.device(), loadingVertShaderModule, nullptr);
-		vkDestroyShaderModule(device.device(), loadingFragShaderModule, nullptr);
+		vkDestroyShaderModule(EWEDevice::GetVkDevice(), loadingVertShaderModule, nullptr);
+		vkDestroyShaderModule(EWEDevice::GetVkDevice(), loadingFragShaderModule, nullptr);
 		loadingPipeline.reset();
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstructing pipeline manager \n");

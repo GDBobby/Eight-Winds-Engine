@@ -11,7 +11,7 @@ namespace EWE {
 
 	class Compute_Texture {
     public:
-        Compute_Texture(EWEDevice& device, uint16_t width, uint16_t height, bool mipmaps, std::vector<std::array<float, 4>> pixels, VkFormat texel_format = VK_FORMAT_R8G8B8A8_UNORM) : device{ device }, width{ width }, height{ height }, texel_format{ texel_format } {
+        Compute_Texture(uint16_t width, uint16_t height, bool mipmaps, std::vector<std::array<float, 4>> pixels, VkFormat texel_format = VK_FORMAT_R8G8B8A8_UNORM) : width{ width }, height{ height }, texel_format{ texel_format } {
             //std::cout << "GENERATING WITH PIXELS : " << width << ":" << height << std::endl;
             createTextureImage(pixels, mipmaps);
            // printf("after create image PIXELS \n");
@@ -30,7 +30,7 @@ namespace EWE {
 
             //std::cout << "FINISHED GENERATION WITH PIXELS" << std::endl;
         }
-        Compute_Texture(EWEDevice& device, uint16_t width, uint16_t height, bool mipmaps = false) : device{ device }, width{ width }, height{ height } {
+        Compute_Texture(uint16_t width, uint16_t height, bool mipmaps = false) : width{ width }, height{ height } {
             //std::cout << " width : height - " << width << " : " << height << std::endl;
             //imageLayout{ descriptorCount }, image{ descriptorCount }, imageMemory{ descriptorCount }, texPath{ texPath }
             //mipLevels.resize(pixelPeek.size(), 1);
@@ -63,7 +63,7 @@ namespace EWE {
         }
 
         //VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
-        Compute_Texture(EWEDevice& device, uint16_t width, uint16_t height, VkPipelineStageFlags stageFlags, bool mipmaps = false) : device{ device }, width{ width }, height{ height } {
+        Compute_Texture(uint16_t width, uint16_t height, VkPipelineStageFlags stageFlags, bool mipmaps = false) : width{ width }, height{ height } {
 
             if (mipmaps) {
                 mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height))) + 1);
@@ -119,8 +119,6 @@ namespace EWE {
         uint32_t width;
         uint32_t height;
         uint32_t mipLevels{ 1 };
-
-        EWEDevice& device;
 
 
         VkDescriptorImageInfo descriptor;

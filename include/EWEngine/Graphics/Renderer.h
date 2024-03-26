@@ -32,7 +32,7 @@ namespace EWE {
 			vkCmdSetScissor(commandBuffer, 0, 1, &instance->scissor);
 		}
 
-		EWERenderer(MainWindow& window, EWEDevice& device, EWECamera& camera);
+		EWERenderer(MainWindow& window, EWECamera& camera);
 		~EWERenderer();
 
 		EWERenderer(const EWERenderer&) = delete;
@@ -95,7 +95,6 @@ namespace EWE {
 		
 		EWECamera& camera;
 		MainWindow& mainWindow;
-		EWEDevice& eweDevice;
 		std::unique_ptr<EWESwapChain> eweSwapChain;
 
 		uint32_t currentImageIndex;

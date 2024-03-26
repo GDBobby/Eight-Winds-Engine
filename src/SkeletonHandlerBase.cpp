@@ -16,7 +16,7 @@
 
 namespace EWE {
 
-    void SkeletonBase::readAnimData(std::string filePath, EWEDevice& device, bool partial, bool endian) {
+    void SkeletonBase::readAnimData(std::string filePath, bool partial, bool endian) {
         std::ifstream inFile(filePath, std::ifstream::binary);
         if (!inFile.is_open()) {
             printf("failed to open anim file: %s \n", filePath.c_str());
@@ -101,7 +101,7 @@ namespace EWE {
 
     }
 
-    void SkeletonBase::loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath) {
+    void SkeletonBase::loadTextures(std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath) {
         //printf("failed to open : %s \n", filePath.c_str());
         std::ifstream inFile(filePath, std::ifstream::binary);
         if (!inFile.is_open()) {
@@ -121,7 +121,7 @@ namespace EWE {
             std::string finalDir = texturePath;
             finalDir += importData.meshNames[i];
             
-            MaterialTextureInfo materialInfo{ Material_Texture::createMaterialTexture(device, finalDir, true) };
+            MaterialTextureInfo materialInfo{ Material_Texture::createMaterialTexture(finalDir, true) };
             textureTracker.first.push_back(materialInfo);
             
         }
@@ -131,14 +131,13 @@ namespace EWE {
             std::string finalDir = texturePath;
             finalDir += importData.meshNTNames[i];
 
-            MaterialTextureInfo materialInfo = Material_Texture::createMaterialTexture(device, finalDir, true);
+            MaterialTextureInfo materialInfo = Material_Texture::createMaterialTexture(finalDir, true);
             textureTracker.second.push_back(materialInfo);
         }
         //printf("after mesh nt texutres \n");
     }
 
-    //                            (const std::string& importPath, EWEDevice& device)
-    SkeletonBase::SkeletonBase(std::string importPath, EWEDevice& device, std::string texturePath, bool instanced) {
+    SkeletonBase::SkeletonBase(std::string importPath, std::string texturePath, bool instanced) {
         printf("skeleton : improting data : %s \n", importPath.c_str());
 
         mySkeletonID = SkinRenderSystem::getSkinID();
@@ -200,7 +199,7 @@ namespace EWE {
             meshThread1.join();
             //printf("mesh thread 1 finished \n");
             for (int i = 0; i < importMesh.meshes.size(); i++) {
-                meshes.push_back(EWEModel::createMesh(device, importMesh.meshes[i].vertices, importMesh.meshes[i].indices));
+                meshes.push_back(EWEModel::createMesh(importMesh.meshes[i].vertices, importMesh.meshes[i].indices));
             }
         }
         if (meshThread2Exist) {
@@ -208,7 +207,7 @@ namespace EWE {
             meshThread2.join();
 
             for (int i = 0; i < importMeshNT.meshes.size(); i++) {
-                meshesNT.push_back(EWEModel::createMesh(device, importMeshNT.meshes[i].vertices, importMeshNT.meshes[i].indices));
+                meshesNT.push_back(EWEModel::createMesh(importMeshNT.meshes[i].vertices, importMeshNT.meshes[i].indices));
             }
             //printf("mesh thread 2 finished \n");
         }

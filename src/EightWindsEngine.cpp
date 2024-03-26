@@ -70,8 +70,8 @@ namespace EWE {
 		//advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
 		leafSystem = std::make_unique<LeafSystem>(eweDevice);
-		Dimension2::init(eweDevice);
-		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(constructSingular<Pipe_Skybox>()));
+		Dimension2::init();
+		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>()));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
 		RigidRenderingSystem::getRigidRSInstance();
@@ -91,8 +91,8 @@ namespace EWE {
 	}
 
 	EightWindsEngine::~EightWindsEngine() {
-		Dimension2::destruct(eweDevice);
-		PipelineSystem::destruct(eweDevice);
+		Dimension2::destruct();
+		PipelineSystem::destruct();
 #if DECONSTRUCTION_DEBUG
 		printf("beginning of EightWindsEngine deconstructor \n");
 #endif
@@ -105,14 +105,16 @@ namespace EWE {
 		MaterialPipelines::cleanupStaticVariables();
 
 		for (auto& dsl : TextureDSLInfo::descSetLayouts) {
-			delete dsl.second;
+			dsl.second->~EWEDescriptorSetLayout();
+			ewe_free(dsl.second);
 		}
 		TextureDSLInfo::descSetLayouts.clear();
 		Texture_Manager::getTextureManagerPtr()->cleanup();
 
 		for (auto& bufferType : bufferMap) {
 			for (auto& buffer : bufferType.second) {
-				delete buffer;
+				buffer->~EWEBuffer();
+				ewe_free(buffer);
 			}
 		}
 		bufferMap.clear();
@@ -135,7 +137,7 @@ namespace EWE {
 
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			//allocate buffer memory
-			bufferMap[Buff_ubo].emplace_back(EWEBuffer::construct(sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->map();
+			bufferMap[Buff_ubo].emplace_back(ConstructSingular<EWEBuffer>(sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->map();
 			bufferMap[Buff_gpu].emplace_back(EWEBuffer::createAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 
 		}

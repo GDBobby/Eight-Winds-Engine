@@ -14,7 +14,6 @@ namespace EWE {
 
 			const uint16_t ocean_resolution{ 1024 };
 			const uint16_t cascade_count{ 4 };
-			EWEDevice& device;
 
 			IntialFrequencySpectrumPushData ifsPushData;
 			
@@ -33,7 +32,7 @@ namespace EWE {
 			float time = 0.f;
 
 		public:
-			Ocean(EWEDevice& device);
+			Ocean();
 			~Ocean();
 
 			//maybe construct the command buffer here?

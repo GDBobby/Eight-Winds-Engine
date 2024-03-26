@@ -3,9 +3,7 @@
 
 namespace EWE {
 	namespace Ocean {
-		Ocean::Ocean(EWEDevice& device) :
-			device{ device }
-		{
+		Ocean::Ocean() {
 			
 		}
 		Ocean::~Ocean() {

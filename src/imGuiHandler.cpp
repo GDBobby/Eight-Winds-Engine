@@ -4,7 +4,7 @@
 #include <EWEngine/Graphics/Pipeline.h>
 
 namespace EWE {
-	ImGUIHandler::ImGUIHandler(GLFWwindow* window, EWEDevice& device, uint32_t imageCount) : device{ device } {
+	ImGUIHandler::ImGUIHandler(GLFWwindow* window, uint32_t imageCount) : device{ device } {
 		//printf("imgui handler constructor \n");
 
 		IMGUI_CHECKVERSION();
@@ -20,7 +20,7 @@ namespace EWE {
 		ImGui_ImplVulkan_InitInfo init_info = {};
 		init_info.Instance = device.getInstance();
 		init_info.PhysicalDevice = device.getPhysicalDevice();
-		init_info.Device = device.device();
+		init_info.Device = EWEDevice::GetVkDevice();
 		init_info.QueueFamily = device.getGraphicsIndex();
 		init_info.Queue = device.graphicsQueue();
 		init_info.PipelineCache = nullptr;

@@ -14,9 +14,9 @@ namespace EWE {
 		cmdBuf = frameInfo.cmdBuf;
 		frameIndex = frameInfo.index;
 	}
-	void PipelineSystem::destruct(EWEDevice& device) {
+	void PipelineSystem::destruct() {
 		for (auto iter = pipelineSystem.begin(); iter != pipelineSystem.end(); iter++) {
-			vkDestroyPipelineLayout(device.device(), iter->second->pipeLayout, nullptr);
+			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), iter->second->pipeLayout, nullptr);
 		}
 
 		pipelineSystem.clear();

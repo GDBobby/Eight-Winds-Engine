@@ -29,7 +29,7 @@ namespace EWE {
 	//the first layert of the vector (vector<vector>>) designates a pipeline
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
 
-	AdvancedRenderSystem::AdvancedRenderSystem(EWEDevice& device, ObjectManager& objectManager, MenuManager& menuManager) : eweDevice{ device }, objectManager{ objectManager }, menuManager{ menuManager } {
+	AdvancedRenderSystem::AdvancedRenderSystem(ObjectManager& objectManager, MenuManager& menuManager) : eweDevice{ device }, objectManager{ objectManager }, menuManager{ menuManager } {
 		printf("ARS constructor \n");
 		EWEDescriptorPool::BuildGlobalPool(device);
 

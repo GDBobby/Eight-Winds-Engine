@@ -6,7 +6,6 @@
 namespace EWE {
 class ComputeHandler {
 private:
-	EWEDevice& device;
 	//VkSemaphore graphicsSemaphore = VK_NULL_HANDLE;
 	bool computeStarted = false;
 
@@ -20,7 +19,7 @@ private:
 public:
 
 												//the semaphore pointer is to the graphic's compute semaphore. the second, semaphore object, is the graphic semaphore
-	ComputeHandler(EWEDevice& device);
+	ComputeHandler();
 
 	void beginComputation() {
 		syncHub->enableCompute();

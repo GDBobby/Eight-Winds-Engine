@@ -9,7 +9,7 @@ namespace EWE {
     public:
         static uint32_t nextSkeletonID;
 
-        SkeletonBase(std::string importPath, EWEDevice& device, std::string texturePath, bool instanced = false);
+        SkeletonBase(std::string importPath, std::string texturePath, bool instanced = false);
 #if DECONSTRUCTION_DEBUG
         ~SkeletonBase() {
             printf("Deconstructing player skeleton \n");
@@ -58,7 +58,7 @@ namespace EWE {
         uint16_t boneCount = 0;
         int32_t handBone = -1;
 
-        void readAnimData(std::string filePath, EWEDevice& device, bool partial, bool endian);
-        void loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath);
+        void readAnimData(std::string filePath, bool partial, bool endian);
+        void loadTextures(std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath);
     };
 }

@@ -51,11 +51,21 @@ namespace EWE {
         vkDestroyBuffer(EWEDevice::GetEWEDevice()->device(), buffer_info.buffer, nullptr);
         vkFreeMemory(EWEDevice::GetEWEDevice()->device(), memory, nullptr);
     }
-    void deconstruct(EWEBuffer* deconstructedBuffer)
-    {
-        deconstructedBuffer->~EWEBuffer();
-        ewe_free(deconstructedBuffer);
+    void EWEBuffer::Reconstruct(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
+        unmap();
+        vkDestroyBuffer(EWEDevice::GetEWEDevice()->device(), buffer_info.buffer, nullptr);
+        vkFreeMemory(EWEDevice::GetEWEDevice()->device(), memory, nullptr);
+
+        this->usageFlags = usageFlags;
+        this->memoryPropertyFlags = memoryPropertyFlags;
+
+        alignmentSize = getAlignment(instanceSize);
+        bufferSize = alignmentSize * instanceCount;
+        EWEDevice::GetEWEDevice()->createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
+
+        map();
     }
+
 
     /**
      * Map a memory range of this buffer. If successful, mapped points to the specified buffer range.

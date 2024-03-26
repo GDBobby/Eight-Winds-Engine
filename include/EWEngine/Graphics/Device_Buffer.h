@@ -9,7 +9,7 @@ namespace EWE {
         EWEBuffer(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 
         ~EWEBuffer();
-        static void deconstruct(EWEBuffer* deconstructedBuffer);
+        void Reconstruct(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 
         EWEBuffer(const EWEBuffer&) = delete;
         EWEBuffer& operator=(const EWEBuffer&) = delete;

@@ -15,7 +15,7 @@ namespace EWE {
     public:
         class Builder {
         public:
-            Builder() : eweDevice{ eweDevice } {}
+            Builder() {}
 
             Builder& addBinding(
                 uint32_t binding,
@@ -25,7 +25,6 @@ namespace EWE {
             EWEDescriptorSetLayout* build() const;
 
         private:
-            EWEDevice& eweDevice;
             std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
         };
 
@@ -54,7 +53,7 @@ namespace EWE {
     public:
         class Builder {
         public:
-            Builder(EWEDevice& eweDevice) : eweDevice{ eweDevice } {}
+            Builder() {}
 
             Builder& addPoolSize(VkDescriptorType descriptorType, uint32_t count);
             Builder& setPoolFlags(VkDescriptorPoolCreateFlags flags);
@@ -63,14 +62,13 @@ namespace EWE {
 
 
         private:
-            EWEDevice& eweDevice;
             std::vector<VkDescriptorPoolSize> poolSizes{};
             uint32_t maxSets = 1000;
             VkDescriptorPoolCreateFlags poolFlags = 0;
         };
 
-        EWEDescriptorPool(EWEDevice& eweDevice, uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize>& poolSizes);
-        EWEDescriptorPool(EWEDevice& eweDevice, VkDescriptorPoolCreateInfo& pool_info);
+        EWEDescriptorPool(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize>& poolSizes);
+        EWEDescriptorPool(VkDescriptorPoolCreateInfo& pool_info);
         ~EWEDescriptorPool();
         EWEDescriptorPool(const EWEDescriptorPool&) = delete;
         EWEDescriptorPool& operator=(const EWEDescriptorPool&) = delete;
@@ -87,12 +85,11 @@ namespace EWE {
         //void getPool(); maybe later for imGuiHandler, not rn
 
         void resetPool();
-        static void BuildGlobalPool(EWEDevice& device);
-        //static void BuildComputePool(EWEDevice& device);
+        static void BuildGlobalPool();
 
         static void DestructPools();
         static void DestructPool(DescriptorPool_ID poolID);
-        static void AddPool(DescriptorPool_ID poolID, EWEDevice& device, VkDescriptorPoolCreateInfo& pool_info);
+        static void AddPool(DescriptorPool_ID poolID, VkDescriptorPoolCreateInfo& pool_info);
 
     private:
         struct DescriptorTracker {
@@ -106,7 +103,6 @@ namespace EWE {
 
         std::unordered_map<VkDescriptorType, DescriptorTracker> trackers;
 
-        EWEDevice& eweDevice;
         VkDescriptorPool descriptorPool;
 
         void addDescriptorToTrackers(VkDescriptorType descType, uint32_t count);

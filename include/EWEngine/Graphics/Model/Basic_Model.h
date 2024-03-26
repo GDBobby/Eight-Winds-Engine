@@ -8,7 +8,7 @@ namespace EWE {
         static std::unique_ptr<EWEModel> generateSimple3DQuad(glm::vec2 uvScale = glm::vec2{ 1.f });
         static std::unique_ptr<EWEModel> generate3DTileQuad(glm::vec2 uvScale);
         /*
-        static std::unique_ptr<EWEModel> generateSimpleZedQuad(EWEDevice& device, glm::vec2 uvScale = glm::vec2{ 1.f }) {
+        static std::unique_ptr<EWEModel> generateSimpleZedQuad(glm::vec2 uvScale = glm::vec2{ 1.f }) {
             std::vector<EffectVertex> vertices{
                 {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
                 {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},
@@ -24,9 +24,6 @@ namespace EWE {
         static std::unique_ptr<EWEModel> generate2DQuad(glm::vec2 scale = { 1.f,1.f });
 
         static std::unique_ptr<EWEModel> generateNineUIQuad();
-
-
-        //static std::unique_ptr<EWEModel> generate3DCircle(EWEDevice& device);
 
         static std::unique_ptr<EWEModel> generateCircle(uint16_t const points, float radius = 0.5f);
 

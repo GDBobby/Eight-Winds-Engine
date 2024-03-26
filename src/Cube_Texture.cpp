@@ -6,7 +6,7 @@ namespace EWE {
 #define SKYBOX_DIR "textures/skybox/"
 #endif
 
-    TextureDesc Cube_Texture::createCubeTexture(EWEDevice& device, std::string texPath) {
+    TextureDesc Cube_Texture::createCubeTexture(std::string texPath) {
         auto tmPtr = Texture_Manager::getTextureManagerPtr();
         {
             auto foundImage = tmPtr->imageMap.find(texPath);
@@ -53,7 +53,7 @@ namespace EWE {
         cubeImage.descriptorImageInfo.imageView = cubeImage.imageView;
         cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(tmPtr->device, VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
+        EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
 
         descBuilder.writeImage(0, &cubeImage.descriptorImageInfo);
         TextureDesc retDesc = descBuilder.build();
@@ -68,7 +68,7 @@ namespace EWE {
         return retDesc;
     }
 
-    void Cube_Texture::createCubeImage(ImageInfo& cubeTexture, EWEDevice& device, std::vector<PixelPeek>& pixelPeek) {
+    void Cube_Texture::createCubeImage(ImageInfo& cubeTexture, std::vector<PixelPeek>& pixelPeek) {
         uint64_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
         VkDeviceSize imageSize = layerSize * 6;
 
@@ -77,7 +77,7 @@ namespace EWE {
         VkDeviceMemory stagingBufferMemory;
 
         device.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-        vkMapMemory(device.device(), stagingBufferMemory, 0, imageSize, 0, &data);
+        vkMapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
         uint64_t memAddress = reinterpret_cast<uint64_t>(data);
         cubeTexture.mipLevels = 1;
         for (int i = 0; i < 6; i++) {
@@ -85,7 +85,7 @@ namespace EWE {
             stbi_image_free(pixelPeek[i].pixels);
             memAddress += layerSize;
         }
-        vkUnmapMemory(device.device(), stagingBufferMemory);
+        vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory);
 
         VkImageCreateInfo imageInfo;
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -112,14 +112,14 @@ namespace EWE {
 
 
 
-        vkDestroyBuffer(device.device(), stagingBuffer, nullptr);
-        vkFreeMemory(device.device(), stagingBufferMemory, nullptr);
+        vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
 
         //i gotta do this a 2nd time i guess
         device.transitionImageLayout(cubeTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cubeTexture.mipLevels, 6, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     }
 
-    void Cube_Texture::createCubeImageView(ImageInfo& cubeTexture, EWEDevice& device) {
+    void Cube_Texture::createCubeImageView(ImageInfo& cubeTexture) {
 
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -133,13 +133,13 @@ namespace EWE {
         viewInfo.subresourceRange.layerCount = 6;
         viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
             
-        if (vkCreateImageView(device.device(), &viewInfo, nullptr, &cubeTexture.imageView) != VK_SUCCESS) {
+        if (vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &cubeTexture.imageView) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image view!");
         }
         
     }
 
-    void Cube_Texture::createCubeSampler(ImageInfo& cubeTexture, EWEDevice& device) {
+    void Cube_Texture::createCubeSampler(ImageInfo& cubeTexture) {
 
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -170,7 +170,7 @@ namespace EWE {
         samplerInfo.minLod = 0.f;
         samplerInfo.maxLod = 1.f;
 
-        if (vkCreateSampler(device.device(), &samplerInfo, nullptr, &cubeTexture.sampler) != VK_SUCCESS) {
+        if (vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &cubeTexture.sampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler!");
         }
         

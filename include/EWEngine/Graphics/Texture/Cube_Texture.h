@@ -7,13 +7,13 @@ namespace EWE {
 	private:
 
 	protected:
-		static void createCubeImage(ImageInfo& cubeTexture, EWEDevice& device, std::vector<PixelPeek>& pixelPeek);
+		static void createCubeImage(ImageInfo& cubeTexture, std::vector<PixelPeek>& pixelPeek);
 
-		static void createCubeImageView(ImageInfo& cubeTexture, EWEDevice& device);
-		static void createCubeSampler(ImageInfo& cubeTexture, EWEDevice& device);
+		static void createCubeImageView(ImageInfo& cubeTexture);
+		static void createCubeSampler(ImageInfo& cubeTexture);
 
 	public:
-		static TextureDesc createCubeTexture(EWEDevice& device, std::string texPath);
+		static TextureDesc createCubeTexture(std::string texPath);
 	};
 }
 

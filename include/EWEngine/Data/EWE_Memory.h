@@ -4,15 +4,6 @@
 #include <utility>
 
 
-//#ifndef new
-//#define new static_assert(false, "new_ewe");
-//#endif
-//
-//#ifndef delete
-//#define delete static_assert(false, "ewe_free");
-//#endif
-
-
 void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* file, int line, const char* sourceFunction);
 
 void ewe_free_internal(void* ptr);

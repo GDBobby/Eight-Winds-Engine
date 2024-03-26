@@ -22,7 +22,7 @@ namespace EWE {
     }
 
     EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::build() const {
-        EWEDescriptorSetLayout* ret = constructSingular<EWEDescriptorSetLayout>(bindings);
+        EWEDescriptorSetLayout* ret = ConstructSingular<EWEDescriptorSetLayout>(bindings);
         return ret;
     }
 
@@ -106,8 +106,7 @@ namespace EWE {
 
     std::unordered_map<uint16_t, EWEDescriptorPool> EWEDescriptorPool::pools{};
 
-    EWEDescriptorPool::EWEDescriptorPool(EWEDevice& eweDevice, uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize>& poolSizes)
-        : eweDevice{ eweDevice } {
+    EWEDescriptorPool::EWEDescriptorPool(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize>& poolSizes) {
         VkDescriptorPoolCreateInfo descriptorPoolInfo{};
         descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -119,17 +118,17 @@ namespace EWE {
             trackers.emplace(poolSize.type, DescriptorTracker(poolSize.descriptorCount));
         }
 
-        if (vkCreateDescriptorPool(eweDevice.device(), &descriptorPoolInfo, nullptr, &descriptorPool) !=
+        if (vkCreateDescriptorPool(EWEDevice::GetVkDevice(), &descriptorPoolInfo, nullptr, &descriptorPool) !=
             VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor pool!");
         }
     }
-    EWEDescriptorPool::EWEDescriptorPool(EWEDevice& eweDevice, VkDescriptorPoolCreateInfo& pool_info) : eweDevice{ eweDevice } {
+    EWEDescriptorPool::EWEDescriptorPool(VkDescriptorPoolCreateInfo& pool_info) {
         for (int i = 0; i < pool_info.poolSizeCount; i++) {
             trackers.emplace(pool_info.pPoolSizes[i].type, DescriptorTracker(pool_info.pPoolSizes[i].descriptorCount));
         }
 
-        if (vkCreateDescriptorPool(eweDevice.device(), &pool_info, nullptr, &descriptorPool) !=
+        if (vkCreateDescriptorPool(EWEDevice::GetVkDevice(), &pool_info, nullptr, &descriptorPool) !=
             VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor pool!");
         }
@@ -142,7 +141,7 @@ namespace EWE {
 
 		}
 
-        vkDestroyDescriptorPool(eweDevice.device(), descriptorPool, nullptr);
+        vkDestroyDescriptorPool(EWEDevice::GetVkDevice(), descriptorPool, nullptr);
         printf("after destroy pool \n");
     }
     bool EWEDescriptorPool::allocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) {
@@ -155,7 +154,7 @@ namespace EWE {
         allocInfo.pSetLayouts = &descriptorSetLayout;
         allocInfo.descriptorSetCount = 1;
 
-        if (vkAllocateDescriptorSets(eweDevice.device(), &allocInfo, &descriptor) != VK_SUCCESS) {
+        if (vkAllocateDescriptorSets(EWEDevice::GetVkDevice(), &allocInfo, &descriptor) != VK_SUCCESS) {
             return false;
         }
         return true;
@@ -166,7 +165,7 @@ namespace EWE {
     }
     void EWEDescriptorPool::freeDescriptors(std::vector<VkDescriptorSet>& descriptors) const {
         vkFreeDescriptorSets(
-            eweDevice.device(),
+            EWEDevice::GetVkDevice(),
             descriptorPool,
             static_cast<uint32_t>(descriptors.size()),
             descriptors.data());
@@ -178,7 +177,7 @@ namespace EWE {
     }
     void EWEDescriptorPool::freeDescriptor(VkDescriptorSet* descriptor) const {
         vkFreeDescriptorSets(
-            eweDevice.device(),
+            EWEDevice::GetVkDevice(),
             descriptorPool,
             1,
             descriptor);
@@ -186,10 +185,10 @@ namespace EWE {
         //printf("active descriptors after removal : %d \n", activeDescriptors);
     }
     void EWEDescriptorPool::resetPool() {
-        vkResetDescriptorPool(eweDevice.device(), descriptorPool, 0);
+        vkResetDescriptorPool(EWEDevice::GetVkDevice(), descriptorPool, 0);
         //vkResetDescriptorPool(eweDevice.device(), descriptorPool, VK_DESCRIPTOR_POOL);
     }
-    void EWEDescriptorPool::BuildGlobalPool(EWEDevice& device) {
+    void EWEDescriptorPool::BuildGlobalPool() {
         uint32_t maxSets = 1000;
         std::vector<VkDescriptorPoolSize> poolSizes{};
         VkDescriptorPoolSize poolSize;
@@ -202,17 +201,14 @@ namespace EWE {
         poolSizes.emplace_back(poolSize);
         VkDescriptorPoolCreateFlags poolFlags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-        EWEDescriptorPool::pools.try_emplace(0, device, maxSets, poolFlags, poolSizes);
+        EWEDescriptorPool::pools.try_emplace(0, maxSets, poolFlags, poolSizes);
         //EWEDescriptorPool(EWEDevice & eweDevice, uint32_t maxSets,VkDescriptorPoolCreateFlags poolFlags,const std::vector<VkDescriptorPoolSize>&poolSizes);
     }
-    void EWEDescriptorPool::AddPool(DescriptorPool_ID poolID, EWEDevice& device, VkDescriptorPoolCreateInfo& pool_info) {
+    void EWEDescriptorPool::AddPool(DescriptorPool_ID poolID, VkDescriptorPoolCreateInfo& pool_info) {
         EWEDescriptorPool::pools.try_emplace(poolID, device, pool_info);
     }
 
     void EWEDescriptorPool::DestructPools() {
-        for (auto& pool : pools) {
-			//delete pool.second;
-		}
 		pools.clear();
 	}
     void EWEDescriptorPool::DestructPool(DescriptorPool_ID poolID) {
@@ -223,7 +219,6 @@ namespace EWE {
             throw std::runtime_error("destructing pool that doesn't exist \n");
         }
 #endif
-        //delete pools.at(poolID);
         pools.erase(poolID);
     }
 

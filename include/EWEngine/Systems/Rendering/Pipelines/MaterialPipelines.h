@@ -73,9 +73,9 @@ namespace EWE{
     public:
 
 		//pipelayout index is computed before passing in because the calling function is always using it as well
-		static void initMaterialPipeLayout(uint16_t materialPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device, bool hasBump);
-		static MaterialPipelines* getMaterialPipe(MaterialFlags flags, EWEDevice& device);
-		static MaterialPipelines* getInstancedSkinMaterialPipe(uint16_t boneCount, MaterialFlags flags, EWEDevice& device);
+		static void initMaterialPipeLayout(uint16_t materialPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump);
+		static MaterialPipelines* getMaterialPipe(MaterialFlags flags);
+		static MaterialPipelines* getInstancedSkinMaterialPipe(uint16_t boneCount, MaterialFlags flags);
 
 		static void initStaticVariables();
 		static void cleanupStaticVariables();
@@ -109,13 +109,13 @@ namespace EWE{
 		static uint8_t frameIndex;
 		static VkCommandBuffer cmdBuf;
 
-		static std::vector<VkDescriptorSetLayout> getPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device, bool hasBump);
+		static std::vector<VkDescriptorSetLayout> getPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, bool hasBump);
 		static VkPipelineCache materialPipelineCache;
 		static VkPipelineCache skinPipelineCache;
 		static VkPipelineCache instanceSkinPipelineCache;
 
-		static void getPipeCache(EWEDevice& device, bool hasBones, bool instanced, VkPipelineCache& outCache);
-		static MaterialPipelines* createPipe(EWEDevice& device, uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags);
+		static void getPipeCache(bool hasBones, bool instanced, VkPipelineCache& outCache);
+		static MaterialPipelines* createPipe(uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags);
 	};
 }
 

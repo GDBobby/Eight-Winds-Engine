@@ -16,11 +16,10 @@ namespace EWE {
 
 
 	TextOverlay::TextOverlay(
-		EWEDevice& device,
 		float framebufferwidth,
 		float framebufferheight,
 		VkPipelineRenderingCreateInfo const& pipelineInfo
-	) : eweDevice{ device }, frameBufferWidth{ framebufferwidth }, frameBufferHeight{ framebufferheight }, scale{ frameBufferWidth / DEFAULT_WIDTH }
+	) : frameBufferWidth{ framebufferwidth }, frameBufferHeight{ framebufferheight }, scale{ frameBufferWidth / DEFAULT_WIDTH }
 	{
 		if (textOverlayPtr == nullptr) {
 			textOverlayPtr = this;

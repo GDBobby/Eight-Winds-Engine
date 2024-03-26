@@ -16,7 +16,6 @@
 namespace EWE {
 	struct Texture_Builder {
 	protected:
-		EWEDevice& device;
 
 		//scene textures are automatically cleaned upon exit of the current scene. 
 		//For more fine tuned control, use global and define your own deconstruction points.
@@ -31,7 +30,7 @@ namespace EWE {
 	public:
 		std::array<std::vector<ImageConstructionInfo>, 16> imageCI{}; //these are paths, split up into which stage it is going to
 
-		Texture_Builder(EWEDevice& device, bool global);
+		Texture_Builder(bool global);
 
 		//MAYBE default stage flags to FRAG stage
 		void addComponent(std::string const& texPath, VkShaderStageFlags stageFlags, bool mipmaps);
@@ -48,19 +47,11 @@ namespace EWE {
 
 	protected:
 		std::vector<TextureDesc> sceneIDs; //keeping track so i can remove them later
-		EWEDevice& device;
-
-		//int32_t createSimpleVertTexture(EWEDevice& device, std::string texPath);
-
-		//static size_t hashTexture(const std::array<std::vector<std::string>, SUPPORTED_STAGE_COUNT>& paths);
-
-
-		//std::unordered_map<std::string, TextureID> existingIDs{};
 
 		struct ImageTracker {
 			ImageInfo imageInfo;
 			std::unordered_set<TextureDesc> usedInTexture{};
-			ImageTracker(EWEDevice& device, std::string const& path, bool mipmap) : imageInfo{device, path, mipmap} {}
+			ImageTracker(std::string const& path, bool mipmap) : imageInfo{device, path, mipmap} {}
 			ImageTracker() : imageInfo{} {}
 		};
 
@@ -84,7 +75,7 @@ namespace EWE {
 		static Texture_Manager* textureManagerPtr;
 
 	public:
-		Texture_Manager(EWEDevice& device);
+		Texture_Manager();
 
 		void initStaticVariables();
 		void buildSetLayouts();

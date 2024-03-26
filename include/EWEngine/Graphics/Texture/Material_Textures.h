@@ -15,7 +15,7 @@ namespace EWE {
 		};
 
 	public:
-		static MaterialTextureInfo createMaterialTexture(EWEDevice& device, std::string texPath, bool global);
+		static MaterialTextureInfo createMaterialTexture(std::string texPath, bool global);
 	protected:
 
 	};

@@ -188,8 +188,8 @@ namespace EWE {
 		EweLevelLoader& operator=(EweLevelLoader&&) = default;
 	public:
 		static void saveLevel(std::string levelName, ObjectManager* objectManager, std::map<uint32_t, std::map<uint32_t, EWEGameObject>*>& objectList, LevelExportData::SunValues sunVal, std::string targetPath, TransformComponent& spawnPosition, uint32_t targetTimer);
-		static void loadLevelToTarget(EWEDevice& device, std::string levelName, ObjectManager* objectManager, LightBufferObject& lbo, LevelExportData::Map_Type mapType, TransformComponent& spawnTransform, uint32_t& targetTimer);
-		static uint32_t loadLevelToBuilder(EWEDevice& device, std::string levelName, ObjectManager* objectManager, std::map<uint32_t, std::map<uint32_t, EWEGameObject>*>& objectList, LightBufferObject& lbo, LevelExportData::Map_Type mapType, TransformComponent& spawnTransform, char* targetPath, uint32_t& targetTimer);
+		static void loadLevelToTarget(std::string levelName, ObjectManager* objectManager, LightBufferObject& lbo, LevelExportData::Map_Type mapType, TransformComponent& spawnTransform, uint32_t& targetTimer);
+		static uint32_t loadLevelToBuilder(std::string levelName, ObjectManager* objectManager, std::map<uint32_t, std::map<uint32_t, EWEGameObject>*>& objectList, LightBufferObject& lbo, LevelExportData::Map_Type mapType, TransformComponent& spawnTransform, char* targetPath, uint32_t& targetTimer);
 	private:
 		//LevelExportData levelExport;
 	};

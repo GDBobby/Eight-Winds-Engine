@@ -2,7 +2,7 @@
 #include "EWEngine/Graphics/Texture/Texture.h"
 
 namespace EWE {
-	Pipe_SimpleTextured::Pipe_SimpleTextured(EWEDevice& device)
+	Pipe_SimpleTextured::Pipe_SimpleTextured()
 #ifdef _DEBUG
 		: PipelineSystem{ Pipe_textured } {
 #else
@@ -11,7 +11,7 @@ namespace EWE {
 		createPipeline(device);
 	}
 
-	void Pipe_SimpleTextured::createPipeLayout(EWEDevice& device) {
+	void Pipe_SimpleTextured::createPipeLayout() {
 		
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -28,7 +28,7 @@ namespace EWE {
 
 		//pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		std::vector<VkDescriptorSetLayout> tempDSL = {
-			DescriptorHandler::getDescSetLayout(LDSL_global, device),
+			DescriptorHandler::getDescSetLayout(LDSL_global),
 			TextureDSLInfo::getSimpleDSL(device, VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout()
 		};
 
@@ -36,14 +36,14 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
-		if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipeLayout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout) != VK_SUCCESS) {
 			printf("failed to create simple textured pipe layout \n");
 			throw std::runtime_error("Failed to create pipe layout \n");
 		}
 	}
 
-	void Pipe_SimpleTextured::createPipeline(EWEDevice& device) {
-		createPipeLayout(device);
+	void Pipe_SimpleTextured::createPipeline() {
+		createPipeLayout();
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
@@ -55,6 +55,6 @@ namespace EWE {
 		std::string vertString = "texture_shader.vert.spv";
 		std::string fragString = "texture_shader.frag.spv";
 
-		pipe = std::make_unique<EWEPipeline>(device, vertString, fragString, pipelineConfig);
+		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
 	}
 }

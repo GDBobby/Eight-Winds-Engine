@@ -42,27 +42,27 @@ namespace EWE {
     //    return materialMap;
     //}
 
-    void RigidRenderingSystem::addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
+    void RigidRenderingSystem::addMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
         if (renderInfo.meshPtr == nullptr) {
             printf("NULLTPR MESH EXCEPTION \n");
             throw std::runtime_error("nullptr mesh");
         }
         if (!materialMap.contains(materialInfo.materialFlags)) {
-            auto empRet = materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
+            auto empRet = materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
             empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
         }
         else{
             materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).push_back(renderInfo);
         }
     }
-    void RigidRenderingSystem::addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
+    void RigidRenderingSystem::addMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
         if (modelPtr == nullptr) {
             printf("NULLTPR MESH EXCEPTION \n");
             throw std::runtime_error("nullptr mesh");
         }
 
         if (!materialMap.contains(materialInfo.materialFlags)) {
-            auto empRet = materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, device);
+            auto empRet = materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
             empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{MaterialObjectInfo{ownerTransform, modelPtr, drawable}});
         }
         else{

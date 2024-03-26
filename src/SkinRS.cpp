@@ -10,19 +10,19 @@ namespace EWE {
 	SkinRenderSystem* SkinRenderSystem::skinnedMainObject = nullptr;
 
 
-	SkinRenderSystem::SkinRenderSystem(EWEDevice& device) : device { device } {
+	SkinRenderSystem::SkinRenderSystem() {
 		skinnedMainObject = this;
 
 		//this initializes the descriptors
-		DescriptorHandler::getDescSetLayout(LDSL_boned, device);
-		DescriptorHandler::getDescSetLayout(LDSL_largeInstance, device);
+		DescriptorHandler::getDescSetLayout(LDSL_boned);
+		DescriptorHandler::getDescSetLayout(LDSL_largeInstance);
 		
 		MaterialPipelines::initStaticVariables();
 	
 	}
 	SkinRenderSystem::~SkinRenderSystem() {
 		printf("before clearing pipes \n");
-		MaterialPipelines::cleanupStaticVariables(device);
+		MaterialPipelines::cleanupStaticVariables();
 
 		printf("before clearing skin buffer descriptors");// , amount created - % d: % d \n", buffersCreated, instancedBuffersCreated);
 		uint16_t bufferDescriptorsCleared = 0;

@@ -49,22 +49,21 @@ namespace EWE {
 
 		//helix -> ellRatio~1  rotRatio~1
 		//spiral -> elLRatio~0 rotRatio~4
-		LeafSystem(EWEDevice& device);
+		LeafSystem();
 		~LeafSystem();
 
 		void fallCalculation(float timeStep, uint8_t frameIndex);
-		void loadLeafModel(EWEDevice& device);
+		void loadLeafModel();
 		void render(FrameInfo& frameInfo);
 
 		std::unique_ptr<EWEModel> leafModel;
 		TextureDesc leafTextureID = 0;
 
 	protected:
-		void createPipeline(EWEDevice& device) final;
-		void createPipeLayout(EWEDevice& device) final;
+		void createPipeline() final;
+		void createPipeLayout() final;
 
 	private:
-		EWEDevice& device;
 		std::random_device ranDev;
 		std::mt19937 randomGen;
 		std::uniform_real_distribution<float> ellipseRatioDistribution;

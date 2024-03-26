@@ -38,14 +38,14 @@ namespace EWE {
 			}
 		}
 	public:
-		ImGUIHandler(GLFWwindow* window, EWEDevice& eweDevice, uint32_t imageCount);
+		ImGUIHandler(GLFWwindow* window, uint32_t imageCount);
         ~ImGUIHandler();
 
 		void beginRender();
 		void endRender(VkCommandBuffer cmdBuf);
 
 		void rebuild() {
-			//ImGui_ImplVulkanH_CreateWindow(device.getInstance(), device.getPhysicalDevice(), device.device(), &g_MainWindowData, g_QueueFamily, nullptr, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
+			//ImGui_ImplVulkanH_CreateWindow(device.getInstance(), device.getPhysicalDevice(), EWEDevice::GetVkDevice(), &g_MainWindowData, g_QueueFamily, nullptr, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
 		}
         void addTexture(TextureDesc eweTex) {
 
@@ -91,12 +91,11 @@ namespace EWE {
 			info.pSubpasses = &subpass;
 			info.dependencyCount = 1;
 			info.pDependencies = &dependency;
-			if (vkCreateRenderPass(device.device(), &info, nullptr, &imGuiRenderPass) != VK_SUCCESS) {
+			if (vkCreateRenderPass(EWEDevice::GetVkDevice(), &info, nullptr, &imGuiRenderPass) != VK_SUCCESS) {
 				throw std::runtime_error("Could not create Dear ImGui's render pass");
 			}
 		}
 		*/
-		EWEDevice& device;
 		VkRenderPass imGuiRenderPass;
 
 	};
