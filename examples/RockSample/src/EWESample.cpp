@@ -35,7 +35,7 @@ namespace EWE {
 		currentScenePtr = scenes.at(currentScene).get();
 		currentScenePtr->load();
 
-		StaticRenderSystem::initStaticRS(ewEngine.eweDevice, 1, 1);
+		StaticRenderSystem::initStaticRS(1, 1);
 		StaticRenderSystem::destructStaticRS();
 
 		ewEngine.endEngineLoadScreen();
@@ -74,7 +74,7 @@ namespace EWE {
 				//loading entry?
 				vkDeviceWaitIdle(ewEngine.eweDevice.device());
 				currentScenePtr->exit();
-				ewEngine.objectManager.clearSceneObjects(ewEngine.eweDevice);
+				ewEngine.objectManager.clearSceneObjects();
 				Texture_Manager::getTextureManagerPtr()->clearSceneTextures();
 				//loading entry?
 				if (currentScene != scene_exitting) {
@@ -122,10 +122,10 @@ namespace EWE {
 	}
 
 	void EWESample::loadGlobalObjects() {
-		TextureDesc skyboxID = Cube_Texture::createCubeTexture(ewEngine.eweDevice, "nasa/");
+		TextureDesc skyboxID = Cube_Texture::createCubeTexture("nasa/");
 
 		//i dont even know if the engine will work if this isnt constructed
-		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(ewEngine.eweDevice, 100.f), skyboxID };
+		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(100.f), skyboxID };
 
 		//point lights are off by default
 		std::vector<glm::vec3> lightColors{

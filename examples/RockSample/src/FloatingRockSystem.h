@@ -18,7 +18,7 @@ namespace EWE {
 	class FloatingRock {
 	public:
 
-		FloatingRock(EWEDevice& device);
+		FloatingRock();
 
 		FloatingRock(const FloatingRock&) = delete;
 		FloatingRock& operator=(const FloatingRock&) = delete;

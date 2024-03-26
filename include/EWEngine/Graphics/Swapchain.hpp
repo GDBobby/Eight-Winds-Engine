@@ -129,7 +129,6 @@ class EWESwapChain {
     std::vector<VkImage> swapChainImages{};
     std::vector<VkImageView> swapChainImageViews{};
 
-    EWEDevice &device;
     VkExtent2D windowExtent{};
 
     VkSwapchainKHR swapChain{};

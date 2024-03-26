@@ -4,7 +4,7 @@ namespace EWE {
 	SkinBufferHandler::SkinBufferHandler(uint16_t boneCount, uint8_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount } {
 		gpuData.reserve(MAX_FRAMES_IN_FLIGHT);
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			gpuData.emplace_back(device, maxActorCount, boneBlockSize);
+			gpuData.emplace_back(maxActorCount, boneBlockSize);
 		}
 	}
 	SkinBufferHandler::SkinBufferHandler(uint8_t maxActorCount, std::vector<InnerBufferStruct>* innerPtr) : boneBlockSize{0}, maxActorCount{ maxActorCount } {
@@ -21,7 +21,7 @@ namespace EWE {
 		}
 		maxActorCount = actorCount;
 		for (int i = 0; i < gpuData.size(); i++) {
-			gpuData[i].changeActorCount(device, maxActorCount, boneBlockSize);
+			gpuData[i].changeActorCount(maxActorCount, boneBlockSize);
 		}
 	}
 	SkinBufferHandler::InnerBufferStruct::InnerBufferStruct(uint8_t maxActorCount, uint32_t boneBlockSize) :
@@ -61,7 +61,7 @@ namespace EWE {
 	InstancedSkinBufferHandler::InstancedSkinBufferHandler(uint16_t boneCount, uint16_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount } {
 		gpuData.reserve(MAX_FRAMES_IN_FLIGHT);
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			gpuData.emplace_back(device, maxActorCount, boneBlockSize);
+			gpuData.emplace_back(maxActorCount, boneBlockSize);
 		}
 	}
 	void InstancedSkinBufferHandler::writeData(glm::mat4* modelMatrix, void* finalBoneMatrices) {
@@ -79,7 +79,7 @@ namespace EWE {
 		}
 		maxActorCount = actorCount;
 		for (int i = 0; i < gpuData.size(); i++) {
-			gpuData[i].changeActorCount(device, maxActorCount, boneBlockSize);
+			gpuData[i].changeActorCount(maxActorCount, boneBlockSize);
 		}
 	}
 

@@ -122,7 +122,7 @@ namespace EWE {
         
     }
 
-    void EWEBuffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
+    void EWEBuffer::writeToBuffer(void const* data, VkDeviceSize size, VkDeviceSize offset) {
         assert(mapped && "Cannot copy to unmapped buffer");
 
         if (size == VK_WHOLE_SIZE) {

@@ -30,9 +30,9 @@ namespace EWE {
 		}
 
 		leafs.resize(LEAF_COUNT);
-		loadLeafModel(device);
+		loadLeafModel();
 
-		createPipeline(device);
+		createPipeline();
 		leafTextureID = Texture_Builder::createSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 
@@ -315,7 +315,7 @@ namespace EWE {
 		}
 		inFile.close();
 		//printf("file read successfully \n");
-		leafModel = EWEModel::createMesh(importMesh.meshes[0].vertices, importMesh.meshes[0].indices);
+		leafModel = EWEModel::createMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices);
 		//printf("leaf model loaded \n");
 	}
 	void LeafSystem::render(FrameInfo& frameInfo) {

@@ -69,7 +69,7 @@ namespace EWE {
 		advancedRS.takeUIHandlerPtr(&uiHandler);
 		//advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
-		leafSystem = std::make_unique<LeafSystem>();
+		leafSystem = new LeafSystem();
 		Dimension2::init();
 		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>()));
 

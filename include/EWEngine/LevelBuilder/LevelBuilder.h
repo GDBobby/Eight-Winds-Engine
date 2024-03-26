@@ -45,7 +45,7 @@ namespace EWE {
 
 		void postRender() {
 			if (wantsToResetLevel || wantsToLoadLevel) {
-				vkDeviceWaitIdle(eweDevice.device());
+				vkDeviceWaitIdle(EWEDevice::GetVkDevice());
 			}
 			destroyObjects();
 			loadLevel();
@@ -134,7 +134,7 @@ namespace EWE {
 			if (wantsToDestroy) {
 				if (((BuilderModel*)objectList[selectedObject]->at(selectedObject).model.get())->ReadyForDeletion()) {
 					printf("destroy? \n");
-					vkDeviceWaitIdle(eweDevice.device());
+					vkDeviceWaitIdle(EWEDevice::GetVkDevice());
 					materialHandler->removeByTransform(objectList[selectedObject]->at(selectedObject).textureID, &objectList[selectedObject]->at(selectedObject).transform);
 					objectList[selectedObject]->erase(selectedObject);
 					objectList.erase(selectedObject);

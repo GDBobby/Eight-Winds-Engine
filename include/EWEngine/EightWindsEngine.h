@@ -63,7 +63,7 @@ namespace EWE {
 		SkinRenderSystem skinnedRS;
 		Texture_Manager textureManager;
 
-		std::unique_ptr<LeafSystem> leafSystem;
+		LeafSystem* leafSystem;
 
 		std::unique_ptr<std::thread> logicThread;
 		std::unique_ptr<std::thread> renderThread;

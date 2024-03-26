@@ -62,7 +62,7 @@ namespace EWE {
 
         uint32_t mySkinID = 0;
 
-        void addToRigidRenderingSystem(ImportData& tempData, TextureMapping& textureTracker);
+        void addToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker);
         void addToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner);
 
         void loadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);

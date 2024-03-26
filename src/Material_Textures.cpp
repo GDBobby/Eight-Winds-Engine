@@ -37,7 +37,7 @@ namespace EWE {
         std::vector<std::string> materialPaths{};
         //cycling thru extensions, currently png and jpg
 
-        Texture_Builder tBuilder{ device, global };
+        Texture_Builder tBuilder{ global };
         for (int i = 0; i < smartTextureTypes.size(); i++) {
             //foundTypes[i] = true;
             for (int j = 0; j < smartTextureTypes[i].size(); j++) {

@@ -147,7 +147,7 @@ namespace EWE {
 				pipelineLayoutInfo.pushConstantRangeCount = 1;
 			}
 
-			std::vector<VkDescriptorSetLayout> tempDSL{ getPipeDSL(textureCount, hasBones, instanced, device, hasBump) };
+			std::vector<VkDescriptorSetLayout> tempDSL{ getPipeDSL(textureCount, hasBones, instanced, hasBump) };
 			pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 			pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
@@ -283,7 +283,7 @@ namespace EWE {
 			dslInfo.setStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT, 1);
 		}
 		dslInfo.setStageTextureCount(VK_SHADER_STAGE_FRAGMENT_BIT, textureCount - hasBump + 1); //+1 for the albedo, which isnt incldued in textureCount
-		returnLayouts.push_back(dslInfo.getDescSetLayout(device)->getDescriptorSetLayout());
+		returnLayouts.push_back(dslInfo.getDescSetLayout()->getDescriptorSetLayout());
 		//if (instanced) {
 			//printf("returning instanced PDSL size : %d \n", dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].size());
 		//}
@@ -313,7 +313,7 @@ namespace EWE {
 		}
 
 		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * 3);
-		initMaterialPipeLayout(pipeLayoutIndex, textureCount, true, true, device, hasBumps);
+		initMaterialPipeLayout(pipeLayoutIndex, textureCount, true, true, hasBumps);
 
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};

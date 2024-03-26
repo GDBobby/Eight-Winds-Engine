@@ -29,11 +29,11 @@ namespace EWE {
 	//the first layert of the vector (vector<vector>>) designates a pipeline
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
 
-	AdvancedRenderSystem::AdvancedRenderSystem(ObjectManager& objectManager, MenuManager& menuManager) : eweDevice{ device }, objectManager{ objectManager }, menuManager{ menuManager } {
+	AdvancedRenderSystem::AdvancedRenderSystem(ObjectManager& objectManager, MenuManager& menuManager) : objectManager{ objectManager }, menuManager{ menuManager } {
 		printf("ARS constructor \n");
-		EWEDescriptorPool::BuildGlobalPool(device);
+		EWEDescriptorPool::BuildGlobalPool();
 
-		model2D = Basic_Model::generate2DQuad(device);
+		model2D = Basic_Model::generate2DQuad();
 		printf("after ARS constructor finished \n");
 	}
 
@@ -41,7 +41,7 @@ namespace EWE {
 #if true//DECONSTRUCTION_DEBUG
 		std::cout << "entering ARS deconstructor " << std::endl;
 #endif
-		EWEPipeline::cleanShaderModules(eweDevice);
+		EWEPipeline::cleanShaderModules();
 
 		EWEDescriptorPool::DestructPools();
 

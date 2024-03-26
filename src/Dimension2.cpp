@@ -75,7 +75,6 @@ namespace EWE {
 			throw std::runtime_error("initing twice?");
 			return;
 		}
-		dimension2Ptr = ConstructSingular<Dimension2>();
 		dimension2Ptr = reinterpret_cast<Dimension2*>(ewe_alloc(sizeof(Dimension2), 1));
 		new(dimension2Ptr) Dimension2();
 

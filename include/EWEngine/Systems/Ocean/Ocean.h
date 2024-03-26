@@ -1,6 +1,7 @@
 #pragma once
-#include "OceanFFT.h"
 #include "EWEngine/Graphics/Model/Model.h"
+#include "EWEngine/Graphics/Pipeline.h"
+#include "EWEngine/Systems/Ocean/OceanStructs.h"
 
 //this is largely self-contained, and builds its own systems.
 //	as i expand the engine, and these systems are needed in mroe places, 

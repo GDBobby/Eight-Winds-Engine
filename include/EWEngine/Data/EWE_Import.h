@@ -31,6 +31,7 @@ namespace EWE {
         struct TemplateMeshData {
             std::string versionTracker{ "" };
             std::vector<MeshData<V_Type>> meshes;
+            static constexpr size_t vertex_size = sizeof(V_Type);
 
             TemplateMeshData(std::vector<V_Type>& vertex, std::vector<uint32_t>& index) {
                 meshes.emplace_back(vertex, index);

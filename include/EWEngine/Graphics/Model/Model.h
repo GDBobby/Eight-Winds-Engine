@@ -71,21 +71,21 @@ namespace EWE {
         }
 
 
-        std::unique_ptr<EWEModel> createMesh(void* verticesData, uint32_t vertexCount, uint64_t sizeOfVertex, std::vector<uint32_t>const& indices) {
+        static std::unique_ptr<EWEModel> createMesh(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
             return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex, indices);
         }
 
-        std::unique_ptr<EWEModel> createMesh(void* verticesData, uint32_t vertexCount, uint64_t sizeOfVertex) {
+       static std::unique_ptr<EWEModel> createMesh(void const* verticesData, size_t vertexCount, std::size_t sizeOfVertex) {
             return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex);
         }
 
-        EWEModel(void* verticesData, uint32_t vertexCount, uint64_t sizeOfVertex, std::vector<uint32_t> const& indices) {
+        EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
             assert(vertexCount >= 3 && "vertex count must be at least 3");
             VertexBuffers(vertexCount, sizeOfVertex, verticesData);
             createIndexBuffers(indices);
         }
 
-        EWEModel(void* verticesData, uint32_t vertexCount, uint64_t sizeOfVertex) {
+        EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex) {
             assert(vertexCount >= 3 && "vertex count must be at least 3");
             VertexBuffers(vertexCount, sizeOfVertex, verticesData);
         }
@@ -120,7 +120,7 @@ namespace EWE {
         //void createBoneVertexBuffers(const std::vector<boneVertex>& vertices);
         //void createBobVertexBuffers(const std::vector <bobVertex>& vertices);
 
-        void VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void* data);
+        void VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data);
 
         void createGrassIndexBuffer(void* indexData, uint32_t indexCount);
         void createIndexBuffers(const std::vector<uint32_t>& indices);

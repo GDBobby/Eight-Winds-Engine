@@ -120,7 +120,7 @@ namespace EWE {
 		}
 
 #ifdef _DEBUG
-        auto emplaceRet = descSetLayouts.try_emplace(*this, buildDSL(device));
+        auto emplaceRet = descSetLayouts.try_emplace(*this, buildDSL());
         if (!emplaceRet.second) {
             printf("failed to create dynamic desc set layout \n");
             throw std::runtime_error("failed to create dynamic desc set layout");
@@ -135,9 +135,9 @@ namespace EWE {
 
         createTextureImage(pixelPeek, mipmap); //strange to pass in the first, btu whatever
         //printf("after create image \n");
-        createTextureImageView(device);
+        createTextureImageView();
         //printf("after image view \n");
-        createTextureSampler(device);
+        createTextureSampler();
 
         descriptorImageInfo.sampler = sampler;
         descriptorImageInfo.imageView = imageView;
@@ -185,14 +185,16 @@ namespace EWE {
         VkDeviceMemory stagingBufferMemory;
         //printf("before creating buffer \n");
 
-        EWEDevice::GetEWEDevice()->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        EWEDevice* const eweDevice = EWEDevice::GetEWEDevice();
+
+        eweDevice->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
         //printf("before memory mapping \n");
         void* data;
-        vkMapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
+        vkMapMemory(eweDevice->device(), stagingBufferMemory, 0, imageSize, 0, &data);
         //printf("memcpy \n");
         memcpy(data, pixelPeek.pixels, static_cast<size_t>(imageSize));
         //printf("unmapping \n");
-        vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory);
+        vkUnmapMemory(eweDevice->device(), stagingBufferMemory);
         //printf("freeing pixels \n");
         stbi_image_free(pixelPeek.pixels);
         //printf("after memory mapping \n");
@@ -216,22 +218,22 @@ namespace EWE {
         imageInfo.flags = 0; // Optional
 
         //printf("before image info \n");
-        device.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+        eweDevice->createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
         //printf("before transition \n");
-        device.transitionImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
+        eweDevice->transitionImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
         //printf("before copy buffer to image \n");
-        device.copyBufferToImage(stagingBuffer, image, width, height, 1);
+        eweDevice->copyBufferToImage(stagingBuffer, image, width, height, 1);
         //printf("after copy buffer to image \n");
         //i gotta do this a 2nd time i guess
         //eweDevice.transitionImageLayout(image[i], VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels[i]);
 
-        vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
-        vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
+        vkDestroyBuffer(eweDevice->device(), stagingBuffer, nullptr);
+        vkFreeMemory(eweDevice->device(), stagingBufferMemory, nullptr);
         //printf("end of create texture image loop %d \n", i);
         
         //printf("before generate mip maps \n");
         if (MIPMAP_ENABLED && mipmapping) {
-            generateMipmaps(device, VK_FORMAT_R8G8B8A8_SRGB, width, height);
+            generateMipmaps(VK_FORMAT_R8G8B8A8_SRGB, width, height);
         }
         //printf("after generate mip maps \n");
     }
@@ -267,7 +269,7 @@ namespace EWE {
         samplerInfo.addressModeW = samplerInfo.addressModeU;
 
         samplerInfo.anisotropyEnable = VK_TRUE;
-        samplerInfo.maxAnisotropy = device.getProperties().limits.maxSamplerAnisotropy;
+        samplerInfo.maxAnisotropy = EWEDevice::GetEWEDevice()->getProperties().limits.maxSamplerAnisotropy;
 
         samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -375,7 +377,7 @@ namespace EWE {
             1, &barrier
         );
         //printf("after pipeline barrier 3 \n");
-        device.endSingleTimeCommands(commandBuffer);
+        EWEDevice::GetEWEDevice()->endSingleTimeCommands(commandBuffer);
         //printf("after end single time commands \n");
         
         //printf("end of mip maps \n");

@@ -185,9 +185,9 @@ namespace EWE {
         }
 
         std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>> textureMappingTracker;
-        readAnimData(meshPath, device, partial, endian);
+        readAnimData(meshPath, partial, endian);
 
-        loadTextures(device, importPath + "_Names.ewe", textureMappingTracker, texturePath);
+        loadTextures(importPath + "_Names.ewe", textureMappingTracker, texturePath);
 
         //printf("textures created \n");
 
@@ -198,16 +198,17 @@ namespace EWE {
             //printf("waiting on mesh thread 1 \n");
             meshThread1.join();
             //printf("mesh thread 1 finished \n");
-            for (int i = 0; i < importMesh.meshes.size(); i++) {
-                meshes.push_back(EWEModel::createMesh(importMesh.meshes[i].vertices, importMesh.meshes[i].indices));
+
+            for (auto const& mesh : importMesh.meshes) {
+                meshes.push_back(EWEModel::createMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMesh.vertex_size, mesh.indices));
             }
         }
         if (meshThread2Exist) {
             //printf("waiting on mesh thread 2 \n");
             meshThread2.join();
 
-            for (int i = 0; i < importMeshNT.meshes.size(); i++) {
-                meshesNT.push_back(EWEModel::createMesh(importMeshNT.meshes[i].vertices, importMeshNT.meshes[i].indices));
+            for (auto const& mesh : importMeshNT.meshes) {
+                meshes.push_back(EWEModel::createMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMeshNT.vertex_size, mesh.indices));
             }
             //printf("mesh thread 2 finished \n");
         }

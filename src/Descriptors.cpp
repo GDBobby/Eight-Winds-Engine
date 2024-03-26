@@ -186,7 +186,6 @@ namespace EWE {
     }
     void EWEDescriptorPool::resetPool() {
         vkResetDescriptorPool(EWEDevice::GetVkDevice(), descriptorPool, 0);
-        //vkResetDescriptorPool(eweDevice.device(), descriptorPool, VK_DESCRIPTOR_POOL);
     }
     void EWEDescriptorPool::BuildGlobalPool() {
         uint32_t maxSets = 1000;
@@ -328,7 +327,7 @@ namespace EWE {
         for (auto& write : writes) {
             write.dstSet = set;
         }
-        vkUpdateDescriptorSets(pool.eweDevice.device(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+        vkUpdateDescriptorSets(EWEDevice::GetVkDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
     }
 
 }  // namespace EWE

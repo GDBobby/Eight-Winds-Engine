@@ -12,9 +12,6 @@ namespace EWE {
 
 		createPipeline();
 	}
-	void Pipe_Skybox::construct() {
-		createPipeline();
-	}
 
 
 	void Pipe_Skybox::createPipeLayout() {

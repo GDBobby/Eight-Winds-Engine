@@ -59,17 +59,17 @@ namespace EWE {
     std::unique_ptr<EWEModel> EWEModel::createModelFromFile(const std::string& filepath) {
         Builder builder{};
         builder.loadModel(filepath);
-        return std::make_unique<EWEModel>(builder.vertices, builder.indices);
+        return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
     }
     std::unique_ptr<EWEModel> EWEModel::createSimpleModelFromFile(const std::string& filePath) {
         SimpleBuilder builder{};
         builder.loadModel(filePath);
-        return std::make_unique<EWEModel>(builder.vertices, builder.indices);
+        return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
     }
     std::unique_ptr<EWEModel> EWEModel::createGrassModelFromFile(const std::string& filePath) {
         GrassBuilder builder{};
         builder.loadModel(filePath);
-        return std::make_unique<EWEModel>(builder.vertices, builder.indices);
+        return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
     }
 
     void EWEModel::AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data) {
@@ -87,14 +87,13 @@ namespace EWE {
 
 
         instanceBuffer = std::make_unique<EWEBuffer>(
-            eweDevice,
             instanceSize,
             instanceCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         
 
-        eweDevice.copyBuffer(stagingBuffer.getBuffer(), instanceBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), instanceBuffer->getBuffer(), bufferSize);
     }
     /*
     void EWEModel::updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf) {
@@ -122,7 +121,7 @@ namespace EWE {
         eweDevice.copySecondaryBuffer(stagingBuffer.getBuffer(), instanceBuffer[instanceIndex]->getBuffer(), bufferSize, cmdBuf);
     }
     */
-    void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void* data) {
+    void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data) {
         VkDeviceSize bufferSize = vertexSize * vertexCount;
 
         EWEBuffer stagingBuffer{
@@ -136,13 +135,12 @@ namespace EWE {
         stagingBuffer.writeToBuffer(data);
 
         vertexBuffer = std::make_unique<EWEBuffer>(
-            eweDevice,
             vertexSize,
             vertexCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        eweDevice.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
     }
     void EWEModel::createGrassIndexBuffer(void* indexData, uint32_t indexCount) {
         VkDeviceSize bufferSize = indexCount * 4;
@@ -159,13 +157,12 @@ namespace EWE {
         stagingBuffer.writeToBuffer(indexData);
 
         indexBuffer = std::make_unique<EWEBuffer>(
-            eweDevice,
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        eweDevice.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
 
     EWEBuffer* EWEModel::createIndexBuffer(std::vector<uint32_t> const& indices) {
@@ -191,7 +188,7 @@ namespace EWE {
         indexBuffer = ConstructSingular<EWEBuffer>(indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
 
         return indexBuffer;
     }
@@ -219,13 +216,12 @@ namespace EWE {
         stagingBuffer.writeToBuffer((void*)indices.data());
 
         indexBuffer = std::make_unique<EWEBuffer>(
-            eweDevice,
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        eweDevice.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
 
     void EWEModel::draw(VkCommandBuffer commandBuffer) {

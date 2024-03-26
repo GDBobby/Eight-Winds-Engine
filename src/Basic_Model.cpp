@@ -35,7 +35,7 @@ namespace EWE {
         indices.push_back(0);
         indices.push_back(points - 1);
         indices.push_back(1);
-        return std::make_unique<EWEModel>(vertices, indices);
+        return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
 
     std::unique_ptr<EWEModel> Basic_Model::generateQuad(glm::vec2 uvScale) {
@@ -46,7 +46,7 @@ namespace EWE {
             {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}, {1.f, 0.f, 0.f}},
         };
         std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
-        return std::make_unique<EWEModel>(vertices, indices);
+        return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
     std::unique_ptr<EWEModel> Basic_Model::generateQuadPNU(glm::vec2 uvScale) {
         std::vector<VertexNT> vertices{
@@ -56,7 +56,7 @@ namespace EWE {
             {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}},
         };
         std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
-        return std::make_unique<EWEModel>(vertices, indices);
+        return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
     std::unique_ptr<EWEModel> Basic_Model::generateSimple3DQuad(glm::vec2 uvScale) {
         std::vector<EffectVertex> vertices{
@@ -66,7 +66,7 @@ namespace EWE {
             {{0.5f,0.0f, 0.5f}, {uvScale.x,0.f}},
         };
         std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-        return std::make_unique<EWEModel>(vertices, indices);
+        return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
 
     std::unique_ptr<EWEModel> Basic_Model::generate3DTileQuad(glm::vec2 uvScale) {
@@ -79,7 +79,7 @@ namespace EWE {
             {{uvScale.x,uvScale.y}},
         };
         std::vector<uint32_t> indices{};// 0, 1, 2, 2, 3, 0 };
-        return std::make_unique<EWEModel>(vertices, indices);
+        return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
 
     std::unique_ptr<EWEModel> Basic_Model::generate2DGrid(glm::vec2 scale){
@@ -97,7 +97,7 @@ namespace EWE {
             {rightX, botY}
         };
         std::vector<uint32_t> indices{};
-        return std::make_unique<EWEModel>(vertices, indices);
+        return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
 
     std::unique_ptr<EWEModel> Basic_Model::generate2DQuad(glm::vec2 scale) {
@@ -108,7 +108,7 @@ namespace EWE {
             {{-0.5f, 0.5f}, {0.f, scale.y}}
         };
         std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-        return std::make_unique<EWEModel>(vertices, indices);
+        return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
     std::unique_ptr<EWEModel> Basic_Model::generateNineUIQuad() {
         std::vector<VertexUI> vertices{
@@ -125,7 +125,7 @@ namespace EWE {
             {{-.5f, .5f}, {.0625f, 1.f - .0625f}}, //inner top right
         };
         std::vector<uint32_t> indices{ 1,0,6,1,6,7,1,7,3,1,3,2,1,2,0,5,4,2,5,2,3,5,3,7,5,7,6,5,6,4 };
-        return std::make_unique<EWEModel>(vertices, indices);
+        return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
     std::unique_ptr<EWEModel> Basic_Model::createSkyBox(float scale) {
         //hopefully never have to look at this again
@@ -161,6 +161,6 @@ namespace EWE {
         }
 
         //printf("vertex size ? : %d \n", vertices.size());
-        return std::make_unique<EWEModel>(vertices, indices);
+        return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
 }

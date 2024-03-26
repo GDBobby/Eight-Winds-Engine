@@ -11,7 +11,7 @@ namespace EWE {
 		menuManagerPtr = this;
 		currentScene = 0;
 		//menuModules[menu_controls_temp] = std::make_unique<ControlsTempMM>(screenWidth, screenHeight);
-		MenuModule::initTextures(eweDevice);
+		MenuModule::initTextures();
 
 		//MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
 

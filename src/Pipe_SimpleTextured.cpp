@@ -8,7 +8,7 @@ namespace EWE {
 #else
 	{
 #endif
-		createPipeline(device);
+		createPipeline();
 	}
 
 	void Pipe_SimpleTextured::createPipeLayout() {
@@ -29,7 +29,7 @@ namespace EWE {
 		//pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		std::vector<VkDescriptorSetLayout> tempDSL = {
 			DescriptorHandler::getDescSetLayout(LDSL_global),
-			TextureDSLInfo::getSimpleDSL(device, VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout()
+			TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout()
 		};
 
 		//printf("tempDSL size : %d \n", tempDSL->size());

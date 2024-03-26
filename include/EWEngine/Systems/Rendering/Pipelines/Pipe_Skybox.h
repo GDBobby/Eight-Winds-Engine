@@ -7,8 +7,6 @@ namespace EWE {
 	public:
 		Pipe_Skybox();
 
-		void construct() final;
-
 	protected:
 		void createPipeLayout();
 		void createPipeline();

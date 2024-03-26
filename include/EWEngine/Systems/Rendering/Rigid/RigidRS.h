@@ -42,7 +42,8 @@ namespace EWE {
         static RigidRenderingSystem* getRigidRSInstance() {
             //this isn't thread safe
             if (rigidInstance == nullptr) {
-                rigidInstance = ConstructSingular<RigidRenderingSystem>();
+                rigidInstance = reinterpret_cast<RigidRenderingSystem*>(ewe_alloc(sizeof(RigidRenderingSystem), 1));
+                new(rigidInstance) RigidRenderingSystem();
             }
             return rigidInstance;
         }

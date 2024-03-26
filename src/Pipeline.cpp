@@ -178,7 +178,7 @@ namespace EWE {
 		if (shaderModuleMap.find(vertPath) == shaderModuleMap.end()) {
 			printf("creating vertex shader - %d:%d \n", boneCount, flags);
 			//auto vertCode = readFile(vertPath);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, ShaderBlock::getVertexShader(hasNormal, boneCount, true), &vertShaderModule);
+			Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getVertexShader(hasNormal, boneCount, true), &vertShaderModule);
 			shaderModuleMap[vertPath] = vertShaderModule;
 		}
 		else {
@@ -188,7 +188,7 @@ namespace EWE {
 		fragPath += "dynamic/" + std::to_string(flags) + "b.frag.spv";
 		if (shaderModuleMap.find(fragPath) == shaderModuleMap.end()) {
 			printf("creating fragment shader : %d \n", flags);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, ShaderBlock::getFragmentShader(flags, true), &fragShaderModule);
+			Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getFragmentShader(flags, true), &fragShaderModule);
 			//fragPath = ENGINE_DIR + fragPath; //wtf
 			shaderModuleMap[fragPath] = fragShaderModule;
 		}
@@ -204,7 +204,7 @@ namespace EWE {
 		auto vertModuleIter = shaderModuleMap.find(vertFilePath);
 		if (vertModuleIter == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilePath);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, vertCode, &vertShaderModule);
+			Pipeline_Helper_Functions::createShaderModule(vertCode, &vertShaderModule);
 			shaderModuleMap.try_emplace(vertFilePath, vertShaderModule);
 		}
 		else {
@@ -219,7 +219,7 @@ namespace EWE {
 
 		auto fragModuleIter = shaderModuleMap.find(fragPath);
 		if (fragModuleIter == shaderModuleMap.end()) {
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, ShaderBlock::getFragmentShader(flags, hasBones), &fragShaderModule);
+			Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getFragmentShader(flags, hasBones), &fragShaderModule);
 			fragPath = SHADER_DIR + fragPath;
 			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 		}
@@ -231,11 +231,7 @@ namespace EWE {
 	}
 
 	EWEPipeline::~EWEPipeline() {
-		//MIGHT DESTROY THE SAME MODULE TWICE WHILE USING THE MAP COPY
-
-		//vkDestroyShaderModule(eweDevice.device(), vertShaderModule, nullptr);
-		//vkDestroyShaderModule(eweDevice.device(), fragShaderModule, nullptr);
-		vkDestroyPipeline(eweDevice.device(), graphicsPipeline, nullptr);
+		vkDestroyPipeline(EWEDevice::GetVkDevice(), graphicsPipeline, nullptr);
 	}
 
 	void EWEPipeline::bind(VkCommandBuffer commandBuffer) {
@@ -311,7 +307,7 @@ namespace EWE {
 		}
 		pipelineInfo.flags = configInfo.flags;
 #endif
-		if (vkCreateGraphicsPipelines(eweDevice.device(), configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(EWEDevice::GetVkDevice(), configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create graphics pipeline");
 		}
 
@@ -765,7 +761,7 @@ namespace EWE {
 				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_pointLight, eweDevice);
 				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
 				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				if (vkCreatePipelineLayout(eweDevice.device(), &pipelineLayoutInfo, nullptr, &pipeLayouts[PL_pointLight]) != VK_SUCCESS) {
+				if (vkCreatePipelineLayout(eweDeviceEWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayouts[PL_pointLight]) != VK_SUCCESS) {
 					throw std::runtime_error("failed to create pipeline layout");
 				}
 				break;
@@ -942,7 +938,7 @@ namespace EWE {
 
 			}
 
-			if (vkCreatePipelineLayout(eweDevice.device(), &pipelineLayoutInfo, nullptr, &pipeLayouts[ple]) != VK_SUCCESS) {
+			if (vkCreatePipelineLayout(eweDeviceEWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayouts[ple]) != VK_SUCCESS) {
 				printf("failed to create %d pipe layout \n", ple);
 				throw std::runtime_error("Failed to create pipe layout \n");
 			}
