@@ -5,6 +5,7 @@
 //#include "GUI/ControlsMM.h"
 #include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
 #include <EWEngine/Graphics/Texture/Cube_Texture.h>
+#include <EWEngine/Systems/Ocean/Ocean.h>
 
 #include "GUI/MenuEnums.h"
 
@@ -33,10 +34,14 @@ namespace EWE {
 		scenes.emplace(scene_shaderGen, std::make_unique<ShaderGenerationScene>(ewEngine));
 		//scenes.emplace(scene_)
 		currentScenePtr = scenes.at(currentScene).get();
+
 		currentScenePtr->load();
 
-		StaticRenderSystem::initStaticRS(1, 1);
-		StaticRenderSystem::destructStaticRS();
+		Ocean::Ocean ocean{};
+
+		//StaticRenderSystem::initStaticRS(1, 1);
+
+		//StaticRenderSystem::destructStaticRS();
 
 		ewEngine.endEngineLoadScreen();
 	}

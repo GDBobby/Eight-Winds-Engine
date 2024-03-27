@@ -1,5 +1,7 @@
 #pragma once
 
+#include "EWEngine/Global_Macros.h"
+
 #include "EWEngine/MainWindow.h"
 #include "EWEngine/Systems/SyncHub.h"
 
@@ -16,8 +18,6 @@
 
 
 
-#define GPU_LOGGING true
-#define GPU_LOG_FILE "GPULog.log"
 
 namespace EWE {
 
@@ -129,7 +129,7 @@ namespace EWE {
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void copySecondaryBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer cmdBuf);
 
-        void transitionImageLayout(VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t& mipLevels, uint8_t layerCount = 1);
+        void transitionImageLayout(VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
         void transferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImage> const& images);
         void transitionImageLayout(VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t& mipLevels, uint8_t layerCount, VkPipelineStageFlags destinationStage);
 

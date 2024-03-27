@@ -104,18 +104,7 @@ namespace EWE {
 		//glfwSetWindowSize(window, width, height);
 
 
-		if (glfwCreateWindowSurface(instance, window, nullptr, surface) != VK_SUCCESS) {
-			printf("failed to create window surface \n");
-#if GPU_LOGGING
-			//printf("opening file? \n");
-			{
-				std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-				logFile << "after creating command pool " << std::endl;
-				logFile.close();
-			}
-#endif
-			throw std::runtime_error("failed to create window surface");
-		}
+		EWE_VK_ASSERT(glfwCreateWindowSurface(instance, window, nullptr, surface));
 	}
 
 	void MainWindow::frameBufferResizeCallback(GLFWwindow* window, int width, int height) {

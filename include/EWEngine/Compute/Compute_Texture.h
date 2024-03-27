@@ -6,30 +6,11 @@
 #include <cmath>
 #include <random>
 #include <array>
-/*
+
 namespace EWE {
 
 	class Compute_Texture {
     public:
-        Compute_Texture(uint16_t width, uint16_t height, bool mipmaps, std::vector<std::array<float, 4>> pixels, VkFormat texel_format = VK_FORMAT_R8G8B8A8_UNORM) : width{ width }, height{ height }, texel_format{ texel_format } {
-            //std::cout << "GENERATING WITH PIXELS : " << width << ":" << height << std::endl;
-            createTextureImage(pixels, mipmaps);
-           // printf("after create image PIXELS \n");
-            createTextureImageView();
-            //printf("after image view PIXELS \n");
-            createTextureSampler();
-            //printf("before descriptors PIXELS \n");
-
-            descriptor.sampler = sampler;
-            descriptor.imageView = imageView;
-            descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-            graphicsDescriptor.sampler = sampler;
-            graphicsDescriptor.imageView = imageView;
-            graphicsDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-            //std::cout << "FINISHED GENERATION WITH PIXELS" << std::endl;
-        }
         Compute_Texture(uint16_t width, uint16_t height, bool mipmaps = false) : width{ width }, height{ height } {
             //std::cout << " width : height - " << width << " : " << height << std::endl;
             //imageLayout{ descriptorCount }, image{ descriptorCount }, imageMemory{ descriptorCount }, texPath{ texPath }
@@ -56,7 +37,7 @@ namespace EWE {
             //printf("before descriptors \n");
 
             //descriptor.resize(1);
-            descriptor.sampler = sampler;
+            descriptor.sampler = VK_NULL_HANDLE;
             descriptor.imageView = imageView;
             
             descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -75,7 +56,7 @@ namespace EWE {
             createGraphicsImageView();
             createTextureSampler(true);
 
-            graphicsDescriptor.sampler = graphicsSampler;
+            graphicsDescriptor.sampler = VK_NULL_HANDLE;
             graphicsDescriptor.imageView = graphicsImageView;
             graphicsDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
@@ -98,9 +79,6 @@ namespace EWE {
         void createTextureImageView();
         void createTextureSampler(bool settingGraphics = false);
 
-        void createGraphicsImage(VkPipelineStageFlags stageFlags);
-        void createGraphicsImageView();
-
 
 
         VkImageLayout imageLayout;
@@ -109,7 +87,6 @@ namespace EWE {
         VkImage image{ VK_NULL_HANDLE };
         VkDeviceMemory imageMemory;
         VkImageView imageView;
-        VkSampler sampler;
 
         VkImage graphicsImage;
         VkDeviceMemory graphicsImageMemory;
@@ -127,4 +104,3 @@ namespace EWE {
         VkFormat texel_format = VK_FORMAT_R8G8B8A8_UNORM;
 	};
 }
-*/

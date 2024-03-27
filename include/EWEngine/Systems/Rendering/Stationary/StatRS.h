@@ -16,14 +16,6 @@ namespace EWE {
 			uint16_t pipeLayoutIndex; //a lot of work to find this value, might as well just store it
 			std::vector<GPUStruct> objectData{};
 			std::vector<uint32_t> freedTransformIDs{};
-			/*
-			PipelineStruct(std::unique_ptr<EWEPipeline> pipeline, GPUStruct& objectData)
-				: pipeline{std::move(pipeline)}, objectData{std::move(objectData)}
-			{}
-			void addObject(std::unique_ptr<EWEModel> modelData, TextureID textureID) {
-
-			}
-			*/
 		};
 		std::vector<PipelineStruct> pipelineStructs{};
 		std::unique_ptr<EWEBuffer> transformBuffer;
@@ -35,6 +27,7 @@ namespace EWE {
 	public:
 		static void initStaticRS(uint32_t pipelineCount, uint32_t modelLimit);
 		static void destructStaticRS() {
+
 			skinnedMainObject->~StaticRenderSystem();
 			ewe_free(skinnedMainObject);
 		}

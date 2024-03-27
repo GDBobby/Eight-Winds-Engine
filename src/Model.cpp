@@ -185,7 +185,7 @@ namespace EWE {
         stagingBuffer.map();
         stagingBuffer.writeToBuffer((void*)indices.data());
         EWEBuffer* indexBuffer;
-        indexBuffer = ConstructSingular<EWEBuffer>(indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        indexBuffer = ConstructSingular<EWEBuffer>(ewe_call_trace, indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);

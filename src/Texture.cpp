@@ -224,8 +224,6 @@ namespace EWE {
         //printf("before copy buffer to image \n");
         eweDevice->copyBufferToImage(stagingBuffer, image, width, height, 1);
         //printf("after copy buffer to image \n");
-        //i gotta do this a 2nd time i guess
-        //eweDevice.transitionImageLayout(image[i], VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels[i]);
 
         vkDestroyBuffer(eweDevice->device(), stagingBuffer, nullptr);
         vkFreeMemory(eweDevice->device(), stagingBufferMemory, nullptr);
@@ -235,7 +233,6 @@ namespace EWE {
         if (MIPMAP_ENABLED && mipmapping) {
             generateMipmaps(VK_FORMAT_R8G8B8A8_SRGB, width, height);
         }
-        //printf("after generate mip maps \n");
     }
 
     void ImageInfo::createTextureImageView() {

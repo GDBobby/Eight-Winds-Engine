@@ -22,7 +22,7 @@ namespace EWE {
     }
 
     EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::build() const {
-        EWEDescriptorSetLayout* ret = ConstructSingular<EWEDescriptorSetLayout>(bindings);
+        EWEDescriptorSetLayout* ret = ConstructSingular<EWEDescriptorSetLayout>(ewe_call_trace, bindings);
         return ret;
     }
 

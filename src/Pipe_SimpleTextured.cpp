@@ -55,6 +55,9 @@ namespace EWE {
 		std::string vertString = "texture_shader.vert.spv";
 		std::string fragString = "texture_shader.frag.spv";
 
+		//EWEPipeline* tempPtr = new EWEPipeline(vertString, fragString, pipelineConfig);
+
 		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
+		//memory leak for now, return to std::unique_ptr;
 	}
 }

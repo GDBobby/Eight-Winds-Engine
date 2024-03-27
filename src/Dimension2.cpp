@@ -51,7 +51,7 @@ namespace EWE {
 
 		std::string vertString = "2d.vert.spv";
 		std::string fragString = "2d.frag.spv";
-		pipe2d = ConstructSingular<EWEPipeline>(vertString, fragString, pipelineConfig);
+		pipe2d = ConstructSingular<EWEPipeline>(ewe_call_trace, vertString, fragString, pipelineConfig);
 
 		pushConstantRange.size = sizeof(NineUIPushConstantData);
 		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_9) != VK_SUCCESS) {
@@ -62,7 +62,7 @@ namespace EWE {
 
 		vertString = "NineUI.vert.spv";
 		fragString = "NineUI.frag.spv";
-		pipe9 = ConstructSingular<EWEPipeline>(vertString, fragString, pipelineConfig);
+		pipe9 = ConstructSingular<EWEPipeline>(ewe_call_trace, vertString, fragString, pipelineConfig);
 
 		model2D = Basic_Model::generate2DQuad();
 		nineUIModel = Basic_Model::generateNineUIQuad();

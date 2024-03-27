@@ -8,6 +8,7 @@ int main() {
 	EWE::EWESample* eweSample = nullptr;
 	auto loadPart2 = [&]() {
 		ewEngine.finishLoading();
+
 		eweSample = new EWE::EWESample(ewEngine);
 		};
 	std::thread loadThread(loadPart2);

@@ -10,21 +10,24 @@
 namespace EWE {
 	namespace Ocean {
 
-#define CASCADE_COUNT 3
+#define CASCADE_COUNT 4
 		class Ocean {
 
 			const uint16_t ocean_resolution{ 1024 };
 			const uint16_t cascade_count{ 4 };
 
-			IntialFrequencySpectrumPushData ifsPushData;
+			InitialFrequencySpectrumGPUData ifsGPUData{};
 			
-
+			VkDescriptorSet oceanTextures = VK_NULL_HANDLE;
+			VkImage oceanImages = VK_NULL_HANDLE;
+			VkDeviceMemory oceanImageMemory = VK_NULL_HANDLE;
+			VkDescriptorImageInfo oceanImageDescriptor{};
 
 
 		//RENDER BEGIN
-			std::unique_ptr<EWEPipeline> renderPipeline;
+			EWEPipeline* renderPipeline;
 			VkPipelineLayout renderPipeLayout;
-			std::array<std::unique_ptr<EWEBuffer>, 2> renderParamsBuffer;
+			std::array<EWEBuffer*, 2> renderParamsBuffer;
 
 
 			std::unique_ptr<EWEModel> oceanModel;
@@ -79,6 +82,8 @@ namespace EWE {
 				device.transferImageStage(cmdBuf, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, transferFragImages);
 				*/
 			}
+
+			void prepareStorageImage();
 		};
 	}
 }

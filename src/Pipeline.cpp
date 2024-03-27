@@ -267,18 +267,8 @@ namespace EWE {
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 		vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
-		if (attributeDescriptions.size() > 0) {
-			vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-		}
-		else {
-			vertexInputInfo.pVertexAttributeDescriptions = nullptr;
-		}
-		if (bindingDescriptions.size() > 0) {
-			vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
-		}
-		else {
-			vertexInputInfo.pVertexBindingDescriptions = nullptr;
-		}
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+		vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
 
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.pNext = &configInfo.pipelineRenderingInfo;

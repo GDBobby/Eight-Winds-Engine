@@ -19,7 +19,8 @@ namespace EWE {
 			printf("trying to double init static RS \n");
 			throw std::runtime_error("trying to double init StaticRenderSystem");
 		}
-		skinnedMainObject = new StaticRenderSystem(pipelineCount, modelLimit);
+		skinnedMainObject = reinterpret_cast<StaticRenderSystem*>(ewe_alloc(sizeof(StaticRenderSystem), 1));
+		skinnedMainObject = new(skinnedMainObject) StaticRenderSystem(pipelineCount, modelLimit);
 
 
 	}

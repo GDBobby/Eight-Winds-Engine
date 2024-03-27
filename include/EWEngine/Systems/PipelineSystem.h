@@ -13,7 +13,7 @@
 namespace EWE {
 	class PipelineSystem {
 	protected:
-		static std::unordered_map<PipelineID, std::unique_ptr<PipelineSystem>> pipelineSystem;
+		static std::unordered_map<PipelineID, PipelineSystem*> pipelineSystem;
 		static uint8_t frameIndex;
 		static VkCommandBuffer cmdBuf;
 #ifdef _DEBUG

@@ -20,7 +20,7 @@ namespace EWE {
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			leafBuffer.emplace_back(ConstructSingular<EWEBuffer>(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->map();
+			leafBuffer.emplace_back(ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->map();
 			leafBufferData.emplace_back(reinterpret_cast<float*>(leafBuffer[i]->getMappedMemory()));
 			transformDescriptor.emplace_back(
 				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)

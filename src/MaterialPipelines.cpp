@@ -157,11 +157,7 @@ namespace EWE {
 			pipeLayoutInfo.pushSize = pushConstantRange.size;
 			pipeLayoutInfo.pushStageFlags = pushConstantRange.stageFlags;
 
-			VkResult vkResult = vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout);
-			if (vkResult != VK_SUCCESS) {
-				printf("failed to create dynamic mat pipelayout layout [%d] \n", textureCount);
-				throw std::runtime_error("Failed to create dynamic mat pipe layout \n");
-			}
+			EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout));
 		}
 	}
 
@@ -341,7 +337,7 @@ namespace EWE {
 		
 		SkinInstanceKey key(boneCount, flags);
 
-		auto ret = instancedBonePipelines.try_emplace(key, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, boneCount, flags, pipelineConfig)).first->second;
+		auto ret = instancedBonePipelines.try_emplace(key, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, boneCount, flags, pipelineConfig)).first->second;
 
 		glslang::FinalizeProcess();
 		return ret;
@@ -404,33 +400,33 @@ namespace EWE {
 				//printf("boneVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
 				pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "bone_Tangent.vert.spv", flags, pipelineConfig, true)).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "bone_Tangent.vert.spv", flags, pipelineConfig, true)).first->second;
 
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertexNoTangent>();
 				pipelineConfig.attributeDescriptions = boneVertexNoTangent::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "bone_NT.vert.spv", flags, pipelineConfig, true)).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "bone_NT.vert.spv", flags, pipelineConfig, true)).first->second;
 			}
 		}
 		else {
 			if (hasBumps) {
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
 				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "material_bump.vert.spv", flags, pipelineConfig, false)).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_bump.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
 				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "material_Tangent.vert.spv", flags, pipelineConfig, false)).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_Tangent.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexNT>();
 				pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(pipeLayoutIndex, "material_nn.vert.spv", flags, pipelineConfig, false)).first->second;
+				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_nn.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 		}
 	}

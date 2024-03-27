@@ -9,6 +9,7 @@
 #include <vulkan/vulkan_win32.h>
 #endif
 */
+#include "EWEngine/Global_Macros.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

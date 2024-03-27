@@ -191,7 +191,7 @@ namespace EWE {
         }
         */
         const bool differentFamilies = (queueFamilyIndices[0] != queueFamilyIndices[1]);
-        createInfo.imageSharingMode = (VkSharingMode)differentFamilies;
+        createInfo.imageSharingMode = (VkSharingMode)differentFamilies; //1 is concurrent, 0 is exclusive
         createInfo.queueFamilyIndexCount = 1 + differentFamilies;
 
         createInfo.pQueueFamilyIndices = &queueFamilyIndices[0];  //if exclusive, only the first element is read from the array

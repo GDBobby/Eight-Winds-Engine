@@ -71,7 +71,7 @@ namespace EWE {
 		uiHandler.isActive = false;
 		leafSystem = new LeafSystem();
 		Dimension2::init();
-		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>()));
+		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>(ewe_call_trace)));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
 		RigidRenderingSystem::getRigidRSInstance();
@@ -93,6 +93,7 @@ namespace EWE {
 	EightWindsEngine::~EightWindsEngine() {
 		Dimension2::destruct();
 		PipelineSystem::destruct();
+		delete leafSystem;
 #if DECONSTRUCTION_DEBUG
 		printf("beginning of EightWindsEngine deconstructor \n");
 #endif
@@ -131,14 +132,15 @@ namespace EWE {
 		lbo.sunlightDirection = glm::normalize(lbo.sunlightDirection);
 		lbo.sunlightColor = { 0.8f,0.8f, 0.8f, 0.5f };
 
-		bufferMap[Buff_ubo].resize(MAX_FRAMES_IN_FLIGHT);
-		bufferMap[Buff_gpu].resize(MAX_FRAMES_IN_FLIGHT);
-
+		bufferMap.try_emplace(Buff_ubo, std::vector<EWEBuffer*>{MAX_FRAMES_IN_FLIGHT});
+		bufferMap.try_emplace(Buff_gpu, std::vector<EWEBuffer*>{MAX_FRAMES_IN_FLIGHT});
 
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			//allocate buffer memory
-			bufferMap[Buff_ubo].emplace_back(ConstructSingular<EWEBuffer>(sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->map();
-			bufferMap[Buff_gpu].emplace_back(EWEBuffer::createAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+			bufferMap.at(Buff_ubo)[i] = ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+			bufferMap.at(Buff_ubo)[i]->map();
+
+			bufferMap.at(Buff_gpu)[i] = EWEBuffer::createAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 		}
 		camera.setBuffers(&bufferMap[Buff_ubo]);
@@ -260,11 +262,7 @@ namespace EWE {
 					queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
 					queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
 					queryPoolInfo.queryCount = 2; // We'll use two timestamps if we run into trouble with framebuffers use 4
-					VkResult result = vkCreateQueryPool(eweDevice.device(), &queryPoolInfo, nullptr, &queryPool);
-					if (result != VK_SUCCESS) {
-						printf("create query pool failed : %d \n", result);
-						queryPool = VK_NULL_HANDLE;
-					}
+					EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.device(), &queryPoolInfo, nullptr, &queryPool));
 				}
 				else {
 					//printf("before non-null \n");

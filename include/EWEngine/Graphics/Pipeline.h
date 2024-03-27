@@ -180,8 +180,8 @@ namespace EWE {
 		//better to pass in references every time i want something, or make an object then have the object store the reference, with static accessors? singleton?
 		//is static reference even a thing?
 		static std::map<PipeLayout_Enum, VkPipelineLayout> pipeLayouts;
-		static std::map<Pipeline_Enum, std::unique_ptr<EWEPipeline>> pipelines;
-		static std::map<MaterialFlags, std::unique_ptr<EWEPipeline>> dynamicMaterialPipeline;
+		static std::map<Pipeline_Enum, EWEPipeline*> pipelines;
+		static std::map<MaterialFlags, EWEPipeline*> dynamicMaterialPipeline;
 
 #ifdef _DEBUG
 		static std::vector<MaterialFlags> dynamicBonePipeTracker;
@@ -191,7 +191,7 @@ namespace EWE {
 
 		static VkShaderModule loadingVertShaderModule;
 		static VkShaderModule loadingFragShaderModule;
-		static std::unique_ptr<EWEPipeline> loadingPipeline;
+		static EWEPipeline* loadingPipeline;
 
 		static void createLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 
@@ -201,8 +201,8 @@ namespace EWE {
 		static void updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 
 		//this should ALWAYS have bones
-		static std::unique_ptr<EWEPipeline> createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
-		static std::unique_ptr<EWEPipeline> createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		static EWEPipeline* createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		static EWEPipeline* createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 
 		static void initStaticVariables() {
 			for (int i = 0; i < DYNAMIC_PIPE_LAYOUT_COUNT; i++) {

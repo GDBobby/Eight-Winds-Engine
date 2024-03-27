@@ -1,5 +1,8 @@
 #pragma once
 
+#include "EWEngine/Graphics/Device.hpp"
+#include "EWEngine/Graphics/Device_Buffer.h"
+
 #include <glm/glm.hpp>
 #include <array>
 
@@ -141,11 +144,13 @@ namespace EWE {
             VkPipeline pipeline = VK_NULL_HANDLE;
             VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
             VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-            JONSWAP_Parameters jsp{};
+            JONSWAP_Parameters jonswapParams{};
             IntialFrequencySpectrumPushData pushData{};
 
             EWEBuffer* jonswapBuffer[2];
-            InitialFrequencySpectrumGPUData();
+            InitialFrequencySpectrumGPUData() {
+
+            }
         };
     } //namespace ocean
 } //namespace EWE

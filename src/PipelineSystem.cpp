@@ -3,7 +3,7 @@
 #include "EWEngine/Graphics/Texture/Texture_Manager.h"
 
 namespace EWE {
-	std::unordered_map<PipelineID, std::unique_ptr<PipelineSystem>> PipelineSystem::pipelineSystem{};
+	std::unordered_map<PipelineID, PipelineSystem*> PipelineSystem::pipelineSystem{};
 	uint8_t PipelineSystem::frameIndex;
 	VkCommandBuffer PipelineSystem::cmdBuf;
 #ifdef _DEBUG
@@ -17,6 +17,7 @@ namespace EWE {
 	void PipelineSystem::destruct() {
 		for (auto iter = pipelineSystem.begin(); iter != pipelineSystem.end(); iter++) {
 			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), iter->second->pipeLayout, nullptr);
+			ewe_free(iter->second);
 		}
 
 		pipelineSystem.clear();
@@ -27,7 +28,7 @@ namespace EWE {
 #ifdef _DEBUG
 			currentPipe = pipeID;
 #endif
-			return pipelineSystem.at(pipeID).get();
+			return pipelineSystem.at(pipeID);
 		}
 		else {
 			printf("invalid pipe ::at %d \n", pipeID);

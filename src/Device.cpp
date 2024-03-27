@@ -30,7 +30,26 @@ namespace EWE {
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData) {
-        std::cout << "validation layer: " << pCallbackData->pMessage << std::endl;
+        switch (messageSeverity) {
+
+            //VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT = 0x00000001,
+            //    VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT = 0x00000010,
+            //    VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT = 0x00000100,
+            //    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT = 0x00001000,
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+				std::cout << "validation verbose: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
+				break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+                std::cout << "validation info: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
+                break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+                std::cout << "validation warning: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
+                break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+                std::cout << "validation error: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
+                assert(0 && "validation layer error");
+				break;
+        }
         //throw std::exception("validition layer \n");
         return VK_FALSE;
     }
@@ -64,6 +83,8 @@ namespace EWE {
     // class member functions
     EWEDevice::EWEDevice(MainWindow& window) : window{ window } {
         //printf("device constructor \n");
+        assert(eweDevice == nullptr && "EWEDevice already exists");
+        eweDevice = this;
 #if GPU_LOGGING
         {
             std::ofstream logFile{ GPU_LOG_FILE, std::ofstream::trunc };
@@ -196,17 +217,7 @@ namespace EWE {
             createInfo.pNext = nullptr;
         }
 
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-            printf("failed to create instance \n");
-#if GPU_LOGGING
-            //printf("opening file? \n");
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "failed to create instance " << std::endl;
-            logFile.close();
-
-#endif
-            throw std::runtime_error("failed to create instance!");
-        }
+        EWE_VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &instance));
 
         hasGflwRequiredInstanceExtensions();
     }
@@ -214,7 +225,6 @@ namespace EWE {
     void EWEDevice::pickPhysicalDevice() {
 
         uint32_t deviceCount = 16;
-        //VkResult result = vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         //deviceCount = 2;
         //printf("enumerate devices result : %lld \n", result);
         std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -222,19 +232,10 @@ namespace EWE {
                             //score     //device iter in the vector
         std::list<std::pair<uint32_t, uint32_t>> deviceScores{};
 
-        VkResult result = vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+        EWE_VK_ASSERT(vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()));
         std::cout << "Device count: " << deviceCount << std::endl;
-        if (result != VK_SUCCESS) {
-#if GPU_LOGGING
-            //printf("opening file? \n");
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "failed to enumerate physical devices : " << result << '\n' << std::endl;
-            logFile.close();
-#endif
-            throw std::runtime_error("failed to enumerate devices");
-        }
 
-        printf("enumerate devices2 result : %d - %u \n", result, deviceCount);
+        //printf("enumerate devices2 result : %u \n", deviceCount);
         if (deviceCount == 0) {
             std::cout << "failed to find GPUs with Vulkan support!" << std::endl;
 #if GPU_LOGGING
@@ -435,18 +436,7 @@ namespace EWE {
             logFile.close();
         }
 #endif
-        VkResult vkResult = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device_);
-        if (vkResult != VK_SUCCESS) {
-#if GPU_LOGGING
-            {
-                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-                logFile << "Device Name: " << properties.deviceName << " - FAILED TO LOAD LOGICAL DEVICE : " << vkResult << std::endl;
-                logFile.close();
-            }
-#endif
-            printf("failed to create logical device \n");
-            throw std::runtime_error("failed to create logical device!");
-        }
+        EWE_VK_ASSERT(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device_));
 #if GPU_LOGGING
         {
             //printf("opening file? \n");
@@ -494,14 +484,7 @@ namespace EWE {
         //sascha doesnt use TRANSIENT_BIT
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        if (vkCreateCommandPool(device_, &poolInfo, nullptr, &computeCommandPool) != VK_SUCCESS) {
-#if GPU_LOGGING
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "FAILED TO CREATE COMPUTE COMMAND POOL" << std::endl;
-            logFile.close();
-#endif
-            throw std::runtime_error("failed to create command pool!");
-        }
+        EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &computeCommandPool));
     }
 
     void EWEDevice::createCommandPool() {
@@ -510,14 +493,7 @@ namespace EWE {
         poolInfo.queueFamilyIndex = graphicsIndex;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        if (vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-#if GPU_LOGGING
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "FAILED TO CREATE COMMAND POOL" << std::endl;
-            logFile.close();
-#endif
-            throw std::runtime_error("failed to create command pool!");
-        }
+        EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool));
     }
     void EWEDevice::createTransferCommandPool() {
 
@@ -533,16 +509,7 @@ namespace EWE {
         }
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        VkResult vkResult = vkCreateCommandPool(device_, &poolInfo, nullptr, &transferCommandPool);
-        if (vkResult != VK_SUCCESS) {
-            printf("failed to create transfer command pool : %d \n", vkResult);
-#if GPU_LOGGING
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "FAILED TO CREATE TRANSFER COMMAND POOL" << vkResult << std::endl;
-            logFile.close();
-#endif
-            throw std::runtime_error("failed to create transfer command pool!");
-        }
+        EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &transferCommandPool));
     }
 
     void EWEDevice::createSurface() { window.createWindowSurface(instance, &surface_, GPU_LOGGING); }
@@ -1026,28 +993,10 @@ namespace EWE {
 
     SwapChainSupportDetails EWEDevice::querySwapChainSupport(VkPhysicalDevice device) {
         SwapChainSupportDetails details;
-        VkResult vkResult = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_, &details.capabilities);
-        if (vkResult != VK_SUCCESS) {
-#if GPU_LOGGING
-            {
-                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
-                file << "failed to get physical device surface capabilities KHR : " << vkResult << "\n";
-                file.close();
-            }
-#endif
-        }
+        EWE_VK_ASSERT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_, &details.capabilities));
 
         uint32_t formatCount;
-        vkResult = vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount, nullptr);
-        if (vkResult != VK_SUCCESS) {
-#if GPU_LOGGING
-            {
-                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
-                file << "failed to get physical device surface formats : " << vkResult << "\n";
-                file.close();
-            }
-#endif
-        }
+        EWE_VK_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount, nullptr));
 
         if (formatCount != 0) {
             details.formats.resize(formatCount);
@@ -1055,16 +1004,7 @@ namespace EWE {
         }
 
         uint32_t presentModeCount;
-        vkResult = vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, nullptr);
-        if (vkResult != VK_SUCCESS) {
-#if GPU_LOGGING
-            {
-                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
-                file << "failed to get physical device surface capabilities KHR : " << vkResult << "\n";
-                file.close();
-            }
-#endif
-        }
+        EWE_VK_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, nullptr));
 
         if (presentModeCount != 0) {
             details.presentModes.resize(presentModeCount);
@@ -1128,17 +1068,7 @@ namespace EWE {
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VkResult result = vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer);
-        if (result != VK_SUCCESS) {
-#if GPU_LOGGING
-        {
-            std::ofstream file{ GPU_LOG_FILE };
-            file << "failed to create buffer : " << result << "\n";
-        }
-#endif
-        printf("failed to create buffer \n");
-            throw std::runtime_error("failed to create buffer!");
-        }
+        EWE_VK_ASSERT(vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer));
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
@@ -1148,17 +1078,7 @@ namespace EWE {
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-        result = vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory);
-        if (result != VK_SUCCESS) {
-#if GPU_LOGGING
-        {
-            std::ofstream file{ GPU_LOG_FILE };
-            file << "failed to create image : " << result << "\n";
-        }
-#endif
-        printf("failed to allocate vertex buffer memory \n");
-            throw std::runtime_error("failed to allocate vertex buffer memory!");
-        }
+        EWE_VK_ASSERT(vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory));
 
         vkBindBufferMemory(device_, buffer, bufferMemory, 0);
     }
@@ -1189,7 +1109,7 @@ namespace EWE {
         endSingleTimeCommands(commandBuffer);
     }
 
-    void EWEDevice::transitionImageLayout(VkImage &image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t &mipLevels, uint8_t layerCount) {
+    void EWEDevice::transitionImageLayout(VkImage &image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount) {
 
         VkCommandBuffer commandBuffer = syncHub->beginSingleTimeCommands();
         
@@ -1215,16 +1135,18 @@ namespace EWE {
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
+        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            barrier.srcAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            barrier.dstAccessMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+            sourceStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        }
         else if ((oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) && (newLayout == VK_IMAGE_LAYOUT_GENERAL)) {
-            //barrier.srcAccessMask = 0;
-            //??? THE BOSS SASCHA WILLEMS DOESNT HAVE AN EXAMPLE
-            //std::cout << "landed here, PLEASE " << std::endl;
 
             barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-            //copied from vkguide.dev
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            sourceStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
         }
         else {
@@ -1428,18 +1350,8 @@ namespace EWE {
     }
 
     void EWEDevice::createImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
-        VkResult result = vkCreateImage(device_, &imageInfo, nullptr, &image);
-        if (result != VK_SUCCESS) {
-#if GPU_LOGGING
-            {
-                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
-                file << "failed to create image : " << result << "\n";
-                file.close();
-            }
-#endif
-            printf("failed to create image \n");
-            throw std::runtime_error("failed to create image!");
-        }
+        EWE_VK_ASSERT(vkCreateImage(device_, &imageInfo, nullptr, &image));
+
 
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(device_, image, &memRequirements);
@@ -1449,29 +1361,9 @@ namespace EWE {
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-        result = vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory);
-        if (result != VK_SUCCESS) {
-#if GPU_LOGGING
-            {
-                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
-                file << "failed to allocate memory : " << result << "\n";
-            }
-#endif
-            printf("failed to allocate memory \n");
-            throw std::runtime_error("failed to allocate image memory!");
-        }
+        EWE_VK_ASSERT(vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory));
 
-        result = vkBindImageMemory(device_, image, imageMemory, 0);
-        if (result != VK_SUCCESS) {
-#if GPU_LOGGING
-            {
-                std::ofstream file{ GPU_LOG_FILE, std::ios::app };
-                file << "failed to bind image : " << result << "\n";
-            }
-#endif
-            printf("failed to bind image memory \n");
-            throw std::runtime_error("failed to bind image memory!");
-        }
+        EWE_VK_ASSERT(vkBindImageMemory(device_, image, imageMemory, 0));
     }
 
     VkDeviceSize EWEDevice::GetMemoryRemaining() {

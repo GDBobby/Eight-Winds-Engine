@@ -2,6 +2,7 @@
 
 #include <new>
 #include <utility>
+#include <cassert>
 
 
 void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* file, int line, const char* sourceFunction);
@@ -9,10 +10,13 @@ void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* 
 void ewe_free_internal(void* ptr);
 
 
+#ifndef ewe_call_trace
+#define ewe_call_trace __FILE__, __LINE__, __FUNCTION__
+#endif
 //i think function will give a call stack
 #ifndef ewe_alloc
 //user is in charge of construction
-#define ewe_alloc(size, count) ewe_alloc_internal(size, count, __FILE__, __LINE__, __FUNCTION__)
+#define ewe_alloc(size, count) ewe_alloc_internal(size, count, ewe_call_trace)
 #endif
 
 #ifndef ewe_free
@@ -21,12 +25,11 @@ void ewe_free_internal(void* ptr);
 #endif
 
 template<typename T, typename... Args>
-static T* ConstructSingular(Args&&... args) {
-    void* memory = ewe_alloc(sizeof(T), 1);
-    if (memory == nullptr) {
-        return nullptr;
-    }
+static T* ConstructSingular(const char* file, int line, const char* sourceFunction, Args&&... args) {
+    void* memory = ewe_alloc_internal(sizeof(T), 1, file, line, sourceFunction);
+    assert(memory && "memory is nullptr");
     return new (memory) T(std::forward<Args>(args)...);
+    //return memory;
 }
 /*
 template<typename T, typename... Args>
@@ -61,14 +64,6 @@ static T** constructVector(std::vector<Args> args_param) {
     }
 }
 */
-
-template<typename T>
-static void destroy(T* obj) {
-    if (obj != nullptr) {
-        obj->~T(); // Call destructor
-        std::free(obj); // Deallocate memory
-    }
-}
 
 /*
 _THROW1(_STD bad_alloc) {

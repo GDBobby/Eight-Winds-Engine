@@ -72,23 +72,7 @@ void updateMemoryLogFile() {
 }
 
 void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* file, int line, const char* sourceFunction) {
-#ifdef _DEBUG
-	std::ofstream memoryLogFile{};
-	if (notFirstMalloc) {
-		memoryLogFile.open(memoryLogPath, std::ofstream::out | std::ofstream::trunc);
-	}
-	else {
-
-	}
-	if (!memoryLogFile.is_open()) {
-		throw std::runtime_error("failed to open memory log file");
-	}
-	memoryLogFile << "malloc at " << file << " line " << line << " function " << sourceFunction << "\n";
-
-	memoryLogFile.close();
-#endif
 	void* ptr = malloc(element_count * element_size);
-
 
 	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), file, line, sourceFunction);
 
@@ -98,9 +82,7 @@ void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* 
 
 void ewe_free_internal(void* ptr) {
 	auto found = mallocMap.find(reinterpret_cast<uint64_t>(ptr));
-	if (found == mallocMap.end()) {
-		throw std::runtime_error("freeing memory that wasn't allocated");
-	}
+	assert(found != mallocMap.end() && "freeing memory that wasn't allocated");
 	mallocMap.erase(found);
 
 	updateMemoryLogFile();
