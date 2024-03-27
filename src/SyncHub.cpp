@@ -562,6 +562,7 @@ namespace EWE {
 	}
 
 	void SyncHub::domDemand() {
+
 		{
 			std::unique_lock<std::mutex> cuckLock(domCuckSync.cuckMutex);
 			domCuckSync.cuckCondition.wait(cuckLock, [this]

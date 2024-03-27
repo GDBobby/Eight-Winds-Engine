@@ -7,7 +7,9 @@ namespace EWE {
 			prepareStorageImage();
 		}
 		Ocean::~Ocean() {
-
+			vkDestroySampler(EWEDevice::GetVkDevice(), oceanImageDescriptor.sampler, nullptr);
+			vkDestroyImage(EWEDevice::GetVkDevice(), oceanImages, nullptr);
+			vkDestroyImageView(EWEDevice::GetVkDevice(), oceanImageDescriptor.imageView, nullptr);
 		}
 
 		void Ocean::createRenderPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {

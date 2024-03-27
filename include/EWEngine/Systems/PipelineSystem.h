@@ -28,14 +28,7 @@ namespace EWE {
 	public:
 		static void setFrameInfo(FrameInfo frameInfo);
 		static PipelineSystem* at(PipelineID pipeID);
-		static void emplace(PipelineID pipeID, PipelineSystem* pipeSys) {
-#ifdef _DEBUG
-			if (pipelineSystem.find(pipeID) != pipelineSystem.end()) {
-				throw std::runtime_error("attempting to emplace a pipe with an existing id");
-			}
-#endif
-			pipelineSystem.emplace(pipeID, pipeSys);
-		}
+		static void emplace(PipelineID pipeID, PipelineSystem* pipeSys);
 		static void destruct();
 
 		void bindPipeline();

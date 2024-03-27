@@ -2,6 +2,7 @@
 
 #include "EWEngine/Graphics/Device.hpp"
 #include "EWEngine/Graphics/Device_Buffer.h"
+#include "EWEngine/Graphics/Pipeline.h"
 
 #include <glm/glm.hpp>
 #include <array>
@@ -141,16 +142,19 @@ namespace EWE {
 
 
         struct InitialFrequencySpectrumGPUData {
-            VkPipeline pipeline = VK_NULL_HANDLE;
+            EWEPipeline* pipeline = VK_NULL_HANDLE;
             VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
             VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
             JONSWAP_Parameters jonswapParams{};
             IntialFrequencySpectrumPushData pushData{};
 
-            EWEBuffer* jonswapBuffer[2];
+            EWEBuffer* jonswapBuffer[2] = { nullptr, nullptr };
             InitialFrequencySpectrumGPUData() {
-
+                CreatePipeLayout();
+                CreatePipeline();
             }
+            void CreatePipeLayout();
+            void CreatePipeline();
         };
     } //namespace ocean
 } //namespace EWE

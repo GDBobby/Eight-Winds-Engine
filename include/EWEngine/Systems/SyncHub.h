@@ -103,6 +103,7 @@ namespace EWE {
 				std::cout << "COSTRUCTING SYNCHUB" << std::endl;
 			}
 			return syncHubSingleton;
+			
 		}
 		SyncHub() {
 			std::cout << "COSTRUCTING SYNCHUB" << std::endl;

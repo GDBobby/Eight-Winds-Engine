@@ -14,7 +14,19 @@ namespace EWE {
 		cmdBuf = frameInfo.cmdBuf;
 		frameIndex = frameInfo.index;
 	}
+	
+	void PipelineSystem::emplace(PipelineID pipeID, PipelineSystem* pipeSys) {
+
+#ifdef _DEBUG
+		if (pipelineSystem.find(pipeID) != pipelineSystem.end()) {
+			throw std::runtime_error("attempting to emplace a pipe with an existing id");
+		}
+#endif
+		pipelineSystem.emplace(pipeID, pipeSys);
+	}
+
 	void PipelineSystem::destruct() {
+
 		for (auto iter = pipelineSystem.begin(); iter != pipelineSystem.end(); iter++) {
 			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), iter->second->pipeLayout, nullptr);
 			ewe_free(iter->second);

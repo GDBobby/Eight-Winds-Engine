@@ -16,7 +16,7 @@ namespace EWE {
 
 	void MainMenuScene::load() {
 		menuManager.giveMenuFocus();
-		PipelineSystem::emplace(Pipe_textured, new Pipe_SimpleTextured());
+		PipelineSystem::emplace(Pipe_textured, ConstructSingular<Pipe_SimpleTextured>(ewe_call_trace));
 	}
 	void MainMenuScene::entry() {
 		soundEngine->stopMusic();

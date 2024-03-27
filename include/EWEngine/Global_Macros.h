@@ -10,7 +10,7 @@
 {\
     VkResult result = (vkFunc);\
     if (result != VK_SUCCESS) {\
-        printf("VK_ERROR : %s(%s) : %s - %l\n", __FILE__, __LINE__, __FUNCTION__, result); \
+        printf("VK_ERROR : %s(%d) : %s - %ld \n", __FILE__, __LINE__, __FUNCTION__, result); \
         std::ofstream logFile{}; \
         logFile.open(GPU_LOG_FILE, std::ios::app); \
         assert(logFile.is_open() && "Failed to open log file"); \
@@ -22,7 +22,7 @@
 {\
     VkResult result = (vkFunc);\
     if (result != VK_SUCCESS) {\
-        printf("VK_ERROR : %s(%s) : %s - %l\n", __FILE__, __LINE__, __FUNCTION__, result); \
+        printf("VK_ERROR : %s(%d) : %s - %l\n", __FILE__, __LINE__, __FUNCTION__, result); \
         assert(result == VK_SUCCESS && "VK_ERROR"); \
 	}\
 }

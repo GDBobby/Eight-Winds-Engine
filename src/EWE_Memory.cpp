@@ -82,7 +82,7 @@ void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* 
 
 void ewe_free_internal(void* ptr) {
 	auto found = mallocMap.find(reinterpret_cast<uint64_t>(ptr));
-	assert(found != mallocMap.end() && "freeing memory that wasn't allocated");
+	assert((found != mallocMap.end()) && "freeing memory that wasn't allocated");
 	mallocMap.erase(found);
 
 	updateMemoryLogFile();
