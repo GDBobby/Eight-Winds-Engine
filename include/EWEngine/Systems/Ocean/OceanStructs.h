@@ -142,19 +142,23 @@ namespace EWE {
 
 
         struct InitialFrequencySpectrumGPUData {
-            EWEPipeline* pipeline = VK_NULL_HANDLE;
+            VkPipeline pipeline = VK_NULL_HANDLE;
             VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
-            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+            VkDescriptorSet descriptorSet[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
             JONSWAP_Parameters jonswapParams{};
+            VkShaderModule shaderModule = VK_NULL_HANDLE;
             IntialFrequencySpectrumPushData pushData{};
+            EWEDescriptorSetLayout* eweDSL{ nullptr };
 
-            EWEBuffer* jonswapBuffer[2] = { nullptr, nullptr };
-            InitialFrequencySpectrumGPUData() {
-                CreatePipeLayout();
-                CreatePipeline();
-            }
+            EWEBuffer* jonswapBuffer = nullptr;
+            InitialFrequencySpectrumGPUData();
+            ~InitialFrequencySpectrumGPUData();
+
+            void CreateDescriptorSet(VkDescriptorImageInfo* descImageInfo);
+        private:
             void CreatePipeLayout();
             void CreatePipeline();
+            void CreateBuffers();
         };
     } //namespace ocean
 } //namespace EWE

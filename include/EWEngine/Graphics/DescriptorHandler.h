@@ -53,7 +53,7 @@ namespace EWE {
 
     public:
         static void cleanup();
-        static EWEDescriptorSetLayout& getLDSL(LDSL_Enum whichLDSL);
+        static EWEDescriptorSetLayout* getLDSL(LDSL_Enum whichLDSL);
         static void initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
         
         static void initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);

@@ -61,17 +61,17 @@ namespace EWE {
         printf("after descriptor handler cleanup \n");
     }
 
-    EWEDescriptorSetLayout& DescriptorHandler::getLDSL(LDSL_Enum whichLDSL) {
+    EWEDescriptorSetLayout* DescriptorHandler::getLDSL(LDSL_Enum whichLDSL) {
         if (whichLDSL == LDSL_pointLight && descriptorSetLayouts.find(LDSL_pointLight) == descriptorSetLayouts.end()) {
             printf("returning global instead of point LDSL \n");
-            return *(descriptorSetLayouts[LDSL_global]);
+            return descriptorSetLayouts.at(LDSL_global);
         }
 #if _DEBUG
         else if (descriptorSetLayouts.find(whichLDSL) == descriptorSetLayouts.end()) {
             printf("failed to find LDSL : %d \n", whichLDSL);
         }
 #endif
-        return *(descriptorSetLayouts[whichLDSL]);
+        return (descriptorSetLayouts[whichLDSL]);
     }
 
     VkDescriptorSetLayout DescriptorHandler::getDescSetLayout(LDSL_Enum whichDescSet) {

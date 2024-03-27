@@ -4,7 +4,9 @@
 namespace EWE {
 	namespace Ocean {
 		Ocean::Ocean() {
-			prepareStorageImage();
+			PrepareStorageImage();
+
+			InitializeOcean();
 		}
 		Ocean::~Ocean() {
 			vkDestroySampler(EWEDevice::GetVkDevice(), oceanImageDescriptor.sampler, nullptr);
@@ -12,11 +14,11 @@ namespace EWE {
 			vkDestroyImageView(EWEDevice::GetVkDevice(), oceanImageDescriptor.imageView, nullptr);
 		}
 
-		void Ocean::createRenderPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
+		void Ocean::CreateRenderPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 			
 		}
 
-		void Ocean::createBuffers() {
+		void Ocean::CreateBuffers() {
 
 		}
 
@@ -24,7 +26,7 @@ namespace EWE {
 
 		}
 
-		void Ocean::prepareStorageImage()
+		void Ocean::PrepareStorageImage()
 		{
 			const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -92,6 +94,12 @@ namespace EWE {
 
 			// Initialize a descriptor for later use
 			oceanImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+			ifsGPUData.CreateDescriptorSet(&oceanImageDescriptor);
+		}
+
+		void Ocean::InitializeOcean() {
+			
 		}
 
 	}//ocean namespace

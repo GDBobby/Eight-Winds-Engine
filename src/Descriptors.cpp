@@ -107,6 +107,8 @@ namespace EWE {
     std::unordered_map<uint16_t, EWEDescriptorPool> EWEDescriptorPool::pools{};
 
     EWEDescriptorPool::EWEDescriptorPool(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize>& poolSizes) {
+
+
         VkDescriptorPoolCreateInfo descriptorPoolInfo{};
         descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -198,6 +200,8 @@ namespace EWE {
         poolSizes.emplace_back(poolSize);
         poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes.emplace_back(poolSize);
+        poolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        poolSizes.emplace_back(poolSize);
         VkDescriptorPoolCreateFlags poolFlags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
         EWEDescriptorPool::pools.try_emplace(0, maxSets, poolFlags, poolSizes);
@@ -236,16 +240,16 @@ namespace EWE {
 
     // *************** Descriptor Writer *********************
 
-    EWEDescriptorWriter::EWEDescriptorWriter(EWEDescriptorSetLayout& setLayout, EWEDescriptorPool& pool)
+    EWEDescriptorWriter::EWEDescriptorWriter(EWEDescriptorSetLayout* setLayout, EWEDescriptorPool& pool)
         : setLayout{ setLayout }, pool{ pool } {}
-    EWEDescriptorWriter::EWEDescriptorWriter(EWEDescriptorSetLayout& setLayout, DescriptorPool_ID poolID) 
+    EWEDescriptorWriter::EWEDescriptorWriter(EWEDescriptorSetLayout* setLayout, DescriptorPool_ID poolID) 
         : setLayout{ setLayout }, pool{ EWEDescriptorPool::pools.at(poolID) }
     {}
 
     EWEDescriptorWriter& EWEDescriptorWriter::writeBuffer( uint32_t binding, VkDescriptorBufferInfo* bufferInfo) {
-        assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
+        assert(setLayout->bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
-        auto& bindingDescription = setLayout.bindings[binding];
+        auto& bindingDescription = setLayout->bindings[binding];
 
         assert(
             bindingDescription.descriptorCount == 1 &&
@@ -263,9 +267,9 @@ namespace EWE {
     }
 
     EWEDescriptorWriter& EWEDescriptorWriter::writeImage(uint32_t binding, VkDescriptorImageInfo* imageInfo) {
-        assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
+        assert(setLayout->bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
-        auto& bindingDescription = setLayout.bindings[binding];
+        auto& bindingDescription = setLayout->bindings[binding];
 
         assert(
             bindingDescription.descriptorCount == 1 &&
@@ -304,21 +308,18 @@ namespace EWE {
     }
     VkDescriptorSet EWEDescriptorWriter::buildPrint() {
         VkDescriptorSet set;
-        bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set);
+        bool success = pool.allocateDescriptor(setLayout->getDescriptorSetLayout(), set);
 
         activeDescriptors++;
-        for (int i = 0; i < setLayout.bindings.size(); i++) {
+        for (int i = 0; i < setLayout->bindings.size(); i++) {
             //printf("binding[%d] : %d \n", i, setLayout.bindings.at(i).descriptorType);
-            if (setLayout.bindings.at(i).descriptorCount != 1) {
+            if (setLayout->bindings.at(i).descriptorCount != 1) {
                 //printf("\t count:%d\n", setLayout.bindings.at(i).descriptorCount);
             }
-            pool.addDescriptorToTrackers(setLayout.bindings.at(i).descriptorType, setLayout.bindings.at(i).descriptorCount);
+            pool.addDescriptorToTrackers(setLayout->bindings.at(i).descriptorType, setLayout->bindings.at(i).descriptorCount);
         }
         //printf("active descriptors after addition : %d \n", activeDescriptors);
-        if (!success) {
-            throw std::runtime_error("failed to construct descriptor set");
-            return VK_NULL_HANDLE;
-        }
+        assert(success && "failed to construct descriptor set");
         overwrite(set);
         return set;
     }

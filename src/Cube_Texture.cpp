@@ -53,7 +53,7 @@ namespace EWE {
         cubeImage.descriptorImageInfo.imageView = cubeImage.imageView;
         cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
+        EWEDescriptorWriter descBuilder(TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
 
         descBuilder.writeImage(0, &cubeImage.descriptorImageInfo);
         TextureDesc retDesc = descBuilder.build();

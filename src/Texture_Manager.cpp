@@ -103,7 +103,7 @@ namespace EWE {
         }
 
         if (uniqueDescriptor) {
-            EWEDescriptorWriter descBuilder(*dslInfo.getDescSetLayout(), DescriptorPool_Global);
+            EWEDescriptorWriter descBuilder(dslInfo.getDescSetLayout(), DescriptorPool_Global);
             for (uint16_t i = 0; i < imageInfos.size(); i++) {
                 descBuilder.writeImage(i, imageInfos[i]->imageInfo.getDescriptorImageInfo());
             }
@@ -191,7 +191,7 @@ namespace EWE {
                 uniqueImage = true;
                 imageInfo = Texture_Manager::constructImageTracker(texPath, mipmaps);
 
-                EWEDescriptorWriter descBuilder(*TextureDSLInfo::getSimpleDSL(shaderStage), DescriptorPool_Global);
+                EWEDescriptorWriter descBuilder(TextureDSLInfo::getSimpleDSL(shaderStage), DescriptorPool_Global);
                 descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
                 TextureDesc retDesc = descBuilder.build();
 

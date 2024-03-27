@@ -113,8 +113,8 @@ namespace EWE {
 
     class EWEDescriptorWriter {
     public:
-        EWEDescriptorWriter(EWEDescriptorSetLayout& setLayout, EWEDescriptorPool& pool);
-        EWEDescriptorWriter(EWEDescriptorSetLayout& setLayut, DescriptorPool_ID poolID);
+        EWEDescriptorWriter(EWEDescriptorSetLayout* setLayout, EWEDescriptorPool& pool);
+        EWEDescriptorWriter(EWEDescriptorSetLayout* setLayout, DescriptorPool_ID poolID);
 
         EWEDescriptorWriter& writeBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
         EWEDescriptorWriter& writeImage(uint32_t binding, VkDescriptorImageInfo* imageInfo);
@@ -124,7 +124,7 @@ namespace EWE {
 
     private:
         VkDescriptorSet buildPrint();
-        EWEDescriptorSetLayout& setLayout;
+        EWEDescriptorSetLayout* setLayout;
         EWEDescriptorPool& pool;
         std::vector<VkWriteDescriptorSet> writes;
     };

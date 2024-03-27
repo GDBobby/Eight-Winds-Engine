@@ -131,7 +131,7 @@ namespace EWE {
 		computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		computeShaderStageInfo.module = ret.shader;
-		computeShaderStageInfo.pName = "main";
+		computeShaderStageInfo.pName = "computeMain";
 		pipelineInfo.stage = computeShaderStageInfo;
 		vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
 		return ret;

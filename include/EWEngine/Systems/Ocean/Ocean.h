@@ -35,6 +35,8 @@ namespace EWE {
 
 			float time = 0.f;
 
+			void InitializeOcean();
+
 		public:
 			Ocean();
 			~Ocean();
@@ -44,10 +46,10 @@ namespace EWE {
 
 			void RenderUpdate(FrameInfo frameInfo);
 
-			void createBuffers();
-			void createRenderPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+			void CreateBuffers();
+			void CreateRenderPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 
-			void transferOceanToGraphics(VkCommandBuffer cmdBuffer) {
+			void TransferOceanToGraphics(VkCommandBuffer cmdBuffer) {
 				/*
 				std::vector<VkImage> transferVertImages{};
 				transferVertImages.reserve(3);
@@ -65,7 +67,7 @@ namespace EWE {
 				*/
 			}
 
-			void transferGraphicsToOcean(VkCommandBuffer cmdBuf) {
+			void TransferGraphicsToOcean(VkCommandBuffer cmdBuf) {
 				/*
 				std::vector<VkImage> transferVertImages{};
 				transferVertImages.reserve(3);
@@ -83,7 +85,7 @@ namespace EWE {
 				*/
 			}
 
-			void prepareStorageImage();
+			void PrepareStorageImage();
 		};
 	}
 }
