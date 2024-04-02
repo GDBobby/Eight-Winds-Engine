@@ -69,7 +69,7 @@ namespace EWE {
 			throw std::runtime_error("pipe id mismatch on model bind");
 		}
 #endif
-		bindedModel->bind(cmdBuf);
+		bindedModel->Bind(cmdBuf);
 	}
 	void PipelineSystem::bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
 #ifdef _DEBUG
@@ -113,7 +113,7 @@ namespace EWE {
 			throw std::runtime_error("pipe id mismatch on model draw");
 		}
 #endif
-		bindedModel->draw(cmdBuf);
+		bindedModel->Draw(cmdBuf);
 	}
 	void PipelineSystem::drawModel() {
 #ifdef _DEBUG
@@ -126,7 +126,7 @@ namespace EWE {
 			throw std::runtime_error("pipe id mismatch on model draw");
 		}
 #endif
-		bindedModel->draw(cmdBuf);
+		bindedModel->Draw(cmdBuf);
 	}
 	void PipelineSystem::drawInstanced(EWEModel* model) {
 		model->BindAndDrawInstance(cmdBuf);

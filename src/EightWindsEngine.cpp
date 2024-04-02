@@ -59,11 +59,11 @@ namespace EWE {
 		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = eweRenderer.getPipelineInfo();
 
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
-		camera.setPerspectiveProjection(glm::radians(70.0f), eweRenderer.getAspectRatio(), 0.1f, 10000.0f);
+		camera.SetPerspectiveProjection(glm::radians(70.0f), eweRenderer.getAspectRatio(), 0.1f, 10000.0f);
 
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
-		camera.newViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
-		initGlobalBuffers();
+		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
+		InitGlobalBuffers();
 		DescriptorHandler::initGlobalDescriptors(bufferMap);
 		//printf("back to ui handler? \n");
 		advancedRS.takeUIHandlerPtr(&uiHandler);
@@ -78,7 +78,7 @@ namespace EWE {
 
 		printf("end of EightWindsEngine constructor \n");
 	}
-	void EightWindsEngine::finishLoading() {
+	void EightWindsEngine::FinishLoading() {
 		printf("before init descriptors \n");
 		DescriptorHandler::initDescriptors(bufferMap);
 		printf("after init descriptors \n");
@@ -110,7 +110,7 @@ namespace EWE {
 			ewe_free(dsl.second);
 		}
 		TextureDSLInfo::descSetLayouts.clear();
-		Texture_Manager::getTextureManagerPtr()->cleanup();
+		Texture_Manager::GetTextureManagerPtr()->Cleanup();
 
 		for (auto& bufferType : bufferMap) {
 			for (auto& buffer : bufferType.second) {
@@ -126,7 +126,7 @@ namespace EWE {
 #endif
 	}
 
-	void EightWindsEngine::initGlobalBuffers() {
+	void EightWindsEngine::InitGlobalBuffers() {
 		lbo.ambientColor = { 0.1f, 0.1f, 0.1f, 0.1f }; //w is alignment only?
 		lbo.sunlightDirection = { 1.f, 3.f, 1.f, 0.f };
 		lbo.sunlightDirection = glm::normalize(lbo.sunlightDirection);
@@ -143,12 +143,12 @@ namespace EWE {
 			bufferMap.at(Buff_gpu)[i] = EWEBuffer::createAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 		}
-		camera.setBuffers(&bufferMap[Buff_ubo]);
+		camera.SetBuffers(&bufferMap[Buff_ubo]);
 
 		lbo.sunlightColor = { 0.8f,0.8f, 0.8f, 0.5f };
 	}
 
-	void EightWindsEngine::loadingScreen() {
+	void EightWindsEngine::LoadingScreen() {
 		printf("BEGINNING LEAF RENDER ~~~~~~~~~~~~~~~~ \n");
 		//printf("beginning of leaf loading screen, thread ID : %d \n", std::this_thread::get_id());
 		//QueryPerformanceCounter(&QPCstart);
@@ -159,9 +159,9 @@ namespace EWE {
 
 
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
-		camera.newViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
+		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			camera.bindUBO(i);
+			camera.BindUBO(i);
 		}
 		//LARGE_INTEGER averageStart;
 		//QueryPerformanceCounter(&averageStart);
@@ -249,7 +249,54 @@ namespace EWE {
 		finishedLoadingScreen = true;
 		printf(" ~~~~ END OF LOADING SCREEN FUNCTION \n");
 	}
-	FrameInfo EightWindsEngine::beginRender() {
+	FrameInfo EightWindsEngine::BeginCompute() {
+		FrameInfo frameInfo{ eweRenderer.beginFrame() };
+		if (frameInfo.cmdBuf) {
+			if (displayingRenderInfo) {
+#if BENCHMARKING_GPU
+				if (queryPool == VK_NULL_HANDLE) {
+					gpuTicksPerSecond = eweDevice.getProperties().limits.timestampPeriod / 1e9f;
+
+					VkQueryPoolCreateInfo queryPoolInfo = {};
+					queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+					queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+					queryPoolInfo.queryCount = 2; // We'll use two timestamps if we run into trouble with framebuffers use 4
+					EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.device(), &queryPoolInfo, nullptr, &queryPool));
+				}
+				else {
+					//printf("before non-null \n");
+					//shouldnt be activated until after the command has already been submitted at least once
+					uint64_t timestampStart, timestampEnd;
+					vkGetQueryPoolResults(eweDevice.device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
+					vkGetQueryPoolResults(eweDevice.device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
+					elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond * 1000.f;
+					totalElapsedGPUMS += elapsedGPUMS;
+					averageElapsedGPUCounter++;
+					if (averageElapsedGPUCounter == 100) {
+						averageElapsedGPUCounter = 0;
+						averageElapsedGPUMS = totalElapsedGPUMS / 100.f;
+						totalElapsedGPUMS = 0.f;
+					}
+					//need to add this to the text renderer
+					//printf("elapsed GPU seconds : %.5f \n", elapsedGPUMS);
+				}
+
+				vkCmdResetQueryPool(frameInfo.cmdBuf, queryPool, 0, 2);
+				vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
+
+#endif
+			}
+		}
+		else {
+			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain resize
+			//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
+			//menuManager.windowResize(eweRenderer.getExtent());
+		}
+
+		return frameInfo;
+	}
+
+	FrameInfo EightWindsEngine::BeginRender() {
 		//printf("begin render \n");
 		FrameInfo frameInfo{ eweRenderer.beginFrame() };
 		if (frameInfo.cmdBuf) {
@@ -298,16 +345,16 @@ namespace EWE {
 
 		return frameInfo;
 	}
-	void EightWindsEngine::draw2DObjects(FrameInfo& frameInfo) {
+	void EightWindsEngine::Draw2DObjects(FrameInfo& frameInfo) {
 		advancedRS.render2DGameObjects(frameInfo, menuManager.getMenuActive());
 	}
-	void EightWindsEngine::drawObjects(FrameInfo& frameInfo, double dt) {
+	void EightWindsEngine::DrawObjects(FrameInfo& frameInfo, double dt) {
 		PipelineSystem::setFrameInfo(frameInfo);
-		draw3DObjects(frameInfo, dt);
-		draw2DObjects(frameInfo);
-		drawText(frameInfo, dt);
+		Draw3DObjects(frameInfo, dt);
+		Draw2DObjects(frameInfo);
+		DrawText(frameInfo, dt);
 	}
-	void EightWindsEngine::draw3DObjects(FrameInfo& frameInfo, double dt) {
+	void EightWindsEngine::Draw3DObjects(FrameInfo& frameInfo, double dt) {
 		timeTracker = glm::mod(timeTracker + dt, glm::two_pi<double>());
 
 		if (pointLightsEnabled) {
@@ -336,7 +383,7 @@ namespace EWE {
 
 	}
 
-	void EightWindsEngine::drawText(FrameInfo& frameInfo, double dt) {
+	void EightWindsEngine::DrawText(FrameInfo& frameInfo, double dt) {
 		uiHandler.beginTextRender();
 #if BENCHMARKING
 		if (displayingRenderInfo) {
@@ -352,16 +399,20 @@ namespace EWE {
 		uiHandler.endTextRender(frameInfo.cmdBuf);
 	}
 
-	void EightWindsEngine::endRender(FrameInfo& frameInfo) {
-		//printf("end render \n");
-
-
+	void EightWindsEngine::EndRender(FrameInfo const& frameInfo) {
 #if BENCHMARKING_GPU
 		if (displayingRenderInfo) {
 			vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 1);
 		}
 #endif
 		eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);
+	}
+
+	void EightWindsEngine::EndFrame(FrameInfo const& frameInfo) {
+		//printf("end render \n");
+
+
+
 		//printf("after ending swap chain \n");
 		if (eweRenderer.endFrame()) {
 			printf("dirty swap on end\n");

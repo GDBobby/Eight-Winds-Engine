@@ -3,6 +3,7 @@
 #include "EWEngine/Graphics/Device.hpp"
 #include "EWEngine/Graphics/Device_Buffer.h"
 #include "EWEngine/Graphics/Pipeline.h"
+#include "EWEngine/Graphics/Model/Model.h"
 
 #include <glm/glm.hpp>
 #include <array>
@@ -10,28 +11,108 @@
 namespace EWE {
     namespace Ocean {
         constexpr uint32_t OCEAN_WAVE_COUNT = 256;
+        constexpr uint32_t LOCAL_WORK_GROUP_SIZE = 32;
         constexpr float smallestWaveMultiplier = 4.f;
         constexpr float minWavesInCascade = 6.f;
         constexpr float O_PI = 3.14159265358979323846264338327950288f;
 
-        enum Pipe_Enum : uint16_t {
-            Pipe_precompute_twiddle = 0,
+        struct IntialFrequencySpectrumPushData {
 
-            Pipe_permute,
-            Pipe_scale,
+            glm::vec4 mLengthScale;
+            glm::vec4 mCutoffLow;
+            glm::vec4 mCutoffHigh;
+            float  mDepth;
 
-            Pipe_horizontal_fft,
-            Pipe_horizontal_inverse_fft,
-            Pipe_vertical_fft,
-            Pipe_vertical_inverse_fft,
-
-            Pipe_initial_spectrum,
-            Pipe_conjugate_spectrum,
-            Pipe_time_dependent_spectrum,
-            Pipe_textures_merger,
-
-            Pipe_Enum_size,
+            IntialFrequencySpectrumPushData();
         };
+        struct TimeDependentFrequencySpectrumPushData {
+            glm::vec4 mLengthScale;
+            glm::vec4 mCutoffLow;
+            glm::vec4 mCutoffHigh;
+            float  mDepth;
+            float  mTime;
+            TimeDependentFrequencySpectrumPushData() : mTime{ 0.f } {}
+            void CopyFromIFS(IntialFrequencySpectrumPushData const& ifsData) {
+                memcpy(this, &ifsData, sizeof(IntialFrequencySpectrumPushData));
+            }
+        };
+        struct JONSWAP_Parameters
+        {
+            float mScale{ 1.f };
+            float mSpreadBlend{ 1.f };
+            float mSwell{ 0.f };
+            float mWindSpeed{ 5.f };
+            float mPeakEnhancement{ 3.3f };
+            float mShortWavesFade{ 0.1f };
+            float mFetch{ 100.f };
+            float mWindDirection{ -29.81 / 180.f * O_PI };
+        };
+
+
+        struct InitialFrequencySpectrumGPUData {
+            VkPipeline pipeline = VK_NULL_HANDLE;
+            VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
+            VkDescriptorSet descriptorSet[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+            JONSWAP_Parameters jonswapParams{};
+            VkShaderModule shaderModule = VK_NULL_HANDLE;
+            IntialFrequencySpectrumPushData pushData{};
+            EWEDescriptorSetLayout* eweDSL{ nullptr };
+
+            EWEBuffer* jonswapBuffer = nullptr;
+            InitialFrequencySpectrumGPUData();
+            ~InitialFrequencySpectrumGPUData();
+
+            void Compute(FrameInfo const& frameInfo);
+            void CreateDescriptorSet(VkDescriptorImageInfo* descImageInfo);
+        private:
+            void CreatePipeLayout();
+            void CreatePipeline();
+            void CreateBuffers();
+        };
+        struct TimeDependentFrequencySpectrumGPUData {
+            VkPipeline pipeline = VK_NULL_HANDLE;
+            VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
+            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+            VkShaderModule shaderModule = VK_NULL_HANDLE;
+            TimeDependentFrequencySpectrumPushData pushData{};
+            EWEDescriptorSetLayout* eweDSL{ nullptr };
+
+            TimeDependentFrequencySpectrumGPUData();
+            ~TimeDependentFrequencySpectrumGPUData();
+
+            void CreateDescriptorSet(VkDescriptorImageInfo* frequencyImage, VkDescriptorImageInfo* outputImage);
+            void Compute(FrameInfo const& frameInfo, float dt);
+        private:
+            void CreatePipeLayout();
+            void CreatePipeline();
+        };
+        struct FFTPushData {
+            float deltaTime;
+            float foamBias;
+            int secondPass;
+            FFTPushData() : deltaTime{ 0.f }, foamBias{ 1.f } {}
+        };
+        struct FFTGPUData {
+            VkPipeline pipeline = VK_NULL_HANDLE;
+            VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
+            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+            VkShaderModule shaderModule = VK_NULL_HANDLE;
+            FFTPushData pushData{};
+            EWEDescriptorSetLayout* eweDSL{ nullptr };
+            VkImage fftImage;
+
+            FFTGPUData();
+            ~FFTGPUData();
+            void Compute(FrameInfo const& frameInfo, float dt);
+
+            void CreateDescriptorSet(VkDescriptorImageInfo* outputImage);
+            void SetVkImage(VkImage image) { fftImage = image; }
+        private:
+            void CreatePipeLayout();
+            void CreatePipeline();
+        };
+
+
 
         struct SSSDataBuffer
         {
@@ -79,86 +160,35 @@ namespace EWE {
 
             // stuffing these in here for simplicity, remove later
             float mHorizon_fog{ 0.f };
-
-            OceanFragmentData(const glm::vec4 lengthScale) : mLengthScales{ lengthScale } {
+            OceanFragmentData() {}
+            OceanFragmentData(glm::vec4 const& lengthScale) : mLengthScales{ lengthScale } {
             }
         };
-        struct IntialFrequencySpectrumPushData {
-
-            glm::vec4 mLengthScale;
-            glm::vec4 mCutoffLow;
-            glm::vec4 mCutoffHigh;
-            float  mDepth;
-
-            IntialFrequencySpectrumPushData() {
-                const float lengthScaleMultiplier = smallestWaveMultiplier * minWavesInCascade / static_cast<float>(OCEAN_WAVE_COUNT);
-                mLengthScale[0] = 400.f;
-                mLengthScale[1] = mLengthScale[0] * lengthScaleMultiplier;
-                mLengthScale[2] = mLengthScale[1] * lengthScaleMultiplier;
-                mLengthScale[3] = mLengthScale[2] * lengthScaleMultiplier;
-
-                const float highMulti = 2.f * O_PI * static_cast<float>(OCEAN_WAVE_COUNT) / smallestWaveMultiplier;
-                mCutoffHigh[0] = highMulti / mLengthScale[0];
-                mCutoffHigh[1] = highMulti / mLengthScale[1];
-                mCutoffHigh[2] = highMulti / mLengthScale[2];
-                mCutoffHigh[3] = highMulti / mLengthScale[3];
-
-                const float lowMulti = O_PI * 2 * minWavesInCascade;
-#if 0 // ALLOW_OVERLAP
-                mCutoffLow[0] = lowMulti / mLengthScale[0];
-                mCutoffLow[1] = lowMulti / mLengthScale[1];
-                mCutoffLow[2] = lowMulti / mLengthScale[2];
-                mCutoffLow[3] = lowMulti / mLengthScale[3];
-#else
-                mCutoffLow[0] = 0.f;
-                mCutoffLow[1] = glm::max(lowMulti / mLengthScale[1], mCutoffHigh[0]);
-                mCutoffLow[2] = glm::max(lowMulti / mLengthScale[2], mCutoffHigh[1]);
-                mCutoffLow[3] = glm::max(lowMulti / mLengthScale[3], mCutoffHigh[2]);
-#endif
-            }
-        };
-        struct TimeDependentFrequencySpectrumPushData {
-            glm::vec4 mLengthScale;
-            glm::vec4 mCutoffLow;
-            glm::vec4 mCutoffHigh;
-            float  mDepth;
-            float  mTime;
-            TimeDependentFrequencySpectrumPushData(IntialFrequencySpectrumPushData const& ifsData) : mTime{0.f} {
-                memcpy(this, &ifsData, sizeof(glm::vec3) * 3 + sizeof(float));
-
-            }
-        };
-        struct JONSWAP_Parameters
-        {
-            float mScale{ 1.f };
-            float mSpreadBlend{ 1.f };
-            float mSwell{ 0.f };
-            float mWindSpeed{ 5.f };
-            float mPeakEnhancement{ 3.3f };
-            float mShortWavesFade{ 0.1f };
-            float mFetch{ 100.f };
-            float mWindDirection{ -29.81 / 180.f * O_PI };
+        struct OceanRenderParameters {
+            OceanFragmentData oceanFragmentData{};
+            float m__Padding;
+            FoamRenderData foamDataBuffer{};
+            SSSDataBuffer sssDataBuffer{};
+            OceanRenderParameters() {}
         };
 
-
-        struct InitialFrequencySpectrumGPUData {
-            VkPipeline pipeline = VK_NULL_HANDLE;
+        struct OceanGraphicsGPUData {
+            std::unique_ptr<EWEPipeline> pipe;
             VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
             VkDescriptorSet descriptorSet[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
-            JONSWAP_Parameters jonswapParams{};
-            VkShaderModule shaderModule = VK_NULL_HANDLE;
-            IntialFrequencySpectrumPushData pushData{};
+            std::unique_ptr<EWEModel> oceanModel{ nullptr };
+            EWEBuffer* renderData[2] = { nullptr, nullptr };
             EWEDescriptorSetLayout* eweDSL{ nullptr };
+            OceanRenderParameters oceanRenderParameters{};
+            OceanGraphicsGPUData();
+            ~OceanGraphicsGPUData();
 
-            EWEBuffer* jonswapBuffer = nullptr;
-            InitialFrequencySpectrumGPUData();
-            ~InitialFrequencySpectrumGPUData();
-
-            void CreateDescriptorSet(VkDescriptorImageInfo* descImageInfo);
+            void Render(FrameInfo const& frameInfo);
+            void CreateDescriptorSet(VkDescriptorImageInfo* outputImages, VkDescriptorImageInfo* skyboxImage);
         private:
             void CreatePipeLayout();
             void CreatePipeline();
-            void CreateBuffers();
+            void CreateModel();
         };
     } //namespace ocean
 } //namespace EWE

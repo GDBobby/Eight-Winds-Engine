@@ -24,7 +24,7 @@ namespace EWE {
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			ewEngine.camera.updateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
+			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
 		}
 	}
 	void ShaderGenerationScene::exit() {
@@ -34,18 +34,19 @@ namespace EWE {
 		//printf("render main menu scene \n");
 
 
-		auto frameInfo = ewEngine.beginRender();
+		auto frameInfo = ewEngine.BeginRender();
 		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 			//printf("drawing \n");
-			ewEngine.draw2DObjects(frameInfo);
-			ewEngine.drawText(frameInfo, dt);
+			ewEngine.Draw2DObjects(frameInfo);
+			ewEngine.DrawText(frameInfo, dt);
 
 			currentTime += dt;
 			if (currentTime >= saveTime) {
 				SaveShader();
 			}
 
-			ewEngine.endRender(frameInfo);
+			ewEngine.EndRender(frameInfo);
+			ewEngine.EndFrame(frameInfo);
 			return false;
 		}
 		return true;

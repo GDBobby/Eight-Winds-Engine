@@ -106,27 +106,29 @@ namespace EWE {
 		double minRenderTime = 100.0;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		void initGlobalBuffers();
+		void InitGlobalBuffers();
 
-		FrameInfo beginRender();
+		FrameInfo BeginRender();
+		FrameInfo BeginCompute();
 //#define RENDER_OBJECT_DEBUG
 
-		void draw2DObjects(FrameInfo& frameInfo);
-		void draw3DObjects(FrameInfo& frameInfo, double dt);
-		void drawText(FrameInfo& frameInfo, double dt);
-		void drawObjects(FrameInfo& frameInfo, double dt);
+		void Draw2DObjects(FrameInfo& frameInfo);
+		void Draw3DObjects(FrameInfo& frameInfo, double dt);
+		void DrawText(FrameInfo& frameInfo, double dt);
+		void DrawObjects(FrameInfo& frameInfo, double dt);
 
-		void endRender(FrameInfo& frameInfo);
+		void EndRender(FrameInfo const& frameInfo);
+		void EndFrame(FrameInfo const& frameInfo);
 
-		void loadingScreen();
+		void LoadingScreen();
 
-		void finishLoading();
+		void FinishLoading();
 
-		void endEngineLoadScreen() {
+		void EndEngineLoadScreen() {
 			printf("~~~~ ENDING LOADING SCREEN ~~~ \n");
 			loadingEngine = false;
 		}
-		bool getLoadingScreenProgress() {
+		bool GetLoadingScreenProgress() {
 			return (!finishedLoadingScreen) || (loadingTime < 2.0);
 		}
 		//bool endlessPaused = false;

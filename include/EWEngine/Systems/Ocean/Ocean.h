@@ -10,18 +10,25 @@
 namespace EWE {
 	namespace Ocean {
 
-#define CASCADE_COUNT 4
 		class Ocean {
-
-			const uint16_t ocean_resolution{ 1024 };
-			const uint16_t cascade_count{ 4 };
+			uint8_t cascade_count{ 4 };
+			bool notFirstRun = false;
 
 			InitialFrequencySpectrumGPUData ifsGPUData{};
+			TimeDependentFrequencySpectrumGPUData tdfsGPUData{};
+			FFTGPUData fftGPUData{};
+			OceanGraphicsGPUData graphicsGPUData{};
+			float depth = 1000.f;
+
 			
 			VkDescriptorSet oceanTextures = VK_NULL_HANDLE;
-			VkImage oceanImages = VK_NULL_HANDLE;
-			VkDeviceMemory oceanImageMemory = VK_NULL_HANDLE;
-			VkDescriptorImageInfo oceanImageDescriptor{};
+			VkImage oceanOutputImages = VK_NULL_HANDLE;
+			VkImage oceanFreqImages = VK_NULL_HANDLE;
+			VkDeviceMemory oceanOutputImageMemory = VK_NULL_HANDLE;
+			VkDeviceMemory oceanFreqImageMemory = VK_NULL_HANDLE;
+			VkDescriptorImageInfo oceanOutputImageInfoDescriptorCompute{};
+			VkDescriptorImageInfo oceanOutputImageInfoDescriptorGraphics{};
+			VkDescriptorImageInfo oceanFreqImageInfoDescriptor{};
 
 
 		//RENDER BEGIN
@@ -31,61 +38,36 @@ namespace EWE {
 
 
 			std::unique_ptr<EWEModel> oceanModel;
+
+			EWEBuffer* frequencyBuffer = nullptr;
 		//RENDER END
 
 			float time = 0.f;
 
-			void InitializeOcean();
 
 		public:
-			Ocean();
+			Ocean(VkDescriptorImageInfo* skyboxImage);
 			~Ocean();
+			void UpdateNoInit(FrameInfo const& frameInfo, float dt);
+			void ReinitUpdate(FrameInfo const& frameInfo, float dt);
+			void InitializeSpectrum(FrameInfo const& frameInfo);
+			void UpdateSpectrum(FrameInfo const& frameInfo, float dt);
+			void ComputeFFT(FrameInfo const& frameInfo, float deltaTime);
 
-			//maybe construct the command buffer here?
-			void ComputeUpdate(std::array<VkCommandBuffer, 5> oceanBuffers, float dt);
 
-			void RenderUpdate(FrameInfo frameInfo);
+			void RenderOcean(FrameInfo const& frameInfo);
 
 			void CreateBuffers();
-			void CreateRenderPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
-
-			void TransferOceanToGraphics(VkCommandBuffer cmdBuffer) {
-				/*
-				std::vector<VkImage> transferVertImages{};
-				transferVertImages.reserve(3);
-				cascade[0].addVertTransferImages(transferVertImages);
-				cascade[1].addVertTransferImages(transferVertImages);
-				cascade[2].addVertTransferImages(transferVertImages);
-				device.transferImageStage(cmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, transferVertImages);
-
-				std::vector<VkImage> transferFragImages{};
-				transferFragImages.reserve(6);
-				cascade[0].addFragTransferImages(transferFragImages);
-				cascade[1].addFragTransferImages(transferFragImages);
-				cascade[2].addFragTransferImages(transferFragImages);
-				device.transferImageStage(cmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, transferFragImages);
-				*/
-			}
-
-			void TransferGraphicsToOcean(VkCommandBuffer cmdBuf) {
-				/*
-				std::vector<VkImage> transferVertImages{};
-				transferVertImages.reserve(3);
-				cascade[0].addVertTransferImages(transferVertImages);
-				cascade[1].addVertTransferImages(transferVertImages);
-				cascade[2].addVertTransferImages(transferVertImages);
-				device.transferImageStage(cmdBuf, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, transferVertImages);
-
-				std::vector<VkImage> transferFragImages{};
-				transferFragImages.reserve(6);
-				cascade[0].addFragTransferImages(transferFragImages);
-				cascade[1].addFragTransferImages(transferFragImages);
-				cascade[2].addFragTransferImages(transferFragImages);
-				device.transferImageStage(cmdBuf, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, transferFragImages);
-				*/
-			}
-
 			void PrepareStorageImage();
+			void CreateDescriptor(VkDescriptorImageInfo* skyboxImage);
+
+			void TransferComputeToGraphics(VkCommandBuffer cmdBuf);
+
+			void TransferGraphicsToCompute(VkCommandBuffer cmdBuf);
+			//void ComputeBarrier(VkCommandBuffer cmdBuf);
+			
+
+
 		};
 	}
 }

@@ -5,9 +5,9 @@ namespace EWE {
 #ifndef SKYBOX_DIR
 #define SKYBOX_DIR "textures/skybox/"
 #endif
-
+    
     TextureDesc Cube_Texture::createCubeTexture(std::string texPath) {
-        auto tmPtr = Texture_Manager::getTextureManagerPtr();
+        auto tmPtr = Texture_Manager::GetTextureManagerPtr();
         {
             auto foundImage = tmPtr->imageMap.find(texPath);
             if (foundImage != tmPtr->imageMap.end()) {
@@ -42,7 +42,7 @@ namespace EWE {
             
         }
         
-        Texture_Manager::ImageTracker* cubeTracker = Texture_Manager::constructEmptyImageTracker(texPath);
+        Texture_Manager::ImageTracker* cubeTracker = Texture_Manager::ConstructEmptyImageTracker(texPath);
         ImageInfo& cubeImage = cubeTracker->imageInfo;
 
         createCubeImage(cubeImage, pixelPeeks);
@@ -108,7 +108,10 @@ namespace EWE {
         EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
         eweDevice->createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeTexture.image, cubeTexture.imageMemory);
 
-        eweDevice->transitionImageLayout(cubeTexture.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cubeTexture.mipLevels, 6);
+        eweDevice->transitionImageLayout(cubeTexture.image, 
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+            cubeTexture.mipLevels, 6);
         eweDevice->copyBufferToImage(stagingBuffer, cubeTexture.image, pixelPeek[0].width, pixelPeek[0].height, 6);
 
 
@@ -116,8 +119,11 @@ namespace EWE {
         vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
         vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
 
-        //i gotta do this a 2nd time i guess
-        eweDevice->transitionImageLayout(cubeTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cubeTexture.mipLevels, 6, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        eweDevice->transitionImageLayout(cubeTexture.image, 
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
+            cubeTexture.mipLevels, 6
+        );
     }
 
     void Cube_Texture::createCubeImageView(ImageInfo& cubeTexture) {

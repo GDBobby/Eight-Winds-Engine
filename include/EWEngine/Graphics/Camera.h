@@ -17,30 +17,30 @@ namespace EWE {
 	class EWECamera {
 	public:
 
-		void setOrthographicProjection(float left, float right, float top, float bottom, float near, float far);
-		void setPerspectiveProjection(float fovy, float aspect, float near, float far);
+		void SetOrthographicProjection(float left, float right, float top, float bottom, float near, float far);
+		void SetPerspectiveProjection(float fovy, float aspect, float near, float far);
 
-		void setViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up = glm::vec3{0.0f,1.0f, 0.0f});
+		void SetViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up = glm::vec3{0.0f,1.0f, 0.0f});
 		//void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up = glm::vec3{ 0.0f,1.0f, 0.0f });
-		void newViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp);
+		void NewViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp);
 		void ViewTargetDirect(uint8_t currentFrame);
-		void setViewYXZ(glm::vec3 position, glm::vec3 rotation);
+		void SetViewYXZ(glm::vec3 position, glm::vec3 rotation);
 
-		const glm::mat4& getProjection() const { return ubo.projection; }
-		const glm::mat4& getView() const { return ubo.view; }
+		const glm::mat4& GetProjection() const { return ubo.projection; }
+		const glm::mat4& GetView() const { return ubo.view; }
 		//const glm::mat4& getInverseView() const { return inverseViewMatrix; }
 
-		void bindUBO(uint8_t frameIndex) {
+		void BindUBO(uint8_t frameIndex) {
 			//printf("camera set ubo \n");
 			uniformBuffers->at(frameIndex)->writeToBuffer(&ubo);
 			uniformBuffers->at(frameIndex)->flush();
 		}
 
-		void setBuffers(std::vector<EWEBuffer*>* buffers) {
+		void SetBuffers(std::vector<EWEBuffer*>* buffers) {
 			uniformBuffers = buffers;
 			assert(uniformBuffers->size() > 0);
 		}
-		void updateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp = glm::vec3{0.f,1.f,0.f}) {
+		void UpdateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp = glm::vec3{0.f,1.f,0.f}) {
 			//probably store a position, target, and camera up variable in this class, then hand out a pointer to those variables
 			//being lazy rn
 			this->position = position;

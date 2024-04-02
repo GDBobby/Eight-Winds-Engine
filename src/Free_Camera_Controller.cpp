@@ -4,6 +4,8 @@
 #include <limits>
 #include <iostream>
 
+#define GK_MACRO(key) glfwGetKey(window, key) == GLFW_PRESS
+
 namespace EWE {
     //std::vector<CameraController> CameraController::keyboardVector;
     //CameraController::CameraController(GLFWwindow* window)
@@ -79,7 +81,7 @@ namespace EWE {
     */
 
 
-    void CameraController::moveInPlaneXZ(EWEGameObject& gameObject) {
+    void CameraController::Move(TransformComponent& transform) {
         //ImGuiIO& io = ImGui::GetIO();
         //if (io.WantCaptureKeyboard) {
         //    return;
@@ -97,44 +99,61 @@ namespace EWE {
         
 
         if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon()) {
-            gameObject.transform.rotation += lookSpeed * glm::normalize(rotate);
+            transform.rotation += lookSpeed * glm::normalize(rotate);
         }
 
         // limit pitch values between about +/- 85ish degrees
-        gameObject.transform.rotation.x = glm::clamp(gameObject.transform.rotation.x, -glm::half_pi<float>(), glm::half_pi<float>());
-        gameObject.transform.rotation.y = glm::mod(gameObject.transform.rotation.y, glm::two_pi<float>());
+        transform.rotation.x = glm::clamp(transform.rotation.x, -glm::half_pi<float>(), glm::half_pi<float>());
+        transform.rotation.y = glm::mod(transform.rotation.y, glm::two_pi<float>());
 
-        glm::vec3 forwardDir{ sin(gameObject.transform.rotation.y), 0.f, cos(gameObject.transform.rotation.y) };
+        glm::vec3 forwardDir{ sin(transform.rotation.y), 0.f, cos(transform.rotation.y) };
         glm::vec3 rightDir{ forwardDir.z, 0.f, -forwardDir.x };
         glm::vec3 upDir{ 0.f, 1.f, 0.f };
 
         glm::vec3 moveDir{ 0.f };
         
-        if (glfwGetKey(window, keys.moveForward) == GLFW_PRESS) moveDir -= forwardDir;
-        if (glfwGetKey(window, keys.moveBackward) == GLFW_PRESS) moveDir += forwardDir;
-        if (glfwGetKey(window, keys.moveRight) == GLFW_PRESS) moveDir -= rightDir;
-        if (glfwGetKey(window, keys.moveLeft) == GLFW_PRESS) moveDir += rightDir;
-        if (glfwGetKey(window, keys.moveUp) == GLFW_PRESS) moveDir += upDir;
-        if (glfwGetKey(window, keys.moveDown) == GLFW_PRESS) moveDir -= upDir;
-        
+        if (GK_MACRO(keys.moveForward)) {
+            printf("forward \n");
+            moveDir -= forwardDir;
+        }
+        if (glfwGetKey(window, keys.moveBackward) == GLFW_PRESS) {
+            printf("back \n");
+            moveDir += forwardDir;
+        }
+        if (glfwGetKey(window, keys.moveRight) == GLFW_PRESS) {
+            printf("right \n");
+            moveDir -= rightDir;
+        }
+        if (glfwGetKey(window, keys.moveLeft) == GLFW_PRESS) {
+            printf("left \n");
+            moveDir += rightDir;
+        }
+        if (glfwGetKey(window, keys.moveUp) == GLFW_PRESS) {
+            printf("up \n");
+            moveDir.y += 1.f;
+        }
+        if (glfwGetKey(window, keys.moveDown) == GLFW_PRESS) {
+            printf("down \n");
+            moveDir.y -= 1.f;
+        }
 
         if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
             //printf("moving camera? \n");
-            gameObject.transform.translation += ((moveSpeed + (isMoveFast * 4.f * moveSpeed))) * (1.f - (isMoveSlow * 0.8f)) * glm::normalize(moveDir);
+            transform.translation += ((moveSpeed + (isMoveFast * 4.f * moveSpeed))) * (1.f - (isMoveSlow * 0.8f)) * glm::normalize(moveDir);
         }
     }
-    void CameraController::rotateCam(EWEGameObject& gameObject) {
+    void CameraController::rotateCam(TransformComponent& transform) {
         double xPos = 0.0;
         double yPos = 0.0;
         glfwGetCursorPos(window, &xPos, &yPos);
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
             float xDiff = static_cast<float>(xPos - mousePos.first);
             float yDiff = static_cast<float>(yPos - mousePos.second);
-            gameObject.transform.rotation.x -= lookSpeed * yDiff;
-            gameObject.transform.rotation.y += lookSpeed * xDiff;
+            transform.rotation.x -= lookSpeed * yDiff;
+            transform.rotation.y += lookSpeed * xDiff;
 
-            gameObject.transform.rotation.x = glm::clamp(gameObject.transform.rotation.x, -glm::half_pi<float>(), glm::half_pi<float>());
-            gameObject.transform.rotation.y = glm::mod(gameObject.transform.rotation.y, glm::two_pi<float>());
+            transform.rotation.x = glm::clamp(transform.rotation.x, -glm::half_pi<float>(), glm::half_pi<float>());
+            transform.rotation.y = glm::mod(transform.rotation.y, glm::two_pi<float>());
         }
 
 
@@ -142,13 +161,13 @@ namespace EWE {
         mousePos.second = yPos;
     }
 
-    void CameraController::zoom(EWEGameObject* gameObject) {
-        forwardDirZoom = { sin(gameObject->transform.rotation.y), -sin(gameObject->transform.rotation.x), cos(gameObject->transform.rotation.y) };
+    void CameraController::zoom(TransformComponent& transform) {
+        forwardDirZoom = { sin(transform.rotation.y), -sin(transform.rotation.x), cos(transform.rotation.y) };
 
         //forwardDirZoom.y = -forwardDirZoom.y;
         forwardDirZoom = glm::normalize(forwardDirZoom);
 
-        gameObject->transform.translation -= forwardDirZoom * storedZoom * ((.1f + (isMoveFast * .4f)) * (1.f - (isMoveSlow * 0.8f)));
+        transform.translation -= forwardDirZoom * storedZoom * ((.1f + (isMoveFast * .4f)) * (1.f - (isMoveSlow * 0.8f)));
 
         storedZoom = 0.0;
     }

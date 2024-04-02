@@ -24,7 +24,7 @@ template <>
 struct std::hash<EWE::Vertex> {
     size_t operator()(EWE::Vertex const& vertex) const {
         size_t seed = 0;
-        EWE::hashCombine(seed, vertex.position, vertex.normal, vertex.uv, vertex.tangent);
+        EWE::HashCombine(seed, vertex.position, vertex.normal, vertex.uv, vertex.tangent);
         return seed;
     }
 };
@@ -32,15 +32,15 @@ template <>
 struct std::hash<EWE::VertexNT> {
     size_t operator()(EWE::VertexNT const& vertex) const {
         size_t seed = 0;
-        EWE::hashCombine(seed, vertex.position, vertex.normal, vertex.uv);
+        EWE::HashCombine(seed, vertex.position, vertex.normal, vertex.uv);
         return seed;
     }
 };
 template<>
-struct std::hash<EWE::simpleVertex> {
-    size_t operator()(EWE::simpleVertex const& vertex) const {
+struct std::hash<EWE::SimpleVertex> {
+    size_t operator()(EWE::SimpleVertex const& vertex) const {
         size_t seed = 0;
-        EWE::hashCombine(seed, vertex.position);
+        EWE::HashCombine(seed, vertex.position);
         return seed;
     }
 };
@@ -48,27 +48,41 @@ template<>
 struct std::hash<EWE::GrassVertex> {
     size_t operator()(EWE::GrassVertex const& vertex) const {
         size_t seed = 0;
-        EWE::hashCombine(seed, vertex.position, vertex.color);
+        EWE::HashCombine(seed, vertex.position, vertex.color);
         return seed;
     }
 };
 
 namespace EWE {
+    EWEModel::EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
+        assert(vertexCount >= 3 && "vertex count must be at least 3");
+        VertexBuffers(vertexCount, sizeOfVertex, verticesData);
+        CreateIndexBuffers(indices);
+    }
+    EWEModel::EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex) {
+        assert(vertexCount >= 3 && "vertex count must be at least 3");
+        VertexBuffers(vertexCount, sizeOfVertex, verticesData);
+    }
+    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
+        return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex, indices);
+    }
+    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, size_t vertexCount, std::size_t sizeOfVertex) {
+        return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex);
+    }
 
-
-    std::unique_ptr<EWEModel> EWEModel::createModelFromFile(const std::string& filepath) {
+    std::unique_ptr<EWEModel> EWEModel::CreateModelFromFile(const std::string& filepath) {
         Builder builder{};
-        builder.loadModel(filepath);
+        builder.LoadModel(filepath);
         return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
     }
-    std::unique_ptr<EWEModel> EWEModel::createSimpleModelFromFile(const std::string& filePath) {
+    std::unique_ptr<EWEModel> EWEModel::CreateSimpleModelFromFile(const std::string& filePath) {
         SimpleBuilder builder{};
-        builder.loadModel(filePath);
+        builder.LoadModel(filePath);
         return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
     }
-    std::unique_ptr<EWEModel> EWEModel::createGrassModelFromFile(const std::string& filePath) {
+    std::unique_ptr<EWEModel> EWEModel::CreateGrassModelFromFile(const std::string& filePath) {
         GrassBuilder builder{};
-        builder.loadModel(filePath);
+        builder.LoadModel(filePath);
         return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
     }
 
@@ -142,7 +156,7 @@ namespace EWE {
 
         EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
     }
-    void EWEModel::createGrassIndexBuffer(void* indexData, uint32_t indexCount) {
+    void EWEModel::CreateGrassIndexBuffer(void* indexData, uint32_t indexCount) {
         VkDeviceSize bufferSize = indexCount * 4;
         uint32_t indexSize = 4;
 
@@ -165,7 +179,7 @@ namespace EWE {
         EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
 
-    EWEBuffer* EWEModel::createIndexBuffer(std::vector<uint32_t> const& indices) {
+    EWEBuffer* EWEModel::CreateIndexBuffer(std::vector<uint32_t> const& indices) {
         uint32_t indexCount = static_cast<uint32_t>(indices.size());
 
         if (indexCount == 0) {
@@ -193,7 +207,7 @@ namespace EWE {
         return indexBuffer;
     }
 
-    void EWEModel::createIndexBuffers(const std::vector<uint32_t>& indices) {
+    void EWEModel::CreateIndexBuffers(const std::vector<uint32_t>& indices) {
         indexCount = static_cast<uint32_t>(indices.size());
         hasIndexBuffer = indexCount > 0;
 
@@ -224,7 +238,7 @@ namespace EWE {
         EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
 
-    void EWEModel::draw(VkCommandBuffer commandBuffer) {
+    void EWEModel::Draw(VkCommandBuffer commandBuffer) {
         if (hasIndexBuffer) {
             //printf("Drawing indexed : %d \n", indexCount);
             vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
@@ -236,7 +250,7 @@ namespace EWE {
         }
     }
 
-    void EWEModel::bind(VkCommandBuffer commandBuffer) {
+    void EWEModel::Bind(VkCommandBuffer commandBuffer) {
         // do a second buffer, and switch to it when changign the object
         //count a couple of frames then remove the old buffer
         VkBuffer buffers[] = { vertexBuffer->getBuffer() };
@@ -295,7 +309,7 @@ namespace EWE {
         }
     }
 
-    void EWEModel::Builder::loadModel(const std::string& filepath) {
+    void EWEModel::Builder::LoadModel(const std::string& filepath) {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -362,7 +376,7 @@ namespace EWE {
         //printf("vertex count after loading model from file : %d \n", vertices.size());
         //printf("index count after loading model froom file : %d \n", indices.size());
     }
-    void EWEModel::GrassBuilder::loadModel(const std::string& filepath) {
+    void EWEModel::GrassBuilder::LoadModel(const std::string& filepath) {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -415,7 +429,7 @@ namespace EWE {
         //printf("index count after loading model froom file : %d \n", indices.size());
     }
 
-    void EWEModel::SimpleBuilder::loadModel(const std::string& filepath) {
+    void EWEModel::SimpleBuilder::LoadModel(const std::string& filepath) {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -429,10 +443,10 @@ namespace EWE {
         vertices.clear();
         indices.clear();
 
-        std::unordered_map<simpleVertex, uint32_t> uniqueVertices{};
+        std::unordered_map<SimpleVertex, uint32_t> uniqueVertices{};
         for (const auto& shape : shapes) {
             for (const auto& index : shape.mesh.indices) {
-                simpleVertex vertex{};
+                SimpleVertex vertex{};
 
                 if (index.vertex_index >= 0) {
                     vertex.position = {

@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace EWE {
-	void EWECamera::setOrthographicProjection(float left, float right, float top, float bottom, float near, float far) {
+	void EWECamera::SetOrthographicProjection(float left, float right, float top, float bottom, float near, float far) {
 		ubo.projection = glm::mat4{ 1.0f };
 		ubo.projection[0][0] = 2.f / (right - left);
 		ubo.projection[1][1] = 2.f / (top - bottom);
@@ -16,7 +16,7 @@ namespace EWE {
 		ubo.projection[3][2] = -near / (far - near);
 	}
 
-	void EWECamera::setPerspectiveProjection(float fovy, float aspect, float near, float far) {
+	void EWECamera::SetPerspectiveProjection(float fovy, float aspect, float near, float far) {
 		if (!(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f)) {
 			return;
 		}
@@ -24,9 +24,9 @@ namespace EWE {
 		ubo.projection = glm::perspective(-fovy, aspect, near, far);
 	}
 
-	void EWECamera::setViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up) {
+	void EWECamera::SetViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up) {
 		const glm::vec3 w{ glm::normalize(direction) };
-		const glm::vec3 u{ glm::normalize(glm::cross(w, up)) };
+		const glm::vec3 u{ glm::cross(w, up) }; //up needs to be passed in normalized
 		const glm::vec3 v{ glm::cross(w, u) };
 
 		ubo.view = glm::mat4{ 1.f };
@@ -51,7 +51,7 @@ namespace EWE {
 		ubo.cameraPos.z = position.z;
 	}
 
-	void EWECamera::newViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp) {
+	void EWECamera::NewViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp) {
 
 		//ubo.view = glm::lookAt(position, target, cameraUp);
 		//inverseubo.view = glm::inverse(ubo.view);
@@ -120,7 +120,7 @@ namespace EWE {
 		uniformBuffers->at(currentFrame)->flush();
 	}
 
-	void EWECamera::setViewYXZ(glm::vec3 position, glm::vec3 rotation) {
+	void EWECamera::SetViewYXZ(glm::vec3 position, glm::vec3 rotation) {
 		const float c3 = glm::cos(rotation.z);
 		const float s3 = glm::sin(rotation.z);
 		const float c2 = glm::cos(rotation.x);

@@ -7,12 +7,12 @@ int main() {
 	EWE::EightWindsEngine ewEngine{"Eight Winds Engine Sample"};
 	EWE::EWESample* eweSample = nullptr;
 	auto loadPart2 = [&]() {
-		ewEngine.finishLoading();
+		ewEngine.FinishLoading();
 
 		eweSample = new EWE::EWESample(ewEngine);
 		};
 	std::thread loadThread(loadPart2);
-	ewEngine.loadingScreen();
+	ewEngine.LoadingScreen();
 	loadThread.join();
 
 	try {

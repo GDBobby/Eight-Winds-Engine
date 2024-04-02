@@ -5,7 +5,6 @@
 //#include "GUI/ControlsMM.h"
 #include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
 #include <EWEngine/Graphics/Texture/Cube_Texture.h>
-#include <EWEngine/Systems/Ocean/Ocean.h>
 
 #include "GUI/MenuEnums.h"
 
@@ -30,20 +29,19 @@ namespace EWE {
 		addModulesToMenuManager(screenWidth, screenHeight);
 		loadGlobalObjects();
 		currentScene = scene_mainmenu;
-		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine));
+		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine, skyboxInfo));
 		scenes.emplace(scene_shaderGen, std::make_unique<ShaderGenerationScene>(ewEngine));
 		//scenes.emplace(scene_)
 		currentScenePtr = scenes.at(currentScene).get();
 
 		currentScenePtr->load();
 
-		Ocean::Ocean ocean{};
 
 		//StaticRenderSystem::initStaticRS(1, 1);
 
 		//StaticRenderSystem::destructStaticRS();
 
-		ewEngine.endEngineLoadScreen();
+		ewEngine.EndEngineLoadScreen();
 	}
 	EWESample::~EWESample() {
 		//explicitly deconstruct static objects that go into vulkan
@@ -64,7 +62,7 @@ namespace EWE {
 		}
 		do { //having a simple while() may cause a race condition
 			vkDeviceWaitIdle(ewEngine.eweDevice.device());
-		} while (ewEngine.getLoadingScreenProgress());
+		} while (ewEngine.GetLoadingScreenProgress());
 		currentScenePtr->entry();
 
 		while (gameRunning) {
@@ -80,7 +78,7 @@ namespace EWE {
 				vkDeviceWaitIdle(ewEngine.eweDevice.device());
 				currentScenePtr->exit();
 				ewEngine.objectManager.clearSceneObjects();
-				Texture_Manager::getTextureManagerPtr()->clearSceneTextures();
+				Texture_Manager::GetTextureManagerPtr()->ClearSceneTextures();
 				//loading entry?
 				if (currentScene != scene_exitting) {
 					currentScenePtr = scenes.at(currentScene).get();
@@ -127,7 +125,9 @@ namespace EWE {
 	}
 
 	void EWESample::loadGlobalObjects() {
+		std::string skyboxLoc = "nasa/";
 		TextureDesc skyboxID = Cube_Texture::createCubeTexture("nasa/");
+		skyboxInfo = Texture_Manager::GetDescriptorImageInfo(skyboxLoc);
 
 		//i dont even know if the engine will work if this isnt constructed
 		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(100.f), skyboxID };

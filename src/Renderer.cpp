@@ -134,7 +134,7 @@ namespace EWE {
 			mainWindow.resetWindowResizedFlag();
 			restartedSwap = true;
 			recreateSwapChain();
-			camera.setPerspectiveProjection(glm::radians(70.0f), eweSwapChain->extentAspectRatio(), 0.1f, 10000.0f);
+			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->extentAspectRatio(), 0.1f, 10000.0f);
 		}
 		else if (vkResult != VK_SUCCESS) {
 			std::cout << "failed to present swap chain image: " << vkResult << std::endl;

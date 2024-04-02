@@ -33,7 +33,7 @@ namespace EWE {
 		loadLeafModel();
 
 		createPipeline();
-		leafTextureID = Texture_Builder::createSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
+		leafTextureID = Texture_Builder::CreateSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 
 		//printf("leafTextureID :%d \n", leafTextureID);
@@ -315,7 +315,7 @@ namespace EWE {
 		}
 		inFile.close();
 		//printf("file read successfully \n");
-		leafModel = EWEModel::createMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices);
+		leafModel = EWEModel::CreateMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices);
 		//printf("leaf model loaded \n");
 	}
 	void LeafSystem::render(FrameInfo& frameInfo) {
@@ -341,7 +341,7 @@ namespace EWE {
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 
 		pipelineConfig.pipelineLayout = pipeLayout;
-		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexNT>();
+		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
 
 		printf("before loading vert shader \n");

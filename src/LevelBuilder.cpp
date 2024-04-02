@@ -66,7 +66,7 @@ namespace EWE {
 		//main controls
 		cameraControl.moveInPlaneXZ(*cameraObject);
 		cameraControl.rotateCam(*cameraObject);
-		camera->setViewYXZ(cameraObject->transform.translation, cameraObject->transform.rotation);
+		camera->SetViewYXZ(cameraObject->transform.translation, cameraObject->transform.rotation);
 		cameraControl.zoom(cameraObject);
 		addMainControls();
 	}

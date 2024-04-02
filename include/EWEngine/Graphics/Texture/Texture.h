@@ -88,7 +88,7 @@ namespace EWE {
 			size_t seed = 0;
 
 			for (uint8_t i = 0; i < SUPPORTED_STAGE_COUNT; i++) {
-				EWE::hashCombine(seed, dslToHash.stageCounts[i]);
+				EWE::HashCombine(seed, dslToHash.stageCounts[i]);
 			}
 			return seed;
 		}

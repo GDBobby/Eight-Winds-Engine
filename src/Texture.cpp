@@ -220,7 +220,11 @@ namespace EWE {
         //printf("before image info \n");
         eweDevice->createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
         //printf("before transition \n");
-        eweDevice->transitionImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
+        eweDevice->transitionImageLayout(image, 
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+            mipLevels
+        );
         //printf("before copy buffer to image \n");
         eweDevice->copyBufferToImage(stagingBuffer, image, width, height, 1);
         //printf("after copy buffer to image \n");
@@ -232,6 +236,13 @@ namespace EWE {
         //printf("before generate mip maps \n");
         if (MIPMAP_ENABLED && mipmapping) {
             generateMipmaps(VK_FORMAT_R8G8B8A8_SRGB, width, height);
+        }
+        else {
+            eweDevice->transitionImageLayout(image,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
+                mipLevels
+            );
         }
     }
 
@@ -297,7 +308,7 @@ namespace EWE {
         }
         //printf("before mip map loop? size of image : %d \n", image.size());
 
-        VkCommandBuffer commandBuffer = SyncHub::getSyncHubInstance()->beginSingleTimeCommands();
+        VkCommandBuffer commandBuffer = SyncHub::getSyncHubInstance()->BeginSingleTimeCommands();
         //printf("after beginning single time command \n");
 
         VkImageMemoryBarrier barrier{};

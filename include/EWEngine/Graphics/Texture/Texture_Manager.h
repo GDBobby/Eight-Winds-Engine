@@ -33,11 +33,11 @@ namespace EWE {
 		Texture_Builder(bool global);
 
 		//MAYBE default stage flags to FRAG stage
-		void addComponent(std::string const& texPath, VkShaderStageFlags stageFlags, bool mipmaps);
+		void AddComponent(std::string const& texPath, VkShaderStageFlags stageFlags, bool mipmaps);
 
-		TextureDesc build();
+		TextureDesc Build();
 
-		static TextureDesc createSimpleTexture(std::string texPath, bool global, bool mipmaps, VkShaderStageFlags shaderStage);
+		static TextureDesc CreateSimpleTexture(std::string texPath, bool global, bool mipmaps, VkShaderStageFlags shaderStage);
 	};
 
 	class Texture_Manager {
@@ -73,26 +73,27 @@ namespace EWE {
 		friend class Texture_Builder;
 
 		static Texture_Manager* textureManagerPtr;
+		static ImageTracker* ConstructImageTracker(std::string const& path, bool mipmap);
+
+		//this is specifically for CubeImage
+		static ImageTracker* ConstructEmptyImageTracker(std::string const& path);
 
 	public:
 		Texture_Manager();
 
-		void initStaticVariables();
-		void buildSetLayouts();
+		static VkDescriptorImageInfo* GetDescriptorImageInfo(std::string const& imageName) {
+			return textureManagerPtr->imageMap.at(imageName)->imageInfo.getDescriptorImageInfo();
+		}
 
-		void clearSceneTextures();
-		void removeMaterialTexture(TextureDesc removeID);
-		void cleanup();
+		void ClearSceneTextures();
+		void RemoveMaterialTexture(TextureDesc removeID);
+		void Cleanup();
 
-		static Texture_Manager* getTextureManagerPtr() { return textureManagerPtr; }
+		static Texture_Manager* GetTextureManagerPtr() { return textureManagerPtr; }
 		//static VkDescriptorSet* getDescriptorSet(TextureID textureID);
 		//static VkDescriptorSet* getSkyboxDescriptorSet() { return &textureManagerPtr->textureMap.at(textureManagerPtr->skyboxID); }
 
 
-		static ImageTracker* constructImageTracker(std::string const& path, bool mipmap);
-
-		//this is specifically for CubeImage
-		static ImageTracker* constructEmptyImageTracker(std::string const& path);
 
 		//EWETexture::TextureData getTextureData(uint32_t textureID) { return textureMap.at(textureID).textureData; }
 	};

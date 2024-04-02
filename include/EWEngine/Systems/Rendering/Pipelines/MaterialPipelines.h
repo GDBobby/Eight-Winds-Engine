@@ -31,7 +31,7 @@ template<>
 struct std::hash<EWE::SkinInstanceKey> {
 	size_t operator()(EWE::SkinInstanceKey const& bptKey) const {
 		size_t seed = 0;
-		EWE::hashCombine(seed, static_cast<uint32_t>(bptKey.boneCount), static_cast<uint32_t>(bptKey.matFlags));
+		EWE::HashCombine(seed, static_cast<uint32_t>(bptKey.boneCount), static_cast<uint32_t>(bptKey.matFlags));
 		return seed;
 	}
 };

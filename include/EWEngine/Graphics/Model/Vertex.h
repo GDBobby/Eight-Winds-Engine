@@ -48,10 +48,10 @@ namespace EWE {
 
         void swapEndian();
     };
-    struct skyVertex {
+    struct SkyVertex {
         glm::vec3 position{ 0.f };
 
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
     };
     struct Vertex {
         glm::vec3 position{ 0.f };
@@ -75,10 +75,10 @@ namespace EWE {
 
         void swapEndian();
     };
-    struct simpleVertex {
+    struct SimpleVertex {
         glm::vec3 position{ 0.f };
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
-        bool operator ==(const simpleVertex& other) const {
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
+        bool operator ==(const SimpleVertex& other) const {
             return position == other.position;
         }
     };

@@ -34,7 +34,7 @@ namespace EWE {
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 		EWEPipeline::enableAlphaBlending(pipelineConfig);
 
-		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
+		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexUI>();
 		pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
 		pipelineConfig.pipelineLayout = PL_2d;
 
@@ -101,7 +101,7 @@ namespace EWE {
 #endif
 
 		dimension2Ptr->pipe2d->bind(cmdBuffer);
-		dimension2Ptr->model2D->bind(cmdBuffer);
+		dimension2Ptr->model2D->Bind(cmdBuffer);
 		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED_DESC;
 		dimension2Ptr->frameIndex = frameIndex;
 		dimension2Ptr->cmdBuffer = cmdBuffer;
@@ -111,7 +111,7 @@ namespace EWE {
 		printf("binding 9ui in dimension 2 \n");
 #endif
 		dimension2Ptr->pipe9->bind(cmdBuffer);
-		dimension2Ptr->nineUIModel->bind(cmdBuffer);
+		dimension2Ptr->nineUIModel->Bind(cmdBuffer);
 		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED_DESC;
 		dimension2Ptr->frameIndex = frameIndex;
 		dimension2Ptr->cmdBuffer = cmdBuffer;
@@ -159,10 +159,10 @@ namespace EWE {
 		//thats really just a feature to check bad programming, dont rely on the programmer being bad. (easy enough to debug)
 
 		vkCmdPushConstants(dimension2Ptr->cmdBuffer, dimension2Ptr->PL_2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-		dimension2Ptr->model2D->draw(dimension2Ptr->cmdBuffer);
+		dimension2Ptr->model2D->Draw(dimension2Ptr->cmdBuffer);
 	}
 	void Dimension2::pushAndDraw(NineUIPushConstantData& push) {
 		vkCmdPushConstants(dimension2Ptr->cmdBuffer, dimension2Ptr->PL_9, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-		dimension2Ptr->nineUIModel->draw(dimension2Ptr->cmdBuffer);
+		dimension2Ptr->nineUIModel->Draw(dimension2Ptr->cmdBuffer);
 	}
 }

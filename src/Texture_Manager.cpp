@@ -12,7 +12,7 @@ namespace EWE {
 
     Texture_Builder::Texture_Builder(bool global) : global(global) {}
 
-    void Texture_Builder::addComponent(std::string const& texPath, VkShaderStageFlags stageFlags, bool mipmaps) {
+    void Texture_Builder::AddComponent(std::string const& texPath, VkShaderStageFlags stageFlags, bool mipmaps) {
         switch (stageFlags) {
             case VK_SHADER_STAGE_VERTEX_BIT: {
                 imageCI[0].emplace_back(texPath, mipmaps);
@@ -61,8 +61,8 @@ namespace EWE {
 
     
 
-    TextureDesc Texture_Builder::build() {
-        auto tmPtr = Texture_Manager::getTextureManagerPtr();
+    TextureDesc Texture_Builder::Build() {
+        auto tmPtr = Texture_Manager::GetTextureManagerPtr();
         
         //size_t myHash = Texture_Manager::hashTexture(paths);
 
@@ -96,7 +96,7 @@ namespace EWE {
                 }
                 else {
                     uniqueDescriptor = true;
-                    imageInfos[currentImage] = Texture_Manager::constructImageTracker(conInfo.path, conInfo.mipmaps);
+                    imageInfos[currentImage] = Texture_Manager::ConstructImageTracker(conInfo.path, conInfo.mipmaps);
                 }
                 currentImage++;
             }
@@ -156,8 +156,8 @@ namespace EWE {
     }
 
 
-    TextureDesc Texture_Builder::createSimpleTexture(std::string path, bool global, bool mipmaps, VkShaderStageFlags shaderStage) {
-        Texture_Manager* tmPtr = Texture_Manager::getTextureManagerPtr();
+    TextureDesc Texture_Builder::CreateSimpleTexture(std::string path, bool global, bool mipmaps, VkShaderStageFlags shaderStage) {
+        Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
 
         Texture_Manager::ImageTracker* imageInfo;
         bool uniqueImage = false;
@@ -189,7 +189,7 @@ namespace EWE {
             }
             else {
                 uniqueImage = true;
-                imageInfo = Texture_Manager::constructImageTracker(texPath, mipmaps);
+                imageInfo = Texture_Manager::ConstructImageTracker(texPath, mipmaps);
 
                 EWEDescriptorWriter descBuilder(TextureDSLInfo::getSimpleDSL(shaderStage), DescriptorPool_Global);
                 descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
@@ -216,7 +216,7 @@ namespace EWE {
 
 
 
-    void Texture_Manager::cleanup() {
+    void Texture_Manager::Cleanup() {
         //call at end of program
 #if DECONSTRUCTION_DEBUG
         printf("beginning of texture cleanup \n");
@@ -248,7 +248,7 @@ namespace EWE {
 
     //return value <flags, textureID>
 
-    void Texture_Manager::clearSceneTextures() {
+    void Texture_Manager::ClearSceneTextures() {
         //everythign created with a mode texture needs to be destroyed. if it persist thru modes, it needs to be a global texture
 #ifdef _DEBUG
         //DBEUUGGIG TEXUTRE BEING CLEARED INCORRECTLY
@@ -258,7 +258,7 @@ namespace EWE {
 
         for (auto& sceneID : sceneIDs) {
 
-            removeMaterialTexture(sceneID);
+            RemoveMaterialTexture(sceneID);
 
 
             std::vector<ImageTracker*>& imageTrackers = textureImages.at(sceneID);
@@ -292,7 +292,7 @@ namespace EWE {
         printf("clear mode textures end \n");
 
     }
-    void Texture_Manager::removeMaterialTexture(TextureDesc removeID) {
+    void Texture_Manager::RemoveMaterialTexture(TextureDesc removeID) {
         for (auto iter = existingMaterials.begin(); iter != existingMaterials.end(); iter++) {
             if (iter->second.texture == removeID) {
                 existingMaterials.erase(iter);
@@ -318,14 +318,14 @@ namespace EWE {
         return &textureManagerPtr->textureMap.at(textureID);
     }
     */
-    Texture_Manager::ImageTracker* Texture_Manager::constructImageTracker(std::string const& path, bool mipmap) {
+    Texture_Manager::ImageTracker* Texture_Manager::ConstructImageTracker(std::string const& path, bool mipmap) {
         ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
 
         new(imageTracker) ImageTracker(path, true);
 
         return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
     }
-    Texture_Manager::ImageTracker* Texture_Manager::constructEmptyImageTracker(std::string const& path) {
+    Texture_Manager::ImageTracker* Texture_Manager::ConstructEmptyImageTracker(std::string const& path) {
 
         ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
         new(imageTracker) ImageTracker();

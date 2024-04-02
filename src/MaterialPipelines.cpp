@@ -27,7 +27,7 @@ namespace EWE {
 	}
 	void MaterialPipelines::bindModel(EWEModel* model) {
 		bindedModel = model;
-		bindedModel->bind(cmdBuf);
+		bindedModel->Bind(cmdBuf);
 	}
 	void MaterialPipelines::bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
 		vkCmdBindDescriptorSets(cmdBuf,
@@ -58,7 +58,7 @@ namespace EWE {
 			throw std::runtime_error("attempting to draw a model while none is binded");
 		}
 #endif
-		bindedModel->draw(cmdBuf);
+		bindedModel->Draw(cmdBuf);
 	}
 	void MaterialPipelines::drawModel() {
 #ifdef _DEBUG
@@ -67,7 +67,7 @@ namespace EWE {
 			throw std::runtime_error("attempting to draw a model while none is binded");
 		}
 #endif
-		bindedModel->draw(cmdBuf);
+		bindedModel->Draw(cmdBuf);
 	}
 	void MaterialPipelines::drawInstanced(EWEModel* model) {
 		model->BindAndDrawInstance(cmdBuf);
@@ -331,7 +331,7 @@ namespace EWE {
 		pipelineConfig.cache = instanceSkinPipelineCache;
 
 		//printf("boneVertex, flags:%d \n", newFlags);
-		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
+		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
 		pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
 		glslang::InitializeProcess();
 		
@@ -398,33 +398,33 @@ namespace EWE {
 		if (hasBones) {
 			if (hasNormal) {
 				//printf("boneVertex, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
+				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
 				pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "bone_Tangent.vert.spv", flags, pipelineConfig, true)).first->second;
 
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertexNoTangent>();
+				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertexNoTangent>();
 				pipelineConfig.attributeDescriptions = boneVertexNoTangent::getAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "bone_NT.vert.spv", flags, pipelineConfig, true)).first->second;
 			}
 		}
 		else {
 			if (hasBumps) {
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
+				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_bump.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
+				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_Tangent.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexNT>();
+				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 				pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_nn.vert.spv", flags, pipelineConfig, false)).first->second;
 			}

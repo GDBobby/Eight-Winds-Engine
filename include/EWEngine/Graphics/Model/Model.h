@@ -45,23 +45,23 @@ namespace EWE {
             std::vector<VertexNT> vertices{};
             std::vector<uint32_t> indices{};
 
-            void loadModel(const std::string& filepath);
+            void LoadModel(const std::string& filepath);
         };
         struct SimpleBuilder {
-            std::vector<simpleVertex> vertices{};
+            std::vector<SimpleVertex> vertices{};
             std::vector<uint32_t> indices{};
 
-            void loadModel(const std::string& filepath);
+            void LoadModel(const std::string& filepath);
         };
         struct GrassBuilder {
             std::vector<GrassVertex> vertices{};
             std::vector<uint32_t> indices{};
 
-            void loadModel(const std::string& filepath);
+            void LoadModel(const std::string& filepath);
         };
 
         template <typename T>
-        static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
+        static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions() {
             std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
             bindingDescriptions[0].binding = 0;
             //printf("size of BVNT:T - %d:%d \n", sizeof(boneVertexNoTangent),sizeof(T));
@@ -71,24 +71,13 @@ namespace EWE {
         }
 
 
-        static std::unique_ptr<EWEModel> createMesh(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
-            return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex, indices);
-        }
+        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t>const& indices);
 
-       static std::unique_ptr<EWEModel> createMesh(void const* verticesData, size_t vertexCount, std::size_t sizeOfVertex) {
-            return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex);
-        }
+        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, size_t vertexCount, std::size_t sizeOfVertex);
 
-        EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
-            assert(vertexCount >= 3 && "vertex count must be at least 3");
-            VertexBuffers(vertexCount, sizeOfVertex, verticesData);
-            createIndexBuffers(indices);
-        }
+       EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t> const& indices);
 
-        EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex) {
-            assert(vertexCount >= 3 && "vertex count must be at least 3");
-            VertexBuffers(vertexCount, sizeOfVertex, verticesData);
-        }
+        EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex);
 
 
         void AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data);
@@ -97,22 +86,22 @@ namespace EWE {
         EWEModel(const EWEModel&) = delete;
         EWEModel& operator=(const EWEModel&) = delete;
 
-        static std::unique_ptr<EWEModel> createModelFromFile(const std::string& filepath);
-        static std::unique_ptr<EWEModel> createSimpleModelFromFile(const std::string& filePath);
-        static std::unique_ptr<EWEModel> createGrassModelFromFile(const std::string& filePath);
+        static std::unique_ptr<EWEModel> CreateModelFromFile(const std::string& filepath);
+        static std::unique_ptr<EWEModel> CreateSimpleModelFromFile(const std::string& filePath);
+        static std::unique_ptr<EWEModel> CreateGrassModelFromFile(const std::string& filePath);
 
         void BindAndDraw(VkCommandBuffer commandBuffer);
-        void bind(VkCommandBuffer commandBuffer);
-        void draw(VkCommandBuffer commandBuffer);
+        void Bind(VkCommandBuffer commandBuffer);
+        void Draw(VkCommandBuffer commandBuffer);
         void BindAndDrawInstance(VkCommandBuffer commandBuffer);
         void BindAndDrawInstanceNoIndex(VkCommandBuffer commandBuffer);
         void BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount);
 
-        uint32_t getVertexCount() { return vertexCount; }
-        uint32_t getIndexCount() { return indexCount; }
+        uint32_t GetVertexCount() { return vertexCount; }
+        uint32_t GetIndexCount() { return indexCount; }
 
         //delete needs to be called on this at destruction, or put it into a smart pointer
-        static EWEBuffer* createIndexBuffer(std::vector<uint32_t> const& indices);
+        static EWEBuffer* CreateIndexBuffer(std::vector<uint32_t> const& indices);
 
     protected:
         //void createVertexBuffers(const std::vector<Vertex>& vertices);
@@ -122,8 +111,8 @@ namespace EWE {
 
         void VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data);
 
-        void createGrassIndexBuffer(void* indexData, uint32_t indexCount);
-        void createIndexBuffers(const std::vector<uint32_t>& indices);
+        void CreateGrassIndexBuffer(void* indexData, uint32_t indexCount);
+        void CreateIndexBuffers(const std::vector<uint32_t>& indices);
 
         std::unique_ptr<EWEBuffer> vertexBuffer;
         uint32_t vertexCount;

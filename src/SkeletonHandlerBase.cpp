@@ -200,7 +200,7 @@ namespace EWE {
             //printf("mesh thread 1 finished \n");
 
             for (auto const& mesh : importMesh.meshes) {
-                meshes.push_back(EWEModel::createMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMesh.vertex_size, mesh.indices));
+                meshes.push_back(EWEModel::CreateMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMesh.vertex_size, mesh.indices));
             }
         }
         if (meshThread2Exist) {
@@ -208,7 +208,7 @@ namespace EWE {
             meshThread2.join();
 
             for (auto const& mesh : importMeshNT.meshes) {
-                meshes.push_back(EWEModel::createMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMeshNT.vertex_size, mesh.indices));
+                meshes.push_back(EWEModel::CreateMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMeshNT.vertex_size, mesh.indices));
             }
             //printf("mesh thread 2 finished \n");
         }

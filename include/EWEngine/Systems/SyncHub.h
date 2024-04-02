@@ -18,6 +18,12 @@ static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {
 	class SyncHub {
 	private:
+		struct SingleTimeStruct {
+			VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
+			VkFence fence{ VK_NULL_HANDLE }; //i could do a pool of fences and pull from it, or a ring buffer
+			VkCommandPool cmdPool;
+		};
+
 		static SyncHub* syncHubSingleton;
 
 		VkDevice device{};
@@ -145,11 +151,12 @@ namespace EWE {
 		std::array<VkCommandBuffer, 5> beginOceanBuffers();
 		void endOceanBuffers();
 		
-		void oceanSubmission();
+		void OceanSubmission();
 		VkCommandBuffer beginComputeBuffer();
 		void endComputeBuffer();
 
-		VkCommandBuffer beginSingleTimeCommands();
+		VkCommandBuffer BeginSingleTimeCommand(VkCommandPool cmdPool);
+		VkCommandBuffer BeginSingleTimeCommands();
 
 		void prepTransferSubmission(VkCommandBuffer transferBuffer);
 		void submitCompute();

@@ -82,10 +82,10 @@ namespace EWE {
         };
         
 
-        void moveInPlaneXZ(EWEGameObject& gameObject);
+        void Move(TransformComponent& transform);
         void move2DPlaneXZ(float dt, Transform2dComponent& transform2d);
-        void zoom(EWEGameObject* gameObject);
-        void rotateCam(EWEGameObject& gameObject);
+        void zoom(TransformComponent& transform);
+        void rotateCam(TransformComponent& transform);
 
         glm::vec2 menuOperation();
         void disableMenu(GLFWwindow* window);

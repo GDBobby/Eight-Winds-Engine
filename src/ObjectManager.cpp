@@ -40,14 +40,14 @@ namespace EWE {
 		printf("after clearing ewe \n");
 		auto clearTextures = materialHandler->checkAndClearTextures();
 		printf("afterr clear texutres \n");
-		Texture_Manager* tmPtr = Texture_Manager::getTextureManagerPtr();
+		Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
 		for (auto& texture : clearTextures) {
 			//printf("each texture : %lu \n", texture);
-			tmPtr->removeMaterialTexture(texture);
+			tmPtr->RemoveMaterialTexture(texture);
 		}
 		for (int i = 0; i < clearTextures.size(); i++) {
 			//printf("each smart texture : %d \n", clearTextures[i]);
-			tmPtr->clearSceneTextures();
+			tmPtr->ClearSceneTextures();
 		}
 		printf("after removing play objects \n");
 	}

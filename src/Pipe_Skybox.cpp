@@ -41,8 +41,8 @@ namespace EWE {
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 
 		pipelineConfig.pipelineLayout = pipeLayout;
-		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<skyVertex>();
-		pipelineConfig.attributeDescriptions = skyVertex::getAttributeDescriptions();
+		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<SkyVertex>();
+		pipelineConfig.attributeDescriptions = SkyVertex::GetAttributeDescriptions();
 
 		std::string vertString = "skybox.vert.spv";
 		std::string fragString = "skybox.frag.spv";

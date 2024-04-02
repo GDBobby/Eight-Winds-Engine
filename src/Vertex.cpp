@@ -18,10 +18,10 @@ namespace EWE {
     }
     */
 
-    std::vector<VkVertexInputAttributeDescription> simpleVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> SimpleVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(simpleVertex, position) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SimpleVertex, position) });
 
         return attributeDescriptions;
     }
@@ -100,10 +100,10 @@ namespace EWE {
 
         return attributeDescriptions;
     }
-    std::vector<VkVertexInputAttributeDescription> skyVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> SkyVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(skyVertex, position) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SkyVertex, position) });
 
         return attributeDescriptions;
     }

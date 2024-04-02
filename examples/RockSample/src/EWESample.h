@@ -30,6 +30,8 @@ namespace EWE {
 		bool gameRunning = true;
 		double renderRefreshRate = 0.0;
 
+		VkDescriptorImageInfo* skyboxInfo{ nullptr };
+
 		void mainThread();
 		void addModulesToMenuManager(float screenWidth, float screenHeight);
 		

@@ -36,10 +36,7 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
-		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout) != VK_SUCCESS) {
-			printf("failed to create simple textured pipe layout \n");
-			throw std::runtime_error("Failed to create pipe layout \n");
-		}
+		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout));
 	}
 
 	void Pipe_SimpleTextured::createPipeline() {
@@ -49,7 +46,7 @@ namespace EWE {
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 
 		pipelineConfig.pipelineLayout = pipeLayout;
-		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexNT>();
+		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
 
 		std::string vertString = "texture_shader.vert.spv";

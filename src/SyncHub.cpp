@@ -1,5 +1,5 @@
 #include "EWEngine/Systems/SyncHub.h"
-
+#include "EWEngine/Global_Macros.h"
 
 #include <future>
 #include <assert.h>
@@ -235,33 +235,19 @@ namespace EWE {
 		//std::cout << "after ending command buffer 4" << std::endl;
 		oceanComputing = true;
 	}
-	void SyncHub::oceanSubmission() {
-		VkResult vkResult;
+	void SyncHub::OceanSubmission() {
 		if (graphicsSemaphoreIndex < MAX_FRAMES_IN_FLIGHT) {
 			oceanSubmitInfo[0].pWaitSemaphores = nullptr;
 			oceanSubmitInfo[0].waitSemaphoreCount = 0;
 		}
 		else {
-			//oceanSubmitInfo[0].pWaitSemaphores = &graphicsToComputeTransferSemaphore;
 			oceanSubmitInfo[0].pWaitSemaphores = &graphicsSemaphore;
 			oceanSubmitInfo[0].waitSemaphoreCount = 1;
 		}
 		for (uint8_t i = 0; i < 4; i++) {
-			//std::cout << "before submitting ocean command buffers " << std::endl;
-			vkResult = vkQueueSubmit(computeQueue, 1, &oceanSubmitInfo[i], nullptr);
-			//std::cout << "after submitting ocean command buffers " << std::endl;
-			if (vkResult != VK_SUCCESS) {
-				std::cout << "failed to submit compute command buffer: " << vkResult << std::endl;
-				throw std::runtime_error("failed to submit compute command buffer");
-			}
+			EWE_VK_ASSERT(vkQueueSubmit(computeQueue, 1, &oceanSubmitInfo[i], nullptr));
 		}
-		//std::cout << "before submitting command buffer " << 4 << std::endl;
-		vkResult = vkQueueSubmit(computeQueue, 1, &oceanSubmitInfo[4], oceanFlightFence);
-		//std::cout << "after submitting command buffer " << 4 << std::endl;
-		//if (vkResult != VK_SUCCESS) {
-		//	std::cout << "failed to submit compute command buffer: " << vkResult << std::endl;
-		//	throw std::runtime_error("failed to submit compute command buffer");
-		//}
+		EWE_VK_ASSERT(vkQueueSubmit(computeQueue, 1, &oceanSubmitInfo[4], oceanFlightFence));
 	}
 	VkCommandBuffer SyncHub::beginComputeBuffer() {
 		VkResult vkResult = vkWaitForFences(device, 1, &computeInFlightFence, VK_TRUE, UINT64_MAX);
@@ -282,7 +268,25 @@ namespace EWE {
 		submitCompute();
 		//computing = true;
 	}
-	VkCommandBuffer SyncHub::beginSingleTimeCommands() {
+	VkCommandBuffer SyncHub::BeginSingleTimeCommand(VkCommandPool cmdPool){
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = 1;
+		allocInfo.commandPool = cmdPool;
+
+		VkCommandBuffer commandBuffer{ VK_NULL_HANDLE };
+		vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+		return commandBuffer;
+	}
+
+	VkCommandBuffer SyncHub::BeginSingleTimeCommands() {
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -316,7 +320,6 @@ namespace EWE {
 	}
 	void SyncHub::submitTransferBuffers() {
 
-		VkResult vkResult;
 		//printf("begin submit transfer \n");
 #ifdef _DEBUG
 		assert(transferBuffers[!transferFlipFlop].size() > 0);
@@ -327,24 +330,14 @@ namespace EWE {
 		transferSubmitInfo.commandBufferCount = static_cast<uint32_t>(transferBuffers[!transferFlipFlop].size());
 		transferSubmitInfo.pCommandBuffers = transferBuffers[!transferFlipFlop].data();
 		//std::cout << "before transfer submit \n";
-		vkResult = vkQueueSubmit(transferQueue, 1, &transferSubmitInfo, singleTimeFence);
+		EWE_VK_ASSERT(vkQueueSubmit(transferQueue, 1, &transferSubmitInfo, singleTimeFence));
 		//std::cout << "after transfer submit \n";
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to queue submit : %d \n", vkResult);
-			throw std::runtime_error("Failed to queue submit in endSingleTimeCommands");
-		}
-		vkResult = vkWaitForFences(device, 1, &singleTimeFence, VK_TRUE, UINT64_MAX);
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to wait for fences : %d \n", vkResult);
-			throw std::runtime_error("Failed to wait for fence in endSingleTimeCommands");
-		}
+
+		EWE_VK_ASSERT(vkWaitForFences(device, 1, &singleTimeFence, VK_TRUE, UINT64_MAX));
+
 		vkResetFences(device, 1, &singleTimeFence);
 
-		vkResult = vkQueueWaitIdle(transferQueue);
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to queue wait idle : %d \n", vkResult);
-			throw std::runtime_error("Failed to wait idle in endSingleTimeCommands");
-		}
+		EWE_VK_ASSERT(vkQueueWaitIdle(transferQueue));
 
 		{
 			std::lock_guard<std::mutex> lock(transferPoolMutex);
@@ -370,15 +363,7 @@ namespace EWE {
 		}
 		*/
 
-		//std::cout << "immediately before queue submit in compute handler \n";
-		VkResult vkResult = vkQueueSubmit(computeQueue, 1, &computeSubmitInfo, computeInFlightFence);
-		//std::cout << "immediately after queue submit in compute \n";
-
-		if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to submit compute command buffer: " << vkResult << std::endl;
-			throw std::runtime_error("failed to submit compute command buffer");
-		}
-		//std::cout << "immediately after queue submit in compute handler \n";
+		EWE_VK_ASSERT(vkQueueSubmit(computeQueue, 1, &computeSubmitInfo, computeInFlightFence));
 	}
 
 	void SyncHub::submitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex) {
@@ -394,7 +379,7 @@ namespace EWE {
 		*/
 		if (oceanComputing) {
 			//std::cout << "OCEAN SUBMISSION \n";
-			oceanSubmission();
+			OceanSubmission();
 			graphicsSemaphoreIndex = frameIndex + MAX_FRAMES_IN_FLIGHT;
 			//std::cout << "AFTER OCEAN SUBMISISON \n";
 			//std::cout << "currently ocean computing : " << oceanComputing << std::endl;
@@ -432,22 +417,10 @@ namespace EWE {
 		submitInfo.pSignalSemaphores = graphicsSignal[graphicsSemaphoreIndex].data();
 		submitInfo.signalSemaphoreCount = static_cast<uint32_t>(graphicsSignal[graphicsSemaphoreIndex].size());
 
-		VkResult vkResult = vkResetFences(device, 1, &inFlightFences[frameIndex]);
-		if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to reset fence : " << vkResult << std::endl;
-		}
-		//std::cout << "immediately before submitting graphics \n";
-		vkResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]);
-		//std::cout << "immediately after submitting graphics \n";
+		EWE_VK_ASSERT(vkResetFences(device, 1, &inFlightFences[frameIndex]));
 
-		if (vkResult != VK_SUCCESS) {
-			std::string errorString = "failed to submit draw command buffer : ";
-			errorString += std::to_string(vkResult);
-			std::cout << errorString << std::endl;
+		EWE_VK_ASSERT(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]));
 
-
-			throw std::runtime_error(errorString);
-		}
 		/*
 		if (oceanComputing) {
 			oceanComputing = false;

@@ -23,7 +23,7 @@ namespace EWE {
         };
 
         //printf("creating new MRO Texture : %s \n", texPath.c_str());
-        auto tmPtr = Texture_Manager::getTextureManagerPtr();
+        auto tmPtr = Texture_Manager::GetTextureManagerPtr();
 
         if (tmPtr->existingMaterials.contains(texPath)) {
             return tmPtr->existingMaterials.at(texPath);
@@ -51,10 +51,10 @@ namespace EWE {
                     //pixelPeek.emplace_back(materialPath);
                     foundTypes[i] = true;
                     if (i == 0) {
-                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
+                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
                     }
                     else {
-                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
+                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
                     }
 
                     break;
@@ -65,10 +65,10 @@ namespace EWE {
                     //pixelPeek.emplace_back(materialPath);
                     foundTypes[i] = true;
                     if (i == 0) {
-                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
+                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
                     }
                     else {
-                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
+                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
                     }
                     break;
                 }
@@ -77,10 +77,10 @@ namespace EWE {
                     //pixelPeek.emplace_back(materialPaths.back());
                     foundTypes[i] = true;
                     if (i == 0) {
-                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
+                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
                     }
                     else {
-                        tBuilder.addComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
+                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
                     }
                     break;
                 }
@@ -108,7 +108,7 @@ namespace EWE {
         //printf("constructng texture from smart \n");
         //textureMap.emplace(returnID, EWETexture{ texPath, device, pixelPeek, tType_material, flags });
 
-        TextureDesc retID = tBuilder.build();
+        TextureDesc retID = tBuilder.Build();
 
         tmPtr->existingMaterials.try_emplace(texPath, flags, retID);
         //existingMaterialIDs[texPath] = std::pair<MaterialFlags, int32_t>{ flags, returnID };

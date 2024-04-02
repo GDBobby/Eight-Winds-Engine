@@ -130,7 +130,7 @@ namespace EWE {
     std::unique_ptr<EWEModel> Basic_Model::createSkyBox(float scale) {
         //hopefully never have to look at this again
 
-        std::vector<skyVertex> vertices = {
+        std::vector<SkyVertex> vertices = {
             {{ -1.0f, -1.0f,  1.0f}}, //0
             {{ -1.0f,  1.0f,  1.0f}}, //1
             {{  1.0f,  1.0f,  1.0f}}, //2
