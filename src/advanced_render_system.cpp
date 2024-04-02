@@ -144,27 +144,27 @@ namespace EWE {
 		printf("drawing skybox \n");
 #endif
 		//skyboxPipeline->bind(frameInfo.frameInfo.cmdBuf);
-		auto pipe = PipelineSystem::at(Pipe_skybox);
-		pipe->bindPipeline();
-		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
-		pipe->bindDescriptor(1, &objectManager.skybox.second);
+		auto pipe = PipelineSystem::At(Pipe_skybox);
+		pipe->BindPipeline();
+		pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+		pipe->BindDescriptor(1, &objectManager.skybox.second);
 
-		pipe->bindModel(objectManager.skybox.first.get());
-		pipe->drawModel();
+		pipe->BindModel(objectManager.skybox.first.get());
+		pipe->DrawModel();
 		
 	}
 
 	inline void AdvancedRenderSystem::renderTexturedGameObjects(FrameInfo& frameInfo) {
 		bool texturePipeBinded = false;
 		if ((objectManager.texturedGameObjects.size() > 0)) {
-			auto pipe = PipelineSystem::at(Pipe_textured);
+			auto pipe = PipelineSystem::At(Pipe_textured);
 #if DEBUGGING_PIPELINES
 			printf("Drawing texutered game objects \n");
 #endif
 			//texturedPipeline->bind(frameInfo.frameInfo.cmdBuf);
 			texturePipeBinded = true;
-			pipe->bindPipeline();
-			pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+			pipe->BindPipeline();
+			pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
 
 
 			//std::cout << "post-bind textured" << std::endl;
@@ -183,7 +183,7 @@ namespace EWE {
 				}
 				else if (textureGameObject.textureID != currentBindedTextureID) {
 
-					pipe->bindDescriptor(0, &textureGameObject.textureID);
+					pipe->BindDescriptor(0, &textureGameObject.textureID);
 
 					currentBindedTextureID = textureGameObject.textureID;
 				}
@@ -192,8 +192,8 @@ namespace EWE {
 				push.normalMatrix = textureGameObject.transform.normalMatrix();
 				//std::cout << "pre-bind/draw : " << i;
 
-				pipe->bindModel(textureGameObject.model.get());
-				pipe->pushAndDraw(&push);
+				pipe->BindModel(textureGameObject.model.get());
+				pipe->PushAndDraw(&push);
 				//std::cout << " ~ post-bind/draw : " << i << std::endl;
 			}
 		}
@@ -255,17 +255,17 @@ namespace EWE {
 #if DEBUGGING_PIPELINES
 		printf("Drawing grass \n");
 #endif
-		PipelineSystem* pipe = PipelineSystem::at(Pipe_grass);
-		pipe->bindPipeline();
-		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
-		pipe->bindDescriptor(1, &objectManager.grassTextureID);
+		PipelineSystem* pipe = PipelineSystem::At(Pipe_grass);
+		pipe->BindPipeline();
+		pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+		pipe->BindDescriptor(1, &objectManager.grassTextureID);
 
 
 		UVScrollingPushData push{ glm::vec2{glm::mod(time / 6.f, 1.f), glm::mod(time / 9.f, 1.f)} };
-		pipe->push(&push);
+		pipe->Push(&push);
 
 		for (const auto& grassField : objectManager.grassField) {
-			pipe->drawInstanced(grassField.model.get());
+			pipe->DrawInstanced(grassField.model.get());
 		}
 #if DEBUGGING_PIPELINES
 		printf("after drawing grass \n");

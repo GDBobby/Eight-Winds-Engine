@@ -13,7 +13,7 @@ namespace EWE {
 		static void createCubeSampler(ImageInfo& cubeTexture);
 
 	public:
-		static TextureDesc createCubeTexture(std::string texPath);
+		static TextureDesc createCubeTexture(std::string texPath, std::string extension = ".png");
 	};
 }
 

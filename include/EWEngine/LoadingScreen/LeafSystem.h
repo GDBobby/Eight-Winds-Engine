@@ -52,16 +52,16 @@ namespace EWE {
 		LeafSystem();
 		~LeafSystem();
 
-		void fallCalculation(float timeStep, uint8_t frameIndex);
-		void loadLeafModel();
-		void render(FrameInfo& frameInfo);
+		void FallCalculation(float timeStep, uint8_t frameIndex);
+		void LoadLeafModel();
+		void Render(FrameInfo& frameInfo);
 
 		std::unique_ptr<EWEModel> leafModel;
 		TextureDesc leafTextureID = 0;
 
 	protected:
-		void createPipeline() final;
-		void createPipeLayout() final;
+		void CreatePipeline() final;
+		void CreatePipeLayout() final;
 
 	private:
 		std::random_device ranDev;

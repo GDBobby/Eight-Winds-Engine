@@ -24,7 +24,7 @@ namespace EWE {
 
 		//MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
 		printf("before sound engine \n");
-		soundEngine = SoundEngine::getSoundEngineInstance();
+		soundEngine = SoundEngine::GetSoundEngineInstance();
 		printf("after sound engine \n");
 
 		//printf("after imagers in ui handler \n");

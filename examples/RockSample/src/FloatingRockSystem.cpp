@@ -68,15 +68,15 @@ namespace EWE {
 	}
 	void FloatingRock::render(FrameInfo& frameInfo) {
 
-		 PipelineSystem::setFrameInfo(frameInfo);
-		auto pipe = PipelineSystem::at(Pipe_textured);
+		 PipelineSystem::SetFrameInfo(frameInfo);
+		auto pipe = PipelineSystem::At(Pipe_textured);
 
-		pipe->bindPipeline();
+		pipe->BindPipeline();
 
-		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
-		pipe->bindDescriptor(1, &rockTexture);
+		pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+		pipe->BindDescriptor(1, &rockTexture);
 
-		pipe->bindModel(rockModel.get());
+		pipe->BindModel(rockModel.get());
 
 
 		SimplePushConstantData push{ renderModelMatrix, renderNormalMatrix };
@@ -89,7 +89,7 @@ namespace EWE {
 				push.modelMatrix[3].y = tempPosition.y;
 				push.modelMatrix[3].z = tempPosition.z;
 
-				pipe->pushAndDraw(&push);
+				pipe->PushAndDraw(&push);
 				//ockCount++;
 				//std::cout << "post draw simple" << std::endl;
 			}

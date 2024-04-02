@@ -69,9 +69,9 @@ namespace EWE {
 		advancedRS.takeUIHandlerPtr(&uiHandler);
 		//advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
-		leafSystem = new LeafSystem();
+		leafSystem = ConstructSingular<LeafSystem>(ewe_call_trace);
 		Dimension2::init();
-		PipelineSystem::emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>(ewe_call_trace)));
+		PipelineSystem::Emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>(ewe_call_trace)));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
 		RigidRenderingSystem::getRigidRSInstance();
@@ -92,8 +92,9 @@ namespace EWE {
 
 	EightWindsEngine::~EightWindsEngine() {
 		Dimension2::destruct();
-		PipelineSystem::destruct();
-		delete leafSystem;
+		PipelineSystem::Destruct();
+		leafSystem->~LeafSystem();
+		ewe_free(leafSystem);
 #if DECONSTRUCTION_DEBUG
 		printf("beginning of EightWindsEngine deconstructor \n");
 #endif
@@ -222,11 +223,11 @@ namespace EWE {
 #endif
 
 					eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
-					leafSystem->fallCalculation(static_cast<float>(renderThreadTime), frameIndex);
+					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameIndex);
 #if false//BENCHMARKING
 					uiHandler.Benchmarking(renderThreadTime, peakRenderTime, averageRenderTime, minRenderTime, highestRenderTime, averageLogicTime, BENCHMARKING_GPU, elapsedGPUMS, averageElapsedGPUMS);
 #endif
-					leafSystem->render(frameInfo);
+					leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);
 					if (eweRenderer.endFrame()) {
@@ -349,7 +350,7 @@ namespace EWE {
 		advancedRS.render2DGameObjects(frameInfo, menuManager.getMenuActive());
 	}
 	void EightWindsEngine::DrawObjects(FrameInfo& frameInfo, double dt) {
-		PipelineSystem::setFrameInfo(frameInfo);
+		PipelineSystem::SetFrameInfo(frameInfo);
 		Draw3DObjects(frameInfo, dt);
 		Draw2DObjects(frameInfo);
 		DrawText(frameInfo, dt);

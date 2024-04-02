@@ -5,7 +5,7 @@ namespace EWE {
 	ShaderGenerationScene::ShaderGenerationScene(EightWindsEngine& ewEngine)
 		: ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
-		soundEngine{ SoundEngine::getSoundEngineInstance() }
+		soundEngine{ SoundEngine::GetSoundEngineInstance() }
 	{}
 	ShaderGenerationScene::~ShaderGenerationScene() {
 		printf("deconstructing main menu \n");
@@ -17,7 +17,7 @@ namespace EWE {
 		printf("after updating pipelines load menu objects, returning \n");
 	}
 	void ShaderGenerationScene::entry() {
-		soundEngine->stopMusic();
+		soundEngine->StopMusic();
 		//soundEngine->playMusic(Music_Menu);
 
 		menuManager.changeMenuState(menu_ShaderGen, 0);

@@ -19,28 +19,30 @@ namespace EWE {
 #ifdef _DEBUG
 		static PipelineID currentPipe;
 		PipelineSystem(PipelineID pipeID) : myID{pipeID} {}
+		~PipelineSystem() {}
 #else
 		PipelineSystem() {}
 #endif
-		virtual void createPipeLayout() = 0;
-		virtual void createPipeline() = 0;
+		virtual void CreatePipeLayout() = 0;
+		virtual void CreatePipeline() = 0;
 
 	public:
-		static void setFrameInfo(FrameInfo frameInfo);
-		static PipelineSystem* at(PipelineID pipeID);
-		static void emplace(PipelineID pipeID, PipelineSystem* pipeSys);
-		static void destruct();
+		static void SetFrameInfo(FrameInfo const& frameInfo);
+		static PipelineSystem* At(PipelineID pipeID);
+		static void Emplace(PipelineID pipeID, PipelineSystem* pipeSys);
+		static void Destruct();
+		static void DestructAt(PipelineID pipeID);
 
-		void bindPipeline();
+		void BindPipeline();
 
-		void bindModel(EWEModel* model);
-		void bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet);
-		void bindTextureDescriptor(uint8_t descSlot, TextureDesc texID);
+		void BindModel(EWEModel* model);
+		void BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet);
+		void BindTextureDescriptor(uint8_t descSlot, TextureDesc texID);
 
-		void push(void* push);
-		virtual void pushAndDraw(void* push);
-		void drawModel();
-		virtual void drawInstanced(EWEModel* model);
+		void Push(void* push);
+		virtual void PushAndDraw(void* push);
+		void DrawModel();
+		virtual void DrawInstanced(EWEModel* model);
 
 	protected:
 		std::unique_ptr<EWEPipeline> pipe{nullptr};

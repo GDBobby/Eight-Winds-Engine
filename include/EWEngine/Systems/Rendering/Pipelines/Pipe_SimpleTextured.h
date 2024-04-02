@@ -12,8 +12,8 @@ namespace EWE {
 		Pipe_SimpleTextured();
 
 	protected:
-		void createPipeLayout() final;
-		void createPipeline() final;
+		void CreatePipeLayout() final;
+		void CreatePipeline() final;
 
 	};
 }

@@ -6,7 +6,7 @@ namespace EWE {
 #define SKYBOX_DIR "textures/skybox/"
 #endif
     
-    TextureDesc Cube_Texture::createCubeTexture(std::string texPath) {
+    TextureDesc Cube_Texture::createCubeTexture(std::string texPath, std::string extension) {
         auto tmPtr = Texture_Manager::GetTextureManagerPtr();
         {
             auto foundImage = tmPtr->imageMap.find(texPath);
@@ -32,7 +32,7 @@ namespace EWE {
             std::string individualPath = SKYBOX_DIR;
             individualPath += texPath;
             individualPath += cubeNames[i];
-            individualPath += ".png";
+            individualPath += extension;
 
             pixelPeeks.emplace_back(individualPath);
 

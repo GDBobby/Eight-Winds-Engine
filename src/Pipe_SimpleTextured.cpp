@@ -8,10 +8,10 @@ namespace EWE {
 #else
 	{
 #endif
-		createPipeline();
+		CreatePipeline();
 	}
 
-	void Pipe_SimpleTextured::createPipeLayout() {
+	void Pipe_SimpleTextured::CreatePipeLayout() {
 		
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -39,8 +39,8 @@ namespace EWE {
 		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout));
 	}
 
-	void Pipe_SimpleTextured::createPipeline() {
-		createPipeLayout();
+	void Pipe_SimpleTextured::CreatePipeline() {
+		CreatePipeLayout();
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);

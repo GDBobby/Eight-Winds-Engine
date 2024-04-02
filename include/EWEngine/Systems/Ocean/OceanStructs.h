@@ -41,7 +41,7 @@ namespace EWE {
             float mScale{ 1.f };
             float mSpreadBlend{ 1.f };
             float mSwell{ 0.f };
-            float mWindSpeed{ 5.f };
+            float mWindSpeed{ 40.f };
             float mPeakEnhancement{ 3.3f };
             float mShortWavesFade{ 0.1f };
             float mFetch{ 100.f };

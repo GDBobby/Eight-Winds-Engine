@@ -10,11 +10,11 @@ namespace EWE {
 	{
 #endif
 
-		createPipeline();
+		CreatePipeline();
 	}
 
 
-	void Pipe_Skybox::createPipeLayout() {
+	void Pipe_Skybox::CreatePipeLayout() {
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -34,8 +34,8 @@ namespace EWE {
 			throw std::runtime_error("Failed to create pipe layout \n");
 		}
 	}
-	void Pipe_Skybox::createPipeline() {
-		createPipeLayout();
+	void Pipe_Skybox::CreatePipeline() {
+		CreatePipeLayout();
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);

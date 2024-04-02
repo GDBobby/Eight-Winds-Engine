@@ -10,12 +10,12 @@ namespace EWE {
 	PipelineID PipelineSystem::currentPipe;
 #endif
 
-	void PipelineSystem::setFrameInfo(FrameInfo frameInfo) {
+	void PipelineSystem::SetFrameInfo(FrameInfo const& frameInfo) {
 		cmdBuf = frameInfo.cmdBuf;
 		frameIndex = frameInfo.index;
 	}
 	
-	void PipelineSystem::emplace(PipelineID pipeID, PipelineSystem* pipeSys) {
+	void PipelineSystem::Emplace(PipelineID pipeID, PipelineSystem* pipeSys) {
 
 #ifdef _DEBUG
 		if (pipelineSystem.find(pipeID) != pipelineSystem.end()) {
@@ -25,7 +25,7 @@ namespace EWE {
 		pipelineSystem.emplace(pipeID, pipeSys);
 	}
 
-	void PipelineSystem::destruct() {
+	void PipelineSystem::Destruct() {
 
 		for (auto iter = pipelineSystem.begin(); iter != pipelineSystem.end(); iter++) {
 			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), iter->second->pipeLayout, nullptr);
@@ -34,13 +34,26 @@ namespace EWE {
 
 		pipelineSystem.clear();
 	}
+	void PipelineSystem::DestructAt(PipelineID pipeID) {
+		auto foundPipe = pipelineSystem.find(pipeID);
+		if (foundPipe != pipelineSystem.end()) {
+			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), foundPipe->second->pipeLayout, nullptr);
+			foundPipe->second->~PipelineSystem();
+		}
+		else {
+			printf("invalid pipe ::at %d \n", pipeID);
 
-	PipelineSystem* PipelineSystem::at(PipelineID pipeID) {
-		if (pipelineSystem.find(pipeID) != pipelineSystem.end()) {
+			throw std::runtime_error("searching for invlaid pipe \n");
+		}
+	}
+
+	PipelineSystem* PipelineSystem::At(PipelineID pipeID) {
+		auto foundPipe = pipelineSystem.find(pipeID);
+		if (foundPipe != pipelineSystem.end()) {
 #ifdef _DEBUG
 			currentPipe = pipeID;
 #endif
-			return pipelineSystem.at(pipeID);
+			return foundPipe->second;
 		}
 		else {
 			printf("invalid pipe ::at %d \n", pipeID);
@@ -49,7 +62,7 @@ namespace EWE {
 		}
 	}
 	
-	void PipelineSystem::bindPipeline() {
+	void PipelineSystem::BindPipeline() {
 #ifdef _DEBUG
 		if (currentPipe != myID) {
 
@@ -61,7 +74,7 @@ namespace EWE {
 		pipe->bind(cmdBuf);
 		bindedTexture = TEXTURE_UNBINDED_DESC;
 	}
-	void PipelineSystem::bindModel(EWEModel* model) {
+	void PipelineSystem::BindModel(EWEModel* model) {
 		bindedModel = model;
 #ifdef _DEBUG
 		if (currentPipe != myID) {
@@ -71,7 +84,7 @@ namespace EWE {
 #endif
 		bindedModel->Bind(cmdBuf);
 	}
-	void PipelineSystem::bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
+	void PipelineSystem::BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
 #ifdef _DEBUG
 		if (currentPipe != myID) {
 			printf("failed desc bind \n");
@@ -88,19 +101,19 @@ namespace EWE {
 		
 	}
 	//EWETexture::getDescriptorSets(tileSet.tileSetTexture, frameIndex)
-	void PipelineSystem::bindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
+	void PipelineSystem::BindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
 		if (bindedTexture != texID) {
-			bindDescriptor(descSlot, &texID);
+			BindDescriptor(descSlot, &texID);
 			bindedTexture = texID;
 		}
 	}
 
 
-	void PipelineSystem::push(void* push) {
+	void PipelineSystem::Push(void* push) {
 		vkCmdPushConstants(cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
 	}
 
-	void PipelineSystem::pushAndDraw(void* push) {
+	void PipelineSystem::PushAndDraw(void* push) {
 		vkCmdPushConstants(cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
 		
 #ifdef _DEBUG
@@ -115,7 +128,7 @@ namespace EWE {
 #endif
 		bindedModel->Draw(cmdBuf);
 	}
-	void PipelineSystem::drawModel() {
+	void PipelineSystem::DrawModel() {
 #ifdef _DEBUG
 		if (bindedModel == nullptr) {
 			printf("failed model draw \n");
@@ -128,7 +141,7 @@ namespace EWE {
 #endif
 		bindedModel->Draw(cmdBuf);
 	}
-	void PipelineSystem::drawInstanced(EWEModel* model) {
+	void PipelineSystem::DrawInstanced(EWEModel* model) {
 		model->BindAndDrawInstance(cmdBuf);
 	}
 }

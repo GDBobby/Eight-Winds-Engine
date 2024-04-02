@@ -30,9 +30,9 @@ namespace EWE {
 		}
 
 		leafs.resize(LEAF_COUNT);
-		loadLeafModel();
+		LoadLeafModel();
 
-		createPipeline();
+		CreatePipeline();
 		leafTextureID = Texture_Builder::CreateSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 
@@ -115,7 +115,7 @@ namespace EWE {
 #endif
 	}
 
-	void LeafSystem::fallCalculation(float timeStep, uint8_t frameIndex) {
+	void LeafSystem::FallCalculation(float timeStep, uint8_t frameIndex) {
 		//angF = angularFrequency * timestep
 		//EllRatio = ratio of minor to major axis in ellipse
 		//rotRatio = ratio of elliptical oscillation to rotation of leaf itself
@@ -291,7 +291,7 @@ namespace EWE {
 		//could use a buffer and trim instances that are out of view, might be a compute shader kinda thing
 
 	}
-	void LeafSystem::loadLeafModel() {
+	void LeafSystem::LoadLeafModel() {
 		//printf("loading leaf model \n");
 		std::ifstream inFile("models/leaf_simpleNTMesh.ewe", std::ifstream::binary);
 		//inFile.open();
@@ -318,23 +318,23 @@ namespace EWE {
 		leafModel = EWEModel::CreateMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices);
 		//printf("leaf model loaded \n");
 	}
-	void LeafSystem::render(FrameInfo& frameInfo) {
-		setFrameInfo(frameInfo);
+	void LeafSystem::Render(FrameInfo& frameInfo) {
+		SetFrameInfo(frameInfo);
 #ifdef _DEBUG
 		currentPipe = myID;
 #endif
-		bindPipeline();
-		bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+		BindPipeline();
+		BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
 
 		//printf("after binding descriptor set 0 \n");
-		bindDescriptor(1, &leafTextureID);
+		BindDescriptor(1, &leafTextureID);
 
-		bindDescriptor(2, &transformDescriptor[frameInfo.index]);
+		BindDescriptor(2, &transformDescriptor[frameInfo.index]);
 
 		leafModel->BindAndDrawInstanceNoBuffer(cmdBuf, LEAF_COUNT);
 	}
-	void LeafSystem::createPipeline() {
-		createPipeLayout();
+	void LeafSystem::CreatePipeline() {
+		CreatePipeLayout();
 
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
@@ -355,7 +355,7 @@ namespace EWE {
 
 		pipe = std::make_unique<EWEPipeline>(vertexShaderModule, fragmentShaderModule, pipelineConfig);
 	}
-	void LeafSystem::createPipeLayout() {
+	void LeafSystem::CreatePipeLayout() {
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 

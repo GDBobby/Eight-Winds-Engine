@@ -53,7 +53,7 @@ namespace EWE {
 		music.resize(engines.size());
 		voices.resize(engines.size());
 
-		initEngines(pPlaybackDeviceInfos, playbackDeviceCount);
+		InitEngines(pPlaybackDeviceInfos, playbackDeviceCount);
 
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &effectGroup);
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &musicGroup);
@@ -61,7 +61,7 @@ namespace EWE {
 
 		bool foundMatchingDevice = false;
 
-		loadHowlingWind();
+		LoadHowlingWind();
 		initVolume();
 		if ((volumes[(uint8_t)SoundVolume::master] > 0.f) && (volumes[(uint8_t)SoundVolume::music] > 0.f)) {
 			currentSong = 65534;
@@ -89,7 +89,7 @@ namespace EWE {
 		ma_resource_manager_uninit(&resourceManager);
 	}
 
-	void SoundEngine::switchDevices(uint16_t deviceIterator) {
+	void SoundEngine::SwitchDevices(uint16_t deviceIterator) {
 		if ((deviceIterator < 0) || (deviceIterator > devices.size())) {
 #ifdef _DEBUG
 			printf("failed to switch devices - %d:%lld \n", deviceIterator, devices.size());
@@ -125,12 +125,12 @@ namespace EWE {
 			effects.at(selectedEngine).clear();
 			music.at(selectedEngine).clear();
 			selectedEngine = deviceIterator;
-			reloadSounds();
+			ReloadSounds();
 		}
 			
 	}
 
-	void SoundEngine::playMusic(uint16_t whichSong, bool repeat) {
+	void SoundEngine::PlayMusic(uint16_t whichSong, bool repeat) {
 		printf("starting music \n");
 
 		currentSong = whichSong;
@@ -145,7 +145,7 @@ namespace EWE {
 			return;
 		}
 	}
-	void SoundEngine::playEffect(uint16_t whichEffect, bool looping) {
+	void SoundEngine::PlayEffect(uint16_t whichEffect, bool looping) {
 		printf("starting sound \n");
 		
 		if(selectedEngine > effects.size()){
@@ -166,11 +166,11 @@ namespace EWE {
 			return;
 		}
 	}
-	void SoundEngine::stopEfect(uint16_t whichEffect) {
+	void SoundEngine::StopEfect(uint16_t whichEffect) {
 		ma_sound_stop(&effects.at(selectedEngine).at(whichEffect));
 	}
 
-	void SoundEngine::loadHowlingWind() {
+	void SoundEngine::LoadHowlingWind() {
 		bin2cpp::File const* hWind = &bin2cpp::getHowlingWindFile();
 		
 		ma_decoder_config decoderConfig = ma_decoder_config_init(ma_format_f32, 2, 48000);
@@ -194,7 +194,7 @@ namespace EWE {
 
 		}
 	}
-	void SoundEngine::initEngines(ma_device_info* deviceInfos, uint32_t deviceCount) {
+	void SoundEngine::InitEngines(ma_device_info* deviceInfos, uint32_t deviceCount) {
 
 		ma_engine_config engineConfig;
 		engineConfig = ma_engine_config_init();
@@ -313,7 +313,7 @@ namespace EWE {
 		printf("after init engines, selected device : %d \n", selectedEngine);
 	}
 
-	void SoundEngine::loadSoundMap(std::unordered_map<uint16_t, std::string>& loadSounds, SoundType soundType) {
+	void SoundEngine::LoadSoundMap(std::unordered_map<uint16_t, std::string>& loadSounds, SoundType soundType) {
 		if (selectedEngine > engines.size()) {
 			printf("selected engine isinvalid when loading effects \n");
 			return;
@@ -399,7 +399,7 @@ namespace EWE {
 		}
 
 	}
-	void SoundEngine::reloadSounds() {
+	void SoundEngine::ReloadSounds() {
 		ma_result result;
 		//effects
 		printf("before reloading effects \n");
@@ -436,7 +436,7 @@ namespace EWE {
 		initVolume();
 		printf("after reloading music \n");
 	}
-	void SoundEngine::setVolume(SoundVolume whichVolume, uint8_t value) {
+	void SoundEngine::SetVolume(SoundVolume whichVolume, uint8_t value) {
 		auto& volume = this->volumes[(uint8_t)whichVolume];
 		volume = static_cast<float>(value) / 100.f;
 

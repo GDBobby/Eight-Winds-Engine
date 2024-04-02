@@ -15,7 +15,7 @@ namespace EWE {
 	EWESample::EWESample(EightWindsEngine& ewEngine) :
 		ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
-		soundEngine{SoundEngine::getSoundEngineInstance()},
+		soundEngine{SoundEngine::GetSoundEngineInstance()},
 		windowPtr{ewEngine.mainWindow.getGLFWwindow()}
  {
 		float screenWidth = ewEngine.uiHandler.getScreenWidth();
@@ -24,12 +24,13 @@ namespace EWE {
 		std::unordered_map<uint16_t, std::string> effectsMap{};
 		effectsMap.emplace(0, "sounds/effects/click.mp3");
 		printf("loading effects \n");
-		soundEngine->loadSoundMap(effectsMap, SoundEngine::SoundType::Effect);
+		soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect);
 
 		addModulesToMenuManager(screenWidth, screenHeight);
 		loadGlobalObjects();
-		currentScene = scene_mainmenu;
-		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine, skyboxInfo));
+		currentScene = scene_ocean;
+		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine));
+		scenes.emplace(scene_ocean, std::make_unique<OceanScene>(ewEngine, skyboxInfo));
 		scenes.emplace(scene_shaderGen, std::make_unique<ShaderGenerationScene>(ewEngine));
 		//scenes.emplace(scene_)
 		currentScenePtr = scenes.at(currentScene).get();
@@ -125,12 +126,12 @@ namespace EWE {
 	}
 
 	void EWESample::loadGlobalObjects() {
-		std::string skyboxLoc = "nasa/";
-		TextureDesc skyboxID = Cube_Texture::createCubeTexture("nasa/");
+		std::string skyboxLoc = "nasa2/";
+		TextureDesc skyboxID = Cube_Texture::createCubeTexture(skyboxLoc);
 		skyboxInfo = Texture_Manager::GetDescriptorImageInfo(skyboxLoc);
 
 		//i dont even know if the engine will work if this isnt constructed
-		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(100.f), skyboxID };
+		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(10000.f), skyboxID };
 
 		//point lights are off by default
 		std::vector<glm::vec3> lightColors{
@@ -173,7 +174,7 @@ namespace EWE {
 		if (clickReturns.size() == 0) {
 			return false;
 		}
-		soundEngine->playEffect(0);
+		soundEngine->PlayEffect(0);
 		uint16_t processMCR = clickReturns.front();
 		while (clickReturns.size() > 0) {
 			clickReturns.pop();
