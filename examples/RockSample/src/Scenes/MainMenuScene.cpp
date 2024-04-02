@@ -62,7 +62,7 @@ namespace EWE {
 			cameraControl.rotateCam(transform);
 			cameraControl.zoom(transform);
 
-			ewEngine.camera.SetViewDirection(transform.translation, transform.rotation);
+			ewEngine.camera.SetViewYXZ(transform.translation, transform.rotation);
 			ewEngine.camera.BindUBO(frameInfo.index);
 
 			ewEngine.DrawObjects(frameInfo, dt);

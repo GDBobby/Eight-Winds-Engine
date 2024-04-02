@@ -120,7 +120,7 @@ namespace EWE {
 		uniformBuffers->at(currentFrame)->flush();
 	}
 
-	void EWECamera::SetViewYXZ(glm::vec3 position, glm::vec3 rotation) {
+	void EWECamera::SetViewYXZ(glm::vec3 const& position, glm::vec3 const& rotation) {
 		const float c3 = glm::cos(rotation.z);
 		const float s3 = glm::sin(rotation.z);
 		const float c2 = glm::cos(rotation.x);

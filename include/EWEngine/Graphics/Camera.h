@@ -24,7 +24,7 @@ namespace EWE {
 		//void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up = glm::vec3{ 0.0f,1.0f, 0.0f });
 		void NewViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp);
 		void ViewTargetDirect(uint8_t currentFrame);
-		void SetViewYXZ(glm::vec3 position, glm::vec3 rotation);
+		void SetViewYXZ(glm::vec3 const& position, glm::vec3 const& rotation);
 
 		const glm::mat4& GetProjection() const { return ubo.projection; }
 		const glm::mat4& GetView() const { return ubo.view; }
