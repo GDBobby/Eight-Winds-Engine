@@ -36,8 +36,7 @@ namespace EWE {
                 memcpy(this, &ifsData, sizeof(IntialFrequencySpectrumPushData));
             }
         };
-        struct JONSWAP_Parameters
-        {
+        struct JONSWAP_Parameters {
             float mScale{ 1.f };
             float mSpreadBlend{ 1.f };
             float mSwell{ 0.f };

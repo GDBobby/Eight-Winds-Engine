@@ -107,7 +107,7 @@ namespace EWE {
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         
 
-        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), instanceBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), instanceBuffer->getBuffer(), bufferSize);
     }
     /*
     void EWEModel::updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf) {
@@ -154,7 +154,7 @@ namespace EWE {
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
     }
     void EWEModel::CreateGrassIndexBuffer(void* indexData, uint32_t indexCount) {
         VkDeviceSize bufferSize = indexCount * 4;
@@ -176,7 +176,7 @@ namespace EWE {
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
 
     EWEBuffer* EWEModel::CreateIndexBuffer(std::vector<uint32_t> const& indices) {
@@ -202,7 +202,7 @@ namespace EWE {
         indexBuffer = ConstructSingular<EWEBuffer>(ewe_call_trace, indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
 
         return indexBuffer;
     }
@@ -235,7 +235,7 @@ namespace EWE {
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        EWEDevice::GetEWEDevice()->copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
 
     void EWEModel::Draw(VkCommandBuffer commandBuffer) {

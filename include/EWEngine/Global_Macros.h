@@ -15,6 +15,7 @@
         logFile.open(GPU_LOG_FILE, std::ios::app); \
         assert(logFile.is_open() && "Failed to open log file"); \
         logFile << "VK_ERROR : " << __FILE__ << '(' << __LINE__ << ") : " << __FUNCTION__ << " - " << result << '\n'; \
+        logFile.close(); \
         assert(result == VK_SUCCESS && "VK_ERROR"); \
 	}}
 #else

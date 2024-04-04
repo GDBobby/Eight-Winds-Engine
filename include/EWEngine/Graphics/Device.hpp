@@ -28,7 +28,7 @@ namespace EWE {
     };
 
     struct QueueFamilyIndices {
-        enum Queue_Enum {
+        enum Queue_Enum : uint16_t {
             q_graphics,
             q_present,
             q_compute,
@@ -36,7 +36,7 @@ namespace EWE {
         };
 
         std::array<uint32_t, 4> familyIndices;
-        std::array<uint32_t, 4> familyHasIndex = {false, false, false, false};
+        std::array<bool, 4> familyHasIndex = {false, false, false, false};
         /*
         uint32_t graphicsFamily;
         uint32_t presentFamily;
@@ -73,12 +73,12 @@ namespace EWE {
             return eweDevice;
         }
         static VkDevice GetVkDevice() {
-            return GetEWEDevice()->device();
+            return eweDevice->Device();
         }
 
         VkFormatProperties GetVkFormatProperties(VkFormat imageFormat) {
             VkFormatProperties formatProperties;
-            vkGetPhysicalDeviceFormatProperties(getPhysicalDevice(), imageFormat, &formatProperties);
+            vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
             return formatProperties;
         }
 
@@ -87,59 +87,51 @@ namespace EWE {
         VkCommandPool getComputeCommandPool() {
             return computeCommandPool;
         }
-        VkDevice device() { return device_; }
-        VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
+        VkDevice Device() { return device_; }
+        VkPhysicalDevice GetPhysicalDevice() { return physicalDevice; }
         VkSurfaceKHR surface() { return surface_; }
-        VkQueue graphicsQueue() { return graphicsQueue_; }
-        uint32_t getGraphicsIndex() { return graphicsIndex; }
+        VkQueue GetGraphicsQueue() { return graphicsQueue_; }
+        uint32_t GetGraphicsIndex() { return graphicsIndex; }
 
-        VkQueue presentQueue() { return presentQueue_; }
-        uint32_t getPresentIndex() { return presentIndex; }
+        VkQueue PresentQueue() { return presentQueue_; }
+        uint32_t GetPresentIndex() { return presentIndex; }
 
         //VkQueue computeQueue() { return computeQueue_; }
         //uint32_t getComputeIndex() { return computeIndex; }
 
-        uint32_t getTransferIndex() { return transferIndex; }
-        VkQueue transferQueue() { return transferQueue_; }
+        uint32_t GetAsyncTransferIndex() { return transferIndex; }
+        VkQueue GetAsyncTransferQueue() { return transferQueue_; }
 
-        uint32_t getComputeIndex() { return computeIndex; }
-        VkQueue computeQueue() { return computeQueue_; }
+        uint32_t GetAsyncComputeIndex() { return computeIndex; }
+        VkQueue GetAsyncComputeQueue() { return computeQueue_; }
 
-        std::vector<uint32_t> getComputeGraphicsIndex() {
-            if (computeIndex == graphicsIndex) {
-                return { graphicsIndex };
-            }
-            else {
-                return { graphicsIndex, computeIndex };
-            }
-        }
 
         std::string deviceName;
 
-        SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physicalDevice); }
-        uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-        const QueueFamilyIndices& getPhysicalQueueFamilies() { return queueFamilyIndices; }
+        SwapChainSupportDetails GetSwapChainSupport() { return QuerySwapChainSupport(physicalDevice); }
+        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        const QueueFamilyIndices& GetPhysicalQueueFamilies() { return queueFamilyIndices; }
 
-        VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
         // Buffer Helper Functions
-        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-        void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+        void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+        void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
         //void endSingleTimeCommandsSecondThread(VkCommandBuffer commandBuffer);
-        void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void copySecondaryBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer cmdBuf);
+        void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        void CopySecondaryBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer cmdBuf);
 
-        void transitionImageLayout(VkImage& image, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
+        void TransitionImageLayout(VkImage& image, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
         void TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImage> const& images);
         void TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image);
 
-        void setImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange);
+        void SetImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange);
 
-        void copyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount);
-        void createImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        void CopyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount);
+        void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
-        VkInstance getInstance() { return instance; }
-        const VkPhysicalDeviceProperties& getProperties() { return properties; }
+        VkInstance GetInstance() { return instance; }
+        const VkPhysicalDeviceProperties& GetProperties() { return properties; }
 
         VkDeviceSize GetMemoryRemaining();
 
@@ -147,27 +139,7 @@ namespace EWE {
 
     private:
         VkPhysicalDeviceProperties properties{};
-        void createInstance();
-        void setupDebugMessenger();
-        void createSurface();
-        void pickPhysicalDevice();
-        void createLogicalDevice();
-
-        void createCommandPool();
-        void createComputeCommandPool();
-        void createTransferCommandPool();
-
         QueueFamilyIndices queueFamilyIndices;
-
-        // helper functions
-        bool isDeviceSuitable(VkPhysicalDevice device);
-        std::vector<const char*> getRequiredExtensions(); //glfw
-        bool checkValidationLayerSupport();
-        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-        void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-        void hasGflwRequiredInstanceExtensions();
-        bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-        SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
@@ -175,7 +147,7 @@ namespace EWE {
         MainWindow& window;
         VkCommandPool commandPool{ VK_NULL_HANDLE };
         VkCommandPool transferCommandPool{ VK_NULL_HANDLE };
-        VkCommandPool computeCommandPool{VK_NULL_HANDLE};
+        VkCommandPool computeCommandPool{ VK_NULL_HANDLE };
 
         VkDevice device_;
         VkSurfaceKHR surface_;
@@ -188,12 +160,35 @@ namespace EWE {
         uint32_t computeIndex;
         uint32_t transferIndex;
 
-        //std::thread::id mainThreadID;
         SyncHub* syncHub;
 
         const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
         const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
         // if doing full screen                                                              VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
+
+        void CreateInstance();
+        void SetupDebugMessenger();
+        void CreateSurface();
+        void PickPhysicalDevice();
+        void CreateLogicalDevice();
+
+        void CreateCommandPool();
+        void CreateComputeCommandPool();
+        void CreateTransferCommandPool();
+
+
+        // helper functions
+        bool IsDeviceSuitable(VkPhysicalDevice device);
+        std::vector<const char*> GetRequiredExtensions(); //glfw
+        bool CheckValidationLayerSupport();
+        QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+        void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+        void HasGflwRequiredInstanceExtensions();
+        bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
+        SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
+
+
+
     };
 
 }  // namespace EWE

@@ -152,7 +152,7 @@ namespace EWE {
         //printf("create swap chain \n");
 
         EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
-        SwapChainSupportDetails swapChainSupport = eweDevice->getSwapChainSupport();
+        SwapChainSupportDetails swapChainSupport = eweDevice->GetSwapChainSupport();
 
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -178,7 +178,7 @@ namespace EWE {
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        uint32_t queueFamilyIndices[] = { eweDevice->getGraphicsIndex(), eweDevice->getPresentIndex() };
+        uint32_t queueFamilyIndices[] = { eweDevice->GetGraphicsIndex(), eweDevice->GetPresentIndex() };
 
         /*
         if (queueFamilyIndices[0] != queueFamilyIndices[1]) {
@@ -310,7 +310,7 @@ namespace EWE {
             imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             imageInfo.flags = 0;
 
-            EWEDevice::GetEWEDevice()->createImageWithInfo(
+            EWEDevice::GetEWEDevice()->CreateImageWithInfo(
                 imageInfo,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 depthImages[i],
@@ -431,7 +431,7 @@ namespace EWE {
     }
 
     VkFormat EWESwapChain::findDepthFormat() {
-        return EWEDevice::GetEWEDevice()->findSupportedFormat(
+        return EWEDevice::GetEWEDevice()->FindSupportedFormat(
             {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
             VK_IMAGE_TILING_OPTIMAL,
             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT

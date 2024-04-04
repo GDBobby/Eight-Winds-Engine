@@ -19,11 +19,11 @@ namespace EWE {
 		ImGui_ImplGlfw_InitForVulkan(window, true);
 		EWEDevice* const& device = EWEDevice::GetEWEDevice();
 		ImGui_ImplVulkan_InitInfo init_info = {};
-		init_info.Instance = device->getInstance();
-		init_info.PhysicalDevice = device->getPhysicalDevice();
-		init_info.Device = device->device();
-		init_info.QueueFamily = device->getGraphicsIndex();
-		init_info.Queue = device->graphicsQueue();
+		init_info.Instance = device->GetInstance();
+		init_info.PhysicalDevice = device->GetPhysicalDevice();
+		init_info.Device = device->Device();
+		init_info.QueueFamily = device->GetGraphicsIndex();
+		init_info.Queue = device->GetGraphicsQueue();
 		init_info.PipelineCache = nullptr;
 		init_info.Allocator = nullptr;
 		init_info.MinImageCount = imageCount;

@@ -59,7 +59,7 @@ namespace EWE {
 
 			VkFormatProperties formatProperties;
 			// Get device properties for the requested texture format
-			vkGetPhysicalDeviceFormatProperties(eweDevice->getPhysicalDevice(), format, &formatProperties);
+			vkGetPhysicalDeviceFormatProperties(eweDevice->GetPhysicalDevice(), format, &formatProperties);
 			// Check if requested image format supports image storage operations required for storing pixel from the compute shader
 			assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
 
@@ -81,24 +81,24 @@ namespace EWE {
 			// If compute and graphics queue family indices differ, we create an image that can be shared between them
 			// This can result in worse performance than exclusive sharing mode, but save some synchronization to keep the sample simple
 
-			uint32_t queueFamilyIndices[] = { eweDevice->getGraphicsIndex(), eweDevice->getPresentIndex() };
+			uint32_t queueFamilyIndices[] = { eweDevice->GetGraphicsIndex(), eweDevice->GetPresentIndex() };
 			const bool differentFamilies = (queueFamilyIndices[0] != queueFamilyIndices[1]);
 			imageCreateInfo.sharingMode = (VkSharingMode)differentFamilies;
 			imageCreateInfo.queueFamilyIndexCount = 1 + differentFamilies;
 			imageCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
-			eweDevice->createImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanOutputImages, oceanOutputImageMemory);
+			eweDevice->CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanOutputImages, oceanOutputImageMemory);
 
 			imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
 			imageCreateInfo.arrayLayers = cascade_count;
-			eweDevice->createImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanFreqImages, oceanFreqImageMemory);
+			eweDevice->CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanFreqImages, oceanFreqImageMemory);
 
 
-			eweDevice->transitionImageLayout(oceanOutputImages,
+			eweDevice->TransitionImageLayout(oceanOutputImages,
 				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
 				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
 				1, cascade_count * 3
 			);			
-			eweDevice->transitionImageLayout(oceanFreqImages,
+			eweDevice->TransitionImageLayout(oceanFreqImages,
 				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
 				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
 				1, cascade_count
@@ -119,7 +119,7 @@ namespace EWE {
 			samplerInfo.minLod = 0.0f;
 			samplerInfo.maxLod = 1.0f;
 			samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-			vkCreateSampler(eweDevice->device(), &samplerInfo, nullptr, &oceanOutputImageInfoDescriptorCompute.sampler);
+			vkCreateSampler(eweDevice->Device(), &samplerInfo, nullptr, &oceanOutputImageInfoDescriptorCompute.sampler);
 			oceanOutputImageInfoDescriptorGraphics.sampler = oceanOutputImageInfoDescriptorCompute.sampler;
 
 			// Create image view
@@ -134,11 +134,11 @@ namespace EWE {
 			view.subresourceRange.baseArrayLayer = 0;
 			view.subresourceRange.layerCount = cascade_count * 3;
 			view.image = oceanOutputImages;
-			EWE_VK_ASSERT(vkCreateImageView(eweDevice->device(), &view, nullptr, &oceanOutputImageInfoDescriptorCompute.imageView));
+			EWE_VK_ASSERT(vkCreateImageView(eweDevice->Device(), &view, nullptr, &oceanOutputImageInfoDescriptorCompute.imageView));
 			oceanOutputImageInfoDescriptorGraphics.imageView = oceanOutputImageInfoDescriptorCompute.imageView;
 			view.image = oceanFreqImages;
 			view.subresourceRange.layerCount = cascade_count;
-			EWE_VK_ASSERT(vkCreateImageView(eweDevice->device(), &view, nullptr, &oceanFreqImageInfoDescriptor.imageView));
+			EWE_VK_ASSERT(vkCreateImageView(eweDevice->Device(), &view, nullptr, &oceanFreqImageInfoDescriptor.imageView));
 
 
 			// Initialize a descriptor for later use

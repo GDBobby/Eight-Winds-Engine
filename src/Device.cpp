@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include <unordered_set>
+#include <stack>
 #include <set>
 
 #define ENGINE_DIR "../"
@@ -95,18 +96,18 @@ namespace EWE {
         }
 #endif
 
-        createInstance();
+        CreateInstance();
         //printf("after creating device instance \n");
-        setupDebugMessenger();
+        SetupDebugMessenger();
         //printf("after setup debug messenger \n");
-        createSurface();
+        CreateSurface();
         //printf("after creating device surface \n");
-        pickPhysicalDevice();
+        PickPhysicalDevice();
         //printf("after picking physical device \n");
-        createLogicalDevice();
+        CreateLogicalDevice();
         //printf("after creating logical device \n");
-        createCommandPool();
-        createComputeCommandPool();
+        CreateCommandPool();
+        CreateComputeCommandPool();
 #if GPU_LOGGING
         //printf("opening file? \n");
         {
@@ -116,7 +117,7 @@ namespace EWE {
         }
 #endif
         //printf("after creating command pool, end of device constructor \n");
-        createTransferCommandPool();
+        CreateTransferCommandPool();
 #if GPU_LOGGING
         //printf("opening file? \n");
         {
@@ -166,8 +167,8 @@ namespace EWE {
 #endif
     }
 
-    void EWEDevice::createInstance() {
-        if (enableValidationLayers && !checkValidationLayerSupport()) {
+    void EWEDevice::CreateInstance() {
+        if (enableValidationLayers && !CheckValidationLayerSupport()) {
 
 #if GPU_LOGGING
             std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
@@ -199,7 +200,7 @@ namespace EWE {
 #endif
         }
 
-        std::vector<const char*> extensions = getRequiredExtensions();
+        std::vector<const char*> extensions = GetRequiredExtensions();
         //extensions.push_back("VK_KHR_get_physical_Device_properties2");
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
@@ -209,7 +210,7 @@ namespace EWE {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
             createInfo.ppEnabledLayerNames = validationLayers.data();
 
-            populateDebugMessengerCreateInfo(debugCreateInfo);
+            PopulateDebugMessengerCreateInfo(debugCreateInfo);
             createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
         }
         else {
@@ -219,10 +220,10 @@ namespace EWE {
 
         EWE_VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &instance));
 
-        hasGflwRequiredInstanceExtensions();
+        HasGflwRequiredInstanceExtensions();
     }
 
-    void EWEDevice::pickPhysicalDevice() {
+    void EWEDevice::PickPhysicalDevice() {
 
         uint32_t deviceCount = 16;
         //deviceCount = 2;
@@ -275,7 +276,7 @@ namespace EWE {
         //bigger score == gooder device
         //printf("after getting scores \n");
         for (auto iter = deviceScores.begin(); iter != deviceScores.end(); iter++) {
-            if (isDeviceSuitable(devices[iter->second])) {
+            if (IsDeviceSuitable(devices[iter->second])) {
                 physicalDevice = devices[iter->second];
                 break;
             }
@@ -316,7 +317,7 @@ namespace EWE {
         //printf("max draw vertex count : %d \n", properties.limits.maxDrawVertexCount);
     }
 
-    void EWEDevice::createLogicalDevice() {
+    void EWEDevice::CreateLogicalDevice() {
         //queueFamilyIndices = findQueueFamilies(physicalDevice);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -476,7 +477,7 @@ namespace EWE {
         }
 #endif
     }
-    void EWEDevice::createComputeCommandPool() {
+    void EWEDevice::CreateComputeCommandPool() {
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.queueFamilyIndex = computeIndex;
@@ -487,7 +488,7 @@ namespace EWE {
         EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &computeCommandPool));
     }
 
-    void EWEDevice::createCommandPool() {
+    void EWEDevice::CreateCommandPool() {
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.queueFamilyIndex = graphicsIndex;
@@ -495,7 +496,7 @@ namespace EWE {
 
         EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool));
     }
-    void EWEDevice::createTransferCommandPool() {
+    void EWEDevice::CreateTransferCommandPool() {
 
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -512,17 +513,17 @@ namespace EWE {
         EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &transferCommandPool));
     }
 
-    void EWEDevice::createSurface() { window.createWindowSurface(instance, &surface_, GPU_LOGGING); }
+    void EWEDevice::CreateSurface() { window.createWindowSurface(instance, &surface_, GPU_LOGGING); }
 
-    bool EWEDevice::isDeviceSuitable(VkPhysicalDevice device) {
-        queueFamilyIndices = findQueueFamilies(device);
+    bool EWEDevice::IsDeviceSuitable(VkPhysicalDevice device) {
+        queueFamilyIndices = FindQueueFamilies(device);
 
-        bool extensionsSupported = checkDeviceExtensionSupport(device);
+        bool extensionsSupported = CheckDeviceExtensionSupport(device);
 
 
         bool swapChainAdequate = false;
         if (extensionsSupported) {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+            SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
             swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         }
 
@@ -533,7 +534,7 @@ namespace EWE {
             supportedFeatures.samplerAnisotropy;
     }
 
-    void EWEDevice::populateDebugMessengerCreateInfo(
+    void EWEDevice::PopulateDebugMessengerCreateInfo(
         VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -546,17 +547,17 @@ namespace EWE {
         createInfo.pUserData = nullptr;  // Optional
     }
 
-    void EWEDevice::setupDebugMessenger() {
+    void EWEDevice::SetupDebugMessenger() {
         if (!enableValidationLayers) return;
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
-        populateDebugMessengerCreateInfo(createInfo);
+        PopulateDebugMessengerCreateInfo(createInfo);
         if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
 
             throw std::runtime_error("failed to set up debug messenger!");
         }
     }
 
-    bool EWEDevice::checkValidationLayerSupport() {
+    bool EWEDevice::CheckValidationLayerSupport() {
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -581,7 +582,7 @@ namespace EWE {
         return true;
     }
 
-    std::vector<const char*> EWEDevice::getRequiredExtensions() {
+    std::vector<const char*> EWEDevice::GetRequiredExtensions() {
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions;
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -607,7 +608,7 @@ namespace EWE {
         return extensions;
     }
 
-    void EWEDevice::hasGflwRequiredInstanceExtensions() {
+    void EWEDevice::HasGflwRequiredInstanceExtensions() {
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
         std::vector<VkExtensionProperties> extensions(extensionCount);
@@ -621,7 +622,7 @@ namespace EWE {
         }
 
         //std::cout << "required extensions:" << std::endl;
-        auto requiredExtensions = getRequiredExtensions();
+        auto requiredExtensions = GetRequiredExtensions();
         for (const auto& required : requiredExtensions) {
             //std::cout << "\t" << required << std::endl;
             if (available.find(required) == available.end()) {
@@ -635,7 +636,7 @@ namespace EWE {
         }
     }
 
-    bool EWEDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+    bool EWEDevice::CheckDeviceExtensionSupport(VkPhysicalDevice device) {
         uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -664,7 +665,7 @@ namespace EWE {
         return requiredExtensions.empty();
     }
 
-    QueueFamilyIndices EWEDevice::findQueueFamilies(VkPhysicalDevice device) {
+    QueueFamilyIndices EWEDevice::FindQueueFamilies(VkPhysicalDevice device) {
         QueueFamilyIndices indices;
 
         uint32_t queueFamilyCount = 0;
@@ -674,24 +675,124 @@ namespace EWE {
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
         printf("queue family count : %d \n", queueFamilyCount);
 
-        std::vector<int> availablePresent{};
-        std::vector<int> availableGraphics{};
-        std::vector<int> availableTransfer{};
-        std::vector<int> availableCompute{};
+        //i want a designated graphics/present queue, or throw an error
+        //i want a dedicated async compute queue
+        //i want a dedicated async transfer queue
+        //if i dont get two separate dedicated queues for transfer and compute, attempt to combine those 2
+        //otherwise, flop them in the graphics queue
 
-        std::vector<int> availableCombinedGraphicsPresent{};
-        //std::vector<int> availableCombinedComputeGraphicsPresent{}; //dont currently need
+        bool foundDedicatedGraphicsPresent = false;
 
-        //attempt to get everything in the same queue family
-        //if not possible, try to keep graphics and present in the same family
-        //transfer and compute may not need graphics support? not really sure
-        //currently, set transfer to have graphics support preferably
+        //fidning graphics/present queue
+        int index = 0;
+        for (const auto& queueFamily : queueFamilies) {
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface_, &presentSupport);
+            bool graphicsSupport = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+            bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
+            if ((presentSupport && graphicsSupport && computeSupport) == true) {
+                //im pretty sure compute and graphics in a queue is a vulkan requirement, but not 100%
+                foundDedicatedGraphicsPresent = true;
+                indices.familyIndices[QueueFamilyIndices::q_graphics] = index;
+                indices.familyIndices[QueueFamilyIndices::q_present] = index;
+                indices.familyHasIndex[QueueFamilyIndices::q_graphics] = true;
+                indices.familyHasIndex[QueueFamilyIndices::q_present] = true;
+                break;
+            }
+            index++;
+        }
+        if (!foundDedicatedGraphicsPresent) {
 
-        bool suitableGraphicsFamily = false;
-        bool suitablePresentFamily = false;
-        bool suitableComputeFamily = false;
-        bool suitableTransferFamily = false;
+            printf("device not have a queue for both graphics and present \n");
+            std::ofstream logFile{};
+            logFile.open(GPU_LOG_FILE, std::ios::app);
+            assert(logFile.is_open() && "Failed to open log file");
+            throw std::runtime_error("device doesnt have graphics/present queue");
+        }
+        //re-searching for compute and transfer queues
+        std::stack<int> dedicatedComputeFamilies{};
+        std::stack<int> dedicatedTransferFamilies{};
+        std::stack<int> combinedTransferComputeFamilies{};
+        index = 0;
+        for (const auto& queueFamily : queueFamilies) {
+            if (index == indices.familyIndices[QueueFamilyIndices::q_graphics]) {
+                continue;
+            }
+            bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
+            bool transferSupport = queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT;
 
+            if(computeSupport && transferSupport) {
+                combinedTransferComputeFamilies.emplace(index);
+			}
+            else if (computeSupport) {
+                dedicatedComputeFamilies.emplace(index);
+            }
+            else if (transferSupport) {
+                dedicatedTransferFamilies.emplace(index);
+            }
+            index++;
+        }
+        if (dedicatedComputeFamilies.size() > 0) {
+            indices.familyIndices[QueueFamilyIndices::q_compute] = dedicatedComputeFamilies.top();
+            indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
+        }
+        if (dedicatedTransferFamilies.size() > 0) {
+            indices.familyIndices[QueueFamilyIndices::q_transfer] = dedicatedTransferFamilies.top();
+            indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
+        }
+        if (combinedTransferComputeFamilies.size() > 0) {
+            if ((!indices.familyHasIndex[QueueFamilyIndices::q_compute]) && (!indices.familyHasIndex[QueueFamilyIndices::q_transfer])) {
+                if (combinedTransferComputeFamilies.size() >= 2) {
+                    indices.familyIndices[QueueFamilyIndices::q_compute] = combinedTransferComputeFamilies.top();
+                    combinedTransferComputeFamilies.pop();
+                    indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
+
+
+                    indices.familyIndices[QueueFamilyIndices::q_transfer] = combinedTransferComputeFamilies.top();
+                    indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
+                }
+                else { //else if size == 1
+                    indices.familyIndices[QueueFamilyIndices::q_compute] = combinedTransferComputeFamilies.top();
+                    indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
+
+                    VkQueueFamilyProperties& graphicsFamRef = queueFamilies[indices.familyIndices[QueueFamilyIndices::q_graphics]];
+                    if ((graphicsFamRef.queueFlags & VK_QUEUE_TRANSFER_BIT) && (graphicsFamRef.queueCount > 1)) {
+                        indices.familyIndices[QueueFamilyIndices::q_transfer] = indices.familyIndices[QueueFamilyIndices::q_graphics];
+                    }
+                    else {
+                        indices.familyIndices[QueueFamilyIndices::q_transfer] = indices.familyIndices[QueueFamilyIndices::q_compute];
+                        indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
+                    }
+                }
+            }
+            else if (!indices.familyHasIndex[QueueFamilyIndices::q_compute]) {
+                indices.familyIndices[QueueFamilyIndices::q_compute] = combinedTransferComputeFamilies.top();
+                indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
+            }
+            else if (!indices.familyHasIndex[QueueFamilyIndices::q_transfer]) {
+                indices.familyIndices[QueueFamilyIndices::q_transfer] = combinedTransferComputeFamilies.top();
+                indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
+            }
+        }
+        if (!indices.familyHasIndex[QueueFamilyIndices::q_compute]) {
+            //already did a check for graphics + compute
+            VkQueueFamilyProperties& graphicsFamRef = queueFamilies[indices.familyIndices[QueueFamilyIndices::q_graphics]];
+            if (graphicsFamRef.queueCount > 1) {
+                indices.familyIndices[QueueFamilyIndices::q_compute] = indices.familyIndices[QueueFamilyIndices::q_graphics];
+                indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
+            }
+        }
+        if (!indices.familyHasIndex[QueueFamilyIndices::q_transfer]) {
+            VkQueueFamilyProperties& graphicsFamRef = queueFamilies[indices.familyIndices[QueueFamilyIndices::q_graphics]];
+            if ((graphicsFamRef.queueFlags & VK_QUEUE_TRANSFER_BIT) && (graphicsFamRef.queueCount > 1)) {
+                indices.familyIndices[QueueFamilyIndices::q_transfer] = indices.familyIndices[QueueFamilyIndices::q_graphics];
+                indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
+            }
+        }
+        return indices;
+
+        /*
+        *old method
         int index = 0;
         for (const auto& queueFamily : queueFamilies) {
             VkBool32 presentSupport = false;
@@ -699,7 +800,7 @@ namespace EWE {
             bool graphicsSupport = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
             bool transferSupport = queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT;
             bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
-
+            //this is NVIDIA only im pretty sure
             if (presentSupport && graphicsSupport && transferSupport && computeSupport && queueFamily.queueCount >= 3) {
                 std::cout << "can stuff all 4 queues into one family \n";
                 indices.familyIndices[QueueFamilyIndices::q_graphics] = index;
@@ -713,285 +814,15 @@ namespace EWE {
                 indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
                 return indices;
             }
-            index++;
-        }
-        return indices;
-
-        /*
-        index = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface_, &presentSupport);
-            printf("queuefamily[%d] : queueCount : %d - queueFlags \n", index, queueFamily.queueCount);
-            printf("\t queueFlags - %d:%d:%d:%d \n", (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT), presentSupport, (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT), (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT));
-            if (presentSupport) {
-                availablePresent.push_back(index);
-                if ((queueFamily.queueCount > 0) && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-                    availableCombinedGraphicsPresent.push_back(index);
-                    *
-                    if ((queueFamily.queueCount > 0) && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)) {
-                        availableCombinedComputeGraphicsPresent.push_back(i);
-                    }
-                    *
-                }
-            }
-            if ((queueFamily.queueCount > 0) && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)) {
-                availableCompute.push_back(index);
-            }
-            if ((queueFamily.queueCount > 0) && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-                availableGraphics.push_back(index);
-            }
-
-            if ((queueFamily.queueCount > 0) && ((queueFamily.queueFlags & (VK_QUEUE_GRAPHICS_BIT + VK_QUEUE_TRANSFER_BIT)) == (VK_QUEUE_GRAPHICS_BIT + VK_QUEUE_TRANSFER_BIT))) {
-                availableTransfer.push_back(index);
-            }
-            index++;
-        }
-        if (availableGraphics.size() == 0) {
-            std::cout << "available graphics is 0 \n";
-            throw std::exception("0 graphics queues?");
-        }
-        if (availablePresent.size() == 0) {
-            std::cout << "available present is 0 \n";
-            throw std::exception("i dont know how to handle this currently");
-        }
-        if (availableTransfer.size() == 0) {
-            std::cout << "available transfer is 0 \n";
-            throw std::exception("0 transfer queues????");
-        }
-        if (availableCompute.size() == 0) {
-            std::cout << "available compute is 0 \n";
-            throw std::exception("compute queues required");
-        }
-
-        int graphicsQueue = availableGraphics[0];
-        int transferQueue = availableTransfer[0];
-        int presentQueue = availablePresent[0];
-        int computeQueue = availableCompute[0];
-
-        bool combinedGraphicsPresent = false;
-        bool foundASyncCompute = false;
-        bool foundASyncTransfer = false;
-
-        if (availableCombinedGraphicsPresent.size() > 0) {
-            graphicsQueue = availableCombinedGraphicsPresent[0];
-            presentQueue = availableCombinedGraphicsPresent[0];
-            combinedGraphicsPresent = true;
-
-            for (uint16_t i = 0; (i < availableCombinedGraphicsPresent.size()) && !foundASyncCompute; i++) {
-                bool notEqual = true;
-                for (uint16_t j = 0; j < availableCompute.size() && !foundASyncCompute; j++) {
-                    if (availableCombinedGraphicsPresent[i] != availableCompute[j]) {
-                        //available combined graphics present that can perform async compute
-                        graphicsQueue = availableCombinedGraphicsPresent[i];
-                        presentQueue = availableCombinedGraphicsPresent[i];
-                        computeQueue = availableCompute[j];
-                        foundASyncCompute = true;
-                    }
-                }
-            }
-            for (uint16_t i = 0; (i < availableTransfer.size()) && !foundASyncTransfer; i++) {
-                if (availableTransfer[i] != graphicsQueue) {
-                    transferQueue = i;
-                    foundASyncTransfer = true;
-                }
-            }
-
-        }
-        else {
-            throw std::exception("not currently supported \n");
-        }
-        indices.graphicsFamily = graphicsQueue;
-        indices.presentFamily = presentQueue;
-        indices.computeFamily = computeQueue;
-        indices.transferFamily = transferQueue;
-
-        indices.graphicsFamilyHasValue = true;
-        indices.presentFamilyHasValue = true;
-        indices.computeFamilyHasValue = true;
-        indices.transferFamilyHasValue = true;
-
-        std::cout << "selected indices - graphics:" << graphicsQueue << " - present:" << presentQueue << " - compute:" << computeQueue << " - transferQueue:" << transferQueue << std::endl;
-
-        return indices;
-        */
-
-
-
-
-
-        /*
-        uint32_t graphicsQueueCount = 0;
-        uint32_t presentQueueCount = 0;
-        uint32_t computeQueueCount = 0;
-        uint32_t transferQueueCount = 0;
-
-        int32_t desiredPresentQueue = -1; //doesnt need graphics capability?
-        int32_t desiredGraphicsQueue = -1; //give present queue a higher priority
-        int32_t desiredComputeQueue = -1; //not necessary right now
-        int32_t desiredTransferQueue = -1; //needs graphic capability, or i need to split images and non-images singletimecommands into different parts
-
-        bool presentEqualGraphics = true;
-        bool transferEqualGraphics = true;
-
-        bool presentAndGraphics = false;
-
-        int i = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface_, &presentSupport);
-            printf("queuefamily[%d] : queueCount : %d - queueFlags \n", i, queueFamily.queueCount);
-            printf("\t queueFlags - %d:%d:%d:%d \n", (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT), presentSupport, (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT), (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT));
             
-
-            if ((queueCounts[i] > 0) && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-                if ((queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-                    if (desiredGraphicsQueue == -1) {
-                        queueCounts[i]--;
-                        desiredGraphicsQueue = i;
-                    }
-                }
-                graphicsQueueCount++;
-            }
-            if ((queueCounts[i] > 0) && (presentSupport)) { //highest priority
-                if ((queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) {
-                    if (presentEqualGraphics) {
-                        if (desiredPresentQueue != -1) {
-                            queueCounts[desiredPresentQueue]++;
-                        }
-                        else {
-                            queueCounts[i]--;
-                        }
-                        desiredPresentQueue = i;
-                        if (i != desiredGraphicsQueue) {
-                            desiredPresentQueue = i;
-                            presentEqualGraphics = false;
-                        }
-                    }
-                }
-                presentQueueCount++;
-            }
-            if ((queueCounts[i] > 0) && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)) {
-                if (desiredComputeQueue == -1) {
-					desiredComputeQueue = i;
-				}
-                computeQueueCount++;
-            }
-            if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
-                transferQueueCount++;
-                if (((queueFamily.queueFlags & (VK_QUEUE_GRAPHICS_BIT + VK_QUEUE_TRANSFER_BIT)) == (VK_QUEUE_GRAPHICS_BIT + VK_QUEUE_TRANSFER_BIT))) {
-                    if (transferEqualGraphics) {
-                        if (desiredTransferQueue != -1) {
-                            queueCounts[desiredTransferQueue]++;
-                        }
-                        else {
-                            queueCounts[i]--;
-                        }
-
-                        desiredTransferQueue = i;                    
-                        if (i != desiredGraphicsQueue) {
-                            desiredTransferQueue = i;
-                            transferEqualGraphics = false;
-                        }
-                    }
-
-                }
-                else {
-                    printf("transfer queue flags? : %d \n", queueFamily.queueFlags);
-                }
-            }
-             i++;
+            index++;
         }
-
-        if (desiredPresentQueue == -1) {
-            for (const auto& queueFamily : queueFamilies) {
-                VkBool32 presentSupport = false;
-                vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface_, &presentSupport);
-                if (presentSupport) { //highest priority
-                    if (presentEqualGraphics) {
-                        desiredPresentQueue = i;
-                        if (i != desiredGraphicsQueue) {
-                            desiredPresentQueue = i;
-                            presentEqualGraphics = false;
-                        }
-                    }
-                    presentQueueCount++;
-                }
-            }
-
-        }
-        i = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            if ((queueCounts[i] > 0) && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-
-            }
-        }
-        
-
-        
-        //if ((desiredTransferQueue >= 0) && (desiredGraphicsQueue >= 0) && (desiredPresentQueue >= 0)) {
-        printf("desired queues - %d:%d:%d \n", desiredGraphicsQueue, desiredPresentQueue, desiredTransferQueue);
-        indices.graphicsFamily = desiredGraphicsQueue;
-        indices.presentFamily = desiredPresentQueue;
-        indices.transferFamily = desiredTransferQueue;
-        indices.graphicsFamilyHasValue = desiredGraphicsQueue >= 0;
-        indices.presentFamilyHasValue = desiredPresentQueue >= 0;
-        indices.transferFamilyHasValue = desiredTransferQueue >= 0;
-        indices.computeFamily = desiredComputeQueue;
-        indices.computeFamilyHasValue = desiredComputeQueue >= 0;
-        //return indices;
-        //}
-        if (!((desiredTransferQueue >= 0) && (desiredGraphicsQueue >= 0) && (desiredPresentQueue >= 0))) {
-
-            printf("did not find all desired queues \n");
-            printf("desired queues - %d:%d:%d \n", desiredGraphicsQueue, desiredPresentQueue, desiredTransferQueue);
-        }
-
-        printf("queue counts - %d:%d:%d:%d \n", graphicsQueueCount, presentQueueCount, computeQueueCount, transferQueueCount);
-
-        if (!indices.isComplete()) {
-            std::cout << "couldnt pull all queues!" << std::endl;
-            if (!indices.computeFamilyHasValue) {
-#if GPU_LOGGING
-                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-                logFile << "GPU doesn't have compute queue family \n";
-                logFile.close();
-#endif
-                std::cout << "compute family has no value!" << std::endl;
-            }
-            if (!indices.graphicsFamilyHasValue) {
-#if GPU_LOGGING
-                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-                logFile << "GPU doesn't have graphics queue family \n";
-                logFile.close();
-#endif
-                std::cout << "graphics family has no value!" << std::endl;
-            }
-            if (!indices.presentFamilyHasValue) {
-#if GPU_LOGGING
-                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-                logFile << "GPU doesn't have present queue family, testing present=graphics \n";
-                logFile.close();
-#endif
-                presentQueue_ = graphicsQueue_;
-                std::cout << "present family has no value!" << std::endl;
-            }
-            if (!indices.transferFamilyHasValue) {
-                printf("GPU doesn't have transfer family, using a second graphics queue instead \n");
-#if GPU_LOGGING
-                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-                logFile << "GPU doesn't have transfer queue family, testing trasfer=graphics \n";
-                logFile.close();
-#endif
-                transferQueue_ = graphicsQueue_;
-
-            }
-        }
-        return indices;
         */
+        //return indices;
+
     }
 
-    SwapChainSupportDetails EWEDevice::querySwapChainSupport(VkPhysicalDevice device) {
+    SwapChainSupportDetails EWEDevice::QuerySwapChainSupport(VkPhysicalDevice device) {
         SwapChainSupportDetails details;
         EWE_VK_ASSERT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_, &details.capabilities));
 
@@ -1013,7 +844,7 @@ namespace EWE {
         return details;
     }
 
-    VkFormat EWEDevice::findSupportedFormat(
+    VkFormat EWEDevice::FindSupportedFormat(
         const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
         for (VkFormat format : candidates) {
             VkFormatProperties props;
@@ -1035,7 +866,7 @@ namespace EWE {
         throw std::runtime_error("failed to find supported format!");
     }
 
-    uint32_t EWEDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+    uint32_t EWEDevice::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
@@ -1061,7 +892,7 @@ namespace EWE {
         throw std::runtime_error("failed to find suitable memory type!");
     }
 
-    void EWEDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+    void EWEDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = size;
@@ -1076,20 +907,20 @@ namespace EWE {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
         EWE_VK_ASSERT(vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory));
 
         vkBindBufferMemory(device_, buffer, bufferMemory, 0);
     }
 
-    void EWEDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+    void EWEDevice::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
 
         vkEndCommandBuffer(commandBuffer);
 
         syncHub->prepTransferSubmission(commandBuffer);
     }
-    void EWEDevice::copySecondaryBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer cmdBuf) {
+    void EWEDevice::CopySecondaryBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer cmdBuf) {
         //printf("COPY SECONDARY BUFFER, thread ID: %d \n", std::this_thread::get_id());
         VkBufferCopy copyRegion{};
         copyRegion.srcOffset = 0;  // Optional
@@ -1097,7 +928,7 @@ namespace EWE {
         copyRegion.size = size;
         vkCmdCopyBuffer(cmdBuf, srcBuffer, dstBuffer, 1, &copyRegion);
     }
-    void EWEDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+    void EWEDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
         VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
 
         VkBufferCopy copyRegion{};
@@ -1106,10 +937,10 @@ namespace EWE {
         copyRegion.size = size;
         vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-        endSingleTimeCommands(commandBuffer);
+        EndSingleTimeCommands(commandBuffer);
     }
 
-    void EWEDevice::transitionImageLayout(VkImage &image, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount) {
+    void EWEDevice::TransitionImageLayout(VkImage &image, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount) {
 
         VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
         
@@ -1237,7 +1068,7 @@ namespace EWE {
             0, nullptr,
             1, &barrier);
 
-        endSingleTimeCommands(commandBuffer);
+        EndSingleTimeCommands(commandBuffer);
     }
 
 #define BARRIER_DEBUGGING false
@@ -1377,7 +1208,7 @@ namespace EWE {
     }
 
 
-    void EWEDevice::setImageLayout(
+    void EWEDevice::SetImageLayout(
         VkCommandBuffer cmdbuffer,
         VkImage image,
         VkImageLayout oldImageLayout,
@@ -1426,7 +1257,7 @@ namespace EWE {
             1, &imageMemoryBarrier);
     }
 
-    void EWEDevice::copyBufferToImage(VkBuffer &buffer, VkImage &image, uint32_t width, uint32_t height, uint32_t layerCount) {
+    void EWEDevice::CopyBufferToImage(VkBuffer &buffer, VkImage &image, uint32_t width, uint32_t height, uint32_t layerCount) {
         VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
 
         VkBufferImageCopy region{};
@@ -1449,10 +1280,10 @@ namespace EWE {
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
             &region);
-        endSingleTimeCommands(commandBuffer);
+        EndSingleTimeCommands(commandBuffer);
     }
 
-    void EWEDevice::createImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+    void EWEDevice::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
         EWE_VK_ASSERT(vkCreateImage(device_, &imageInfo, nullptr, &image));
 
 
@@ -1462,7 +1293,7 @@ namespace EWE {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
         EWE_VK_ASSERT(vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory));
 

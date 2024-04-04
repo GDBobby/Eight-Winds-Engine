@@ -187,14 +187,14 @@ namespace EWE {
 
         EWEDevice* const eweDevice = EWEDevice::GetEWEDevice();
 
-        eweDevice->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        eweDevice->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
         //printf("before memory mapping \n");
         void* data;
-        vkMapMemory(eweDevice->device(), stagingBufferMemory, 0, imageSize, 0, &data);
+        vkMapMemory(eweDevice->Device(), stagingBufferMemory, 0, imageSize, 0, &data);
         //printf("memcpy \n");
         memcpy(data, pixelPeek.pixels, static_cast<size_t>(imageSize));
         //printf("unmapping \n");
-        vkUnmapMemory(eweDevice->device(), stagingBufferMemory);
+        vkUnmapMemory(eweDevice->Device(), stagingBufferMemory);
         //printf("freeing pixels \n");
         stbi_image_free(pixelPeek.pixels);
         //printf("after memory mapping \n");
@@ -218,19 +218,19 @@ namespace EWE {
         imageInfo.flags = 0; // Optional
 
         //printf("before image info \n");
-        eweDevice->createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+        eweDevice->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
         //printf("before transition \n");
-        eweDevice->transitionImageLayout(image, 
+        eweDevice->TransitionImageLayout(image, 
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 
             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
             mipLevels
         );
         //printf("before copy buffer to image \n");
-        eweDevice->copyBufferToImage(stagingBuffer, image, width, height, 1);
+        eweDevice->CopyBufferToImage(stagingBuffer, image, width, height, 1);
         //printf("after copy buffer to image \n");
 
-        vkDestroyBuffer(eweDevice->device(), stagingBuffer, nullptr);
-        vkFreeMemory(eweDevice->device(), stagingBufferMemory, nullptr);
+        vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
+        vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
         //printf("end of create texture image loop %d \n", i);
         
         //printf("before generate mip maps \n");
@@ -238,7 +238,7 @@ namespace EWE {
             generateMipmaps(VK_FORMAT_R8G8B8A8_SRGB, width, height);
         }
         else {
-            eweDevice->transitionImageLayout(image,
+            eweDevice->TransitionImageLayout(image,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
                 mipLevels
@@ -277,7 +277,7 @@ namespace EWE {
         samplerInfo.addressModeW = samplerInfo.addressModeU;
 
         samplerInfo.anisotropyEnable = VK_TRUE;
-        samplerInfo.maxAnisotropy = EWEDevice::GetEWEDevice()->getProperties().limits.maxSamplerAnisotropy;
+        samplerInfo.maxAnisotropy = EWEDevice::GetEWEDevice()->GetProperties().limits.maxSamplerAnisotropy;
 
         samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -385,7 +385,7 @@ namespace EWE {
             1, &barrier
         );
         //printf("after pipeline barrier 3 \n");
-        EWEDevice::GetEWEDevice()->endSingleTimeCommands(commandBuffer);
+        EWEDevice::GetEWEDevice()->EndSingleTimeCommands(commandBuffer);
         //printf("after end single time commands \n");
         
         //printf("end of mip maps \n");

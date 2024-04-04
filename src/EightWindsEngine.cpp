@@ -99,7 +99,7 @@ namespace EWE {
 		printf("beginning of EightWindsEngine deconstructor \n");
 #endif
 		printf("after deconstructig level manager \n");
-		vkDestroyQueryPool(eweDevice.device(), queryPool, nullptr);
+		vkDestroyQueryPool(eweDevice.Device(), queryPool, nullptr);
 		DescriptorHandler::cleanup();
 
 
@@ -256,20 +256,20 @@ namespace EWE {
 			if (displayingRenderInfo) {
 #if BENCHMARKING_GPU
 				if (queryPool == VK_NULL_HANDLE) {
-					gpuTicksPerSecond = eweDevice.getProperties().limits.timestampPeriod / 1e9f;
+					gpuTicksPerSecond = eweDevice.GetProperties().limits.timestampPeriod / 1e9f;
 
 					VkQueryPoolCreateInfo queryPoolInfo = {};
 					queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
 					queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
 					queryPoolInfo.queryCount = 2; // We'll use two timestamps if we run into trouble with framebuffers use 4
-					EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.device(), &queryPoolInfo, nullptr, &queryPool));
+					EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool));
 				}
 				else {
 					//printf("before non-null \n");
 					//shouldnt be activated until after the command has already been submitted at least once
 					uint64_t timestampStart, timestampEnd;
-					vkGetQueryPoolResults(eweDevice.device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-					vkGetQueryPoolResults(eweDevice.device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
+					vkGetQueryPoolResults(eweDevice.Device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
+					vkGetQueryPoolResults(eweDevice.Device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
 					elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond * 1000.f;
 					totalElapsedGPUMS += elapsedGPUMS;
 					averageElapsedGPUCounter++;
@@ -304,20 +304,20 @@ namespace EWE {
 			if (displayingRenderInfo) {
 #if BENCHMARKING_GPU
 				if (queryPool == VK_NULL_HANDLE) {
-					gpuTicksPerSecond = eweDevice.getProperties().limits.timestampPeriod / 1e9f;
+					gpuTicksPerSecond = eweDevice.GetProperties().limits.timestampPeriod / 1e9f;
 
 					VkQueryPoolCreateInfo queryPoolInfo = {};
 					queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
 					queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
 					queryPoolInfo.queryCount = 2; // We'll use two timestamps if we run into trouble with framebuffers use 4
-					EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.device(), &queryPoolInfo, nullptr, &queryPool));
+					EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool));
 				}
 				else {
 					//printf("before non-null \n");
 					//shouldnt be activated until after the command has already been submitted at least once
 					uint64_t timestampStart, timestampEnd;
-					vkGetQueryPoolResults(eweDevice.device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-					vkGetQueryPoolResults(eweDevice.device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
+					vkGetQueryPoolResults(eweDevice.Device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
+					vkGetQueryPoolResults(eweDevice.Device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
 					elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond * 1000.f;
 					totalElapsedGPUMS += elapsedGPUMS;
 					averageElapsedGPUCounter++;

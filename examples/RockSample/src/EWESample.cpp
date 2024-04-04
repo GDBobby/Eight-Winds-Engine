@@ -62,7 +62,7 @@ namespace EWE {
 			renderRefreshRate = 1.0 / renderRefreshRate;
 		}
 		do { //having a simple while() may cause a race condition
-			vkDeviceWaitIdle(ewEngine.eweDevice.device());
+			vkDeviceWaitIdle(ewEngine.eweDevice.Device());
 		} while (ewEngine.GetLoadingScreenProgress());
 		currentScenePtr->entry();
 
@@ -76,7 +76,7 @@ namespace EWE {
 				printf("swapping scenes beginning \n");
 
 				//loading entry?
-				vkDeviceWaitIdle(ewEngine.eweDevice.device());
+				vkDeviceWaitIdle(ewEngine.eweDevice.Device());
 				currentScenePtr->exit();
 				ewEngine.objectManager.clearSceneObjects();
 				Texture_Manager::GetTextureManagerPtr()->ClearSceneTextures();
@@ -126,7 +126,7 @@ namespace EWE {
 	}
 
 	void EWESample::loadGlobalObjects() {
-		std::string skyboxLoc = "nasa2/";
+		std::string skyboxLoc = "nasa/";
 		TextureDesc skyboxID = Cube_Texture::createCubeTexture(skyboxLoc);
 		skyboxInfo = Texture_Manager::GetDescriptorImageInfo(skyboxLoc);
 

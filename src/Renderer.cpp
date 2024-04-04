@@ -184,8 +184,8 @@ namespace EWE {
 			}
 		};
 
-		image_memory_barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->getPresentIndex();
-		image_memory_barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->getGraphicsIndex();
+		image_memory_barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetPresentIndex();
+		image_memory_barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex();
 
 		vkCmdPipelineBarrier(
 			commandBuffer,
@@ -226,8 +226,8 @@ namespace EWE {
 			  .layerCount = 1,
 			}
 		};
-		image_memory_barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->getGraphicsIndex();
-		image_memory_barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->getPresentIndex();
+		image_memory_barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex();
+		image_memory_barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetPresentIndex();
 		//printf("end frame :: get currentCommandBuffer \n");
 
 		vkCmdPipelineBarrier(
