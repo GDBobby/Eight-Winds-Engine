@@ -27,7 +27,7 @@ namespace EWE {
         std::vector<VkPresentModeKHR> presentModes;
     };
 
-    struct QueueFamilyIndices {
+    struct QueueData {
         enum Queue_Enum : uint16_t {
             q_graphics,
             q_present,
@@ -35,19 +35,12 @@ namespace EWE {
             q_transfer,
         };
 
-        std::array<uint32_t, 4> familyIndices;
-        std::array<bool, 4> familyHasIndex = {false, false, false, false};
-        /*
-        uint32_t graphicsFamily;
-        uint32_t presentFamily;
-        uint32_t computeFamily;
-        uint32_t transferFamily;
-        bool graphicsFamilyHasValue = false;
-        bool presentFamilyHasValue = false;
-        bool computeFamilyHasValue = false;
-        bool transferFamilyHasValue = false;
-        */
-        bool isComplete() { return familyHasIndex[q_graphics] && familyHasIndex[q_present] && familyHasIndex[q_compute] && familyHasIndex[q_transfer]; }
+        std::array<int, 4> index = { -1, -1, -1, -1 };
+        std::array<bool, 4> found = {false, false, false, false};
+        std::vector<VkQueueFamilyProperties> queueFamilies{};
+        void FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface_);
+
+        bool isComplete() { return found[q_graphics] && found[q_present] && found[q_transfer] && found[q_compute]; }
     };
 
     //std::vector<VkDeviceQueueCreateInfo> queueInfo;
@@ -91,18 +84,18 @@ namespace EWE {
         VkPhysicalDevice GetPhysicalDevice() { return physicalDevice; }
         VkSurfaceKHR surface() { return surface_; }
         VkQueue GetGraphicsQueue() { return graphicsQueue_; }
-        uint32_t GetGraphicsIndex() { return graphicsIndex; }
+        uint32_t GetGraphicsIndex() { return queueData.index[QueueData::q_graphics]; }
 
         VkQueue PresentQueue() { return presentQueue_; }
-        uint32_t GetPresentIndex() { return presentIndex; }
+        uint32_t GetPresentIndex() { return queueData.index[QueueData::q_present]; }
 
         //VkQueue computeQueue() { return computeQueue_; }
         //uint32_t getComputeIndex() { return computeIndex; }
 
-        uint32_t GetAsyncTransferIndex() { return transferIndex; }
+        uint32_t GetAsyncTransferIndex() { return queueData.index[QueueData::q_transfer]; }
         VkQueue GetAsyncTransferQueue() { return transferQueue_; }
 
-        uint32_t GetAsyncComputeIndex() { return computeIndex; }
+        uint32_t GetAsyncComputeIndex() { return queueData.index[QueueData::q_compute]; }
         VkQueue GetAsyncComputeQueue() { return computeQueue_; }
 
 
@@ -110,7 +103,7 @@ namespace EWE {
 
         SwapChainSupportDetails GetSwapChainSupport() { return QuerySwapChainSupport(physicalDevice); }
         uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-        const QueueFamilyIndices& GetPhysicalQueueFamilies() { return queueFamilyIndices; }
+        QueueData const& GetPhysicalQueueFamilies() { return queueData; }
 
         VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
@@ -139,7 +132,7 @@ namespace EWE {
 
     private:
         VkPhysicalDeviceProperties properties{};
-        QueueFamilyIndices queueFamilyIndices;
+        QueueData queueData;
 
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
@@ -147,7 +140,9 @@ namespace EWE {
         MainWindow& window;
         VkCommandPool commandPool{ VK_NULL_HANDLE };
         VkCommandPool transferCommandPool{ VK_NULL_HANDLE };
+        bool asyncTransferCapable = false;
         VkCommandPool computeCommandPool{ VK_NULL_HANDLE };
+        bool asyncComputeCapable = false;
 
         VkDevice device_;
         VkSurfaceKHR surface_;
@@ -155,12 +150,9 @@ namespace EWE {
         VkQueue presentQueue_;
         VkQueue computeQueue_;
         VkQueue transferQueue_;
-        uint32_t graphicsIndex;
-        uint32_t presentIndex;
-        uint32_t computeIndex;
-        uint32_t transferIndex;
 
         SyncHub* syncHub;
+
 
         const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
         const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -181,7 +173,6 @@ namespace EWE {
         bool IsDeviceSuitable(VkPhysicalDevice device);
         std::vector<const char*> GetRequiredExtensions(); //glfw
         bool CheckValidationLayerSupport();
-        QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
         void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
         void HasGflwRequiredInstanceExtensions();
         bool CheckDeviceExtensionSupport(VkPhysicalDevice device);

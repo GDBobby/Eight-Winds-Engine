@@ -178,10 +178,10 @@ namespace EWE {
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        uint32_t queueFamilyIndices[] = { eweDevice->GetGraphicsIndex(), eweDevice->GetPresentIndex() };
+        uint32_t queueData[] = { eweDevice->GetGraphicsIndex(), eweDevice->GetPresentIndex() };
 
         /*
-        if (queueFamilyIndices[0] != queueFamilyIndices[1]) {
+        if (queueData[0] != queueData[1]) {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
         }
@@ -190,11 +190,11 @@ namespace EWE {
             createInfo.queueFamilyIndexCount = 1;      // Optional
         }
         */
-        const bool differentFamilies = (queueFamilyIndices[0] != queueFamilyIndices[1]);
+        const bool differentFamilies = (queueData[0] != queueData[1]);
         createInfo.imageSharingMode = (VkSharingMode)differentFamilies; //1 is concurrent, 0 is exclusive
         createInfo.queueFamilyIndexCount = 1 + differentFamilies;
 
-        createInfo.pQueueFamilyIndices = &queueFamilyIndices[0];  //if exclusive, only the first element is read from the array
+        createInfo.pQueueFamilyIndices = &queueData[0];  //if exclusive, only the first element is read from the array
 
         createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;

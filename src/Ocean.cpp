@@ -81,11 +81,11 @@ namespace EWE {
 			// If compute and graphics queue family indices differ, we create an image that can be shared between them
 			// This can result in worse performance than exclusive sharing mode, but save some synchronization to keep the sample simple
 
-			uint32_t queueFamilyIndices[] = { eweDevice->GetGraphicsIndex(), eweDevice->GetPresentIndex() };
-			const bool differentFamilies = (queueFamilyIndices[0] != queueFamilyIndices[1]);
+			uint32_t queueData[] = { eweDevice->GetGraphicsIndex(), eweDevice->GetPresentIndex() };
+			const bool differentFamilies = (queueData[0] != queueData[1]);
 			imageCreateInfo.sharingMode = (VkSharingMode)differentFamilies;
 			imageCreateInfo.queueFamilyIndexCount = 1 + differentFamilies;
-			imageCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
+			imageCreateInfo.pQueueFamilyIndices = queueData;
 			eweDevice->CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanOutputImages, oceanOutputImageMemory);
 
 			imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;

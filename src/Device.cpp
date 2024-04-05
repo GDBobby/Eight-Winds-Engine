@@ -81,6 +81,107 @@ namespace EWE {
         }
     }
 
+
+    void QueueData::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface_) {
+
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+        
+        queueFamilies.resize(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+        printf("queue family count : %d:%d \n", queueFamilyCount, queueFamilies.size());
+
+        //i want a designated graphics/present queue, or throw an error
+        //i want a dedicated async compute queue
+        //i want a dedicated async transfer queue
+        //if i dont get two separate dedicated queues for transfer and compute, attempt to combine those 2
+        //otherwise, flop them in the graphics queue
+
+        bool foundDedicatedGraphicsPresent = false;
+#if 1 //queue debugging
+        for (const auto& queueFamily : queueFamilies) {
+            printf("queue properties - %d:%d:%d\n", queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT, queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT, queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT);
+        }
+#endif
+
+        //fidning graphics/present queue
+        int currentIndex = 0;
+        for (const auto& queueFamily : queueFamilies) {
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, currentIndex, surface_, &presentSupport);
+            bool graphicsSupport = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+            bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
+            if ((presentSupport && graphicsSupport && computeSupport) == true) {
+                //im pretty sure compute and graphics in a queue is a vulkan requirement, but not 100%
+                foundDedicatedGraphicsPresent = true;
+                index[QueueData::q_graphics] = currentIndex;
+                index[QueueData::q_present] = currentIndex;
+                found[QueueData::q_graphics] = true;
+                found[QueueData::q_present] = true;
+                break;
+            }
+            currentIndex++;
+        }
+        assert(foundDedicatedGraphicsPresent && "failed to find a graphics/present queue that could also do compute");
+
+        //re-searching for compute and transfer queues
+        std::stack<int> dedicatedComputeFamilies{};
+        std::stack<int> dedicatedTransferFamilies{};
+        std::stack<int> combinedTransferComputeFamilies{};
+
+        currentIndex = 0;
+        for (const auto& queueFamily : queueFamilies) {
+            if (currentIndex == index[QueueData::q_graphics]) {
+                currentIndex++;
+                continue;
+            }
+            bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
+            bool transferSupport = queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT;
+            printf("queue support[%d] - %d:%d \n", currentIndex, computeSupport, transferSupport);
+            if (computeSupport && transferSupport) {
+                combinedTransferComputeFamilies.push(currentIndex);
+            }
+            else if (computeSupport) {
+                dedicatedComputeFamilies.push(currentIndex);
+            }
+            else if (transferSupport) {
+                dedicatedTransferFamilies.push(currentIndex);
+            }
+            currentIndex++;
+        }
+        printf("after the queue family \n");
+        if (dedicatedComputeFamilies.size() > 0) {
+            index[QueueData::q_compute] = dedicatedComputeFamilies.top();
+            found[QueueData::q_compute] = true;
+        }
+        if (dedicatedTransferFamilies.size() > 0) {
+            index[QueueData::q_transfer] = dedicatedTransferFamilies.top();
+            found[QueueData::q_transfer] = true;
+        }
+        if (combinedTransferComputeFamilies.size() > 0) {
+            if ((!found[QueueData::q_compute]) && (!found[QueueData::q_transfer])) {
+                assert(combinedTransferComputeFamilies.size() >= 2 && "not enough queues for transfer and compute");
+
+                index[QueueData::q_compute] = combinedTransferComputeFamilies.top();
+                found[QueueData::q_compute] = true;
+                combinedTransferComputeFamilies.pop();
+
+                index[QueueData::q_transfer] = combinedTransferComputeFamilies.top();
+                found[QueueData::q_transfer] = true;
+            }
+            else if (!found[QueueData::q_compute]) {
+                index[QueueData::q_compute] = combinedTransferComputeFamilies.top();
+                found[QueueData::q_compute] = true;
+            }
+            else if (!found[QueueData::q_transfer]) {
+                index[QueueData::q_transfer] = combinedTransferComputeFamilies.top();
+                found[QueueData::q_transfer] = true;
+            }
+        }
+        assert(found[QueueData::q_compute] && found[QueueData::q_transfer] && "did not find a dedicated transfer or compute queue");
+        assert(index[QueueData::q_compute] != index[QueueData::q_transfer] && "compute queue and transfer q should not be the same");
+    }
+
     // class member functions
     EWEDevice::EWEDevice(MainWindow& window) : window{ window } {
         //printf("device constructor \n");
@@ -149,9 +250,12 @@ namespace EWE {
 
 
         vkDestroyCommandPool(device_, commandPool, nullptr);
-        vkDestroyCommandPool(device_, computeCommandPool, nullptr);
-        vkDestroyCommandPool(device_, transferCommandPool, nullptr);
-
+        if (computeCommandPool != VK_NULL_HANDLE) {
+            vkDestroyCommandPool(device_, computeCommandPool, nullptr);
+        }
+        if (transferCommandPool != VK_NULL_HANDLE) {
+            vkDestroyCommandPool(device_, transferCommandPool, nullptr);
+        }
         eweDevice = nullptr;
         vkDestroyDevice(device_, nullptr);
 
@@ -275,10 +379,14 @@ namespace EWE {
         }
         //bigger score == gooder device
         //printf("after getting scores \n");
+
         for (auto iter = deviceScores.begin(); iter != deviceScores.end(); iter++) {
             if (IsDeviceSuitable(devices[iter->second])) {
                 physicalDevice = devices[iter->second];
                 break;
+            }
+            else {
+                printf("device unsuitable \n");
             }
         }
         //printf("before physical device null handle \n");
@@ -318,74 +426,31 @@ namespace EWE {
     }
 
     void EWEDevice::CreateLogicalDevice() {
-        //queueFamilyIndices = findQueueFamilies(physicalDevice);
+        //queueData = findQueueFamilies(physicalDevice);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        //std::vector<uint32_t> uniqueQueueFamilies = { queueFamilyIndices.graphicsFamily, queueFamilyIndices.presentFamily, queueFamilyIndices.transferFamily, queueFamilyIndices.computeFamily };
-        if (queueFamilyIndices.familyIndices[QueueFamilyIndices::q_graphics] == queueFamilyIndices.familyIndices[QueueFamilyIndices::q_transfer]) {
-            printf("SAME QUEUE FAMILY INDEX ON GRAPHIC AND TRANSFER \n");
-        }
+        std::vector<std::vector<float>> queuePriorities{};
+        //std::vector<uint32_t> uniqueQueueFamilies = { queueData.graphicsFamily, queueData.presentFamily, queueData.transferFamily, queueData.computeFamily };
+        queueData.index[QueueData::q_present] = queueData.index[QueueData::q_graphics];
 
+        queuePriorities.emplace_back().push_back(1.f);
+        VkDeviceQueueCreateInfo queueCreateInfo = {};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueData.index[QueueData::q_graphics];
 
-        uint32_t graphicsQueueIndex = 0;
-        uint32_t presentQueueIndex = 0;
-        uint32_t transferQueueIndex = 0;
-        uint32_t computeQueueIndex = 0;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfos.push_back(queueCreateInfo);
 
-        std::vector<std::vector<float>> queuePriorities;
-        if (queueFamilyIndices.familyHasIndex[QueueFamilyIndices::q_graphics]) {
-            queuePriorities.push_back({});
-            queuePriorities[0].push_back(1.0f);
-            VkDeviceQueueCreateInfo queueCreateInfo = {};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamilyIndices.familyIndices[QueueFamilyIndices::q_graphics];
+        queuePriorities.emplace_back().push_back(0.9f);
+        queueCreateInfo.queueFamilyIndex = queueData.index[QueueData::q_compute];
+        queueCreateInfos.push_back(queueCreateInfo);
 
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfos.push_back(queueCreateInfo);
-        }
-        if (queueFamilyIndices.familyHasIndex[QueueFamilyIndices::q_present]) {
-            if (queueFamilyIndices.familyIndices[QueueFamilyIndices::q_present] == queueFamilyIndices.familyIndices[QueueFamilyIndices::q_graphics]) {
-                //queueCreateInfos[0].queueCount++;
-                presentQueueIndex = 0;
+        queuePriorities.emplace_back().push_back(0.8f);
+        queueCreateInfo.queueFamilyIndex = queueData.index[QueueData::q_transfer];
+        queueCreateInfos.push_back(queueCreateInfo);
+        //not currently doing a separate queue for present. its currently combined with graphics
+        //not sure how much wrok it'll be to fix that, i'll come back to it later
 
-                queuePriorities[0].push_back(0.9f);
-            }
-            else {
-                presentQueueIndex = 0;
-                queuePriorities.push_back({});
-                queuePriorities.back().push_back(0.9f);
-                VkDeviceQueueCreateInfo queueCreateInfo = {};
-                queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-                queueCreateInfo.queueFamilyIndex = queueFamilyIndices.familyIndices[QueueFamilyIndices::q_present];
-
-               // queueCreateInfo.queueCount = 1;
-                queueCreateInfos.push_back(queueCreateInfo);
-            }
-        }
-        if (queueFamilyIndices.familyHasIndex[QueueFamilyIndices::q_transfer]) {
-            if (queueFamilyIndices.familyIndices[QueueFamilyIndices::q_transfer] == queueFamilyIndices.familyIndices[QueueFamilyIndices::q_graphics]) {
-                transferQueueIndex = queueCreateInfos[0].queueCount;
-                queueCreateInfos[0].queueCount++;
-                queuePriorities[0].push_back(0.8f);
-            }
-            else {
-                printf("no queue transfer support \n");
-#if GPU_LOGGING
-                //printf("opening file? \n");
-                std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-                logFile << "no queue transfer support, currently throwing an exception\n" << std::endl;
-                logFile.close();
-
-#endif
-                throw std::runtime_error("please");
-            }
-
-        }
-        if (queueFamilyIndices.familyHasIndex[QueueFamilyIndices::q_compute]) {
-            computeQueueIndex = queueCreateInfos[0].queueCount;
-            queueCreateInfos[0].queueCount++;
-            queuePriorities[0].push_back(0.7f);
-        }
 
         for (int i = 0; i < queueCreateInfos.size(); i++) {
             queueCreateInfos[i].pQueuePriorities = queuePriorities[i].data();
@@ -446,26 +511,22 @@ namespace EWE {
             logFile.close();
         }
 #endif
-        graphicsIndex = queueFamilyIndices.familyIndices[QueueFamilyIndices::q_graphics];
-        presentIndex = queueFamilyIndices.familyIndices[QueueFamilyIndices::q_present];
-        computeIndex = queueFamilyIndices.familyIndices[QueueFamilyIndices::q_compute];
-        transferIndex = queueFamilyIndices.familyIndices[QueueFamilyIndices::q_transfer];
         
         std::cout << "getting device queues \n";
-        std::cout << "\t graphics family:queue index - " << graphicsIndex << ":" << graphicsQueueIndex << std::endl;
-        std::cout << "\t present family:queue index - " << presentIndex << ":" << presentQueueIndex << std::endl;
-        std::cout << "\t compute family:queue index - " << computeIndex << ":" << computeQueueIndex << std::endl;
-        std::cout << "\t transfer family:queue index - " << transferIndex << ":" << transferQueueIndex << std::endl;
+        std::cout << "\t graphics family:queue index - " << queueData.index[QueueData::q_graphics] << std::endl;
+        std::cout << "\t present family:queue index - " << queueData.index[QueueData::q_present] << std::endl;
+        std::cout << "\t compute family:queue index - " << queueData.index[QueueData::q_compute] << std::endl;
+        std::cout << "\t transfer family:queue index - " << queueData.index[QueueData::q_transfer] << std::endl;
         //printf("before graphics queue \n");
-        vkGetDeviceQueue(device_, graphicsIndex, graphicsQueueIndex, &graphicsQueue_);
+        vkGetDeviceQueue(device_, queueData.index[QueueData::q_graphics], 0, &graphicsQueue_);
         //printf("after graphics queue \n");
-        vkGetDeviceQueue(device_, presentIndex, presentQueueIndex, &presentQueue_);
-        //printf("after present queue \n");
-        //vkGetDeviceQueue(device_, indices.computeFamily, 0, &computeQueue_);
+        if (queueData.index[QueueData::q_graphics] != queueData.index[QueueData::q_present]) {
+            vkGetDeviceQueue(device_, queueData.index[QueueData::q_present], 0, &presentQueue_);
+        }
 
-        vkGetDeviceQueue(device_, computeIndex, computeQueueIndex, &computeQueue_);
+        vkGetDeviceQueue(device_, queueData.index[QueueData::q_compute], 0, &computeQueue_);
 
-        vkGetDeviceQueue(device_, transferIndex, transferQueueIndex, &transferQueue_);
+        vkGetDeviceQueue(device_, queueData.index[QueueData::q_transfer], 0, &transferQueue_);
         printf("after transfer qeuue \n");
 
 #if GPU_LOGGING
@@ -480,7 +541,7 @@ namespace EWE {
     void EWEDevice::CreateComputeCommandPool() {
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = computeIndex;
+        poolInfo.queueFamilyIndex = queueData.index[QueueData::q_compute];
 
         //sascha doesnt use TRANSIENT_BIT
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -491,7 +552,7 @@ namespace EWE {
     void EWEDevice::CreateCommandPool() {
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = graphicsIndex;
+        poolInfo.queueFamilyIndex = queueData.index[QueueData::q_graphics];
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
         EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool));
@@ -500,13 +561,13 @@ namespace EWE {
 
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        if (queueFamilyIndices.familyHasIndex[QueueFamilyIndices::q_transfer]) {
+        if (queueData.found[QueueData::q_transfer]) {
             printf("transfer command pool created with transfer queue family \n");
-            poolInfo.queueFamilyIndex = transferIndex;
+            poolInfo.queueFamilyIndex = queueData.index[QueueData::q_transfer];
         }
         else {
             printf("transfer command pool created with graphics queue family \n");
-            poolInfo.queueFamilyIndex = graphicsIndex;
+            poolInfo.queueFamilyIndex = queueData.index[QueueData::q_graphics];
         }
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
@@ -516,7 +577,7 @@ namespace EWE {
     void EWEDevice::CreateSurface() { window.createWindowSurface(instance, &surface_, GPU_LOGGING); }
 
     bool EWEDevice::IsDeviceSuitable(VkPhysicalDevice device) {
-        queueFamilyIndices = FindQueueFamilies(device);
+        queueData.FindQueueFamilies(device, surface_);
 
         bool extensionsSupported = CheckDeviceExtensionSupport(device);
 
@@ -530,7 +591,7 @@ namespace EWE {
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-        return queueFamilyIndices.isComplete() && extensionsSupported && swapChainAdequate &&
+        return queueData.isComplete() && extensionsSupported && swapChainAdequate &&
             supportedFeatures.samplerAnisotropy;
     }
 
@@ -665,162 +726,6 @@ namespace EWE {
         return requiredExtensions.empty();
     }
 
-    QueueFamilyIndices EWEDevice::FindQueueFamilies(VkPhysicalDevice device) {
-        QueueFamilyIndices indices;
-
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-        printf("queue family count : %d \n", queueFamilyCount);
-
-        //i want a designated graphics/present queue, or throw an error
-        //i want a dedicated async compute queue
-        //i want a dedicated async transfer queue
-        //if i dont get two separate dedicated queues for transfer and compute, attempt to combine those 2
-        //otherwise, flop them in the graphics queue
-
-        bool foundDedicatedGraphicsPresent = false;
-
-        //fidning graphics/present queue
-        int index = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface_, &presentSupport);
-            bool graphicsSupport = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
-            bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
-            if ((presentSupport && graphicsSupport && computeSupport) == true) {
-                //im pretty sure compute and graphics in a queue is a vulkan requirement, but not 100%
-                foundDedicatedGraphicsPresent = true;
-                indices.familyIndices[QueueFamilyIndices::q_graphics] = index;
-                indices.familyIndices[QueueFamilyIndices::q_present] = index;
-                indices.familyHasIndex[QueueFamilyIndices::q_graphics] = true;
-                indices.familyHasIndex[QueueFamilyIndices::q_present] = true;
-                break;
-            }
-            index++;
-        }
-        if (!foundDedicatedGraphicsPresent) {
-
-            printf("device not have a queue for both graphics and present \n");
-            std::ofstream logFile{};
-            logFile.open(GPU_LOG_FILE, std::ios::app);
-            assert(logFile.is_open() && "Failed to open log file");
-            throw std::runtime_error("device doesnt have graphics/present queue");
-        }
-        //re-searching for compute and transfer queues
-        std::stack<int> dedicatedComputeFamilies{};
-        std::stack<int> dedicatedTransferFamilies{};
-        std::stack<int> combinedTransferComputeFamilies{};
-        index = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            if (index == indices.familyIndices[QueueFamilyIndices::q_graphics]) {
-                continue;
-            }
-            bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
-            bool transferSupport = queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT;
-
-            if(computeSupport && transferSupport) {
-                combinedTransferComputeFamilies.emplace(index);
-			}
-            else if (computeSupport) {
-                dedicatedComputeFamilies.emplace(index);
-            }
-            else if (transferSupport) {
-                dedicatedTransferFamilies.emplace(index);
-            }
-            index++;
-        }
-        if (dedicatedComputeFamilies.size() > 0) {
-            indices.familyIndices[QueueFamilyIndices::q_compute] = dedicatedComputeFamilies.top();
-            indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
-        }
-        if (dedicatedTransferFamilies.size() > 0) {
-            indices.familyIndices[QueueFamilyIndices::q_transfer] = dedicatedTransferFamilies.top();
-            indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
-        }
-        if (combinedTransferComputeFamilies.size() > 0) {
-            if ((!indices.familyHasIndex[QueueFamilyIndices::q_compute]) && (!indices.familyHasIndex[QueueFamilyIndices::q_transfer])) {
-                if (combinedTransferComputeFamilies.size() >= 2) {
-                    indices.familyIndices[QueueFamilyIndices::q_compute] = combinedTransferComputeFamilies.top();
-                    combinedTransferComputeFamilies.pop();
-                    indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
-
-
-                    indices.familyIndices[QueueFamilyIndices::q_transfer] = combinedTransferComputeFamilies.top();
-                    indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
-                }
-                else { //else if size == 1
-                    indices.familyIndices[QueueFamilyIndices::q_compute] = combinedTransferComputeFamilies.top();
-                    indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
-
-                    VkQueueFamilyProperties& graphicsFamRef = queueFamilies[indices.familyIndices[QueueFamilyIndices::q_graphics]];
-                    if ((graphicsFamRef.queueFlags & VK_QUEUE_TRANSFER_BIT) && (graphicsFamRef.queueCount > 1)) {
-                        indices.familyIndices[QueueFamilyIndices::q_transfer] = indices.familyIndices[QueueFamilyIndices::q_graphics];
-                    }
-                    else {
-                        indices.familyIndices[QueueFamilyIndices::q_transfer] = indices.familyIndices[QueueFamilyIndices::q_compute];
-                        indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
-                    }
-                }
-            }
-            else if (!indices.familyHasIndex[QueueFamilyIndices::q_compute]) {
-                indices.familyIndices[QueueFamilyIndices::q_compute] = combinedTransferComputeFamilies.top();
-                indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
-            }
-            else if (!indices.familyHasIndex[QueueFamilyIndices::q_transfer]) {
-                indices.familyIndices[QueueFamilyIndices::q_transfer] = combinedTransferComputeFamilies.top();
-                indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
-            }
-        }
-        if (!indices.familyHasIndex[QueueFamilyIndices::q_compute]) {
-            //already did a check for graphics + compute
-            VkQueueFamilyProperties& graphicsFamRef = queueFamilies[indices.familyIndices[QueueFamilyIndices::q_graphics]];
-            if (graphicsFamRef.queueCount > 1) {
-                indices.familyIndices[QueueFamilyIndices::q_compute] = indices.familyIndices[QueueFamilyIndices::q_graphics];
-                indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
-            }
-        }
-        if (!indices.familyHasIndex[QueueFamilyIndices::q_transfer]) {
-            VkQueueFamilyProperties& graphicsFamRef = queueFamilies[indices.familyIndices[QueueFamilyIndices::q_graphics]];
-            if ((graphicsFamRef.queueFlags & VK_QUEUE_TRANSFER_BIT) && (graphicsFamRef.queueCount > 1)) {
-                indices.familyIndices[QueueFamilyIndices::q_transfer] = indices.familyIndices[QueueFamilyIndices::q_graphics];
-                indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
-            }
-        }
-        return indices;
-
-        /*
-        *old method
-        int index = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface_, &presentSupport);
-            bool graphicsSupport = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
-            bool transferSupport = queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT;
-            bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
-            //this is NVIDIA only im pretty sure
-            if (presentSupport && graphicsSupport && transferSupport && computeSupport && queueFamily.queueCount >= 3) {
-                std::cout << "can stuff all 4 queues into one family \n";
-                indices.familyIndices[QueueFamilyIndices::q_graphics] = index;
-                indices.familyIndices[QueueFamilyIndices::q_present] = index;
-                indices.familyIndices[QueueFamilyIndices::q_compute] = index;
-                indices.familyIndices[QueueFamilyIndices::q_transfer] = index;
-
-                indices.familyHasIndex[QueueFamilyIndices::q_graphics] = true;
-                indices.familyHasIndex[QueueFamilyIndices::q_present] = true;
-                indices.familyHasIndex[QueueFamilyIndices::q_compute] = true;
-                indices.familyHasIndex[QueueFamilyIndices::q_transfer] = true;
-                return indices;
-            }
-            
-            index++;
-        }
-        */
-        //return indices;
-
-    }
 
     SwapChainSupportDetails EWEDevice::QuerySwapChainSupport(VkPhysicalDevice device) {
         SwapChainSupportDetails details;
@@ -1161,9 +1066,9 @@ namespace EWE {
         imageBarriers[0].subresourceRange.levelCount = 1;
         imageBarriers[0].subresourceRange.baseArrayLayer = 0;
         imageBarriers[0].subresourceRange.layerCount = 1;
-        if (computeIndex != graphicsIndex) {
-            imageBarriers[0].srcQueueFamilyIndex = computeIndex;
-            imageBarriers[0].dstQueueFamilyIndex = graphicsIndex;
+        if (queueData.index[QueueData::q_compute] != queueData.index[QueueData::q_graphics]) {
+            imageBarriers[0].srcQueueFamilyIndex = queueData.index[QueueData::q_compute];
+            imageBarriers[0].dstQueueFamilyIndex = queueData.index[QueueData::q_graphics];
         }
         else {
             imageBarriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1233,13 +1138,17 @@ namespace EWE {
             imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.dstQueueFamilyIndex = queueData.q_transfer;
         }
         else if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
             imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            imageMemoryBarrier.srcQueueFamilyIndex = queueData.q_transfer;
+            imageMemoryBarrier.dstQueueFamilyIndex = queueData.q_graphics;
 
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         }
         else {
             printf("unsupported image layout transition \n");
