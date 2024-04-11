@@ -106,12 +106,13 @@ namespace EWE {
 			std::lock_guard<std::mutex> lock(mtx);
 			if (syncHubSingleton == nullptr) {
 				syncHubSingleton = ConstructSingular<SyncHub>(ewe_call_trace);
-				std::cout << "COSTRUCTING SYNCHUB" << std::endl;
+				//std::cout << "COSTRUCTING SYNCHUB" << std::endl;
 			}
 			return syncHubSingleton;
 			
 		}
 		SyncHub() {
+
 			std::cout << "COSTRUCTING SYNCHUB" << std::endl;
 		}
 		~SyncHub() {

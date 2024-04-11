@@ -49,8 +49,8 @@ namespace EWE {
 
 		pipelineConfig.cache = cache;
 
-		std::string vertString = "2d.vert.spv";
-		std::string fragString = "2d.frag.spv";
+		std::string vertString = "UI.vert.spv";
+		std::string fragString = "UI.frag.spv";
 		pipe2d = ConstructSingular<EWEPipeline>(ewe_call_trace, vertString, fragString, pipelineConfig);
 
 		pushConstantRange.size = sizeof(NineUIPushConstantData);
@@ -69,7 +69,7 @@ namespace EWE {
 	}
 
 
-	void Dimension2::init() {
+	void Dimension2::Init() {
 		if (dimension2Ptr != nullptr) {
 			printf("initing twice??? \n");
 			throw std::runtime_error("initing twice?");
@@ -79,7 +79,7 @@ namespace EWE {
 		new(dimension2Ptr) Dimension2();
 
 	}
-	void Dimension2::destruct() {
+	void Dimension2::Destruct() {
 		vkDestroyPipelineCache(EWEDevice::GetVkDevice(), dimension2Ptr->cache, nullptr);
 
 		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_2d, nullptr);
@@ -95,7 +95,7 @@ namespace EWE {
 		ewe_free(dimension2Ptr);
 	}
 
-	void Dimension2::bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {
+	void Dimension2::Bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {
 #if RENDER_DEBUG
 		printf("binding 2d pipeline in dimension 2 \n");
 #endif
@@ -106,7 +106,7 @@ namespace EWE {
 		dimension2Ptr->frameIndex = frameIndex;
 		dimension2Ptr->cmdBuffer = cmdBuffer;
 	}
-	void Dimension2::bindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {
+	void Dimension2::BindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {
 #if RENDER_DEBUG
 		printf("binding 9ui in dimension 2 \n");
 #endif
@@ -117,7 +117,7 @@ namespace EWE {
 		dimension2Ptr->cmdBuffer = cmdBuffer;
 	}
 
-	void Dimension2::bindTexture2DUI(TextureDesc texture) {
+	void Dimension2::BindTexture2DUI(TextureDesc texture) {
 		if (texture != dimension2Ptr->bindedTexture) {
 			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -129,7 +129,7 @@ namespace EWE {
 			dimension2Ptr->bindedTexture = texture;
 		}
 	}
-	void Dimension2::bindTexture2D(TextureDesc texture) {
+	void Dimension2::BindTexture2D(TextureDesc texture) {
 		if (texture != dimension2Ptr->bindedTexture) {
 			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -141,7 +141,7 @@ namespace EWE {
 			dimension2Ptr->bindedTexture = texture;
 		}
 	}
-	void Dimension2::bindTexture9(TextureDesc texture) {
+	void Dimension2::BindTexture9(TextureDesc texture) {
 		if (texture != dimension2Ptr->bindedTexture) {
 			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -154,14 +154,14 @@ namespace EWE {
 		}
 	}
 
-	void Dimension2::pushAndDraw(Simple2DPushConstantData& push) {
+	void Dimension2::PushAndDraw(Simple2DPushConstantData& push) {
 		//possibly do a check here, to ensure the pipeline and descriptors are properly binded
 		//thats really just a feature to check bad programming, dont rely on the programmer being bad. (easy enough to debug)
 
 		vkCmdPushConstants(dimension2Ptr->cmdBuffer, dimension2Ptr->PL_2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
 		dimension2Ptr->model2D->Draw(dimension2Ptr->cmdBuffer);
 	}
-	void Dimension2::pushAndDraw(NineUIPushConstantData& push) {
+	void Dimension2::PushAndDraw(NineUIPushConstantData& push) {
 		vkCmdPushConstants(dimension2Ptr->cmdBuffer, dimension2Ptr->PL_9, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
 		dimension2Ptr->nineUIModel->Draw(dimension2Ptr->cmdBuffer);
 	}

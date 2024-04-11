@@ -32,8 +32,7 @@ namespace EWE {
 		PixelPeek(std::string const& path);
 		//dont currrently care about desired channels, but maybe one day
 	};
-	class ImageInfo {
-		friend class Cube_Texture;
+	struct ImageInfo {
 		VkImageLayout imageLayout;
 		VkImage image;
 		VkDeviceMemory imageMemory;

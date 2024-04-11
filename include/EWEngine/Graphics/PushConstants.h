@@ -8,7 +8,7 @@ struct SimplePushConstantData {
 };
 struct SpritePushConstantData {
 	glm::mat4 modelMatrix{ 1.f };
-	glm::vec4 data{ 0.f };
+	int textureID;
 };
 
 struct PlayerPushConstantData {
@@ -35,11 +35,13 @@ struct Grid2DPushConstantData {
 struct Simple2DPushConstantData {
 	glm::vec4 scaleOffset{ 1.f }; //4 floats here, 2 x 2
 	alignas(16) glm::vec3 color{1.f}; //?idk if id stuff anything else right here
+	alignas(16) int textureID;
 };
 struct NineUIPushConstantData {
 	alignas(16)glm::vec2 scale;
 	alignas(16)glm::vec4 offset; //xy = translation, z = borderSize
 	alignas(16)glm::vec3 color;
+	alignas(16)int textureID;
 };
 struct ModelTimePushData {
 	glm::mat4 modelMatrix{ 1.f };

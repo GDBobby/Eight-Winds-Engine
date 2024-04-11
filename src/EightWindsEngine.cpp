@@ -70,7 +70,7 @@ namespace EWE {
 		//advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
 		leafSystem = ConstructSingular<LeafSystem>(ewe_call_trace);
-		Dimension2::init();
+		Dimension2::Init();
 		PipelineSystem::Emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>(ewe_call_trace)));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
@@ -91,7 +91,7 @@ namespace EWE {
 	}
 
 	EightWindsEngine::~EightWindsEngine() {
-		Dimension2::destruct();
+		Dimension2::Destruct();
 		PipelineSystem::Destruct();
 		leafSystem->~LeafSystem();
 		ewe_free(leafSystem);

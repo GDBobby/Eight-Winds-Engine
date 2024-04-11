@@ -360,6 +360,8 @@ namespace EWE {
             uint32_t score = 0;
             score += (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) * 1000;
             score += properties.limits.maxImageDimension2D;
+            std::string deviceNameTemp = properties.deviceName;
+            score += (deviceNameTemp.find("AMD") != deviceNameTemp.npos) * 100000;
             //properties.limits.maxFramebufferWidth;
 
             printf("Device Name:Score %s:%d \n", properties.deviceName, score);
@@ -1123,8 +1125,6 @@ namespace EWE {
         // Create an image barrier object
         VkImageMemoryBarrier imageMemoryBarrier{};
         imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         imageMemoryBarrier.oldLayout = oldImageLayout;
         imageMemoryBarrier.newLayout = newImageLayout;
         imageMemoryBarrier.image = image;
@@ -1142,13 +1142,14 @@ namespace EWE {
             imageMemoryBarrier.dstQueueFamilyIndex = queueData.q_transfer;
         }
         else if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+
             imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            imageMemoryBarrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
             imageMemoryBarrier.srcQueueFamilyIndex = queueData.q_transfer;
             imageMemoryBarrier.dstQueueFamilyIndex = queueData.q_graphics;
 
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
         }
         else {
             printf("unsupported image layout transition \n");

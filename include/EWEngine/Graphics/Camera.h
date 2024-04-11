@@ -6,10 +6,9 @@
 
 namespace EWE {
 	struct GlobalUbo {
-		glm::mat4 projection{ 1.f };
-		glm::mat4 view{ 1.f };
+		glm::mat4 projView;
 		//glm::mat4 inverseView{ 1.f };
-		glm::vec4 cameraPos{ 1.f }; //4 just for alignment
+		glm::vec3 cameraPos{ 1.f }; //4 just for alignment
 
 		//alignas(16) glm::vec3 lightDirection = glm::normalize(glm::vec3{ 1.f, 3.f, -1.f });
 		//glm::vec4 ambientLightColor{ 1.f, 0.7f, 0.7f, .02f };  // w is intensity
@@ -23,6 +22,10 @@ namespace EWE {
 		void SetViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up = glm::vec3{0.0f,1.0f, 0.0f});
 		//void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up = glm::vec3{ 0.0f,1.0f, 0.0f });
 		void NewViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp);
+		void NewViewTarget(glm::vec3 const& position, glm::vec3 const& target) {
+			const glm::vec3 upDir{ 0.f, 1.f, 0.f };
+			NewViewTarget(position, target, upDir);
+		}
 		void ViewTargetDirect(uint8_t currentFrame);
 		void SetViewYXZ(glm::vec3 const& position, glm::vec3 const& rotation);
 
@@ -52,6 +55,9 @@ namespace EWE {
 	private:
 		std::vector<EWEBuffer*>* uniformBuffers{};
 		GlobalUbo ubo{};
+
+		glm::mat4 projection;
+		glm::mat4 view;
 
 		uint8_t dataHasBeenUpdated = 0;
 		glm::vec3 position;

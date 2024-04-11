@@ -28,22 +28,20 @@ namespace EWE {
 		VkCommandBuffer cmdBuffer;
 		uint8_t frameIndex;
 
-		EWEPipeline::PipelineConfigInfo InitConfigInfo();
-		EWEPipeline::PipelineConfigInfo SecondConfigInfo();
 
 	public:
-		static void init();
-		static void destruct();
+		static void Init();
+		static void Destruct();
 
-		static void bindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
-		static void bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
+		static void BindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
+		static void Bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
 
-		static void bindTexture2DUI(TextureDesc texture);
-		static void bindTexture2D(TextureDesc texture);
-		static void bindTexture9(TextureDesc texture);
+		static void BindTexture2DUI(TextureDesc texture);
+		static void BindTexture2D(TextureDesc texture);
+		static void BindTexture9(TextureDesc texture);
 
-		static void pushAndDraw(Simple2DPushConstantData& push);
-		static void pushAndDraw(NineUIPushConstantData& push);
+		static void PushAndDraw(Simple2DPushConstantData& push);
+		static void PushAndDraw(NineUIPushConstantData& push);
 
 
 	};

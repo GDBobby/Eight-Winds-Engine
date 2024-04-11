@@ -32,7 +32,7 @@ namespace EWE {
 			changeMenuStateFromMM(menuStates, gameState);
 		}
 
-		static std::map<MenuTextureEnum, TextureDesc> textures;
+		static TextureDesc textureArray;
 
 		static std::queue<uint16_t> clickReturns;
 

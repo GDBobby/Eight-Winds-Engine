@@ -1,4 +1,5 @@
 #include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/UI_Texture.h"
 
 #ifndef TEXTURE_DIR
 #define TEXTURE_DIR "textures/"
@@ -331,5 +332,56 @@ namespace EWE {
         new(imageTracker) ImageTracker();
 
         return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
+    }
+
+
+    TextureDesc Texture_Manager::CreateTextureArray(std::vector<PixelPeek> const& pixelPeeks) {
+
+        ImageInfo arrayImageInfo{};
+
+        UI_Texture::CreateUIImage(arrayImageInfo, pixelPeeks);
+        UI_Texture::CreateUIImageView(arrayImageInfo, pixelPeeks.size());
+        UI_Texture::CreateUISampler(arrayImageInfo);
+
+        arrayImageInfo.descriptorImageInfo.sampler = arrayImageInfo.sampler;
+        arrayImageInfo.descriptorImageInfo.imageView = arrayImageInfo.imageView;
+        arrayImageInfo.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        EWEDescriptorWriter descBuilder(TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
+
+        descBuilder.writeImage(0, &arrayImageInfo.descriptorImageInfo);
+        TextureDesc retDesc = descBuilder.build();
+
+        //cubeVector.emplace_back(EWETexture(eweDevice, texPath, tType_cube));
+        //tmPtr->textureMap.emplace(tmPtr->currentTextureCount, );
+        auto tmPtr = GetTextureManagerPtr();
+        tmPtr->UI_ID = retDesc;
+        tmPtr->currentTextureCount++;
+        return retDesc;
+    }
+    TextureDesc Texture_Manager::CreateUITexture() {
+        const std::vector<std::string> uiNames = {
+            "NineUI.png",
+            "NineFade.png",
+            "clickyBox.png",
+            "bracketButton.png",
+            "bracketSlide.png",
+            "unchecked.png"
+            "buttonUp.png",
+            "checked.png",
+            "menuBase.png",
+            //"roundButton.png",
+        };
+        std::vector<PixelPeek> pixelPeeks{};
+        pixelPeeks.reserve(6);
+
+        for (auto const& name : uiNames) {
+            std::string individualPath = "textures/UI/";
+            individualPath += name;
+
+            pixelPeeks.emplace_back(individualPath);
+
+        }
+        return CreateTextureArray(pixelPeeks);
     }
 }

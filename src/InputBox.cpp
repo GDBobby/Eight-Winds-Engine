@@ -337,7 +337,7 @@ namespace EWE {
 				push.color.g = .05f;
 				push.color.b = .05f;
 				push.scaleOffset = glm::vec4(background.scale, background.translation);
-				Dimension2::pushAndDraw(push);
+				Dimension2::PushAndDraw(push);
 			}
 			else {
 				push.color = glm::vec3{ 1.f, 1.f, 1.f };
@@ -363,7 +363,7 @@ namespace EWE {
 					push.offset = glm::vec4(variables[i].variableCombo.activeOption.transform.translation, 1.f, 1.f);
 					//need color array
 					push.scale = variables[i].variableCombo.activeOption.transform.scale;
-					Dimension2::pushAndDraw(push);
+					Dimension2::PushAndDraw(push);
 
 					variables[i].variableCombo.render(push);
 

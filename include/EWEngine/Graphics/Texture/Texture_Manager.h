@@ -64,6 +64,7 @@ namespace EWE {
 		
 
 		TextureDesc skyboxID;
+		TextureDesc UI_ID;
 
 		uint32_t currentTextureCount{ 0 };
 
@@ -90,6 +91,8 @@ namespace EWE {
 		void Cleanup();
 
 		static Texture_Manager* GetTextureManagerPtr() { return textureManagerPtr; }
+		static TextureDesc CreateUITexture();
+		static TextureDesc CreateTextureArray(std::vector<PixelPeek> const& pixelPeeks);
 		//static VkDescriptorSet* getDescriptorSet(TextureID textureID);
 		//static VkDescriptorSet* getSkyboxDescriptorSet() { return &textureManagerPtr->textureMap.at(textureManagerPtr->skyboxID); }
 

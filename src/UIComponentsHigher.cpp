@@ -367,7 +367,7 @@ namespace EWE {
 			}
 			push.offset = glm::vec4(typeBoxes[k].transform.translation, 1.f, 1.f);
 			push.scale = typeBoxes[k].transform.scale;
-			Dimension2::pushAndDraw(push);
+			Dimension2::PushAndDraw(push);
 		}
 	}
 	void VariableControl::render(Simple2DPushConstantData& push) {
@@ -504,7 +504,7 @@ namespace EWE {
 		push.color = glm::vec3{ .3f, .25f, .15f };
 		push.offset = glm::vec4(transform.translation, 1.f, 1.f);
 		push.scale = transform.scale;
-		Dimension2::pushAndDraw(push);
+		Dimension2::PushAndDraw(push);
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~ MENU BAR ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -577,7 +577,7 @@ namespace EWE {
 					if (dropBoxes[j].currentlyDropped) {
 						push.offset = glm::vec4(dropBoxes[j].dropBackground.translation, 0.5f, 1.f);
 						push.scale = dropBoxes[j].dropBackground.scale;
-						Dimension2::pushAndDraw(push);
+						Dimension2::PushAndDraw(push);
 						break; //i think only 1 can be dropped
 					}
 				}
@@ -587,7 +587,7 @@ namespace EWE {
 			push.color = glm::vec3{ .86f, .5f, .5f };
 			push.offset = glm::vec4(transform.translation, 0.1f, 1.f);
 			push.scale = transform.scale;
-			Dimension2::pushAndDraw(push);
+			Dimension2::PushAndDraw(push);
 		}
 	}
 }
