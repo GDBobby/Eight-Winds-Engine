@@ -14,6 +14,7 @@ namespace EWE {
 
         DS_MAX_COUNT,
     };
+
     /*
     enum PipeDescSetLayouts_Enum {
 #if DRAWING_POINTS
@@ -38,6 +39,7 @@ namespace EWE {
         LDSL_smallInstance,
         LDSL_largeInstance,
 	};
+
 	enum Buffer_Enum : uint16_t {
 		Buff_ubo,
 		Buff_gpu,

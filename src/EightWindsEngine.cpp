@@ -71,7 +71,7 @@ namespace EWE {
 		uiHandler.isActive = false;
 		leafSystem = ConstructSingular<LeafSystem>(ewe_call_trace);
 		Dimension2::Init();
-		PipelineSystem::Emplace(Pipe_skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>(ewe_call_trace)));
+		PipelineSystem::Emplace(Pipe::skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>(ewe_call_trace)));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
 		RigidRenderingSystem::getRigidRSInstance();

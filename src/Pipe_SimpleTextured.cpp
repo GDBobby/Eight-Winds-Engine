@@ -4,7 +4,7 @@
 namespace EWE {
 	Pipe_SimpleTextured::Pipe_SimpleTextured()
 #ifdef _DEBUG
-		: PipelineSystem{ Pipe_textured } {
+		: PipelineSystem{ Pipe::textured } {
 #else
 	{
 #endif

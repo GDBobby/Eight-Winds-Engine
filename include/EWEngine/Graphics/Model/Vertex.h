@@ -153,7 +153,7 @@ namespace EWE {
         glm::vec2 position{ 0.f };
         glm::vec2 uv{ 0.f };
 
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
     };
     struct VertexGrid2D {
         glm::vec2 position;

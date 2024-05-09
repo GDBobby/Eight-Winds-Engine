@@ -35,7 +35,7 @@ namespace EWE {
 		EWEPipeline::enableAlphaBlending(pipelineConfig);
 
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexUI>();
-		pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
+		pipelineConfig.attributeDescriptions = VertexUI::GetAttributeDescriptions();
 		pipelineConfig.pipelineLayout = PL_2d;
 
 

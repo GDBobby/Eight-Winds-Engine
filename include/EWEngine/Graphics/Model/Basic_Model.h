@@ -5,7 +5,7 @@ namespace EWE {
     struct Basic_Model {
         static std::unique_ptr<EWEModel> generateQuad(glm::vec2 uvScale = glm::vec2{ 1.f });
         static std::unique_ptr<EWEModel> generateQuadPNU(glm::vec2 uvScale = glm::vec2{ 1.f });
-        static std::unique_ptr<EWEModel> generateSimple3DQuad(glm::vec2 uvScale = glm::vec2{ 1.f });
+        static std::unique_ptr<EWEModel> GenerateSimple3DQuad(glm::vec2 uvScale = glm::vec2{ 1.f });
         static std::unique_ptr<EWEModel> generate3DTileQuad(glm::vec2 uvScale);
         /*
         static std::unique_ptr<EWEModel> generateSimpleZedQuad(glm::vec2 uvScale = glm::vec2{ 1.f }) {

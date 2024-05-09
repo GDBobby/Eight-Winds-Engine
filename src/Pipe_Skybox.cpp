@@ -5,7 +5,7 @@
 namespace EWE {
 	Pipe_Skybox::Pipe_Skybox()
 #ifdef _DEBUG
-		: PipelineSystem{ Pipe_skybox } {
+		: PipelineSystem{ Pipe::skybox } {
 #else
 	{
 #endif

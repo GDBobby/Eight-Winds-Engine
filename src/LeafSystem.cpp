@@ -9,7 +9,7 @@ namespace EWE {
 		widthVarianceDistribution{ -80.f, 60.f }, fallSwingVarianceDistribution{ 5.f, 10.f }, initHeightVarianceDistribution{ 2.f, 40.f }, varianceDistribution{ -.5f, .5f },
 		rockDist{ 1.75f, 2.25f }
 #ifdef _DEBUG
-		, PipelineSystem{Pipe_loading}
+		, PipelineSystem{Pipe::loading}
 #endif
 
 	{

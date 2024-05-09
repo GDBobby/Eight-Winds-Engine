@@ -29,8 +29,8 @@ namespace EWE {
 		void ViewTargetDirect(uint8_t currentFrame);
 		void SetViewYXZ(glm::vec3 const& position, glm::vec3 const& rotation);
 
-		const glm::mat4& GetProjection() const { return ubo.projection; }
-		const glm::mat4& GetView() const { return ubo.view; }
+		const glm::mat4& GetProjection() const { return projection; }
+		const glm::mat4& GetView() const { return view; }
 		//const glm::mat4& getInverseView() const { return inverseViewMatrix; }
 
 		void BindUBO(uint8_t frameIndex) {

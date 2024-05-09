@@ -19,49 +19,52 @@
 
 namespace EWE {
 
+	namespace Pipe {
+		enum Pipeline_Enum : PipelineID {
+			pointLight,
+			textured,
+			alpha,
+			//material,
+			twod,
+			NineUI,
+			//fbx,
+			skybox,
+			grid,
+			//bobTrans,
+			sprite,
+			boneWeapon,
+			lightning,
+			spikyBall,
+			visualEffect,
+			grass,
+			loading,
 
-	enum Pipeline_Enum : PipelineID {
-		Pipe_pointLight,
-		Pipe_textured,
-		Pipe_alpha,
-		//Pipe_material,
-		Pipe_2d,
-		Pipe_NineUI,
-		//Pipe_fbx,
-		Pipe_skybox,
-		Pipe_grid,
-		//Pipe_bobTrans,
-		Pipe_sprite,
-		Pipe_boneWeapon,
-		Pipe_lightning,
-		Pipe_spikyBall,
-		Pipe_visualEffect,
-		Pipe_grass,
-		Pipe_loading,
-
-		Pipe_MAX_COUNT,
-	};
+			ENGINE_MAX_COUNT,
+		};
+	} //namespace Pipe
+	namespace PL{
 	enum PipeLayout_Enum : uint32_t { //uint32_t is the same as PipelineID, but using uint32_t to avoid confusion
-		PL_pointLight,
-		PL_lightning,
-		PL_spikyBall,
-		PL_grass,
-		PL_textured,
+		pointLight,
+		lightning,
+		spikyBall,
+		grass,
+		textured,
 		//PL_material,
-		PL_2d,
-		PL_boned,
+		twod,
+		boned,
 		//PL_fbx,
-		PL_skybox,
-		PL_sprite,
+		skybox,
+		sprite,
 		//PL_boneWeapon,
-		PL_visualEffect,
+		visualEffect,
 		//PL_metalRough,
-		PL_loading,
+		loading,
 
-		PL_nineUI,
+		nineUI,
 
-		PL_MAX_COUNT,
+		MAX_COUNT,
 	};
+	} //namespace PL
 
 	//typedef uint8_t MaterialFlags; this in engine/data/enginedatatypes.h
 

@@ -7,12 +7,12 @@
 namespace EWE {
 
 #if LEVEL_BUILDER
-	void ObjectManager::clearBuilders() {
+	void ObjectManager::ClearBuilders() {
 		lBuilderObjects.clear();
 		spriteBuildObjects.clear();
 		resetBuilders();
 	}
-	void ObjectManager::resetBuilders() {
+	void ObjectManager::ResetBuilders() {
 		auto RigidRenderingSystem = RigidRenderingSystem::getRigidRSInstance();
 		for (int i = 0; i < dynamicBuildObjects.size(); i++) {
 			materialHandler->removeByTransform(dynamicBuildObjects[i].textureID, &dynamicBuildObjects[i].transform);
@@ -25,7 +25,7 @@ namespace EWE {
 	}
 
 #endif
-	void ObjectManager::clearSceneObjects() {
+	void ObjectManager::ClearSceneObjects() {
 		texturedGameObjects.clear();
 		grassField.clear();
 		printf("clearing ewe objects \n");

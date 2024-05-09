@@ -70,7 +70,6 @@ namespace EWE {
 
 		friend class Cube_Texture;
 		friend class Material_Texture;
-		friend class UI_Texture;
 		friend class Texture_Builder;
 
 		static Texture_Manager* textureManagerPtr;

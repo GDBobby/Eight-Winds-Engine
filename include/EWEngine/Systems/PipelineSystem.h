@@ -19,10 +19,10 @@ namespace EWE {
 #ifdef _DEBUG
 		static PipelineID currentPipe;
 		PipelineSystem(PipelineID pipeID) : myID{pipeID} {}
-		~PipelineSystem() {}
 #else
 		PipelineSystem() {}
 #endif
+		~PipelineSystem() {}
 		virtual void CreatePipeLayout() = 0;
 		virtual void CreatePipeline() = 0;
 

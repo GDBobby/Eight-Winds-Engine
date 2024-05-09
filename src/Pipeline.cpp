@@ -855,51 +855,6 @@ namespace EWE {
 
 				break;
 			}
-			case PL_orbOverlay: {
-				
-				pushConstantRange.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-				pushConstantRange.size = sizeof(HPContainerPushData);
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-				//std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_sprite, eweDevice);
-				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_orbOverlay, eweDevice);
-				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
-				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				//printf("before orb overlay PL \n");
-				//printf("after orb overlay PL \n");
-				break;
-			}
-			case PL_ExpBar: {
-
-				pushConstantRange.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-				pushConstantRange.size = sizeof(ExpBarPushData);
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-				//std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_sprite, eweDevice);
-				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_2d, eweDevice);
-				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
-				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				//printf("before orb overlay PL \n");
-				//printf("after exp bar overlay PL \n");
-				break;
-			}
-			case PL_castleHealth: {
-
-				pushConstantRange.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-				pushConstantRange.size = sizeof(CastleHealthPushData);
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-				//std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_sprite, eweDevice);
-				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_2d, eweDevice);
-				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
-				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				//printf("before orb overlay PL \n");
-				//printf("after exp bar overlay PL \n");
-				break;
-			}
 
 			case PL_visualEffect: {
 				pushConstantRange.size = sizeof(ModelPushData);
@@ -1019,7 +974,7 @@ namespace EWE {
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_2d, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = VertexUI::GetAttributeDescriptions();
 				vertString = "2d.vert.spv";
 				fragString = "2d.frag.spv";
 				break;
@@ -1028,7 +983,7 @@ namespace EWE {
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_nineUI, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = VertexUI::GetAttributeDescriptions();
 				//maybe i should cache UI into here
 				//printf("before nineui pipe \n");
 				vertString = "NineUI.vert.spv";
@@ -1053,42 +1008,6 @@ namespace EWE {
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				vertString = "sprite.vert.spv";
 				fragString = "sprite.frag.spv";
-				break;
-			}
-			case Pipe_orbOverlay: {
-
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_orbOverlay, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
-				EWEPipeline::enableAlphaBlending(pipelineConfig);
-				//printf("before orb pipe \n");
-				vertString = "HPContainer.vert.spv";
-				fragString = "HPContainer.frag.spv";
-
-				//printf("after orb pipe \n");
-				break;
-			}
-			case Pipe_ExpBar: {
-
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_ExpBar, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
-				EWEPipeline::enableAlphaBlending(pipelineConfig);
-				//printf("before orb pipe \n");
-				vertString = "ExpContainer.vert.spv";
-				fragString = "ExpContainer.frag.spv";
-				//printf("after orb pipe \n");
-				break;
-			}
-			case Pipe_castleHealth: {
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_castleHealth, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
-				EWEPipeline::enableAlphaBlending(pipelineConfig);
-				//printf("before orb pipe \n");
-				vertString = "CastleHealth.vert.spv";
-				fragString = "CastleHealth.frag.spv";
-				//printf("after orb pipe \n");
 				break;
 			}
 

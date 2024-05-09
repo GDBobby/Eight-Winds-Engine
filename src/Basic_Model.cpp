@@ -58,7 +58,7 @@ namespace EWE {
         std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
         return std::make_unique<EWEModel>(vertices.data(), vertices.size(), sizeof(vertices[0]), indices);
     }
-    std::unique_ptr<EWEModel> Basic_Model::generateSimple3DQuad(glm::vec2 uvScale) {
+    std::unique_ptr<EWEModel> Basic_Model::GenerateSimple3DQuad(glm::vec2 uvScale) {
         std::vector<EffectVertex> vertices{
             {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
             {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},

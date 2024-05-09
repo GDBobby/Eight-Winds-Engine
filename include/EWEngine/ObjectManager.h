@@ -37,7 +37,7 @@ namespace EWE {
 		std::pair<std::unique_ptr<EWEModel>, TextureDesc> skybox{}; //model and textureID
 
 
-		void initCollision() {
+		void InitCollision() {
 			Collision::collisionObjects.clear();
 			Collision::collisionObjects.push_back(&texturedGameObjects);
 			Collision::collisionObjects.push_back(&materialGameObjects);
@@ -57,10 +57,10 @@ namespace EWE {
 		//uint32_t currentActiveTargets = 0;
 		TextureDesc grassTextureID{TEXTURE_UNBINDED_DESC};
 #if LEVEL_BUILDER
-		void clearBuilders();
-		void resetBuilders();
+		void ClearBuilders();
+		void ResetBuilders();
 #endif
-		void clearSceneObjects();
+		void ClearSceneObjects();
 
 		/*
 		add callbacks, when the first item is added to a vector, bind the pipeline

@@ -152,7 +152,7 @@ namespace EWE {
         return attributeDescriptions;
     }
 
-    std::vector<VkVertexInputAttributeDescription> VertexUI::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> VertexUI::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions(1);
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
