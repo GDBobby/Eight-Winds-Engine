@@ -109,7 +109,6 @@ namespace EWE {
 
         // Buffer Helper Functions
         void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-        void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
         //void endSingleTimeCommandsSecondThread(VkCommandBuffer commandBuffer);
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void CopySecondaryBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer cmdBuf);
@@ -117,10 +116,13 @@ namespace EWE {
         void TransitionImageLayout(VkImage& image, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
         void TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImage> const& images);
         void TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image);
+        void TransitionFromTransfer(VkCommandBuffer cmdBuf, QueueData::Queue_Enum dstQueueIndex, VkImage const& image, VkImageLayout finalLayout);
+        void TransitionFromTransferToGraphics(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image);
 
         void SetImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange);
 
         void CopyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount);
+        void CopyBufferToImageAndTransitionFromTransfer(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount, VkImageLayout finalLayout);
         void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
         VkInstance GetInstance() { return instance; }
@@ -155,7 +157,7 @@ namespace EWE {
 
 
         const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-        const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+        const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME };
         // if doing full screen                                                              VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
 
         void CreateInstance();

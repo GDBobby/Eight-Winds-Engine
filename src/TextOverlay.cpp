@@ -285,15 +285,16 @@ namespace EWE {
 
 		//im just winging it with these pipelinestageflags
 		
-		eweDevice->SetImageLayout(
-			copyCmd,
-			image,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			subresourceRange
-		);
+		//eweDevice->SetImageLayout(
+		//	copyCmd,
+		//	image,
+		//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		//	VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		//	subresourceRange
+		//);
+		eweDevice->TransitionFromTransfer(copyCmd, EWE::QueueData::q_graphics, image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-		eweDevice->EndSingleTimeCommands(copyCmd);
+		SyncHub::getSyncHubInstance()->EndSingleTimeCommand(copyCmd);
 
 		vkFreeMemory(eweDevice->Device(), stagingBuffer.memory, nullptr);
 		vkDestroyBuffer(eweDevice->Device(), stagingBuffer.buffer, nullptr);

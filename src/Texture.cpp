@@ -226,23 +226,18 @@ namespace EWE {
             mipLevels
         );
         //printf("before copy buffer to image \n");
-        eweDevice->CopyBufferToImage(stagingBuffer, image, width, height, 1);
-        //printf("after copy buffer to image \n");
 
-        vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
-        vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
-        //printf("end of create texture image loop %d \n", i);
-        
-        //printf("before generate mip maps \n");
         if (MIPMAP_ENABLED && mipmapping) {
-            generateMipmaps(VK_FORMAT_R8G8B8A8_SRGB, width, height);
+            eweDevice->CopyBufferToImageAndTransitionFromTransfer(stagingBuffer, image, width, height, 1, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
+            vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
+
+            //the graphics queue needs to be notified that generatemipmaps should be claled for this image
         }
         else {
-            eweDevice->TransitionImageLayout(image,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
-                mipLevels
-            );
+            eweDevice->CopyBufferToImageAndTransitionFromTransfer(stagingBuffer, image, width, height, 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
+            vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
         }
     }
 
@@ -299,6 +294,7 @@ namespace EWE {
         
     }
 
+    //this needs to happen in the graphics queue
     void ImageInfo::generateMipmaps(VkFormat imageFormat, int width, int height) {
         // Check if image format supports linear blitting
         VkFormatProperties formatProperties = EWEDevice::GetEWEDevice()->GetVkFormatProperties(imageFormat);
@@ -308,7 +304,8 @@ namespace EWE {
         }
         //printf("before mip map loop? size of image : %d \n", image.size());
 
-        VkCommandBuffer commandBuffer = SyncHub::getSyncHubInstance()->BeginSingleTimeCommands();
+        SyncHub* syncHub = SyncHub::getSyncHubInstance();
+        VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
         //printf("after beginning single time command \n");
 
         VkImageMemoryBarrier barrier{};
@@ -328,6 +325,7 @@ namespace EWE {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
             //printf("before cmd pipeline barrier \n");
+            //this barrier right here needs a transfer queue partner
             vkCmdPipelineBarrier(commandBuffer,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
                 0, nullptr,
@@ -385,7 +383,7 @@ namespace EWE {
             1, &barrier
         );
         //printf("after pipeline barrier 3 \n");
-        EWEDevice::GetEWEDevice()->EndSingleTimeCommands(commandBuffer);
+        syncHub->EndSingleTimeCommand(commandBuffer);
         //printf("after end single time commands \n");
         
         //printf("end of mip maps \n");

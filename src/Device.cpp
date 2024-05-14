@@ -821,12 +821,6 @@ namespace EWE {
         vkBindBufferMemory(device_, buffer, bufferMemory, 0);
     }
 
-    void EWEDevice::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
-
-        vkEndCommandBuffer(commandBuffer);
-
-        syncHub->prepTransferSubmission(commandBuffer);
-    }
     void EWEDevice::CopySecondaryBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer cmdBuf) {
         //printf("COPY SECONDARY BUFFER, thread ID: %d \n", std::this_thread::get_id());
         VkBufferCopy copyRegion{};
@@ -844,7 +838,7 @@ namespace EWE {
         copyRegion.size = size;
         vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-        EndSingleTimeCommands(commandBuffer);
+        syncHub->EndSingleTimeCommand(commandBuffer);
     }
 
     void EWEDevice::TransitionImageLayout(VkImage &image, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount) {
@@ -975,7 +969,7 @@ namespace EWE {
             0, nullptr,
             1, &barrier);
 
-        EndSingleTimeCommands(commandBuffer);
+        syncHub->EndSingleTimeCommand(commandBuffer);
     }
 
 #define BARRIER_DEBUGGING false
@@ -1115,6 +1109,69 @@ namespace EWE {
     }
 
 
+    void EWEDevice::TransitionFromTransfer(VkCommandBuffer cmdBuf, QueueData::Queue_Enum dstQueueIndex, VkImage const& image, VkImageLayout finalLayout) {
+        VkImageMemoryBarrier imageBarrier{};
+        imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageBarrier.pNext = nullptr;
+        imageBarrier.image = image;
+        assert(imageBarrier.image != VK_NULL_HANDLE && "transfering a null image?");
+        imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
+        imageBarrier.subresourceRange.baseMipLevel = 0;
+        imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+        imageBarrier.subresourceRange.baseArrayLayer = 0;
+        imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+        imageBarrier.srcQueueFamilyIndex = queueData.index[QueueData::q_transfer];
+
+        imageBarrier.dstQueueFamilyIndex = queueData.index[dstQueueIndex];
+
+        imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageBarrier.newLayout = finalLayout;
+        assert((dstQueueIndex == QueueData::q_graphics) || (dstQueueIndex == QueueData::q_compute));
+
+        imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // Access mask for compute shader writes
+        imageBarrier.dstAccessMask = 0; // Access mask for transfer read operation
+        vkCmdPipelineBarrier(
+            cmdBuf,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, // pipeline stage
+            0, //dependency flags
+            0, nullptr, //memory barrier
+            0, nullptr, //buffer barrier
+            1, &imageBarrier //image barrier
+        );
+    }
+    void EWEDevice::TransitionFromTransferToGraphics(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image) {
+        VkImageMemoryBarrier imageBarrier{};
+        imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageBarrier.pNext = nullptr;
+        imageBarrier.image = image;
+        assert(imageBarrier.image != VK_NULL_HANDLE && "transfering a null image?");
+        imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
+        imageBarrier.subresourceRange.baseMipLevel = 0;
+        imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+        imageBarrier.subresourceRange.baseArrayLayer = 0;
+        imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+        imageBarrier.srcQueueFamilyIndex = queueData.index[QueueData::q_transfer];
+
+        imageBarrier.dstQueueFamilyIndex = queueData.index[QueueData::q_compute];
+
+        imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+        imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        imageBarrier.srcAccessMask = 0; // Access mask for compute shader writes
+        imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
+        vkCmdPipelineBarrier(
+            cmdBuf,
+            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, // pipeline stage
+            0, //dependency flags
+            0, nullptr, //memory barrier
+            0, nullptr, //buffer barrier
+            1, &imageBarrier //image barrier
+        );
+    }
+
     void EWEDevice::SetImageLayout(
         VkCommandBuffer cmdbuffer,
         VkImage image,
@@ -1139,7 +1196,7 @@ namespace EWE {
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.dstQueueFamilyIndex = queueData.q_transfer;
+            imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         }
         else if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
 
@@ -1190,7 +1247,35 @@ namespace EWE {
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
             &region);
-        EndSingleTimeCommands(commandBuffer);
+        syncHub->EndSingleTimeCommand(commandBuffer);
+    }
+    void EWEDevice::CopyBufferToImageAndTransitionFromTransfer(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount, VkImageLayout finalLayout) {
+        VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
+
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = layerCount;
+
+        region.imageOffset = { 0, 0, 0 };
+        region.imageExtent = { width, height, 1 };
+
+        vkCmdCopyBufferToImage(
+            commandBuffer,
+            buffer,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region);
+
+        TransitionFromTransfer(commandBuffer, QueueData::Queue_Enum::q_graphics, image, finalLayout);
+
+        syncHub->EndSingleTimeCommand(commandBuffer);
     }
 
     void EWEDevice::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {

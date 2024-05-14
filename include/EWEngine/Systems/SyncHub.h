@@ -35,10 +35,6 @@ namespace EWE {
 		VkCommandPool transferCommandPool{};
 		VkCommandBufferBeginInfo bufferBeginInfo{};
 
-		VkSubmitInfo computeSubmitInfo{};
-		std::array<VkSubmitInfo, 5> oceanSubmitInfo{};
-		VkPipelineStageFlags graphicsToComputeWaitStageMask{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-		VkPipelineStageFlags computeWaitStageMask{ VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT };
 		VkSubmitInfo transferSubmitInfo{};
 
 		bool readyForNextTransmit = true;
@@ -52,28 +48,11 @@ namespace EWE {
 		//VkFence fence{ VK_NULL_HANDLE };
 		VkFence singleTimeFence{ VK_NULL_HANDLE };
 
-		//0 is compute -> graphics, 1 is graphics -> compute
-		std::array<VkCommandBuffer, 2> oceanTransferBuffers{ VK_NULL_HANDLE, VK_NULL_HANDLE };
-		std::array<VkSubmitInfo, 2> oceanTransfersSubmitInfo{};
-
-		VkSemaphore computeToGraphicsTransferSemaphore{VK_NULL_HANDLE};
-		VkSemaphore graphicsToComputeTransferSemaphore{VK_NULL_HANDLE};
-
-		VkFence oceanFlightFence;
-		std::array<VkSemaphore, 5> oceanSemaphores{VK_NULL_HANDLE};
-		//std::array<VkEvent, 4> oceanWaitEvents;
-
-		uint8_t graphicsSemaphoreIndex{ 0 };
-		VkSemaphore computeSemaphore{ VK_NULL_HANDLE };
-		VkSemaphore graphicsSemaphore{ VK_NULL_HANDLE };
 		std::vector<VkSemaphore> imageAvailableSemaphores{}; //resized to maxFramesInFlight
 		std::vector<VkSemaphore> renderFinishedSemaphores{};//resized to maxFramesInFlight
 		std::vector<VkCommandBuffer> renderBuffers{};
-		VkCommandBuffer computeBuffer{VK_NULL_HANDLE};
-		std::array<VkCommandBuffer, 5> oceanBuffers = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
 		VkCommandBuffer transferBuffer{ VK_NULL_HANDLE };
 
-		VkFence computeInFlightFence{VK_NULL_HANDLE};
 		std::vector<VkFence> inFlightFences{}; //resized to maxFramesInFlight
 		std::vector<VkFence> imagesInFlight{}; //resized to maxFramesInFlight
 
@@ -86,9 +65,6 @@ namespace EWE {
 		bool rendering = true;
 		std::vector<StageMask> graphicsWait{};
 		std::vector<StageMask> graphicsSignal{};
-
-		std::vector<StageMask> computeWait{};
-		std::vector<StageMask> computeSignal{};
 
 		struct DomCuckSync {
 			std::mutex domMutex{};
@@ -149,37 +125,11 @@ namespace EWE {
 		void cuckRequest();
 		void cuckSubmit();
 
-		std::array<VkCommandBuffer, 5> beginOceanBuffers();
-		void endOceanBuffers();
-		
-		void OceanSubmission();
-		VkCommandBuffer beginComputeBuffer();
-		void endComputeBuffer();
-
 		VkCommandBuffer BeginSingleTimeCommand(VkCommandPool cmdPool);
 		VkCommandBuffer BeginSingleTimeCommands();
+		void EndSingleTimeCommand(VkCommandBuffer cmdBuf);
 
 		void prepTransferSubmission(VkCommandBuffer transferBuffer);
-		void submitCompute();
-
-		VkCommandBuffer beginTransferringOceanToGraphics() {
-			std::cout << "beginning OTG transfer 0 \n";
-			vkBeginCommandBuffer(oceanTransferBuffers[0], &bufferBeginInfo);
-			std::cout << "after beginning OTG transfer 0 \n";
-			return oceanTransferBuffers[0];
-		}
-		void endTransferringOceanToGraphics() {
-			vkEndCommandBuffer(oceanTransferBuffers[0]);
-		}
-		VkCommandBuffer beginTransferringGraphicsToOcean() {
-			std::cout << "beginning GTO transfer 1 \n";
-			vkBeginCommandBuffer(oceanTransferBuffers[1], &bufferBeginInfo);
-			std::cout << "after GTO transfer 1 \n";
-			return oceanTransferBuffers[1];
-		}
-		void endTransferringGraphicsToOcean() {
-			vkEndCommandBuffer(oceanTransferBuffers[1]);
-		}
 
 		void waitOnTransferFence();
 
@@ -187,16 +137,6 @@ namespace EWE {
 
 		void createSyncObjects();
 
-		void initEvents() {
-			/*
-			for (uint8_t i = 0; i < 4; i++) {
-				VkEventCreateInfo eventInfo = {};
-				eventInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-				vkCreateEvent(device, &eventInfo, nullptr, &oceanWaitEvents[i]);
-			}
-			*/
-		}
-		void initOceanSubmitInfo();
 		void initWaitMask();
 		void initSignalMask();
 
