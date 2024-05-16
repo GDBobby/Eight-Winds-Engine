@@ -122,7 +122,7 @@ namespace EWE {
         void SetImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange);
 
         void CopyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount);
-        void CopyBufferToImageAndTransitionFromTransfer(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount, VkImageLayout finalLayout);
+        void CopyBufferToImageAndTransitionFromTransfer(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount, VkImageLayout finalLayout, bool generateMips);
         void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
         VkInstance GetInstance() { return instance; }

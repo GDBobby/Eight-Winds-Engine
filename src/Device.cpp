@@ -1154,7 +1154,7 @@ namespace EWE {
 
         imageBarrier.srcQueueFamilyIndex = queueData.index[QueueData::q_transfer];
 
-        imageBarrier.dstQueueFamilyIndex = queueData.index[QueueData::q_compute];
+        imageBarrier.dstQueueFamilyIndex = queueData.index[QueueData::q_graphics];
 
         imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
@@ -1164,7 +1164,7 @@ namespace EWE {
         imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
         vkCmdPipelineBarrier(
             cmdBuf,
-            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, // pipeline stage
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // pipeline stage
             0, //dependency flags
             0, nullptr, //memory barrier
             0, nullptr, //buffer barrier
@@ -1249,7 +1249,8 @@ namespace EWE {
             &region);
         syncHub->EndSingleTimeCommand(commandBuffer);
     }
-    void EWEDevice::CopyBufferToImageAndTransitionFromTransfer(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount, VkImageLayout finalLayout) {
+    void EWEDevice::CopyBufferToImageAndTransitionFromTransfer(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount, VkImageLayout finalLayout, bool generateMips) {
+
         VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
 
         VkBufferImageCopy region{};
@@ -1273,9 +1274,12 @@ namespace EWE {
             1,
             &region);
 
-        TransitionFromTransfer(commandBuffer, QueueData::Queue_Enum::q_graphics, image, finalLayout);
-
-        syncHub->EndSingleTimeCommand(commandBuffer);
+        if (generateMips) {
+            syncHub->EndSingleTimeCommandWithGenerateMips(commandBuffer);
+        }
+        else{
+            syncHub->EndSingleTimeCommand(commandBuffer);
+        }
     }
 
     void EWEDevice::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {

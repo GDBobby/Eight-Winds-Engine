@@ -18,11 +18,24 @@ static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {
 	class SyncHub {
 	private:
-		struct SingleTimeStruct {
-			VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
-			VkFence fence{ VK_NULL_HANDLE }; //i could do a pool of fences and pull from it, or a ring buffer
-			VkCommandPool cmdPool;
+		struct ImageQueueTransitionStruct {
+			VkImage image;
+			bool generateMips;
+			uint32_t dstQueue;
+			ImageQueueTransitionStruct(VkImage image, bool mips, uint32_t dstQueue) : image(image), generateMips(mips), dstQueue(dstQueue) {}
 		};
+		struct SingleTimeStruct {
+
+			std::vector<ImageQueueTransitionStruct> images{};
+			//buffer is not currently supported, but if it was, it would be put here
+			//std::vector<VkBuffer> buffers{};
+
+		};
+		struct GraphicsTransitionStruct {
+			std::vector<ImageQueueTransitionStruct> images{};
+			std::vector<VkSemaphore> waitSemaphores{};
+		};
+
 
 		static SyncHub* syncHubSingleton;
 
@@ -31,6 +44,7 @@ namespace EWE {
 		VkQueue presentQueue{};
 		VkQueue computeQueue{};
 		VkQueue transferQueue{};
+		uint32_t transferQueueIndex;
 
 		VkCommandPool transferCommandPool{};
 		VkCommandBufferBeginInfo bufferBeginInfo{};
@@ -42,7 +56,17 @@ namespace EWE {
 		std::mutex transferPoolMutex{};
 		//std::mutex mutexNextTransmit{};
 		bool transferFlipFlop = false;
+
+		//one in flight, one being built
+		//the transfer queue doesn't work like the graphics queue, which could have 2 frames in flight
+		//the transfer queue will only have one submission in flight
 		std::array<std::vector<VkCommandBuffer>, 2> transferBuffers{};
+
+		//one for each frame in flight, one for each built transfer
+		//i think if everything goes right, there should never be more than one in flight. but it really depends
+		//on how quickly the transfer queue works. if it processes 3 submissions in 1 graphics submission, singleTimeStructs will be overflowed
+		//if the transfer queue works slower than the graphics queue, this structure will be fine
+		std::array<SingleTimeStruct, MAX_FRAMES_IN_FLIGHT> singleTimeStructs{}; 
 
 		using StageMask = std::vector<VkSemaphore>;
 		//VkFence fence{ VK_NULL_HANDLE };
@@ -96,7 +120,7 @@ namespace EWE {
 		}
 
 		//only class this from EWEDevice
-		void initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool);
+		void initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool, uint32_t transferQueueIndex);
 		void setImageCount(uint32_t imageCount) {
 			imagesInFlight.resize(imageCount, VK_NULL_HANDLE);
 		}
@@ -128,8 +152,10 @@ namespace EWE {
 		VkCommandBuffer BeginSingleTimeCommand(VkCommandPool cmdPool);
 		VkCommandBuffer BeginSingleTimeCommands();
 		void EndSingleTimeCommand(VkCommandBuffer cmdBuf);
+		void EndSingleTimeCommandTransition(VkCommandBuffer cmdBuf, VkImage image, bool generateMips, uint32_t dstQueue);
 
 		void prepTransferSubmission(VkCommandBuffer transferBuffer);
+		void prepTransferSubmission(VkCommandBuffer transferBuffer, VkImage image, bool generateMips, uint32_t dstQueue);
 
 		void waitOnTransferFence();
 

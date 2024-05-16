@@ -7,11 +7,12 @@
 namespace EWE {
 	SyncHub* SyncHub::syncHubSingleton{ nullptr };
 
-	void SyncHub::initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool) {
+	void SyncHub::initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool, uint32_t transferQueueIndex) {
 		this->graphicsQueue = graphicsQueue;
 		this->presentQueue = presentQueue;
 		this->computeQueue = computeQueue;
 		this->transferQueue = transferQueue;
+		this->transferQueueIndex = transferQueueIndex;
 
 		this->device = device;
 
@@ -67,6 +68,7 @@ namespace EWE {
 	}
 	void SyncHub::createBuffers(VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool) {
 		this->transferCommandPool = transferCommandPool;
+
 		renderBuffers.clear();
 		renderBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 		VkCommandBufferAllocateInfo allocInfo{};
@@ -145,6 +147,7 @@ namespace EWE {
 		vkBeginCommandBuffer(commandBuffer, &beginInfo);
 		return commandBuffer;
 	}
+	//this might turn legacy
 	void SyncHub::EndSingleTimeCommand(VkCommandBuffer cmdBuf) {
 		vkEndCommandBuffer(cmdBuf);
 		prepTransferSubmission(cmdBuf);
@@ -154,6 +157,7 @@ namespace EWE {
 		//std::cout << "pushing for transfer submission \n";
 		transferBuffers[transferFlipFlop].push_back(transferBuffer);
 
+
 		if (readyForNextTransmit) {
 			readyForNextTransmit = false;
 			transferFlipFlop = !transferFlipFlop;
@@ -161,6 +165,24 @@ namespace EWE {
 		}
 
 	}
+	void SyncHub::EndSingleTimeCommandTransition(VkCommandBuffer cmdBuf, VkImage image, bool generateMips, uint32_t dstQueue) {
+		vkEndCommandBuffer(cmdBuf);
+		prepTransferSubmission(cmdBuf);
+	}
+	void SyncHub::prepTransferSubmission(VkCommandBuffer transferBuffer, VkImage image, bool generateMips, uint32_t dstQueue) {
+
+		//std::cout << "pushing for transfer submission \n";
+		transferBuffers[transferFlipFlop].push_back(transferBuffer);
+		singleTimeStructs[transferFlipFlop].images.emplace_back(image, generateMips, dstQueue);
+
+		if (readyForNextTransmit) {
+			readyForNextTransmit = false;
+			transferFlipFlop = !transferFlipFlop;
+			auto future = std::async(&SyncHub::submitTransferBuffers, this);
+		}
+
+	}
+
 	void SyncHub::submitTransferBuffers() {
 
 		//printf("begin submit transfer \n");
@@ -178,9 +200,8 @@ namespace EWE {
 
 		EWE_VK_ASSERT(vkWaitForFences(device, 1, &singleTimeFence, VK_TRUE, UINT64_MAX));
 
-		vkResetFences(device, 1, &singleTimeFence);
-
-		EWE_VK_ASSERT(vkQueueWaitIdle(transferQueue));
+		//this should be redundant with the vkWaitForFences
+		//EWE_VK_ASSERT(vkQueueWaitIdle(transferQueue));
 
 		{
 			std::lock_guard<std::mutex> lock(transferPoolMutex);

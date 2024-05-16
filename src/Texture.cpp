@@ -226,19 +226,19 @@ namespace EWE {
             mipLevels
         );
         //printf("before copy buffer to image \n");
+        VkImageLayout dstLayout;
 
         if (MIPMAP_ENABLED && mipmapping) {
-            eweDevice->CopyBufferToImageAndTransitionFromTransfer(stagingBuffer, image, width, height, 1, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-            vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
-            vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
+            dstLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
             //the graphics queue needs to be notified that generatemipmaps should be claled for this image
         }
         else {
-            eweDevice->CopyBufferToImageAndTransitionFromTransfer(stagingBuffer, image, width, height, 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
-            vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
+            dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
+        eweDevice->CopyBufferToImageAndTransitionFromTransfer(stagingBuffer, image, width, height, 1, dstLayout, false);
+        vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
+        vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
     }
 
     void ImageInfo::createTextureImageView() {
