@@ -10,7 +10,7 @@ namespace EWE {
 
 	EWERenderer* EWERenderer::instance{ nullptr };
 
-	EWERenderer::EWERenderer(MainWindow& window, EWECamera& camera) : camera{ camera }, mainWindow{ window }, syncHub{ SyncHub::getSyncHubInstance() } {
+	EWERenderer::EWERenderer(MainWindow& window, EWECamera& camera) : camera{ camera }, mainWindow{ window }, syncHub{ SyncHub::GetSyncHubInstance() } {
 		instance = this;
 		//printf("EWE renderer constructor \n");
 #if GPU_LOGGING
@@ -103,7 +103,7 @@ namespace EWE {
 		//std::cout << "begin frame 3" << std::endl;
 
 		isFrameStarted = true;
-		auto commandBuffer = syncHub->getRenderBuffer(currentFrameIndex);
+		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -121,7 +121,7 @@ namespace EWE {
 	bool EWERenderer::endFrame() {
 		bool restartedSwap = false;
 		//printf("end frame :: isFrameStarted : %d \n", isFrameStarted);
-		auto commandBuffer = syncHub->getRenderBuffer(currentFrameIndex);
+		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
 
 		VkResult vkResult = vkEndCommandBuffer(commandBuffer);
 		if (vkResult != VK_SUCCESS) {

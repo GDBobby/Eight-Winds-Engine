@@ -40,7 +40,7 @@ namespace EWE {
 
 
 		static std::shared_ptr<SoundEngine> GetSoundEngineInstance() {
-			static std::shared_ptr<SoundEngine> soundEngineInstance{ new SoundEngine };
+			static std::shared_ptr<SoundEngine> soundEngineInstance{ new SoundEngine() };
 			return soundEngineInstance;
 		}
 

@@ -35,8 +35,8 @@ namespace EWE {
 
 		void BindUBO(uint8_t frameIndex) {
 			//printf("camera set ubo \n");
-			uniformBuffers->at(frameIndex)->writeToBuffer(&ubo);
-			uniformBuffers->at(frameIndex)->flush();
+			uniformBuffers->at(frameIndex)->WriteToBuffer(&ubo);
+			uniformBuffers->at(frameIndex)->Flush();
 		}
 
 		void SetBuffers(std::vector<EWEBuffer*>* buffers) {

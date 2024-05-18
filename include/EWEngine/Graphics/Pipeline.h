@@ -73,7 +73,7 @@ namespace EWE {
 		std::vector<char> readFile(const std::string& filepath);
 
 		void createShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule);
-		void createShaderModule(const char* data, size_t dataSize, VkShaderModule* shaderModule);
+		void createShaderModule(const char* data, std::size_t dataSize, VkShaderModule* shaderModule);
 
 		template <typename T>
 		void createShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule);

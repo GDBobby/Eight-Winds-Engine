@@ -12,12 +12,12 @@
 namespace EWE {
 
     EWESwapChain::EWESwapChain(VkExtent2D extent, bool fullscreen)
-        : windowExtent{ extent }, syncHub{SyncHub::getSyncHubInstance()} {
+        : windowExtent{ extent }, syncHub{SyncHub::GetSyncHubInstance()} {
         init(fullscreen);
         //deviceRef.receiveImageInFlightFences(&imagesInFlight);
     }
     EWESwapChain::EWESwapChain(VkExtent2D extent, bool fullscreen, std::shared_ptr<EWESwapChain> previous)
-        : windowExtent{ extent }, oldSwapChain{ previous }, syncHub{ SyncHub::getSyncHubInstance() } {
+        : windowExtent{ extent }, oldSwapChain{ previous }, syncHub{ SyncHub::GetSyncHubInstance() } {
         init(fullscreen);
         oldSwapChain.reset();
         //deviceRef.receiveImageInFlightFences(&imagesInFlight);
@@ -103,7 +103,7 @@ namespace EWE {
         vkWaitForFences(
             EWEDevice::GetVkDevice(),
             1,
-            syncHub->getFlightFence(currentFrame),
+            syncHub->GetFlightFence(currentFrame),
             //&inFlightFences[currentFrame],
             VK_TRUE,
             std::numeric_limits<uint64_t>::max()
@@ -113,7 +113,7 @@ namespace EWE {
             EWEDevice::GetVkDevice(),
             swapChain,
             std::numeric_limits<uint64_t>::max(),
-            syncHub->getImageAvailableSemaphore(currentFrame),
+            syncHub->GetImageAvailableSemaphore(currentFrame),
             //imageAvailableSemaphores[currentFrame],  // must be a not signaled semaphore
             VK_NULL_HANDLE,
             imageIndex
@@ -131,14 +131,14 @@ namespace EWE {
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = buffers;
 
-        syncHub->submitGraphics(submitInfo, currentFrame, imageIndex);
+        syncHub->SubmitGraphics(submitInfo, currentFrame, imageIndex);
 
         VkPresentInfoKHR presentInfo = {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &swapChain;
         presentInfo.pImageIndices = imageIndex;
-        auto result = syncHub->presentKHR(presentInfo, currentFrame);
+        auto result = syncHub->PresentKHR(presentInfo, currentFrame);
         if (result != VK_SUCCESS) {
             printf("failed to present KHR \n");
         }
@@ -163,7 +163,7 @@ namespace EWE {
             imageCount > swapChainSupport.capabilities.maxImageCount) {
             imageCount = swapChainSupport.capabilities.maxImageCount;
         }
-        syncHub->setImageCount(imageCount);
+        syncHub->SetImageCount(imageCount);
 
 
         VkSwapchainCreateInfoKHR createInfo = {};
@@ -229,7 +229,7 @@ namespace EWE {
 
     void EWESwapChain::createImageViews() {
         swapChainImageViews.resize(swapChainImages.size());
-            for (size_t i = 0; i < swapChainImages.size(); i++) {
+        for (std::size_t i = 0; i < swapChainImages.size(); i++) {
             VkImageViewCreateInfo viewInfo{};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             viewInfo.image = swapChainImages[i];

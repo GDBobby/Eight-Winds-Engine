@@ -69,7 +69,7 @@ namespace EWE {
 	void FloatingRock::render(FrameInfo& frameInfo) {
 
 		 PipelineSystem::SetFrameInfo(frameInfo);
-		auto pipe = PipelineSystem::At(Pipe_textured);
+		auto pipe = PipelineSystem::At(Pipe::textured);
 
 		pipe->BindPipeline();
 

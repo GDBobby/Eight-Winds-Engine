@@ -11,6 +11,8 @@ bool notFirstMalloc = false;
 
 
 #endif
+#include <cstdlib>
+#include <cstring>
 
 struct MallocTracker {
 	char file[256];
@@ -25,16 +27,17 @@ struct MallocTracker {
 			eof++;
 		}
 		eof++;
-		memcpy(file, f, eof);
+		std::memcpy(file, f, eof);
 
 		eof = 0;
 		while (sourceFunction[eof] != '\0' && eof < 256) {
 			eof++;
 		}
 		eof++;
-		memcpy(this->sourceFunction, sourceFunction, eof);
+		std::memcpy(this->sourceFunction, sourceFunction, eof);
 	}
 };
+#ifdef _DEBUG
 std::unordered_map<uint64_t, MallocTracker> mallocMap{};
 
 void updateMemoryLogFile() {
@@ -70,20 +73,25 @@ void updateMemoryLogFile() {
 	}
 
 }
+#endif
 
-void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* file, int line, const char* sourceFunction) {
+void* ewe_alloc_internal(std::size_t element_size, std::size_t element_count, const char* file, int line, const char* sourceFunction) {
 	void* ptr = malloc(element_count * element_size);
-
+#ifdef _DEBUG
 	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), file, line, sourceFunction);
 
 	updateMemoryLogFile();
+#endif
 	return ptr;
 }
 
 void ewe_free_internal(void* ptr) {
+	free(ptr);
+#ifdef _DEBUG
 	auto found = mallocMap.find(reinterpret_cast<uint64_t>(ptr));
 	assert((found != mallocMap.end()) && "freeing memory that wasn't allocated");
 	mallocMap.erase(found);
 
 	updateMemoryLogFile();
+#endif
 }

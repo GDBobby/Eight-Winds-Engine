@@ -15,7 +15,7 @@ namespace EWE {
      *
      * @return VkResult of the buffer mapping call
      */
-    VkDeviceSize EWEBuffer::getAlignment(VkDeviceSize instanceSize) {
+    VkDeviceSize EWEBuffer::GetAlignment(VkDeviceSize instanceSize) {
 
         if (((usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) == VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) ||
             ((usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) == VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
@@ -41,29 +41,29 @@ namespace EWE {
 
         //buffer_info.buffer = VK_NULL_HANDLE; //not sure if necessary??
 
-        alignmentSize = getAlignment(instanceSize);
+        alignmentSize = GetAlignment(instanceSize);
         bufferSize = alignmentSize * instanceCount;
         EWEDevice::GetEWEDevice()->CreateBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
     }
 
     EWEBuffer::~EWEBuffer() {
-        unmap();
+        Unmap();
         vkDestroyBuffer(EWEDevice::GetEWEDevice()->Device(), buffer_info.buffer, nullptr);
         vkFreeMemory(EWEDevice::GetEWEDevice()->Device(), memory, nullptr);
     }
     void EWEBuffer::Reconstruct(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
-        unmap();
+        Unmap();
         vkDestroyBuffer(EWEDevice::GetEWEDevice()->Device(), buffer_info.buffer, nullptr);
         vkFreeMemory(EWEDevice::GetEWEDevice()->Device(), memory, nullptr);
 
         this->usageFlags = usageFlags;
         this->memoryPropertyFlags = memoryPropertyFlags;
 
-        alignmentSize = getAlignment(instanceSize);
+        alignmentSize = GetAlignment(instanceSize);
         bufferSize = alignmentSize * instanceCount;
         EWEDevice::GetEWEDevice()->CreateBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
 
-        map();
+        Map();
     }
 
 
@@ -76,7 +76,7 @@ namespace EWE {
      *
      * @return VkResult of the buffer mapping call
      */
-    VkResult EWEBuffer::map(VkDeviceSize size, VkDeviceSize offset) {
+    VkResult EWEBuffer::Map(VkDeviceSize size, VkDeviceSize offset) {
         assert(buffer_info.buffer && memory && "Called map on buffer before create");
         return vkMapMemory(EWEDevice::GetEWEDevice()->Device(), memory, offset, size, 0, &mapped);
     }
@@ -86,7 +86,7 @@ namespace EWE {
      *
      * @note Does not return a result as vkUnmapMemory can't fail
      */
-    void EWEBuffer::unmap() {
+    void EWEBuffer::Unmap() {
         if (mapped) {
             vkUnmapMemory(EWEDevice::GetEWEDevice()->Device(), memory);
             mapped = nullptr;
@@ -102,7 +102,7 @@ namespace EWE {
      * @param offset (Optional) Byte offset from beginning of mapped region
      *
      */
-    void EWEBuffer::writeToBufferAligned(void* data, VkDeviceSize size, uint64_t alignmentOffset) {
+    void EWEBuffer::WriteToBufferAligned(void* data, VkDeviceSize size, uint64_t alignmentOffset) {
         assert(mapped && "Cannot copy to unmapped buffer");
 
         char* memOffset = (char*)mapped;
@@ -122,7 +122,7 @@ namespace EWE {
         
     }
 
-    void EWEBuffer::writeToBuffer(void const* data, VkDeviceSize size, VkDeviceSize offset) {
+    void EWEBuffer::WriteToBuffer(void const* data, VkDeviceSize size, VkDeviceSize offset) {
         assert(mapped && "Cannot copy to unmapped buffer");
 
         if (size == VK_WHOLE_SIZE) {
@@ -153,7 +153,7 @@ namespace EWE {
      *
      * @return VkResult of the flush call
      */
-    VkResult EWEBuffer::flush(VkDeviceSize size, VkDeviceSize offset) {
+    VkResult EWEBuffer::Flush(VkDeviceSize size, VkDeviceSize offset) {
         VkMappedMemoryRange mappedRange = {};
         mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
         mappedRange.memory = memory;
@@ -161,7 +161,7 @@ namespace EWE {
         mappedRange.size = size;
         return vkFlushMappedMemoryRanges(EWEDevice::GetEWEDevice()->Device(), 1, &mappedRange);
     }
-    VkResult EWEBuffer::flushMin(uint64_t offset) {
+    VkResult EWEBuffer::FlushMin(uint64_t offset) {
         VkDeviceSize trueOffset = offset - (offset % minOffsetAlignment);
         VkMappedMemoryRange mappedRange = {};
         mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -185,7 +185,7 @@ namespace EWE {
      *
      * @return VkResult of the invalidate call
      */
-    VkResult EWEBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset) {
+    VkResult EWEBuffer::Invalidate(VkDeviceSize size, VkDeviceSize offset) {
         VkMappedMemoryRange mappedRange = {};
         mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
         mappedRange.memory = memory;
@@ -202,7 +202,7 @@ namespace EWE {
      *
      * @return VkDescriptorBufferInfo of specified offset and range
      */
-    VkDescriptorBufferInfo* EWEBuffer::descriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
+    VkDescriptorBufferInfo* EWEBuffer::DescriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
         buffer_info.offset = offset;
         buffer_info.range = size;
         return &buffer_info;
@@ -215,7 +215,7 @@ namespace EWE {
      * @param index Used in offset calculation
      *
      */
-    VkResult EWEBuffer::flushIndex(int index) { return flush(alignmentSize, index * alignmentSize); }
+    VkResult EWEBuffer::FlushIndex(int index) { return Flush(alignmentSize, index * alignmentSize); }
 
     /**
      * Create a buffer info descriptor
@@ -224,8 +224,8 @@ namespace EWE {
      *
      * @return VkDescriptorBufferInfo for instance at index
      */
-    VkDescriptorBufferInfo* EWEBuffer::descriptorInfoForIndex(int index) {
-        return descriptorInfo(alignmentSize, index * alignmentSize);
+    VkDescriptorBufferInfo* EWEBuffer::DescriptorInfoForIndex(int index) {
+        return DescriptorInfo(alignmentSize, index * alignmentSize);
     }
 
     /**
@@ -237,16 +237,16 @@ namespace EWE {
      *
      * @return VkResult of the invalidate call
      */
-    VkResult EWEBuffer::invalidateIndex(int index) {
-        return invalidate(alignmentSize, index * alignmentSize);
+    VkResult EWEBuffer::InvalidateIndex(int index) {
+        return Invalidate(alignmentSize, index * alignmentSize);
     }
 
-    EWEBuffer* EWEBuffer::createAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
+    EWEBuffer* EWEBuffer::CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
         EWEBuffer* retBuffer = ConstructSingular<EWEBuffer>(ewe_call_trace, dataSize * dataCount, 1, usageFlags, memoryPropertyFlags);
         
-        retBuffer->map();
-        retBuffer->writeToBuffer(data, dataSize * dataCount);
-        retBuffer->flush();
+        retBuffer->Map();
+        retBuffer->WriteToBuffer(data, dataSize * dataCount);
+        retBuffer->Flush();
         return retBuffer;
     }
 

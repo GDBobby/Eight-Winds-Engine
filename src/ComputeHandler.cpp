@@ -2,7 +2,7 @@
 #include "Compute/ComputeHandler.h"
 
 namespace EWE {
-	ComputeHandler::ComputeHandler() : syncHub{ SyncHub::getSyncHubInstance()} {
+	ComputeHandler::ComputeHandler() : syncHub{ SyncHub::GetSyncHubInstance()} {
 		createCommandBuffers();
 
 

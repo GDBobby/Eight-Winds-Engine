@@ -20,11 +20,11 @@ namespace EWE {
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			leafBuffer.emplace_back(ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->map();
-			leafBufferData.emplace_back(reinterpret_cast<float*>(leafBuffer[i]->getMappedMemory()));
+			leafBuffer.emplace_back(ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->Map();
+			leafBufferData.emplace_back(reinterpret_cast<float*>(leafBuffer[i]->GetMappedMemory()));
 			transformDescriptor.emplace_back(
 				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
-				.writeBuffer(0, leafBuffer[i]->descriptorInfo())
+				.writeBuffer(0, leafBuffer[i]->DescriptorInfo())
 				.build()
 			);
 		}
@@ -283,7 +283,7 @@ namespace EWE {
 			*/
 
 		}
-		leafBuffer[frameIndex]->flush();
+		leafBuffer[frameIndex]->Flush();
 		//printf("before instancing \n");
 		//return leafModel->updateInstancing(LEAF_COUNT, sizeof(glm::mat4), transformBuffer.data(), frameIndex, cmdBuf);
 		//printf("after instancing \n");

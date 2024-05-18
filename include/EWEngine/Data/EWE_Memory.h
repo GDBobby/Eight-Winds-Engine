@@ -3,9 +3,10 @@
 #include <new>
 #include <utility>
 #include <cassert>
+#include <cstdint>
 
 
-void* ewe_alloc_internal(size_t element_size, size_t element_count, const char* file, int line, const char* sourceFunction);
+void* ewe_alloc_internal(std::size_t element_size, std::size_t element_count, const char* file, int line, const char* sourceFunction);
 
 void ewe_free_internal(void* ptr);
 

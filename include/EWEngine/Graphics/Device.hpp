@@ -86,17 +86,17 @@ namespace EWE {
         VkQueue GetGraphicsQueue() { return graphicsQueue_; }
         uint32_t GetGraphicsIndex() { return queueData.index[QueueData::q_graphics]; }
 
-        VkQueue PresentQueue() { return presentQueue_; }
+        VkQueue GetPresentQueue() { return presentQueue_; }
         uint32_t GetPresentIndex() { return queueData.index[QueueData::q_present]; }
 
         //VkQueue computeQueue() { return computeQueue_; }
         //uint32_t getComputeIndex() { return computeIndex; }
 
-        uint32_t GetAsyncTransferIndex() { return queueData.index[QueueData::q_transfer]; }
-        VkQueue GetAsyncTransferQueue() { return transferQueue_; }
+        uint32_t GetTransferIndex() { return queueData.index[QueueData::q_transfer]; }
+        VkQueue GetTransferQueue() { return transferQueue_; }
 
-        uint32_t GetAsyncComputeIndex() { return queueData.index[QueueData::q_compute]; }
-        VkQueue GetAsyncComputeQueue() { return computeQueue_; }
+        uint32_t GetComputeIndex() { return queueData.index[QueueData::q_compute]; }
+        VkQueue GetComputeQueue() { return computeQueue_; }
 
 
         std::string deviceName;
@@ -110,10 +110,12 @@ namespace EWE {
         // Buffer Helper Functions
         void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         //void endSingleTimeCommandsSecondThread(VkCommandBuffer commandBuffer);
-        void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void CopySecondaryBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer cmdBuf);
+        //void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        void CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-        void TransitionImageLayout(VkImage& image, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
+        VkImageMemoryBarrier TransitionImageLayout(VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
+        void TransitionImageLayoutWithBarrier(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
+
         void TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImage> const& images);
         void TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image);
         void TransitionFromTransfer(VkCommandBuffer cmdBuf, QueueData::Queue_Enum dstQueueIndex, VkImage const& image, VkImageLayout finalLayout);
@@ -121,8 +123,7 @@ namespace EWE {
 
         void SetImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange);
 
-        void CopyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount);
-        void CopyBufferToImageAndTransitionFromTransfer(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount, VkImageLayout finalLayout, bool generateMips);
+        void CopyBufferToImage(VkCommandBuffer cmdBuf, VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount);
         void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
         VkInstance GetInstance() { return instance; }

@@ -139,9 +139,9 @@ namespace EWE {
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			//allocate buffer memory
 			bufferMap.at(Buff_ubo)[i] = ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-			bufferMap.at(Buff_ubo)[i]->map();
+			bufferMap.at(Buff_ubo)[i]->GetMappedMemory();
 
-			bufferMap.at(Buff_gpu)[i] = EWEBuffer::createAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+			bufferMap.at(Buff_gpu)[i] = EWEBuffer::CreateAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 		}
 		camera.SetBuffers(&bufferMap[Buff_ubo]);
@@ -168,7 +168,7 @@ namespace EWE {
 		//QueryPerformanceCounter(&averageStart);
 		//LARGE_INTEGER averageEnd;
 		//printf("loading screen entry \n");
-		//SyncHub::getSyncHubInstance()->waitOnTransferFence();
+		//SyncHub::GetSyncHubInstance()->waitOnTransferFence();
 
 		//printf("starting loading thread loop \n");
 		while (loadingEngine || (loadingTime < 2.0)) {
@@ -365,8 +365,8 @@ namespace EWE {
 				lbo.pointLights[i].color = glm::vec4(objectManager.pointLights[i].color, objectManager.pointLights[i].lightIntensity);
 			}
 			lbo.numLights = static_cast<uint8_t>(objectManager.pointLights.size());
-			bufferMap[Buff_gpu][frameInfo.index]->writeToBuffer(&lbo);
-			bufferMap[Buff_gpu][frameInfo.index]->flush();
+			bufferMap[Buff_gpu][frameInfo.index]->WriteToBuffer(&lbo);
+			bufferMap[Buff_gpu][frameInfo.index]->Flush();
 		}
 
 		camera.ViewTargetDirect(frameInfo.index);

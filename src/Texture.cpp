@@ -127,7 +127,7 @@ namespace EWE {
         }
         return emplaceRet.first->second;
 #else
-        return descSetLayouts.try_emplace(*this, buildDSL(device)).first->second;
+        return descSetLayouts.try_emplace(*this, buildDSL()).first->second;
 #endif
     }
 
@@ -192,7 +192,7 @@ namespace EWE {
         void* data;
         vkMapMemory(eweDevice->Device(), stagingBufferMemory, 0, imageSize, 0, &data);
         //printf("memcpy \n");
-        memcpy(data, pixelPeek.pixels, static_cast<size_t>(imageSize));
+        memcpy(data, pixelPeek.pixels, static_cast<std::size_t>(imageSize));
         //printf("unmapping \n");
         vkUnmapMemory(eweDevice->Device(), stagingBufferMemory);
         //printf("freeing pixels \n");
@@ -220,23 +220,21 @@ namespace EWE {
         //printf("before image info \n");
         eweDevice->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
         //printf("before transition \n");
-        eweDevice->TransitionImageLayout(image, 
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+        //            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+        eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,  
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            image, 
             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
             mipLevels
         );
         //printf("before copy buffer to image \n");
         VkImageLayout dstLayout;
 
-        if (MIPMAP_ENABLED && mipmapping) {
-            dstLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, image, width, height, 1);
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, image, MIPMAP_ENABLED && mipmapping, eweDevice->GetGraphicsIndex());
 
-            //the graphics queue needs to be notified that generatemipmaps should be claled for this image
-        }
-        else {
-            dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        }
-        eweDevice->CopyBufferToImageAndTransitionFromTransfer(stagingBuffer, image, width, height, 1, dstLayout, false);
         vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
         vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
     }
@@ -304,8 +302,8 @@ namespace EWE {
         }
         //printf("before mip map loop? size of image : %d \n", image.size());
 
-        SyncHub* syncHub = SyncHub::getSyncHubInstance();
-        VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommandGraphics();
         //printf("after beginning single time command \n");
 
         VkImageMemoryBarrier barrier{};
@@ -383,7 +381,7 @@ namespace EWE {
             1, &barrier
         );
         //printf("after pipeline barrier 3 \n");
-        syncHub->EndSingleTimeCommand(commandBuffer);
+        syncHub->EndSingleTimeCommandGraphics(commandBuffer);
         //printf("after end single time commands \n");
         
         //printf("end of mip maps \n");

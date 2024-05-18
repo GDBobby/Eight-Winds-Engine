@@ -54,19 +54,19 @@ struct std::hash<EWE::GrassVertex> {
 };
 
 namespace EWE {
-    EWEModel::EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
+    EWEModel::EWEModel(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
         assert(vertexCount >= 3 && "vertex count must be at least 3");
         VertexBuffers(vertexCount, sizeOfVertex, verticesData);
         CreateIndexBuffers(indices);
     }
-    EWEModel::EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex) {
+    EWEModel::EWEModel(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex) {
         assert(vertexCount >= 3 && "vertex count must be at least 3");
         VertexBuffers(vertexCount, sizeOfVertex, verticesData);
     }
-    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
+    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
         return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex, indices);
     }
-    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, size_t vertexCount, std::size_t sizeOfVertex) {
+    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex) {
         return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex);
     }
 
@@ -96,8 +96,8 @@ namespace EWE {
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
 
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer(data);
+        stagingBuffer.Map();
+        stagingBuffer.WriteToBuffer(data);
 
 
         instanceBuffer = std::make_unique<EWEBuffer>(
@@ -107,7 +107,10 @@ namespace EWE {
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         
 
-        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), instanceBuffer->getBuffer(), bufferSize);
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), instanceBuffer->GetBuffer(), bufferSize);
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
     }
     /*
     void EWEModel::updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf) {
@@ -145,8 +148,8 @@ namespace EWE {
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
 
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer(data);
+        stagingBuffer.Map();
+        stagingBuffer.WriteToBuffer(data);
 
         vertexBuffer = std::make_unique<EWEBuffer>(
             vertexSize,
@@ -154,7 +157,12 @@ namespace EWE {
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
+
+
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), vertexBuffer->GetBuffer(), bufferSize);
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
     }
     void EWEModel::CreateGrassIndexBuffer(void* indexData, uint32_t indexCount) {
         VkDeviceSize bufferSize = indexCount * 4;
@@ -167,8 +175,8 @@ namespace EWE {
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
 
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer(indexData);
+        stagingBuffer.Map();
+        stagingBuffer.WriteToBuffer(indexData);
 
         indexBuffer = std::make_unique<EWEBuffer>(
             indexSize,
@@ -176,7 +184,10 @@ namespace EWE {
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), indexBuffer->GetBuffer(), bufferSize);
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
     }
 
     EWEBuffer* EWEModel::CreateIndexBuffer(std::vector<uint32_t> const& indices) {
@@ -196,13 +207,17 @@ namespace EWE {
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
 
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer((void*)indices.data());
+        stagingBuffer.Map();
+        stagingBuffer.WriteToBuffer((void*)indices.data());
         EWEBuffer* indexBuffer;
         indexBuffer = ConstructSingular<EWEBuffer>(ewe_call_trace, indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), indexBuffer->GetBuffer(), bufferSize);
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
 
         return indexBuffer;
     }
@@ -226,8 +241,8 @@ namespace EWE {
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
 
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer((void*)indices.data());
+        stagingBuffer.Map();
+        stagingBuffer.WriteToBuffer((void*)indices.data());
 
         indexBuffer = std::make_unique<EWEBuffer>(
             indexSize,
@@ -235,7 +250,10 @@ namespace EWE {
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), indexBuffer->GetBuffer(), bufferSize);
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
     }
 
     void EWEModel::Draw(VkCommandBuffer commandBuffer) {
@@ -253,21 +271,21 @@ namespace EWE {
     void EWEModel::Bind(VkCommandBuffer commandBuffer) {
         // do a second buffer, and switch to it when changign the object
         //count a couple of frames then remove the old buffer
-        VkBuffer buffers[] = { vertexBuffer->getBuffer() };
+        VkBuffer buffers[] = { vertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 
         if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
         }
     }
 
     void EWEModel::BindAndDraw(VkCommandBuffer commandBuffer) {
-        VkBuffer buffers[] = { vertexBuffer->getBuffer() };
+        VkBuffer buffers[] = { vertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
         if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
         }
         else {
@@ -275,20 +293,18 @@ namespace EWE {
         }
     }
     void EWEModel::BindAndDrawInstance(VkCommandBuffer commandBuffer) {
-        VkBuffer buffers[2] = { vertexBuffer->getBuffer(), instanceBuffer->getBuffer()};
+        VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer()};
         VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffers[0], offsets);
-        vkCmdBindVertexBuffers(commandBuffer, 1, 1, &buffers[1], offsets);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets);
         //vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets); //test this with grass later
         //if no index buffer, indexing wont work
-        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
     }
     void EWEModel::BindAndDrawInstanceNoIndex(VkCommandBuffer cmdBuf) {
-        VkBuffer buffers[2] = { vertexBuffer->getBuffer(), instanceBuffer->getBuffer() };
+        VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(cmdBuf, 0, 1, &buffers[0], offsets);
-        vkCmdBindVertexBuffers(cmdBuf, 1, 1, &buffers[1], offsets);
+        vkCmdBindVertexBuffers(cmdBuf, 0, 2, buffers, offsets);
         //vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets); //test this with grass later
         //if no index buffer, indexing wont work
         //vkCmdBindIndexBuffer(cmdBuf, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
@@ -297,11 +313,11 @@ namespace EWE {
 
 
     void EWEModel::BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount) {
-        VkBuffer buffers[] = { vertexBuffer->getBuffer() };
+        VkBuffer buffers[] = { vertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
         if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
         }
         else {

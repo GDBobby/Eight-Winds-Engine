@@ -5,7 +5,7 @@ namespace EWE {
 
         //namespace internal {
         void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek) {
-            size_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
+            std::size_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
             VkDeviceSize imageSize = layerSize * pixelPeek.size();
 #ifdef _DEBUG
             assert(pixelPeek.size() > 1 && "creating an array without an array of images?");
@@ -52,20 +52,25 @@ namespace EWE {
             EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
             eweDevice->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.imageMemory);
 
-            eweDevice->TransitionImageLayout(uiImageInfo.image,
+            SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+            eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                uiImageInfo.image,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 uiImageInfo.mipLevels, pixelPeek.size());
-            eweDevice->CopyBufferToImage(stagingBuffer, uiImageInfo.image, pixelPeek[0].width, pixelPeek[0].height, pixelPeek.size());
+            eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, uiImageInfo.image, pixelPeek[0].width, pixelPeek[0].height, pixelPeek.size());
 
             vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
             vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
 
-            eweDevice->TransitionImageLayout(uiImageInfo.image,
+            eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                uiImageInfo.image,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 uiImageInfo.mipLevels, pixelPeek.size()
             );
+            syncHub->EndSingleTimeCommandTransfer(cmdBuf, uiImageInfo.image, false, eweDevice->GetGraphicsIndex());
         }
 
         void CreateUIImageView(ImageInfo& uiImageInfo, uint8_t layerCount) {

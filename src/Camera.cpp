@@ -116,11 +116,11 @@ namespace EWE {
 
 		ubo.cameraPos = position;
 		ubo.projView = projection * view;
-		uniformBuffers->at(currentFrame)->writeToBuffer(&ubo);
+		uniformBuffers->at(currentFrame)->WriteToBuffer(&ubo);
 
 
 		//printf("view target direct, currentFrmae : %d \n", currentFrame);
-		uniformBuffers->at(currentFrame)->flush();
+		uniformBuffers->at(currentFrame)->Flush();
 	}
 
 	void EWECamera::SetViewYXZ(glm::vec3 const& position, glm::vec3 const& rotation) {

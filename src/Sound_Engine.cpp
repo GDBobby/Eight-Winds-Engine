@@ -202,6 +202,11 @@ namespace EWE {
 		engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
 
 		bool foundDesiredDevice = false;
+		deviceNames.emplace_back("default");
+		for(uint32_t i = 0; i < deviceCount; i++){
+			printf("device name[%d] : %s\n", i, deviceNames.emplace_back(pPlaybackDeviceInfos[i].name).c_str());
+		}
+
 		for (uint32_t i = 0; i < deviceCount + 1; i++) {
 			ma_device_config deviceConfig; //are these disposable or do i need these for the same lifetime as the device/engine?
 
@@ -222,21 +227,25 @@ namespace EWE {
 			if (result != MA_SUCCESS) {
 				if (i == 0) {
 					printf("failed to initialize the default device \n");
+					//throw std::runtime_error("failed to init miniaudio device");
+					return;
+
+				}
+				else{
+					printf("Failed to initialize device for %s.\n", pPlaybackDeviceInfos[i - 1].name);
 					throw std::runtime_error("failed to init miniaudio device");
 				}
-				printf("Failed to initialize device for %s.\n", pPlaybackDeviceInfos[i - 1].name);
-				throw std::runtime_error("failed to init miniaudio device");
 			}
 
-			// Now that we have the device we can initialize the engine. The device is passed into the engine's config
-			ma_engine_config engineConfig;
-			engineConfig = ma_engine_config_init();
-			engineConfig.pDevice = &devices[i];
-			engineConfig.pResourceManager = &resourceManager;
-			engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
-
+			auto& deviceName = deviceNames[i];
 			if (i == 0) {
-				auto& deviceName = deviceNames.emplace_back("default");
+				// Now that we have the device we can initialize the engine. The device is passed into the engine's config
+				ma_engine_config engineConfig;
+				engineConfig = ma_engine_config_init();
+				engineConfig.pDevice = &devices[i];
+				engineConfig.pResourceManager = &resourceManager;
+				engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
+			
 				result = ma_engine_init(&engineConfig, &engines[0]);
 				if (result != MA_SUCCESS) {
 					printf("Failed to init engine for %s\n", deviceName.c_str());
@@ -257,10 +266,16 @@ namespace EWE {
 						selectedEngine = 0;
 					}
 				}
+			
 			}
 			else {
+				// Now that we have the device we can initialize the engine. The device is passed into the engine's config
+				ma_engine_config engineConfig;
+				engineConfig = ma_engine_config_init();
+				engineConfig.pDevice = &devices[i];
+				engineConfig.pResourceManager = &resourceManager;
+				engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
 
-				auto& deviceName = deviceNames.emplace_back(pPlaybackDeviceInfos[i - 1].name);
 				result = ma_engine_init(&engineConfig, &engines[i]);
 				if (result != MA_SUCCESS) {
 					printf("Failed to init engine for %s\n", deviceName.c_str());
@@ -338,7 +353,7 @@ namespace EWE {
 			break;
 		}
 		default: {
-			printf("loading an unsupported soudn type? : %d \n", soundType);
+			printf("loading an unsupported soudn type? : %d \n", (int)soundType);
 			return;
 			break;
 		}
@@ -394,7 +409,7 @@ namespace EWE {
 				}
 			}
 			else {
-				printf("trying to emplace a sound into a map key that already has a sounnd. this is being ignored - %d:%d \n", soundPath.first, soundType);
+				printf("trying to emplace a sound into a map key that already has a sounnd. this is being ignored - %d:%d \n", soundPath.first, (int)soundType);
 			}
 		}
 

@@ -96,13 +96,13 @@ namespace EWE {
             vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
         }
         void InitialFrequencySpectrumGPUData::CreateBuffers() {
-            jonswapBuffer = EWEBuffer::createAndInitBuffer(&jonswapParams, sizeof(JONSWAP_Parameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+            jonswapBuffer = EWEBuffer::CreateAndInitBuffer(&jonswapParams, sizeof(JONSWAP_Parameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         }
         void InitialFrequencySpectrumGPUData::CreateDescriptorSet(VkDescriptorImageInfo* descImageInfo) {
 
             EWEDescriptorWriter descWriter{eweDSL, DescriptorPool_Global};
             descWriter.writeImage(0, descImageInfo);
-            descWriter.writeBuffer(1, jonswapBuffer->descriptorInfo());
+            descWriter.writeBuffer(1, jonswapBuffer->DescriptorInfo());
             descriptorSet[0] = descWriter.build();
             descriptorSet[1] = descWriter.build();
         }
@@ -308,22 +308,22 @@ namespace EWE {
             //creating the buffer here as well
             //OceanRenderParameters
             renderData[0] = ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(OceanRenderParameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-            renderData[0]->map();
-            renderData[0]->writeToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
-            renderData[0]->flush();
+            renderData[0]->Map();
+            renderData[0]->WriteToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
+            renderData[0]->Flush();
 
             renderData[1] = ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(OceanRenderParameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-            renderData[1]->map();
-            renderData[1]->writeToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
-            renderData[1]->flush();
+            renderData[1]->Map();
+            renderData[1]->WriteToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
+            renderData[1]->Flush();
 
             EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
-            descWriter.writeBuffer(0, renderData[0]->descriptorInfo());
+            descWriter.writeBuffer(0, renderData[0]->DescriptorInfo());
             descWriter.writeImage(1, outputImage);
             descWriter.writeImage(2, skyboxImage);
             descriptorSet[0] = descWriter.build();
 
-            descWriter.writeBuffer(0, renderData[1]->descriptorInfo());
+            descWriter.writeBuffer(0, renderData[1]->DescriptorInfo());
             descriptorSet[1] = descWriter.build();
 
         }

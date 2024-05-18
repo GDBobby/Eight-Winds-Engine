@@ -75,11 +75,9 @@ namespace EWE {
 			imageCreateInfo.arrayLayers = cascade_count * 3;
 			imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 			imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-			// Image will be sampled in the graphics shaders and used as storage target in the compute shader
 			imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 			imageCreateInfo.flags = 0;
-			// If compute and graphics queue family indices differ, we create an image that can be shared between them
-			// This can result in worse performance than exclusive sharing mode, but save some synchronization to keep the sample simple
+			imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 			uint32_t queueData[] = { eweDevice->GetGraphicsIndex(), eweDevice->GetPresentIndex() };
 			const bool differentFamilies = (queueData[0] != queueData[1]);
@@ -93,16 +91,29 @@ namespace EWE {
 			eweDevice->CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanFreqImages, oceanFreqImageMemory);
 
 
-			eweDevice->TransitionImageLayout(oceanOutputImages,
-				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
+			SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+			//directly to graphics because no data is being uploaded
+			VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
+
+			VkImageMemoryBarrier imageBarriers[2];
+			imageBarriers[0] = eweDevice->TransitionImageLayout(oceanOutputImages,
 				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
 				1, cascade_count * 3
 			);			
-			eweDevice->TransitionImageLayout(oceanFreqImages,
-				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
+			imageBarriers[1] = eweDevice->TransitionImageLayout(oceanFreqImages,
 				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
 				1, cascade_count
 			);
+			vkCmdPipelineBarrier(cmdBuf,
+            	VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
+            	0,
+            	0, nullptr,
+            	0, nullptr,
+            	2, imageBarriers
+			);
+			VkImage imagesTransfer[2] = {oceanOutputImages, oceanFreqImages};
+			//directly to graphics because no data is being uploaded
+			syncHub->EndSingleTimeCommandGraphics(cmdBuf);
 
 			// Create sampler
 			VkSamplerCreateInfo samplerInfo{};

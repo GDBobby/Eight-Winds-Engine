@@ -1,6 +1,7 @@
 #pragma once
 
 #include <EWEngine/Data/EWE_Memory.h>
+#include <EWEngine/Data/TransitionManager.h>
 
 #include <mutex>
 #include <condition_variable>
@@ -18,23 +19,6 @@ static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {
 	class SyncHub {
 	private:
-		struct ImageQueueTransitionStruct {
-			VkImage image;
-			bool generateMips;
-			uint32_t dstQueue;
-			ImageQueueTransitionStruct(VkImage image, bool mips, uint32_t dstQueue) : image(image), generateMips(mips), dstQueue(dstQueue) {}
-		};
-		struct SingleTimeStruct {
-
-			std::vector<ImageQueueTransitionStruct> images{};
-			//buffer is not currently supported, but if it was, it would be put here
-			//std::vector<VkBuffer> buffers{};
-
-		};
-		struct GraphicsTransitionStruct {
-			std::vector<ImageQueueTransitionStruct> images{};
-			std::vector<VkSemaphore> waitSemaphores{};
-		};
 
 
 		static SyncHub* syncHubSingleton;
@@ -47,6 +31,7 @@ namespace EWE {
 		uint32_t transferQueueIndex;
 
 		VkCommandPool transferCommandPool{};
+		VkCommandPool graphicsCommandPool{};
 		VkCommandBufferBeginInfo bufferBeginInfo{};
 
 		VkSubmitInfo transferSubmitInfo{};
@@ -61,16 +46,13 @@ namespace EWE {
 		//the transfer queue doesn't work like the graphics queue, which could have 2 frames in flight
 		//the transfer queue will only have one submission in flight
 		std::array<std::vector<VkCommandBuffer>, 2> transferBuffers{};
+		Transition_Manager transitionManager;
 
-		//one for each frame in flight, one for each built transfer
-		//i think if everything goes right, there should never be more than one in flight. but it really depends
-		//on how quickly the transfer queue works. if it processes 3 submissions in 1 graphics submission, singleTimeStructs will be overflowed
-		//if the transfer queue works slower than the graphics queue, this structure will be fine
-		std::array<SingleTimeStruct, MAX_FRAMES_IN_FLIGHT> singleTimeStructs{}; 
 
 		using StageMask = std::vector<VkSemaphore>;
 		//VkFence fence{ VK_NULL_HANDLE };
-		VkFence singleTimeFence{ VK_NULL_HANDLE };
+		VkFence singleTimeFenceGraphics{VK_NULL_HANDLE};
+		VkFence singleTimeFenceTransfer{ VK_NULL_HANDLE };
 
 		std::vector<VkSemaphore> imageAvailableSemaphores{}; //resized to maxFramesInFlight
 		std::vector<VkSemaphore> renderFinishedSemaphores{};//resized to maxFramesInFlight
@@ -100,18 +82,11 @@ namespace EWE {
 		};
 		DomCuckSync domCuckSync{};
 	public:		
-		static SyncHub* getSyncHubInstance() {
-			static std::mutex mtx;
-
-			std::lock_guard<std::mutex> lock(mtx);
-			if (syncHubSingleton == nullptr) {
-				syncHubSingleton = ConstructSingular<SyncHub>(ewe_call_trace);
-				//std::cout << "COSTRUCTING SYNCHUB" << std::endl;
-			}
+		static SyncHub* GetSyncHubInstance() {
 			return syncHubSingleton;
 			
 		}
-		SyncHub() {
+		SyncHub() : transitionManager{2, 2} {
 
 			std::cout << "COSTRUCTING SYNCHUB" << std::endl;
 		}
@@ -120,83 +95,62 @@ namespace EWE {
 		}
 
 		//only class this from EWEDevice
-		void initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool, uint32_t transferQueueIndex);
-		void setImageCount(uint32_t imageCount) {
+		static void Initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool, uint32_t transferQueueIndex);
+		void SetImageCount(uint32_t imageCount) {
 			imagesInFlight.resize(imageCount, VK_NULL_HANDLE);
 		}
-		void destroy(VkCommandPool renderPool, VkCommandPool computePool, VkCommandPool transferPool);
+		void Destroy(VkCommandPool renderPool, VkCommandPool computePool, VkCommandPool transferPool);
 
 		//void enableCompute();
 		//void disableCompute();
 
-		VkCommandBuffer getRenderBuffer(uint8_t frameIndex) {
+		VkCommandBuffer GetRenderBuffer(uint8_t frameIndex) {
 			return renderBuffers[frameIndex];
 		}
 
 		//void setComputeMask(VkSubmitInfo& computeSubmitInfo);
-		VkFence* getFlightFence(uint8_t frameIndex) {
+		VkFence* GetFlightFence(uint8_t frameIndex) {
 			return &inFlightFences[frameIndex];
 		}
-		VkSemaphore getImageAvailableSemaphore(uint8_t frameIndex) {
+		VkSemaphore GetImageAvailableSemaphore(uint8_t frameIndex) {
 			return imageAvailableSemaphores[frameIndex];
 		}
 
-		void submitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex);
-		VkResult presentKHR(VkPresentInfoKHR& presentInfo, uint8_t currentFrame);
+		void SubmitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex);
+		VkResult PresentKHR(VkPresentInfoKHR& presentInfo, uint8_t currentFrame);
 
-		void domDemand();
-		void domRelease();
-		void cuckRequest();
-		void cuckSubmit();
+		void DomDemand();
+		void DomRelease();
+		void CuckRequest();
+		void CuckSubmit();
 
-		VkCommandBuffer BeginSingleTimeCommand(VkCommandPool cmdPool);
-		VkCommandBuffer BeginSingleTimeCommands();
-		void EndSingleTimeCommand(VkCommandBuffer cmdBuf);
-		void EndSingleTimeCommandTransition(VkCommandBuffer cmdBuf, VkImage image, bool generateMips, uint32_t dstQueue);
+		VkCommandBuffer BeginSingleTimeCommandGraphics();
+		VkCommandBuffer BeginSingleTimeCommandTransfer();
+		void EndSingleTimeCommandGraphics(VkCommandBuffer cmdBuf);
 
-		void prepTransferSubmission(VkCommandBuffer transferBuffer);
-		void prepTransferSubmission(VkCommandBuffer transferBuffer, VkImage image, bool generateMips, uint32_t dstQueue);
+		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkBuffer buffer, uint32_t dstQueue);
+		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkBuffer* buffers, uint8_t bufferCount, uint32_t dstQueue);
+		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkImage image, bool generateMips, uint32_t dstQueue);
+		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkImage* images, uint8_t imageCount, bool generateMips, uint32_t dstQueue);
 
-		void waitOnTransferFence();
+		void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer buffer, uint32_t dstQueue);
+		void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer* buffers, uint8_t bufferCount, uint32_t dstQueue);
+		void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkImage image, bool generateMips, uint32_t dstQueue);
+		void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkImage* images, uint8_t imageCount, bool generateMips, uint32_t dstQueue);
+
+		void WaitOnTransferFence();
 
 	private:
 
-		void createSyncObjects();
+		void CreateSyncObjects();
 
-		void initWaitMask();
-		void initSignalMask();
+		void InitWaitMask();
+		void InitSignalMask();
 
-		void setMaxFramesInFlight();
-		void createBuffers(VkCommandPool commandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool);
+		void SetMaxFramesInFlight();
+		void CreateBuffers(VkCommandPool commandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool);
 
-		void submitTransferBuffers();
-		
-		/*
-		void computeBarriers(VkCommandBuffer renderBuf) {
-			//need this for derivatives, turbulence, and displacement
-
-			VkImageMemoryBarrier imageMemoryBarrier = {};
-			imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-			// We won't be changing the layout of the image
-			imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-			imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-			//imageMemoryBarrier.image = textureComputeTarget.image;
-			imageMemoryBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-			imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-			imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-			imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			vkCmdPipelineBarrier(
-				renderBuf,
-				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-				0,
-				0, nullptr,
-				0, nullptr,
-				1, &imageMemoryBarrier
-			);
-		}
-		*/
+		void SubmitTransferBuffers();
 
 	};
 }

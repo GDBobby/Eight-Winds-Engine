@@ -11,7 +11,7 @@ namespace EWE {
 		gpuReference = innerPtr;
 	}
 	void SkinBufferHandler::writeData(void* finalBoneMatrices) {
-		gpuData[frameIndex].bone->writeToBuffer(finalBoneMatrices, boneBlockSize, boneMemOffset);
+		gpuData[frameIndex].bone->WriteToBuffer(finalBoneMatrices, boneBlockSize, boneMemOffset);
 		boneMemOffset += boneBlockSize;
 
 	}
@@ -28,7 +28,7 @@ namespace EWE {
 		currentActorCount{maxActorCount}
 	{
 		bone = ConstructSingular<EWEBuffer>(ewe_call_trace, boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		bone->map();
+		bone->Map();
 
 
 		buildDescriptor();
@@ -51,7 +51,7 @@ namespace EWE {
 	void SkinBufferHandler::InnerBufferStruct::buildDescriptor() {
 		//printf("building skin buffer \n");
 		descriptor = EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
-			.writeBuffer(0, bone->descriptorInfo())
+			.writeBuffer(0, bone->DescriptorInfo())
 			.build();
 	}
 
@@ -66,8 +66,8 @@ namespace EWE {
 	}
 	void InstancedSkinBufferHandler::writeData(glm::mat4* modelMatrix, void* finalBoneMatrices) {
 
-		gpuData[frameIndex].model->writeToBuffer(modelMatrix, sizeof(glm::mat4), modelMemOffset);
-		gpuData[frameIndex].bone->writeToBuffer(finalBoneMatrices, boneBlockSize, boneMemOffset);
+		gpuData[frameIndex].model->WriteToBuffer(modelMatrix, sizeof(glm::mat4), modelMemOffset);
+		gpuData[frameIndex].bone->WriteToBuffer(finalBoneMatrices, boneBlockSize, boneMemOffset);
 		modelMemOffset += sizeof(glm::mat4);
 		boneMemOffset += boneBlockSize;
 		currentInstanceCount++;
@@ -99,8 +99,8 @@ namespace EWE {
 
 		bone = ConstructSingular<EWEBuffer>(ewe_call_trace, boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-		model->map();
-		bone->map();
+		model->Map();
+		bone->Map();
 
 
 		buildDescriptor(maxActorCount);
@@ -119,16 +119,16 @@ namespace EWE {
 		//if (maxActorCount > 1000) {
 		printf("building instanced skin buffer \n");
 		descriptor = EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_largeInstance), DescriptorPool_Global)
-			.writeBuffer(0, model->descriptorInfo())
-			.writeBuffer(1, bone->descriptorInfo())
+			.writeBuffer(0, model->DescriptorInfo())
+			.writeBuffer(1, bone->DescriptorInfo())
 			//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
 			.build();
 	}
 
 	void InstancedSkinBufferHandler::InnerBufferStruct::flush() {
 		if (updated) {
-			model->flush();
-			bone->flush();
+			model->Flush();
+			bone->Flush();
 			updated = false;
 		}
 	}

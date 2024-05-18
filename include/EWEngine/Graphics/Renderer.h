@@ -50,7 +50,7 @@ namespace EWE {
 		VkCommandBuffer getCurrentCommandBuffer() const { 
 			assert(isFrameStarted && "Cannot get command buffer when frame is not in progress!");
 			//printf("currentFrameIndex: commandBuffers size, maxFIF - %d:%d:%d \n", currentFrameIndex, commandBuffers.size(), MAX_FRAMES_IN_FLIGHT);
-			return syncHub->getRenderBuffer(currentFrameIndex);
+			return syncHub->GetRenderBuffer(currentFrameIndex);
 		}
 		int getFrameIndex() const {
 			assert(isFrameStarted && "Cannot get frameindex when frame is not in progress!");
@@ -60,7 +60,7 @@ namespace EWE {
 		FrameInfo beginFrame();
 		bool endFrame();
 
-		void beginSecondarySwapChainRenderPass(std::pair<VkCommandBuffer, VkCommandBuffer> commandBufferPair);
+		//void beginSecondarySwapChainRenderPass(std::pair<VkCommandBuffer, VkCommandBuffer> commandBufferPair);
 		void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
 		void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
 		TextOverlay* makeTextOverlay() {

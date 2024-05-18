@@ -81,7 +81,7 @@ namespace EWE {
         uint64_t memAddress = reinterpret_cast<uint64_t>(data);
         cubeTexture.mipLevels = 1;
         for (int i = 0; i < 6; i++) {
-            memcpy(reinterpret_cast<void*>(memAddress), pixelPeek[i].pixels, static_cast<size_t>(layerSize)); //static_cast<void*> unnecessary>?
+            memcpy(reinterpret_cast<void*>(memAddress), pixelPeek[i].pixels, static_cast<std::size_t>(layerSize)); //static_cast<void*> unnecessary>?
             stbi_image_free(pixelPeek[i].pixels);
             memAddress += layerSize;
         }
@@ -108,22 +108,30 @@ namespace EWE {
         EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
         eweDevice->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeTexture.image, cubeTexture.imageMemory);
 
-        eweDevice->TransitionImageLayout(cubeTexture.image, 
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+        
+        eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,  
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            cubeTexture.image,
             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            cubeTexture.mipLevels, 6);
-        eweDevice->CopyBufferToImage(stagingBuffer, cubeTexture.image, pixelPeek[0].width, pixelPeek[0].height, 6);
-
-
+            cubeTexture.mipLevels, 6
+        );
+        
+        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, cubeTexture.image, pixelPeek[0].width, pixelPeek[0].height, 6);
 
         vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
         vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
 
-        eweDevice->TransitionImageLayout(cubeTexture.image, 
+        eweDevice->TransitionImageLayoutWithBarrier(cmdBuf, 
             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            cubeTexture.image, 
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
             cubeTexture.mipLevels, 6
         );
+
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, cubeTexture.image, false, eweDevice->GetGraphicsIndex());
+
     }
 
     void Cube_Texture::createCubeImageView(ImageInfo& cubeTexture) {

@@ -50,6 +50,14 @@ namespace EWE {
                 std::cout << "validation error: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
                 assert(0 && "validation layer error");
 				break;
+            default:{
+#if defined(_MSC_VER) && !defined(__clang__) // MSVC
+    __assume(false);
+#else // GCC, Clang
+    __builtin_unreachable();
+#endif
+                break;
+            }
         }
         //throw std::exception("validition layer \n");
         return VK_FALSE;
@@ -89,7 +97,7 @@ namespace EWE {
         
         queueFamilies.resize(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-        printf("queue family count : %d:%d \n", queueFamilyCount, queueFamilies.size());
+        printf("queue family count : %d:%lu \n", queueFamilyCount, queueFamilies.size());
 
         //i want a designated graphics/present queue, or throw an error
         //i want a dedicated async compute queue
@@ -231,10 +239,10 @@ namespace EWE {
         //std::cout << "command pool, transfer CP - " << std::hex << commandPool << ":" << transferCommandPool << std::endl;
         //printf("after creating transfer command pool \n");
 
-
         //mainThreadID = std::this_thread::get_id();
-        syncHub = SyncHub::getSyncHubInstance();
-        syncHub->initialize(device_, graphicsQueue_, presentQueue_, computeQueue_, transferQueue_, commandPool, computeCommandPool, transferCommandPool);
+        SyncHub::Initialize(device_, graphicsQueue_, presentQueue_, computeQueue_, transferQueue_, commandPool, computeCommandPool, transferCommandPool, queueData.index[QueueData::Queue_Enum::q_transfer]);
+        syncHub = SyncHub::GetSyncHubInstance();
+        
         /*
         createTextureImage();
         createTextureImageView();
@@ -243,7 +251,7 @@ namespace EWE {
     }
 
     EWEDevice::~EWEDevice() {
-        syncHub->destroy(commandPool, computeCommandPool, transferCommandPool);
+        syncHub->Destroy(commandPool, computeCommandPool, transferCommandPool);
 #if DECONSTRUCTION_DEBUG
         printf("beginning EWEdevice deconstruction \n");
 #endif
@@ -361,7 +369,7 @@ namespace EWE {
             score += (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) * 1000;
             score += properties.limits.maxImageDimension2D;
             std::string deviceNameTemp = properties.deviceName;
-            score += (deviceNameTemp.find("AMD") != deviceNameTemp.npos) * 100000;
+            score += ((deviceNameTemp.find("AMD") != deviceNameTemp.npos) && (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) * 100000;
             //properties.limits.maxFramebufferWidth;
 
             printf("Device Name:Score %s:%d \n", properties.deviceName, score);
@@ -428,11 +436,10 @@ namespace EWE {
     }
 
     void EWEDevice::CreateLogicalDevice() {
-        //queueData = findQueueFamilies(physicalDevice);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::vector<std::vector<float>> queuePriorities{};
-        //std::vector<uint32_t> uniqueQueueFamilies = { queueData.graphicsFamily, queueData.presentFamily, queueData.transferFamily, queueData.computeFamily };
+
         queueData.index[QueueData::q_present] = queueData.index[QueueData::q_graphics];
 
         queuePriorities.emplace_back().push_back(1.f);
@@ -821,7 +828,7 @@ namespace EWE {
         vkBindBufferMemory(device_, buffer, bufferMemory, 0);
     }
 
-    void EWEDevice::CopySecondaryBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer cmdBuf) {
+    void EWEDevice::CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
         //printf("COPY SECONDARY BUFFER, thread ID: %d \n", std::this_thread::get_id());
         VkBufferCopy copyRegion{};
         copyRegion.srcOffset = 0;  // Optional
@@ -829,21 +836,9 @@ namespace EWE {
         copyRegion.size = size;
         vkCmdCopyBuffer(cmdBuf, srcBuffer, dstBuffer, 1, &copyRegion);
     }
-    void EWEDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-        VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
 
-        VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0;  // Optional
-        copyRegion.dstOffset = 0;  // Optional
-        copyRegion.size = size;
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-
-        syncHub->EndSingleTimeCommand(commandBuffer);
-    }
-
-    void EWEDevice::TransitionImageLayout(VkImage &image, VkPipelineStageFlags sourceStage, VkPipelineStageFlags destinationStage, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount) {
-
-        VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
+    //need to find the usage and have it create the single time command
+    VkImageMemoryBarrier EWEDevice::TransitionImageLayout(VkImage &image, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount) {
         
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -962,15 +957,27 @@ namespace EWE {
             assert(false && "unsupported dst layout transition");
         }
 
-        vkCmdPipelineBarrier(commandBuffer,
+        return barrier;
+        /*
+        vkCmdPipelineBarrier(cmdBuf,
             sourceStage, destinationStage,
             0,
             0, nullptr,
             0, nullptr,
             1, &barrier);
-
-        syncHub->EndSingleTimeCommand(commandBuffer);
+        */
     }
+    void EWEDevice::TransitionImageLayoutWithBarrier(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount){
+        VkImageMemoryBarrier imageBarrier{TransitionImageLayout(image, srcLayout, dstLayout, mipLevels, layerCount)};
+        vkCmdPipelineBarrier(cmdBuf,
+            srcStageMask, dstStageMask,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &imageBarrier
+        );
+    }
+
 
 #define BARRIER_DEBUGGING false
     void EWEDevice::TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image) {
@@ -1224,8 +1231,7 @@ namespace EWE {
             1, &imageMemoryBarrier);
     }
 
-    void EWEDevice::CopyBufferToImage(VkBuffer &buffer, VkImage &image, uint32_t width, uint32_t height, uint32_t layerCount) {
-        VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
+    void EWEDevice::CopyBufferToImage(VkCommandBuffer cmdBuf, VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount) {
 
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
@@ -1241,45 +1247,12 @@ namespace EWE {
         region.imageExtent = { width, height, 1 };
 
         vkCmdCopyBufferToImage(
-            commandBuffer,
+            cmdBuf,
             buffer,
             image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
             &region);
-        syncHub->EndSingleTimeCommand(commandBuffer);
-    }
-    void EWEDevice::CopyBufferToImageAndTransitionFromTransfer(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount, VkImageLayout finalLayout, bool generateMips) {
-
-        VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommands();
-
-        VkBufferImageCopy region{};
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = layerCount;
-
-        region.imageOffset = { 0, 0, 0 };
-        region.imageExtent = { width, height, 1 };
-
-        vkCmdCopyBufferToImage(
-            commandBuffer,
-            buffer,
-            image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1,
-            &region);
-
-        if (generateMips) {
-            syncHub->EndSingleTimeCommandWithGenerateMips(commandBuffer);
-        }
-        else{
-            syncHub->EndSingleTimeCommand(commandBuffer);
-        }
     }
 
     void EWEDevice::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {

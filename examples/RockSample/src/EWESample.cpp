@@ -78,7 +78,7 @@ namespace EWE {
 				//loading entry?
 				vkDeviceWaitIdle(ewEngine.eweDevice.Device());
 				currentScenePtr->exit();
-				ewEngine.objectManager.clearSceneObjects();
+				ewEngine.objectManager.ClearSceneObjects();
 				Texture_Manager::GetTextureManagerPtr()->ClearSceneTextures();
 				//loading entry?
 				if (currentScene != scene_exitting) {

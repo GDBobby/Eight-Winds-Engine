@@ -91,7 +91,7 @@ namespace EWE {
 
 			void flush() {
 				if (updated) {
-					bone->flush();
+					bone->Flush();
 					updated = false;
 				}
 			}

@@ -129,8 +129,8 @@ namespace EWE {
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             //printf("init ars descriptors, loop : %d \n", i);
             descriptorSets.at(DS_global).emplace_back(EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_global), DescriptorPool_Global)
-                .writeBuffer(0, bufferMap.at(Buff_ubo)[i]->descriptorInfo())
-                .writeBuffer(1, bufferMap.at(Buff_gpu)[i]->descriptorInfo())
+                .writeBuffer(0, bufferMap.at(Buff_ubo)[i]->DescriptorInfo())
+                .writeBuffer(1, bufferMap.at(Buff_gpu)[i]->DescriptorInfo())
                 .build());
         }
     }

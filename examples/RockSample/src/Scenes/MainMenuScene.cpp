@@ -17,7 +17,7 @@ namespace EWE {
 
 	void MainMenuScene::load() {
 		menuManager.giveMenuFocus();
-		PipelineSystem::Emplace(Pipe_textured, ConstructSingular<Pipe_SimpleTextured>(ewe_call_trace));
+		PipelineSystem::Emplace(Pipe::textured, ConstructSingular<Pipe_SimpleTextured>(ewe_call_trace));
 	}
 	void MainMenuScene::entry() {
 		soundEngine->StopMusic();
@@ -35,8 +35,8 @@ namespace EWE {
 		//handle threads in this scene, or a game specific class
 	}
 	void MainMenuScene::exit() {
-		PipelineSystem::DestructAt(Pipe_textured);
-		ewe_free(PipelineSystem::At(Pipe_textured));
+		PipelineSystem::DestructAt(Pipe::textured);
+		ewe_free(PipelineSystem::At(Pipe::textured));
 		ewEngine.objectManager.eweObjects.clear();
 	}
 	bool MainMenuScene::render(double dt) {

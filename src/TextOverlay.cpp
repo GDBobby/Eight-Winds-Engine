@@ -294,7 +294,7 @@ namespace EWE {
 		//);
 		eweDevice->TransitionFromTransfer(copyCmd, EWE::QueueData::q_graphics, image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-		SyncHub::getSyncHubInstance()->EndSingleTimeCommand(copyCmd);
+		SyncHub::GetSyncHubInstance()->EndSingleTimeCommandTransfer(copyCmd, image, false, eweDevice->GetGraphicsIndex());
 
 		vkFreeMemory(eweDevice->Device(), stagingBuffer.memory, nullptr);
 		vkDestroyBuffer(eweDevice->Device(), stagingBuffer.buffer, nullptr);
@@ -420,7 +420,7 @@ namespace EWE {
 
 		//std::cout << "check4 " << std::endl;
 
-		vkUpdateDescriptorSets(eweDevice->Device(), static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
+		vkUpdateDescriptorSets(eweDevice->Device(), static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 
 		//std::cout << "check5" << std::endl;
 		// Pipeline cache
@@ -778,7 +778,7 @@ namespace EWE {
 	void TextOverlay::draw(VkCommandBuffer commandBuffer) {
 			EWERenderer::bindGraphicsPipeline(commandBuffer, pipeline);
 
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
 			VkDeviceSize offsets = 0;
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffer, &offsets);
