@@ -45,7 +45,7 @@ namespace EWE {
 		//printf("render main menu scene \n");
 
 
-		auto frameInfo = ewEngine.BeginCompute();
+		auto frameInfo = ewEngine.BeginRenderWithoutPass();
 		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 			//printf("drawing \n");
 			ocean->ReinitUpdate(frameInfo, dt);

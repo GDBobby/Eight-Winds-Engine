@@ -75,6 +75,8 @@ void updateMemoryLogFile() {
 }
 #endif
 
+
+#if USING_MALLOC
 void* ewe_alloc_internal(std::size_t element_size, std::size_t element_count, const char* file, int line, const char* sourceFunction) {
 	void* ptr = malloc(element_count * element_size);
 #ifdef _DEBUG
@@ -84,9 +86,19 @@ void* ewe_alloc_internal(std::size_t element_size, std::size_t element_count, co
 #endif
 	return ptr;
 }
+#else
+void ewe_alloc_internal(void* ptr, const char* file, int line, const char* sourceFunction){
+#ifdef _DEBUG
+	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), file, line, sourceFunction);
+	updateMemoryLogFile();
+#endif
+}
+#endif
 
 void ewe_free_internal(void* ptr) {
+#if USING_MALLOC
 	free(ptr);
+#endif
 #ifdef _DEBUG
 	auto found = mallocMap.find(reinterpret_cast<uint64_t>(ptr));
 	assert((found != mallocMap.end()) && "freeing memory that wasn't allocated");

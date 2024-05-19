@@ -5,8 +5,14 @@
 #include <cassert>
 #include <cstdint>
 
+#define USING_MALLOC false
 
+
+#if USING_MALLOC
 void* ewe_alloc_internal(std::size_t element_size, std::size_t element_count, const char* file, int line, const char* sourceFunction);
+#else
+void* ewe_alloc_internal(void* ptr, const char* file, int line, const char* sourceFunction);
+#endif
 
 void ewe_free_internal(void* ptr);
 
@@ -17,7 +23,11 @@ void ewe_free_internal(void* ptr);
 //i think function will give a call stack
 #ifndef ewe_alloc
 //user is in charge of construction
-#define ewe_alloc(size, count) ewe_alloc_internal(size, count, ewe_call_trace)
+    #if USING_MALLOC
+    #define ewe_alloc(size, count) ewe_alloc_internal(size, count, ewe_call_trace)
+    #else
+    #define ewe_alloc(ptr) ewe_alloc_internal(ptr, ewe_call_trace)
+    #endif
 #endif
 
 #ifndef ewe_free
@@ -27,9 +37,15 @@ void ewe_free_internal(void* ptr);
 
 template<typename T, typename... Args>
 static T* ConstructSingular(const char* file, int line, const char* sourceFunction, Args&&... args) {
+#if USING_MALLOC
     void* memory = ewe_alloc_internal(sizeof(T), 1, file, line, sourceFunction);
     assert(memory && "memory is nullptr");
     return new (memory) T(std::forward<Args>(args)...);
+#else
+    T* ret = new T(std::forward<Args>(args)...);
+    ewe_alloc_internal(reinterpret_cast<void*>(ret), file, line, sourceFunction);
+    return ret;
+#endif
     //return memory;
 }
 /*

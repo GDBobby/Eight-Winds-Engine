@@ -32,23 +32,29 @@ namespace EWE {
 		result = ma_resource_manager_init(&resourceManagerConfig, &resourceManager);
 		if(result != MA_SUCCESS) {
 			printf("Failed to initialize resource manager.\n");
-			throw std::runtime_error("failed to init miniaudio");
+			throw std::runtime_error("failed ma_resource_manager_init");
 		}
 		result = ma_context_init(NULL, 0, NULL, &context);
 		if (result != MA_SUCCESS) {
 			printf("Failed to initialize context.\n");
-			throw std::runtime_error("failed to init miniaudio");
+			throw std::runtime_error("failed ma_context_init");
 		}
 		result = ma_context_get_devices(&context, &pPlaybackDeviceInfos, &playbackDeviceCount, NULL, NULL);
 		if (result != MA_SUCCESS) {
 			printf("failed to get devices \n");
-			throw std::runtime_error("failed to init miniaudio");
+			throw std::runtime_error("failed ma_context_get_devices");
 		}
 
 
 		engines.resize(playbackDeviceCount + 1);
 		devices.resize(engines.size());
 		deviceNames.reserve(engines.size());
+
+		//deviceNames.emplace_back("default");
+		//for(uint32_t i = 0; i < deviceCount; i++){
+		//	printf("device name[%d] : %s\n", i, deviceNames.emplace_back(pPlaybackDeviceInfos[i].name).c_str());
+		//}
+
 		effects.resize(engines.size());
 		music.resize(engines.size());
 		voices.resize(engines.size());
@@ -196,15 +202,19 @@ namespace EWE {
 	}
 	void SoundEngine::InitEngines(ma_device_info* deviceInfos, uint32_t deviceCount) {
 
-		ma_engine_config engineConfig;
-		engineConfig = ma_engine_config_init();
+		//printf("before ma_engine_config_init\n");
+		ma_engine_config engineConfig = ma_engine_config_init();
+		//printf("after ma_engine_config_init\n");
 		engineConfig.pResourceManager = &resourceManager;
 		engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
 
 		bool foundDesiredDevice = false;
 		deviceNames.emplace_back("default");
 		for(uint32_t i = 0; i < deviceCount; i++){
-			printf("device name[%d] : %s\n", i, deviceNames.emplace_back(pPlaybackDeviceInfos[i].name).c_str());
+#ifdef _DEBUG
+			printf("device name[%d] : %s\n", i, pPlaybackDeviceInfos[i].name);
+#endif
+			deviceNames.emplace_back(pPlaybackDeviceInfos[i].name);
 		}
 
 		for (uint32_t i = 0; i < deviceCount + 1; i++) {

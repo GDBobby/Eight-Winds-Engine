@@ -109,7 +109,7 @@ namespace EWE {
 		void InitGlobalBuffers();
 
 		FrameInfo BeginRender();
-		FrameInfo BeginCompute();
+		FrameInfo BeginRenderWithoutPass();
 //#define RENDER_OBJECT_DEBUG
 
 		void Draw2DObjects(FrameInfo& frameInfo);

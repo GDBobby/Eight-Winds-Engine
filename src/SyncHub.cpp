@@ -80,17 +80,11 @@ namespace EWE {
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandPool = renderCommandPool;
 		allocInfo.commandBufferCount = static_cast<uint32_t>(renderBuffers.size());
-		if (vkAllocateCommandBuffers(device, &allocInfo, renderBuffers.data()) != VK_SUCCESS) {
-			std::cout << "failed to allocate command buffers " << std::endl;
-			throw std::runtime_error("failed to allocate command buffers!");
-		}
+		EWE_VK_ASSERT(vkAllocateCommandBuffers(device, &allocInfo, renderBuffers.data()));
+
 	}
 	void SyncHub::WaitOnTransferFence() {
-		VkResult vkResult = vkWaitForFences(device, 1, &singleTimeFenceTransfer, VK_TRUE, UINT64_MAX);
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to wait for fences : %d \n", vkResult);
-			throw std::runtime_error("Failed to wait for fence in endSingleTimeCommands");
-		}
+		EWE_VK_ASSERT(vkWaitForFences(device, 1, &singleTimeFenceTransfer, VK_TRUE, UINT64_MAX));
 	}
 	void SyncHub::CreateSyncObjects() {
 		VkSemaphoreCreateInfo semaphoreInfo = {};
@@ -103,12 +97,9 @@ namespace EWE {
 		
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-				vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-				vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-				std::cout << "failed to create rendering semaphores" << std::endl;
-				throw std::runtime_error("failed to create synchronization objects for a frame!");
-			}
+			EWE_VK_ASSERT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
+			EWE_VK_ASSERT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
+			EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]));
 			//printf("in flight fences handle id : %llu \n", reinterpret_cast<uint64_t>(inFlightFences[i]));
 		}
 	}
@@ -174,16 +165,47 @@ namespace EWE {
 
 		vkFreeCommandBuffers(device, graphicsCommandPool, 1, &cmdBuf);
 	}
+	void SyncHub::EndSingleTimeCommandGraphicsSignal(VkCommandBuffer cmdBuf, VkSemaphore signalSemaphore){
+		vkEndCommandBuffer(cmdBuf);
+		vkResetFences(device, 1, &singleTimeFenceGraphics);
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext = nullptr;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &cmdBuf;
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &signalSemaphore;
+		//std::cout << "before graphics EST signal submit \n";
+		EWE_VK_ASSERT(vkQueueSubmit(graphicsQueue, 1, &submitInfo, singleTimeFenceGraphics));
+		//std::cout << "after graphics EST signal submit \n";
+
+		EWE_VK_ASSERT(vkWaitForFences(device, 1, &singleTimeFenceGraphics, VK_TRUE, UINT64_MAX));
+		vkFreeCommandBuffers(device, graphicsCommandPool, 1, &cmdBuf);
+	}
+	void SyncHub::EndSingleTimeCommandGraphicsWait(VkCommandBuffer cmdBuf, VkSemaphore waitSemaphore){
+		vkEndCommandBuffer(cmdBuf);
+		vkResetFences(device, 1, &singleTimeFenceGraphics);
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext = nullptr;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &cmdBuf;
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &waitSemaphore;
+		//std::cout << "before graphics EST signal submit \n";
+		EWE_VK_ASSERT(vkQueueSubmit(graphicsQueue, 1, &submitInfo, singleTimeFenceGraphics));
+		//std::cout << "after graphics EST signal submit \n";
+
+		EWE_VK_ASSERT(vkWaitForFences(device, 1, &singleTimeFenceGraphics, VK_TRUE, UINT64_MAX));
+		vkFreeCommandBuffers(device, graphicsCommandPool, 1, &cmdBuf);
+	}
+
 	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkBuffer buffer, uint32_t dstQueue){
 		vkEndCommandBuffer(cmdBuf);		
 		transitionManager.GetStagingBuffer()->buffers.emplace_back(buffer, dstQueue);
 		
 		transferBuffers[transferFlipFlop].push_back(cmdBuf);
-		if (readyForNextTransmit) {
-			readyForNextTransmit = false;
-			transferFlipFlop = !transferFlipFlop;
-			auto future = std::async(&SyncHub::SubmitTransferBuffers, this);
-		}
+		AttemptTransferSubmission();
 	}
 	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkBuffer* buffers, uint8_t bufferCount, uint32_t dstQueue){
 		vkEndCommandBuffer(cmdBuf);
@@ -194,14 +216,7 @@ namespace EWE {
 			stagingBuffer->buffers.emplace_back(buffers[i], dstQueue);
 		}
 
-
-		if (readyForNextTransmit) {
-			readyForNextTransmit = false;
-			transferFlipFlop = !transferFlipFlop;
-			auto future = std::async(&SyncHub::SubmitTransferBuffers, this);
-		}
-		//for(uint8_t i = 0; i < bufferCount; i++){
-		//}
+		AttemptTransferSubmission();
 	}
 	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkImage image, bool generateMips, uint32_t dstQueue) {
 		vkEndCommandBuffer(cmdBuf);
@@ -209,11 +224,7 @@ namespace EWE {
 		transferBuffers[transferFlipFlop].push_back(cmdBuf);
 		transitionManager.GetStagingBuffer()->images.emplace_back(image, generateMips, dstQueue);
 
-		if (readyForNextTransmit) {
-			readyForNextTransmit = false;
-			transferFlipFlop = !transferFlipFlop;
-			auto future = std::async(&SyncHub::SubmitTransferBuffers, this);
-		}
+		AttemptTransferSubmission();
 	}
 	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkImage* images, uint8_t imageCount, bool generateMips, uint32_t dstQueue){
 		vkEndCommandBuffer(cmdBuf);
@@ -223,15 +234,21 @@ namespace EWE {
 		for(uint8_t i = 0; i < imageCount; i++){
 			stagingBuffer->images.emplace_back(images[i], generateMips, dstQueue);
 		}
-
+		AttemptTransferSubmission();
+	}
+	void SyncHub::AttemptTransferSubmission(){
 		if (readyForNextTransmit) {
-			readyForNextTransmit = false;
-			transferFlipFlop = !transferFlipFlop;
-			auto future = std::async(&SyncHub::SubmitTransferBuffers, this);
+			VkSemaphore signalSemaphore = transitionManager.PrepareSubmission();
+			if(signalSemaphore != VK_NULL_HANDLE){
+
+				readyForNextTransmit = false;
+				transferFlipFlop = !transferFlipFlop;
+				auto future = std::async(&SyncHub::SubmitTransferBuffers, this, signalSemaphore);
+			}
 		}
 	}
 
-	void SyncHub::SubmitTransferBuffers() {
+	void SyncHub::SubmitTransferBuffers(VkSemaphore signalSemaphore) {
 
 		//printf("begin submit transfer \n");
 #ifdef _DEBUG

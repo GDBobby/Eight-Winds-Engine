@@ -19,19 +19,19 @@ static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {
 	class SyncHub {
 	private:
-
+		friend class EWEDevice;
 
 		static SyncHub* syncHubSingleton;
 
 		VkDevice device{};
-		VkQueue graphicsQueue{};
-		VkQueue presentQueue{};
-		VkQueue computeQueue{};
-		VkQueue transferQueue{};
+		VkQueue graphicsQueue;
+		VkQueue presentQueue;
+		VkQueue computeQueue;
+		VkQueue transferQueue;
 		uint32_t transferQueueIndex;
 
-		VkCommandPool transferCommandPool{};
-		VkCommandPool graphicsCommandPool{};
+		VkCommandPool transferCommandPool;
+		VkCommandPool graphicsCommandPool;
 		VkCommandBufferBeginInfo bufferBeginInfo{};
 
 		VkSubmitInfo transferSubmitInfo{};
@@ -127,16 +127,20 @@ namespace EWE {
 		VkCommandBuffer BeginSingleTimeCommandGraphics();
 		VkCommandBuffer BeginSingleTimeCommandTransfer();
 		void EndSingleTimeCommandGraphics(VkCommandBuffer cmdBuf);
+		void EndSingleTimeCommandGraphicsSignal(VkCommandBuffer cmdBuf, VkSemaphore signalSemaphore);
+		void EndSingleTimeCommandGraphicsWait(VkCommandBuffer cmdBuf, VkSemaphore waitSemaphore);
 
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkBuffer buffer, uint32_t dstQueue);
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkBuffer* buffers, uint8_t bufferCount, uint32_t dstQueue);
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkImage image, bool generateMips, uint32_t dstQueue);
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkImage* images, uint8_t imageCount, bool generateMips, uint32_t dstQueue);
 
-		void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer buffer, uint32_t dstQueue);
-		void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer* buffers, uint8_t bufferCount, uint32_t dstQueue);
-		void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkImage image, bool generateMips, uint32_t dstQueue);
-		void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkImage* images, uint8_t imageCount, bool generateMips, uint32_t dstQueue);
+		//void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer buffer, uint32_t dstQueue);
+		//void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer* buffers, uint8_t bufferCount, uint32_t dstQueue);
+		//void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkImage image, bool generateMips, uint32_t dstQueue);
+		//void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkImage* images, uint8_t imageCount, bool generateMips, uint32_t dstQueue);
+
+		void AttemptTransferSubmission();
 
 		void WaitOnTransferFence();
 
@@ -150,7 +154,7 @@ namespace EWE {
 		void SetMaxFramesInFlight();
 		void CreateBuffers(VkCommandPool commandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool);
 
-		void SubmitTransferBuffers();
+		void SubmitTransferBuffers(VkSemaphore signalSemaphore);
 
 	};
 }

@@ -51,7 +51,9 @@ namespace EWE {
 
 		std::string vertString = "UI.vert.spv";
 		std::string fragString = "UI.frag.spv";
+		printf("before constructing with ui shaders\n");
 		pipe2d = ConstructSingular<EWEPipeline>(ewe_call_trace, vertString, fragString, pipelineConfig);
+		printf("after constructing with UI shaders\n");
 
 		pushConstantRange.size = sizeof(NineUIPushConstantData);
 		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_9) != VK_SUCCESS) {

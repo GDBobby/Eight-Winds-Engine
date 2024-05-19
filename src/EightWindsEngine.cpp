@@ -158,7 +158,6 @@ namespace EWE {
 		auto startThreadTime = std::chrono::high_resolution_clock::now();
 		auto endThreadTime = startThreadTime;
 
-
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
 		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -169,6 +168,38 @@ namespace EWE {
 		//LARGE_INTEGER averageEnd;
 		//printf("loading screen entry \n");
 		//SyncHub::GetSyncHubInstance()->waitOnTransferFence();
+		{
+			//initial frame
+			FrameInfo frameInfo = eweRenderer.beginFrame();
+			if(frameInfo.cmdBuf != VK_NULL_HANDLE){
+				syncHub->PostTransitions(frameInfo.cmdBuf, frameInfo.index);
+
+
+				eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
+				leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
+
+				leafSystem->Render(frameInfo);
+				//uiHandler.drawMenuMain(commandBuffer);
+				eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);
+				if (eweRenderer.endFrame()) {
+					//printf("dirty swap on end\n");
+					std::pair<uint32_t, uint32_t> tempPair = eweRenderer.getExtent();
+					//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
+				}
+			}
+			else {
+				std::pair<uint32_t, uint32_t> tempPair = eweRenderer.getExtent();
+				//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
+				menuManager.windowResize(tempPair);
+			}
+			renderThreadTime = 0.f;
+			//printf("end rendering thread \n");	
+		}
+		//printf("end of initial frame \n");
+
+		
+
+
 
 		//printf("starting loading thread loop \n");
 		while (loadingEngine || (loadingTime < 2.0)) {
@@ -189,8 +220,6 @@ namespace EWE {
 				
 				auto frameInfo = eweRenderer.beginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
-					int frameIndex = eweRenderer.getFrameIndex();
-
 #if false//BENCHMARKING_GPU
 					if (queryPool == VK_NULL_HANDLE) {
 						gpuTicksPerSecond = eweDevice.getProperties().limits.timestampPeriod / 1e9f;
@@ -221,9 +250,8 @@ namespace EWE {
 					vkCmdResetQueryPool(commandBufferPair.first, queryPool, 0, 2);
 					vkCmdWriteTimestamp(commandBufferPair.first, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
 #endif
-
 					eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
-					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameIndex);
+					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
 #if false//BENCHMARKING
 					uiHandler.Benchmarking(renderThreadTime, peakRenderTime, averageRenderTime, minRenderTime, highestRenderTime, averageLogicTime, BENCHMARKING_GPU, elapsedGPUMS, averageElapsedGPUMS);
 #endif
@@ -250,7 +278,7 @@ namespace EWE {
 		finishedLoadingScreen = true;
 		printf(" ~~~~ END OF LOADING SCREEN FUNCTION \n");
 	}
-	FrameInfo EightWindsEngine::BeginCompute() {
+	FrameInfo EightWindsEngine::BeginRenderWithoutPass() {
 		FrameInfo frameInfo{ eweRenderer.beginFrame() };
 		if (frameInfo.cmdBuf) {
 			if (displayingRenderInfo) {

@@ -19,9 +19,10 @@ namespace EWE {
 
 	struct ImageQueueTransitionData {
 		VkImage image;
-		bool generateMips;
+		uint8_t mipLevels;
+		uint8_t arrayLayers;
 		uint32_t dstQueue;
-		ImageQueueTransitionData(VkImage image, bool mips, uint32_t dstQueue) : image{image}, generateMips{mips}, dstQueue{dstQueue} {}
+		ImageQueueTransitionData(VkImage image, uint8_t mips, uint8_t arrayLayers, uint32_t dstQueue) : image{image}, mipLevels{mips}, arrayLayers{arrayLayers}, dstQueue{dstQueue} {}
 	};
 	struct BufferQueueTransitionData{
 		VkBuffer buffer;
@@ -29,7 +30,7 @@ namespace EWE {
 		BufferQueueTransitionData(VkBuffer buffer, uint32_t dstQueue) : buffer{buffer}, dstQueue{dstQueue} {}
 	};
 
-	struct ImageQueueTransitionContainer {
+	struct QueueTransitionContainer {
 		std::vector<ImageQueueTransitionData> images{};
 		std::vector<BufferQueueTransitionData> buffers{};
 		VkSemaphore semaphore{VK_NULL_HANDLE};
@@ -44,10 +45,10 @@ namespace EWE {
 			transferFlightCount{max_pending_graphics}, 
 			graphicsFlightCount{max_frames_in_flight}, 
 			max_size{(uint8_t)(1 + transferFlightCount + graphicsFlightCount)}, 
-			buffers{ new ImageQueueTransitionContainer[max_size] }, 
+			buffers{ new QueueTransitionContainer[max_size] }, 
 			stagingBuffer{buffers},
-			transferInFlightBuffers{new ImageQueueTransitionContainer*[transferFlightCount]},
-			graphicsInFlightBuffers{new ImageQueueTransitionContainer*[graphicsFlightCount]} 
+			transferInFlightBuffers{new QueueTransitionContainer*[transferFlightCount]},
+			graphicsInFlightBuffers{new QueueTransitionContainer*[graphicsFlightCount]} 
 		{ 
 			// empty 
 		}
@@ -57,31 +58,44 @@ namespace EWE {
 			delete[] graphicsInFlightBuffers;
 		}
 
-		ImageQueueTransitionContainer* GetStagingBuffer(){
+		QueueTransitionContainer* GetStagingBuffer(){
 			//the main transfer thread is going to keep track of whether or not this can be written to
 			return stagingBuffer;
 		}
 		//this will be called in the main transfer thread, to determine if its possible to spawn the async transfer thread
-		bool PrepareSubmission() {
+		VkSemaphore PrepareSubmission() {
 			if(currentTransferInFlightCount >= transferFlightCount){
-				return false;
+				return VK_NULL_HANDLE;
 			}
 
 			for(uint16_t i = 0; i < max_size; i++){
-				if((&buffers[i] != stagingBuffer) && (buffers[i].images.size() == 0)){
-
-					std::lock_guard<std::mutex> lock(mut);
-					transferInFlightBuffers[currentTransferInFlightCount] = stagingBuffer;
-					transferInFlightBuffers[currentTransferInFlightCount]->inFlight = true;
-					currentTransferInFlightCount++;
-					stagingBuffer = &buffers[i];
-
-					return true;
+				bool bufferNotAvailable = false;
+				bufferNotAvailable |= &buffers[i] == stagingBuffer;
+				for(uint8_t j = 0; j < transferFlightCount; j++){
+					bufferNotAvailable |= &buffers[i] == transferInFlightBuffers[j];
 				}
+				for(uint8_t j = 0; j < graphicsFlightCount; j++){
+					bufferNotAvailable |= &buffers[i] == graphicsInFlightBuffers[j];
+				}
+				if(bufferNotAvailable){
+					continue;
+				}
+
+				std::lock_guard<std::mutex> lock(mut);
+				auto*& submissionBuffer = transferInFlightBuffers[currentTransferInFlightCount];
+
+				submissionBuffer = stagingBuffer;
+				submissionBuffer->inFlight = true;
+				currentTransferInFlightCount++;
+				stagingBuffer = &buffers[i];
+
+				return submissionBuffer->semaphore;
+			
 			}
-#ifdef _DEBUG
+//#ifdef _DEBUG
+#if true
 			assert(false && "buffers are being incorrectly handled in PrepareSubmission");
-			return true;
+			return VK_NULL_HANDLE;
 #else
 #if defined(_MSC_VER) && !defined(__clang__) // MSVC
     __assume(false);
@@ -91,7 +105,7 @@ namespace EWE {
 #endif
 		}
 		//this is performed in the async transfer thread
-		void SignalTransferComplete(ImageQueueTransitionContainer* transferBuffer){
+		void SignalTransferComplete(QueueTransitionContainer* transferBuffer){
 
 #ifdef _DEBUG
 			for(uint8_t i = 0; i < currentTransferInFlightCount; i++){
@@ -107,7 +121,7 @@ namespace EWE {
 			transferBuffer->inFlight = false;
 #endif
 		}
-		ImageQueueTransitionContainer* PrepareGraphics(uint8_t frameIndex){
+		QueueTransitionContainer* PrepareGraphics(uint8_t frameIndex){
 			//the synchronization of graphics frames is handled in the graphics thread
 
 			for(uint8_t i = 0; i < currentTransferInFlightCount; i++) {
@@ -140,10 +154,10 @@ namespace EWE {
 		uint8_t currentTransferInFlightCount = 0;
 		
 		std::mutex mut;
-		ImageQueueTransitionContainer* buffers;
-		ImageQueueTransitionContainer* stagingBuffer;
-		ImageQueueTransitionContainer** transferInFlightBuffers = nullptr;
-		ImageQueueTransitionContainer** graphicsInFlightBuffers;
+		QueueTransitionContainer* buffers;
+		QueueTransitionContainer* stagingBuffer;
+		QueueTransitionContainer** transferInFlightBuffers = nullptr;
+		QueueTransitionContainer** graphicsInFlightBuffers;
 	};
 } //namespace EWE
 

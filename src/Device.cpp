@@ -1305,4 +1305,38 @@ namespace EWE {
         }
         return deviceMemoryRemaining;
     }
+    void EWEDevice::PostTransitions(VkCommandBuffer cmdBuf, uint8_t frameIndex){
+		QueueTransitionContainer* transitionContainer = syncHub->transitionManager.PrepareGraphics(frameIndex);
+        syncHub->BeginSingleTimeCommandGraphics();
+        VkImageLayout dstLayout;
+        std::vector<VkImageMemoryBarrier> imageBarriers{};
+        std::vector<VkBufferMemoryBarrier> bufferBarriers{};
+        imageBarriers.reserve(transitionContainer->images.size());
+        bufferBarriers.reserve(transitionContainer->buffers.size());
+
+        for(auto& transitionInstance : transitionContainer->images){
+            if(transitionInstance.mipLevels > 1){
+                dstLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            }
+            else{
+                dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+            imageBarriers.push_back(TransitionImageLayout(transitionInstance.image, 
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dstLayout,
+                transitionInstance.mipLevels,
+                transitionInstance.arrayLayers
+            ));
+        }
+
+        vkCmdPipelineBarrier(cmdBuf,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            bufferBarriers.size(), bufferBarriers.data(),
+            imageBarriers.size(), imageBarriers.data()
+        );
+        
+        //i might need to use multiple semaphores, not sure yet
+        syncHub->EndSingleTimeCommandGraphics(cmdBuf, transitionContainer->semaphore);
+    }
 }  // namespace EWE

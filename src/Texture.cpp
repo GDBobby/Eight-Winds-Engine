@@ -222,7 +222,7 @@ namespace EWE {
         //printf("before transition \n");
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
-        //            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+        
         eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,  
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
             image, 

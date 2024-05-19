@@ -354,6 +354,7 @@ namespace EWE {
 		glslang::FinalizeProcess();
 
 		pipe = std::make_unique<EWEPipeline>(vertexShaderModule, fragmentShaderModule, pipelineConfig);
+		printf("after creating leaf pipeline\n");
 	}
 	void LeafSystem::CreatePipeLayout() {
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
