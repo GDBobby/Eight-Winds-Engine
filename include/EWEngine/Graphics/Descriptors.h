@@ -34,7 +34,7 @@ namespace EWE {
         EWEDescriptorSetLayout(const EWEDescriptorSetLayout&) = delete;
         EWEDescriptorSetLayout& operator=(const EWEDescriptorSetLayout&) = delete;
 
-        VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
+        VkDescriptorSetLayout GetDescriptorSetLayout() const { return descriptorSetLayout; }
 
     private:
         VkDescriptorSetLayout descriptorSetLayout;

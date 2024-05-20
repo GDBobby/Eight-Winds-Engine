@@ -308,7 +308,7 @@ namespace EWE {
     }
     VkDescriptorSet EWEDescriptorWriter::buildPrint() {
         VkDescriptorSet set;
-        bool success = pool.allocateDescriptor(setLayout->getDescriptorSetLayout(), set);
+        bool success = pool.allocateDescriptor(setLayout->GetDescriptorSetLayout(), set);
 
         activeDescriptors++;
         for (int i = 0; i < setLayout->bindings.size(); i++) {

@@ -52,8 +52,10 @@ namespace EWE {
 		LeafSystem();
 		~LeafSystem();
 
+		void LeafPhysicsInitialization();
 		void FallCalculation(float timeStep, uint8_t frameIndex);
-		void LoadLeafModel();
+		void LoadLeafModel(VkCommandBuffer cmdBuf);
+		void DestroySemaphores();
 		void Render(FrameInfo& frameInfo);
 
 		std::unique_ptr<EWEModel> leafModel;
@@ -95,6 +97,9 @@ namespace EWE {
 
 		VkShaderModule vertexShaderModule{VK_NULL_HANDLE};
 		VkShaderModule fragmentShaderModule{VK_NULL_HANDLE};
+
+		VkSemaphore modelSemaphore{VK_NULL_HANDLE};
+		VkSemaphore textureSemaphore{VK_NULL_HANDLE};
 
 		/*
 		//POSITION:

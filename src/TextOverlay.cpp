@@ -186,9 +186,7 @@ namespace EWE {
 		//eweDevice.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 
 
-		if (vkCreateImage(EWEDevice::GetVkDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create image!");
-		}
+		EWE_VK_ASSERT(vkCreateImage(EWEDevice::GetVkDevice(), &imageInfo, nullptr, &image));
 
 		VkMemoryRequirements memRequirements;
 		vkGetImageMemoryRequirements(EWEDevice::GetVkDevice(), image, &memRequirements);
@@ -196,9 +194,7 @@ namespace EWE {
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = EWEDevice::GetEWEDevice()->FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		if (vkAllocateMemory(EWEDevice::GetVkDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate image memory!");
-		}
+		EWE_VK_ASSERT(vkAllocateMemory(EWEDevice::GetVkDevice(), &allocInfo, nullptr, &imageMemory));
 
 		if (vkBindImageMemory(EWEDevice::GetVkDevice(), image, imageMemory, 0) != VK_SUCCESS) {
 			throw std::runtime_error("failed to bind image memory!");
@@ -254,7 +250,6 @@ namespace EWE {
 		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		subresourceRange.baseMipLevel = 0;
 		subresourceRange.levelCount = 1;
-		subresourceRange.layerCount = 1;
 
 		eweDevice->SetImageLayout(
 			copyCmd,
@@ -294,7 +289,8 @@ namespace EWE {
 		//);
 		eweDevice->TransitionFromTransfer(copyCmd, EWE::QueueData::q_graphics, image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-		SyncHub::GetSyncHubInstance()->EndSingleTimeCommandTransfer(copyCmd, image, false, eweDevice->GetGraphicsIndex());
+		ImageQueueTransitionData transitionData{image, 1, 1, eweDevice->GetGraphicsIndex()};
+		SyncHub::GetSyncHubInstance()->EndSingleTimeCommandTransfer(copyCmd, transitionData);
 
 		vkFreeMemory(eweDevice->Device(), stagingBuffer.memory, nullptr);
 		vkDestroyBuffer(eweDevice->Device(), stagingBuffer.buffer, nullptr);
@@ -306,9 +302,7 @@ namespace EWE {
 		imageViewInfo.format = imageInfo.format;
 		imageViewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B,	VK_COMPONENT_SWIZZLE_A };
 		imageViewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		if ((vkCreateImageView(eweDevice->Device(), &imageViewInfo, nullptr, &view)) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create image view!");
-		}
+		EWE_VK_ASSERT(vkCreateImageView(eweDevice->Device(), &imageViewInfo, nullptr, &view));
 
 		// Sampler
 		VkSamplerCreateInfo samplerInfo{};
@@ -325,9 +319,7 @@ namespace EWE {
 		samplerInfo.minLod = 0.0f;
 		samplerInfo.maxLod = 1.0f;
 		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-		if ((vkCreateSampler(eweDevice->Device(), &samplerInfo, nullptr, &sampler)) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create image sampler!");
-		}
+		EWE_VK_ASSERT(vkCreateSampler(eweDevice->Device(), &samplerInfo, nullptr, &sampler));
 
 		// Descriptor
 		// Font uses a separate descriptor pool
@@ -342,9 +334,7 @@ namespace EWE {
 		descriptorPoolInfo.pPoolSizes = poolSizes.data();
 		descriptorPoolInfo.maxSets = 1;
 
-		if ((vkCreateDescriptorPool(eweDevice->Device(), &descriptorPoolInfo, nullptr, &descriptorPool)) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create descriptor pool!");
-		}
+		EWE_VK_ASSERT(vkCreateDescriptorPool(eweDevice->Device(), &descriptorPoolInfo, nullptr, &descriptorPool)) ;
 
 		// Descriptor set layout
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings(1);
@@ -363,7 +353,7 @@ namespace EWE {
 
 		//std::cout << "vkcreatedescriptorsetlayout return pre " << std::endl;
 
-		vkCreateDescriptorSetLayout(eweDevice->Device(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
+		EWE_VK_ASSERT(vkCreateDescriptorSetLayout(eweDevice->Device(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout));
 		//std::cout << "vkcreatedescriptorsetlayout return : " << printInt << std::endl;
 
 		/*
@@ -384,9 +374,7 @@ namespace EWE {
 
 		//std::cout << "pipelineinfo 3" << std::endl;
 
-		if ((vkCreatePipelineLayout(eweDevice->Device(), &pipelineLayoutInfo, nullptr, &pipelineLayout)) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create pipeline layout!");
-		}
+		EWE_VK_ASSERT(vkCreatePipelineLayout(eweDevice->Device(), &pipelineLayoutInfo, nullptr, &pipelineLayout));
 		//std::cout << "pipeline info2??" << std::endl;
 
 
@@ -399,9 +387,7 @@ namespace EWE {
 
 		//std::cout << "check 2" << std::endl;
 
-		if ((vkAllocateDescriptorSets(eweDevice->Device(), &descriptorSetAllocInfo, &descriptorSet)) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate descriptor sets!");
-		}
+		EWE_VK_ASSERT(vkAllocateDescriptorSets(eweDevice->Device(), &descriptorSetAllocInfo, &descriptorSet));
 
 		//std::cout << "check3" << std::endl;
 
@@ -426,9 +412,7 @@ namespace EWE {
 		// Pipeline cache
 		VkPipelineCacheCreateInfo pipelineCacheCreateInfo{};
 		pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-		if ((vkCreatePipelineCache(eweDevice->Device(), &pipelineCacheCreateInfo, nullptr, &pipelineCache)) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create pipeline cache!");
-		}
+		EWE_VK_ASSERT(vkCreatePipelineCache(eweDevice->Device(), &pipelineCacheCreateInfo, nullptr, &pipelineCache));
 
 
 		//std::cout << "end of function" << std::endl;
@@ -528,19 +512,13 @@ namespace EWE {
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(vertCode.data());
 		createInfo.flags = 0;
 		//printf("after shader module create info \n");
-		if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, &vertShaderModule) != VK_SUCCESS) {
-			printf("vert vk create  shader module failed \n");
-			throw std::runtime_error("failed to create shader module");
-		}
+		EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, &vertShaderModule));
 		//printf("after successfully creating shader module \n");
 
 		createInfo.codeSize = fragCode.size();
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(fragCode.data());
 		//printf("setting shader module create info to frag \n");
-		if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, &fragShaderModule) != VK_SUCCESS) {
-			printf("frag vk create shader module failed \n");
-			throw std::runtime_error("failed to create shader module");
-		}
+		EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, &fragShaderModule));
 		//printf("after successfully creating another shader module \n");
 		//EWEPipeline::createShaderModule(vertCode, &vertShaderModule);
 		//EWEPipeline::createShaderModule(fragCode, &fragShaderModule);
@@ -584,10 +562,7 @@ namespace EWE {
 
 		//std::make_unique<EWEPipeline>(eweDevice, "texture_shader.vert.spv", "texture_shader.frag.spv", pipelineConfig);
 
-		if (vkCreateGraphicsPipelines(EWEDevice::GetVkDevice(), pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline) != VK_SUCCESS) {
-			printf("failed to create graphics pipeline in textoverlay \n");
-			throw std::runtime_error("failed to create graphics pipeline!");
-		}
+		EWE_VK_ASSERT(vkCreateGraphicsPipelines(EWEDevice::GetVkDevice(), pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline));
 		//printf("successfully created textoverlay graphics pipeline \n");
 		//printf("end of text overlay constructor \n");
 	}
@@ -768,9 +743,7 @@ namespace EWE {
 		VkCommandBufferBeginInfo cmdBufInfo{};
 		cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-		if (vkBeginCommandBuffer(cmdBuffers[bufferIndex], &cmdBufInfo) != VK_SUCCESS) {
-			throw std::runtime_error("failed to begin command buffer!");
-		}
+		EWE_VK_ASSERT(vkBeginCommandBuffer(cmdBuffers[bufferIndex], &cmdBufInfo));
 
 		return cmdBuffers[bufferIndex];
 	}
@@ -797,9 +770,7 @@ namespace EWE {
 	}
 
 	void TextOverlay::beginTextUpdate() {
-		if (vkMapMemory(EWEDevice::GetVkDevice(), memory, 0, VK_WHOLE_SIZE, 0, (void**)&mapped) != VK_SUCCESS) {
-			throw std::runtime_error("failed to map memory!");
-		};
+		EWE_VK_ASSERT(vkMapMemory(EWEDevice::GetVkDevice(), memory, 0, VK_WHOLE_SIZE, 0, (void**)&mapped));
 		numLetters = 0;
 	}
 

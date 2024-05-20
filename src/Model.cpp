@@ -110,7 +110,11 @@ namespace EWE {
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
         EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), instanceBuffer->GetBuffer(), bufferSize);
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
+
+        BufferQueueTransitionData transitionData{instanceBuffer->GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
+
+        //this staging buffer needs to be destroyed
     }
     /*
     void EWEModel::updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf) {
@@ -139,6 +143,13 @@ namespace EWE {
     }
     */
     void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data) {
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+        VertexBuffers(cmdBuf, vertexCount, vertexSize, data);
+        BufferQueueTransitionData transitionData{vertexBuffer->GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
+    }
+    void EWEModel::VertexBuffers(VkCommandBuffer cmdBuf, uint32_t vertexCount, uint32_t vertexSize, void const* data){
         VkDeviceSize bufferSize = vertexSize * vertexCount;
 
         EWEBuffer stagingBuffer{
@@ -155,18 +166,22 @@ namespace EWE {
             vertexSize,
             vertexCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+        );
 
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), vertexBuffer->GetBuffer(), bufferSize);
+    }
 
-
+    void EWEModel::CreateIndexBuffer(void* indexData, uint32_t indexCount) {
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), vertexBuffer->GetBuffer(), bufferSize);
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
+        CreateIndexBuffer(cmdBuf, indexData, indexCount);
+        BufferQueueTransitionData transitionData{indexBuffer->GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
     }
-    void EWEModel::CreateGrassIndexBuffer(void* indexData, uint32_t indexCount) {
-        VkDeviceSize bufferSize = indexCount * 4;
-        uint32_t indexSize = 4;
+    void EWEModel::CreateIndexBuffer(VkCommandBuffer cmdBuf, void* indexData, uint32_t indexCount){
+        const uint32_t indexSize = sizeof(uint32_t);
+        const VkDeviceSize bufferSize = indexCount * indexSize;
 
         EWEBuffer stagingBuffer{
             indexSize,
@@ -182,48 +197,22 @@ namespace EWE {
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+        );
+
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), indexBuffer->GetBuffer(), bufferSize);
+    }
+
+    void EWEModel::CreateIndexBuffers(std::vector<uint32_t> const& indices) {
 
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), indexBuffer->GetBuffer(), bufferSize);
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
+        CreateIndexBuffers(cmdBuf, indices);
+        BufferQueueTransitionData transitionData{indexBuffer->GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
     }
-
-    EWEBuffer* EWEModel::CreateIndexBuffer(std::vector<uint32_t> const& indices) {
-        uint32_t indexCount = static_cast<uint32_t>(indices.size());
-
-        if (indexCount == 0) {
-            std::cout << "no index" << std::endl;
-            return nullptr;
-        }
-        VkDeviceSize bufferSize = sizeof(uint32_t) * indexCount;
-        uint32_t indexSize = sizeof(uint32_t);
-
-        EWEBuffer stagingBuffer{
-            indexSize,
-            indexCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
-
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer((void*)indices.data());
-        EWEBuffer* indexBuffer;
-        indexBuffer = ConstructSingular<EWEBuffer>(ewe_call_trace, indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-
-        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), indexBuffer->GetBuffer(), bufferSize);
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
-
-        return indexBuffer;
-    }
-
-    void EWEModel::CreateIndexBuffers(const std::vector<uint32_t>& indices) {
-        indexCount = static_cast<uint32_t>(indices.size());
+    void EWEModel::CreateIndexBuffers(VkCommandBuffer cmdBuf, std::vector<uint32_t> const& indices){
+                indexCount = static_cast<uint32_t>(indices.size());
         hasIndexBuffer = indexCount > 0;
 
         if (!hasIndexBuffer) {
@@ -250,11 +239,9 @@ namespace EWE {
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
         EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), indexBuffer->GetBuffer(), bufferSize);
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, stagingBuffer.GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex());
     }
+
 
     void EWEModel::Draw(VkCommandBuffer commandBuffer) {
         if (hasIndexBuffer) {

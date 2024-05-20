@@ -276,10 +276,10 @@ namespace EWE {
 		}
 		TextureDSLInfo dslInfo{};
 		if (hasBump) {
-			dslInfo.setStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT, 1);
+			dslInfo.SetStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT, 1);
 		}
-		dslInfo.setStageTextureCount(VK_SHADER_STAGE_FRAGMENT_BIT, textureCount - hasBump + 1); //+1 for the albedo, which isnt incldued in textureCount
-		returnLayouts.push_back(dslInfo.getDescSetLayout()->getDescriptorSetLayout());
+		dslInfo.SetStageTextureCount(VK_SHADER_STAGE_FRAGMENT_BIT, textureCount - hasBump + 1); //+1 for the albedo, which isnt incldued in textureCount
+		returnLayouts.push_back(dslInfo.GetDescSetLayout()->GetDescriptorSetLayout());
 		//if (instanced) {
 			//printf("returning instanced PDSL size : %d \n", dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].size());
 		//}

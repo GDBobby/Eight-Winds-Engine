@@ -2,7 +2,18 @@
 
 
 namespace EWE {
-	void Sampler::SamplerTracker::add() {
+    inline bool BitwiseEqualOperator(VkSamplerCreateInfo const& lhs, VkSamplerCreateInfo const& rhs) {
+		return memcmp(&lhs, &rhs, sizeof(VkSamplerCreateInfo)) == 0;
+	}
+
+    Sampler* Sampler::samplerPtr = nullptr;
+    Sampler::Sampler(){
+        assert(samplerPtr == nullptr);
+        samplerPtr = this;
+        storedSamplers.reserve(50);
+    }
+
+	void Sampler::SamplerTracker::Add() {
         inUseCount++;
         totalUsed++;
 
@@ -10,7 +21,7 @@ namespace EWE {
         printf("sampler count after add : %d \n", inUseCount);
 #endif
     }
-    bool Sampler::SamplerTracker::remove() {
+    bool Sampler::SamplerTracker::Remove() {
 #ifdef _DEBUG
         if (inUseCount == 0) {
             printf("removing sampler from tracker when none exist");
@@ -23,36 +34,32 @@ namespace EWE {
 
 
     Sampler::SamplerDuplicateTracker::SamplerDuplicateTracker(VkSamplerCreateInfo& samplerInfo) : samplerInfo(samplerInfo) {
-        if (vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture sampler");
-        }
+        EWE_VK_ASSERT(vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &sampler));
     }
 
 
-    VkSampler Sampler::getSampler(VkSamplerCreateInfo& samplerInfo) {
+    VkSampler Sampler::GetSampler(VkSamplerCreateInfo& samplerInfo) {
+
         SamplerDuplicateTracker* foundDuplicate = nullptr;
-        for (auto& duplicate : storedSamplers) {
-            if (bitwiseEqualOperator(duplicate.samplerInfo, samplerInfo)) {
-                duplicate.tracker.add();
+        for (auto& duplicate : samplerPtr->storedSamplers) {
+            if (BitwiseEqualOperator(duplicate.samplerInfo, samplerInfo)) {
+                duplicate.tracker.Add();
                 return duplicate.sampler;
             }
         }
-        auto& emplaceRet = storedSamplers.emplace_back(samplerInfo);
-        return emplaceRet.sampler;
-
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        return VK_NULL_HANDLE;
+        samplerPtr->storedSamplers.push_back(samplerInfo);
+        return samplerPtr->storedSamplers.back().sampler;
     }
 
-    void Sampler::removeSampler(VkSampler sampler) {
-        for (auto iter = storedSamplers.begin(); iter != storedSamplers.end(); iter++) {
+    void Sampler::RemoveSampler(VkSampler sampler) {
+        for (auto iter = samplerPtr->storedSamplers.begin(); iter != samplerPtr->storedSamplers.end(); iter++) {
             if (iter->sampler == sampler) {
-                if (iter->tracker.remove()) {
-                    storedSamplers.erase(iter);
+                if (iter->tracker.Remove()) {
+                    samplerPtr->storedSamplers.erase(iter);
                 }
                 return;
             }
         }
-        throw std::runtime_error("removing a sampler that does not exist");
+        assert(false && "removing a sampler that does not exist");
     }
 }

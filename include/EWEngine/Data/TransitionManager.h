@@ -6,6 +6,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <cassert>
 
 
 namespace EWE {
@@ -33,7 +34,8 @@ namespace EWE {
 	struct QueueTransitionContainer {
 		std::vector<ImageQueueTransitionData> images{};
 		std::vector<BufferQueueTransitionData> buffers{};
-		VkSemaphore semaphore{VK_NULL_HANDLE};
+		VkSemaphore transferSemaphore{VK_NULL_HANDLE};
+		VkSemaphore queueSemaphore{VK_NULL_HANDLE};
 		//i need a callback here, for images that the graphics pipeline is waiting on
 		bool inFlight{false};
 	};
@@ -89,7 +91,7 @@ namespace EWE {
 				currentTransferInFlightCount++;
 				stagingBuffer = &buffers[i];
 
-				return submissionBuffer->semaphore;
+				return submissionBuffer->transferSemaphore;
 			
 			}
 //#ifdef _DEBUG

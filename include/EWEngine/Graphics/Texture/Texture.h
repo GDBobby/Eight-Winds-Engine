@@ -38,37 +38,43 @@ namespace EWE {
 		VkDeviceMemory imageMemory;
 		VkImageView imageView;
 		VkSampler sampler;
-		uint32_t mipLevels{ 1 };
+		uint8_t mipLevels{ 1 };
+		uint8_t arrayLayers{1};
 		VkDescriptorImageInfo descriptorImageInfo;
 
+		void CreateTextureImage(PixelPeek& pixelPeek, bool mipmapping = true);
+		void CreateTextureImage(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmapping = true);
 
-		void createTextureImage(PixelPeek& pixelPeek, bool mipmapping = true);
+		void CreateTextureImageView();
 
-		void createTextureImageView();
-		void createTextureSampler();
-		void generateMipmaps(VkFormat imageFormat, int width, int height);
+		void CreateTextureSampler();
+
+		void GenerateMipmaps(const VkFormat imageFormat, const int width, int height);
+		void GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, int width, int height);
 
 	public:
-		VkDescriptorImageInfo* getDescriptorImageInfo() {
+		VkDescriptorImageInfo* GetDescriptorImageInfo() {
 			return &descriptorImageInfo;
 		}
 		ImageInfo(PixelPeek& pixelPeek, bool mipmap);
+		ImageInfo(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmap);
 		ImageInfo(std::string const& path, bool mipmap);
+		ImageInfo(VkCommandBuffer cmdBuf, std::string const& path, bool mipmap);
 		ImageInfo() {}
-		void destroy();
+		void Destroy();
 	};
 	struct TextureDSLInfo {
 
 		uint8_t stageCounts[SUPPORTED_STAGE_COUNT] = { 0,0,0,0, 0,0,0,0, 0 };
-		void setStageTextureCount(VkShaderStageFlags stageFlag, uint8_t textureCount);
+		void SetStageTextureCount(VkShaderStageFlags stageFlag, uint8_t textureCount);
 
-		EWEDescriptorSetLayout* buildDSL();
+		EWEDescriptorSetLayout* BuildDSL();
 
 		TextureDSLInfo() {}
-		EWEDescriptorSetLayout* getDescSetLayout();
+		EWEDescriptorSetLayout* GetDescSetLayout();
 
 		static std::unordered_map<TextureDSLInfo, EWEDescriptorSetLayout*> descSetLayouts;
-		static EWEDescriptorSetLayout* getSimpleDSL(VkShaderStageFlags stageFlag);
+		static EWEDescriptorSetLayout* GetSimpleDSL(VkShaderStageFlags stageFlag);
 
 		bool operator==(TextureDSLInfo const& other) const {
 			for (int i = 0; i < SUPPORTED_STAGE_COUNT; i++) {

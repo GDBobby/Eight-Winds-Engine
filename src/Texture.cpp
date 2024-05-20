@@ -1,5 +1,7 @@
 #include "EWEngine/Graphics/Texture/Texture.h"
 
+#include "EWEngine/Graphics/Texture/Sampler.h"
+
 #include <string>
 #include <iostream>
 #include <filesystem>
@@ -22,7 +24,7 @@ namespace EWE {
     std::unordered_map<TextureDSLInfo, EWEDescriptorSetLayout*> TextureDSLInfo::descSetLayouts;
 
 
-    void TextureDSLInfo::setStageTextureCount(VkShaderStageFlags stageFlag, uint8_t textureCount) {
+    void TextureDSLInfo::SetStageTextureCount(VkShaderStageFlags stageFlag, uint8_t textureCount) {
         switch (stageFlag) {
         case VK_SHADER_STAGE_VERTEX_BIT: {
             stageCounts[0] = textureCount;
@@ -69,7 +71,7 @@ namespace EWE {
         }
     }
 
-    EWEDescriptorSetLayout* TextureDSLInfo::buildDSL() {
+    EWEDescriptorSetLayout* TextureDSLInfo::BuildDSL() {
         uint32_t currentBinding = 0;
         VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //this is 1
         EWEDescriptorSetLayout::Builder dslBuilder{};
@@ -98,9 +100,9 @@ namespace EWE {
         return dslBuilder.build();
     }
 
-    EWEDescriptorSetLayout* TextureDSLInfo::getSimpleDSL(VkShaderStageFlags stageFlag) {
+    EWEDescriptorSetLayout* TextureDSLInfo::GetSimpleDSL(VkShaderStageFlags stageFlag) {
         TextureDSLInfo dslInfo{};
-        dslInfo.setStageTextureCount(stageFlag, 1);
+        dslInfo.SetStageTextureCount(stageFlag, 1);
 
         {
             auto dslIter = descSetLayouts.find(dslInfo);
@@ -113,7 +115,7 @@ namespace EWE {
         return descSetLayouts.emplace(dslInfo, dslBuilder.build()).first->second;
     }
 
-    EWEDescriptorSetLayout* TextureDSLInfo::getDescSetLayout() {
+    EWEDescriptorSetLayout* TextureDSLInfo::GetDescSetLayout() {
         auto dslIter = descSetLayouts.find(*this);
         if (dslIter != descSetLayouts.end()) {
 			return dslIter->second;
@@ -127,30 +129,51 @@ namespace EWE {
         }
         return emplaceRet.first->second;
 #else
-        return descSetLayouts.try_emplace(*this, buildDSL()).first->second;
+        return descSetLayouts.try_emplace(*this, BuildDSL()).first->second;
 #endif
     }
 
     ImageInfo::ImageInfo(PixelPeek& pixelPeek, bool mipmap) {
 
-        createTextureImage(pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        CreateTextureImage(pixelPeek, mipmap); //strange to pass in the first, btu whatever
         //printf("after create image \n");
-        createTextureImageView();
+        CreateTextureImageView();
         //printf("after image view \n");
-        createTextureSampler();
+        CreateTextureSampler();
 
         descriptorImageInfo.sampler = sampler;
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
+    ImageInfo::ImageInfo(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmap){
+        CreateTextureImage(cmdBuf, pixelPeek, mipmap);
+        CreateTextureImageView();
+        CreateTextureSampler();
+
+        descriptorImageInfo.sampler = sampler;
+        descriptorImageInfo.imageView = imageView;
+        descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
     ImageInfo::ImageInfo(std::string const& path, bool mipmap) {
         PixelPeek pixelPeek{ path };
 
-        createTextureImage(pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        CreateTextureImage(pixelPeek, mipmap); //strange to pass in the first, btu whatever
         //printf("after create image \n");
-        createTextureImageView();
+        CreateTextureImageView();
         //printf("after image view \n");
-        createTextureSampler();
+        CreateTextureSampler();
+
+        descriptorImageInfo.sampler = sampler;
+        descriptorImageInfo.imageView = imageView;
+        descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+    ImageInfo::ImageInfo(VkCommandBuffer cmdBuf, std::string const& path, bool mipmap){
+        PixelPeek pixelPeek{path};
+
+        CreateTextureImage(cmdBuf, pixelPeek, mipmap);
+        CreateTextureImageView();
+        CreateTextureSampler();
 
         descriptorImageInfo.sampler = sampler;
         descriptorImageInfo.imageView = imageView;
@@ -158,7 +181,7 @@ namespace EWE {
     }
 
 
-    void ImageInfo::destroy() {
+    void ImageInfo::Destroy() {
         VkDevice const& vkDevice = EWEDevice::GetVkDevice();
         vkDestroySampler(vkDevice, sampler, nullptr);
         
@@ -170,8 +193,16 @@ namespace EWE {
         //printf("after image destruction \n");
         vkFreeMemory(vkDevice, imageMemory, nullptr);
     }
+    void ImageInfo::CreateTextureImage(PixelPeek& pixelPeek, bool mipmapping){
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
 
-    void ImageInfo::createTextureImage(PixelPeek& pixelPeek, bool mipmapping) {
+        CreateTextureImage(cmdBuf, pixelPeek, mipmapping);
+        
+        ImageQueueTransitionData transitionData{image, mipLevels, arrayLayers, EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
+    }
+    void ImageInfo::CreateTextureImage(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmapping) {
         int width = pixelPeek.width;
         int height = pixelPeek.height;
 
@@ -207,12 +238,15 @@ namespace EWE {
         imageInfo.extent.height = height;
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = mipLevels;
-        imageInfo.arrayLayers = 1;
+        imageInfo.arrayLayers = arrayLayers;
 
         imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        if(MIPMAP_ENABLED && mipmapping){
+            imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        }
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.flags = 0; // Optional
@@ -220,8 +254,6 @@ namespace EWE {
         //printf("before image info \n");
         eweDevice->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
         //printf("before transition \n");
-        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
         
         eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,  
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -232,14 +264,14 @@ namespace EWE {
         //printf("before copy buffer to image \n");
         VkImageLayout dstLayout;
 
-        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, image, width, height, 1);
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, image, MIPMAP_ENABLED && mipmapping, eweDevice->GetGraphicsIndex());
+        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, image, width, height, arrayLayers);
 
+        //i might need to hold the buffer until after the command has completed
         vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
         vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
     }
 
-    void ImageInfo::createTextureImageView() {
+    void ImageInfo::CreateTextureImageView() {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = image;
@@ -249,16 +281,15 @@ namespace EWE {
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = mipLevels;
         viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
+        viewInfo.subresourceRange.layerCount = arrayLayers;
 
-        if (vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
-        }
+        EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &imageView));
     }
 
-    void ImageInfo::createTextureSampler() {
+    void ImageInfo::CreateTextureSampler() {
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.pNext = nullptr;
 
         //if(tType == tType_2d){
         samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -286,24 +317,27 @@ namespace EWE {
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = static_cast<float>(mipLevels);
 
-        if (vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture sampler!");
-        }
-        
+        sampler = Sampler::GetSampler(samplerInfo);
     }
 
     //this needs to happen in the graphics queue
-    void ImageInfo::generateMipmaps(VkFormat imageFormat, int width, int height) {
+    void ImageInfo::GenerateMipmaps(const VkFormat imageFormat, const int width, const int height){
+
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
+
+        GenerateMipmaps(cmdBuf, imageFormat, width, height);
+
+        syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+    }
+
+    void ImageInfo::GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, int width, int height) {
         // Check if image format supports linear blitting
         VkFormatProperties formatProperties = EWEDevice::GetEWEDevice()->GetVkFormatProperties(imageFormat);
 
-        if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-            throw std::runtime_error("texture image format does not support linear blitting!");
-        }
+        assert((formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) && "texture image format does not support linear blitting");
         //printf("before mip map loop? size of image : %d \n", image.size());
 
-        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer commandBuffer = syncHub->BeginSingleTimeCommandGraphics();
         //printf("after beginning single time command \n");
 
         VkImageMemoryBarrier barrier{};
@@ -324,7 +358,7 @@ namespace EWE {
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
             //printf("before cmd pipeline barrier \n");
             //this barrier right here needs a transfer queue partner
-            vkCmdPipelineBarrier(commandBuffer,
+            vkCmdPipelineBarrier(cmdBuf,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
                 0, nullptr,
                 0, nullptr,
@@ -345,7 +379,7 @@ namespace EWE {
             blit.dstSubresource.baseArrayLayer = 0;
             blit.dstSubresource.layerCount = 1;
             //printf("before blit image \n");
-            vkCmdBlitImage(commandBuffer,
+            vkCmdBlitImage(cmdBuf,
                 image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 1, &blit,
@@ -356,7 +390,7 @@ namespace EWE {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-            vkCmdPipelineBarrier(commandBuffer,
+            vkCmdPipelineBarrier(cmdBuf,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                 0, nullptr,
                 0, nullptr,
@@ -374,14 +408,13 @@ namespace EWE {
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         //printf("before pipeline barrier 3 \n");
         vkCmdPipelineBarrier(
-            commandBuffer,
+            cmdBuf,
             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
             0, nullptr,
             0, nullptr,
             1, &barrier
         );
         //printf("after pipeline barrier 3 \n");
-        syncHub->EndSingleTimeCommandGraphics(commandBuffer);
         //printf("after end single time commands \n");
         
         //printf("end of mip maps \n");

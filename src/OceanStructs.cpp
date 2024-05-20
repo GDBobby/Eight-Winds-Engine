@@ -75,7 +75,7 @@ namespace EWE {
             dslBuilder.addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
             eweDSL = dslBuilder.build();
 
-            VkDescriptorSetLayout dsLayout = eweDSL->getDescriptorSetLayout();
+            VkDescriptorSetLayout dsLayout = eweDSL->GetDescriptorSetLayout();
 
             pipelineLayoutInfo.setLayoutCount = 1;
             pipelineLayoutInfo.pSetLayouts = &dsLayout;
@@ -161,7 +161,7 @@ namespace EWE {
             dslBuilder.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
             eweDSL = dslBuilder.build();
 
-            VkDescriptorSetLayout dsLayout = eweDSL->getDescriptorSetLayout();
+            VkDescriptorSetLayout dsLayout = eweDSL->GetDescriptorSetLayout();
 
             pipelineLayoutInfo.setLayoutCount = 1;
             pipelineLayoutInfo.pSetLayouts = &dsLayout;
@@ -244,7 +244,7 @@ namespace EWE {
             dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
             eweDSL = dslBuilder.build();
 
-            VkDescriptorSetLayout dsLayout = eweDSL->getDescriptorSetLayout();
+            VkDescriptorSetLayout dsLayout = eweDSL->GetDescriptorSetLayout();
 
             pipelineLayoutInfo.setLayoutCount = 1;
             pipelineLayoutInfo.pSetLayouts = &dsLayout;
@@ -343,7 +343,7 @@ namespace EWE {
             dslBuilder.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
             eweDSL = dslBuilder.build();
 
-            tempDSL.push_back(eweDSL->getDescriptorSetLayout());	
+            tempDSL.push_back(eweDSL->GetDescriptorSetLayout());	
             
             pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
             pipelineLayoutInfo.pSetLayouts = tempDSL.data();

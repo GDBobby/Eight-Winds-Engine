@@ -3,6 +3,8 @@
 #include "EWEngine/Graphics/Texture/Texture_Manager.h"
 
 namespace EWE {
+	//id like to move some of the random generation components to local scope on leaf generation, not sure which ones yet
+	//id also like to attempt to move this entire calculation to the GPU on compute shaders
 	LeafSystem::LeafSystem() : ranDev{}, randomGen{ ranDev() }, ellipseRatioDistribution{ 1.f,2.f }, rotRatioDistribution{ 1.f, 4.f },
 		angularFrequencyDistribution{ glm::pi<float>(), glm::two_pi<float>() }, initTimeDistribution{ 0.f, 20.f },
 		motionDistribution{ 0, 100 }, ellipseOscDistribution{ 0.75f, 1.25f }, depthVarianceDistribution{ -5.f, 5.f },
@@ -13,7 +15,6 @@ namespace EWE {
 #endif
 
 	{
-
 		leafBuffer.reserve(MAX_FRAMES_IN_FLIGHT);
 		leafBufferData.reserve(MAX_FRAMES_IN_FLIGHT);
 		transformDescriptor.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -29,14 +30,36 @@ namespace EWE {
 			);
 		}
 
-		leafs.resize(LEAF_COUNT);
-		LoadLeafModel();
-
 		CreatePipeline();
-		leafTextureID = Texture_Builder::CreateSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
+		LeafPhysicsInitialization();
 
 		//printf("leafTextureID :%d \n", leafTextureID);
+
+		//printf("after leaf construction \n");
+	}
+
+	LeafSystem::~LeafSystem() {
+#if DECONSTRUCTION_DEBUG
+		printf("begin deconstructing leaf system \n");
+#endif
+		vkDestroyShaderModule(EWEDevice::GetVkDevice(), vertexShaderModule, nullptr);
+		vkDestroyShaderModule(EWEDevice::GetVkDevice(), fragmentShaderModule, nullptr);
+
+		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), pipeLayout, nullptr);
+
+		for (auto& buffer : leafBuffer) {
+			buffer->~EWEBuffer();
+			ewe_free(buffer);
+		}
+#if DECONSTRUCTION_DEBUG
+		printf("end deconstructing leaf system \n");
+#endif
+	}
+
+	void LeafSystem::LeafPhysicsInitialization(){
+		leafs.resize(LEAF_COUNT);
+		
 		for (auto& leaf : leafs) {
 			//printf("leaf initiation : %d \n", i);
 			//0.7071067811865475
@@ -94,25 +117,6 @@ namespace EWE {
 			leaf.transform.mat4(leafBufferData[frameIndex]);
 		}
 
-		//printf("after leaf construction \n");
-	}
-
-	LeafSystem::~LeafSystem() {
-#if DECONSTRUCTION_DEBUG
-		printf("begin deconstructing leaf system \n");
-#endif
-		vkDestroyShaderModule(EWEDevice::GetVkDevice(), vertexShaderModule, nullptr);
-		vkDestroyShaderModule(EWEDevice::GetVkDevice(), fragmentShaderModule, nullptr);
-
-		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), pipeLayout, nullptr);
-
-		for (auto& buffer : leafBuffer) {
-			buffer->~EWEBuffer();
-			ewe_free(buffer);
-		}
-#if DECONSTRUCTION_DEBUG
-		printf("end deconstructing leaf system \n");
-#endif
 	}
 
 	void LeafSystem::FallCalculation(float timeStep, uint8_t frameIndex) {
@@ -291,7 +295,7 @@ namespace EWE {
 		//could use a buffer and trim instances that are out of view, might be a compute shader kinda thing
 
 	}
-	void LeafSystem::LoadLeafModel() {
+	void LeafSystem::LoadLeafModel(VkCommandBuffer cmdBuf) {
 		//printf("loading leaf model \n");
 		std::ifstream inFile("models/leaf_simpleNTMesh.ewe", std::ifstream::binary);
 		//inFile.open();
@@ -315,9 +319,27 @@ namespace EWE {
 		}
 		inFile.close();
 		//printf("file read successfully \n");
-		leafModel = EWEModel::CreateMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices);
+
+		VkSemaphoreCreateInfo semInfo{};
+		semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		semInfo.pNext = nullptr;
+		semInfo.flags = 0;
+		vkCreateSemaphore(EWEDevice::GetVkDevice(), &semInfo, nullptr, &modelSemaphore);
+
+		leafModel = EWEModel::CreateMesh(cmdBuf, importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices);
+		//leafTextureID = Texture_Builder::CreateSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
+		
+		std::string leafTexturePath = "leaf.jpg";
+		ImageInfo imageInfo{cmdBuf, leafTexturePath, false};
+		Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
+		tmPtr->AddImageInfo(leafTexturePath, imageInfo);
 		//printf("leaf model loaded \n");
 	}
+	void LeafSystem::DestroySemaphores(){
+		vkDestroySemaphore(EWEDevice::GetVkDevice(), modelSemaphore, nullptr);
+		vkDestroySemaphore(EWEDevice::GetVkDevice(), textureSemaphore, nullptr);
+	}
+
 	void LeafSystem::Render(FrameInfo& frameInfo) {
 		SetFrameInfo(frameInfo);
 #ifdef _DEBUG
@@ -365,7 +387,7 @@ namespace EWE {
 
 		std::vector<VkDescriptorSetLayout> setLayouts = {
 			DescriptorHandler::getDescSetLayout(LDSL_global),
-			TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout(),
+			TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->GetDescriptorSetLayout(),
 			DescriptorHandler::getDescSetLayout(LDSL_boned)
 		};
 

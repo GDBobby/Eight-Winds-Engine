@@ -40,6 +40,13 @@ namespace EWE {
 		static TextureDesc CreateSimpleTexture(std::string texPath, bool global, bool mipmaps, VkShaderStageFlags shaderStage);
 	};
 
+	struct ImageTracker {
+		ImageInfo imageInfo;
+		std::unordered_set<TextureDesc> usedInTexture{};
+		ImageTracker(std::string const& path, bool mipmap) : imageInfo{path, mipmap} {}
+		ImageTracker() : imageInfo{} {}
+	};
+
 	class Texture_Manager {
 	private:
 		MemoryTypeBucket<1024> imageTrackerBucket;
@@ -47,13 +54,6 @@ namespace EWE {
 
 	protected:
 		std::vector<TextureDesc> sceneIDs; //keeping track so i can remove them later
-
-		struct ImageTracker {
-			ImageInfo imageInfo;
-			std::unordered_set<TextureDesc> usedInTexture{};
-			ImageTracker(std::string const& path, bool mipmap) : imageInfo{path, mipmap} {}
-			ImageTracker() : imageInfo{} {}
-		};
 
 		std::unordered_map<std::string, ImageTracker*> imageMap{};
 
@@ -82,7 +82,7 @@ namespace EWE {
 		Texture_Manager();
 
 		static VkDescriptorImageInfo* GetDescriptorImageInfo(std::string const& imageName) {
-			return textureManagerPtr->imageMap.at(imageName)->imageInfo.getDescriptorImageInfo();
+			return textureManagerPtr->imageMap.at(imageName)->imageInfo.GetDescriptorImageInfo();
 		}
 
 		void ClearSceneTextures();
@@ -92,6 +92,7 @@ namespace EWE {
 		static Texture_Manager* GetTextureManagerPtr() { return textureManagerPtr; }
 		static TextureDesc CreateUITexture();
 		static TextureDesc CreateTextureArray(std::vector<PixelPeek> const& pixelPeeks);
+		static TextureDesc AddImageInfo(std::string const& path, ImageInfo& imageInfo);
 		//static VkDescriptorSet* getDescriptorSet(TextureID textureID);
 		//static VkDescriptorSet* getSkyboxDescriptorSet() { return &textureManagerPtr->textureMap.at(textureManagerPtr->skyboxID); }
 

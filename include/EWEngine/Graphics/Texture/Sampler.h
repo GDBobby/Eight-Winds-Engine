@@ -8,26 +8,17 @@
 
 
 * i dont think a hash function is reasonable for VkSamplerCreateInfo
-* so instead of using an unordered_map, im just going to do a vector of pairs, and iterate through it with a memory comparison
-
-
-* i need a better container. vector isn't going to cut it.
-* id like a faster way to access the tracker
-* i'd like to not have to shift all the data when 1 sampler is erased
+* vector isnt great either
 */
 namespace EWE {
-    inline bool bitwiseEqualOperator(VkSamplerCreateInfo& lhs, VkSamplerCreateInfo& rhs) {
-		return memcmp(&lhs, &rhs, sizeof(VkSamplerCreateInfo)) == 0;
-	}
-
-
     class Sampler {
     private:
+        static Sampler* samplerPtr;
         struct SamplerTracker {
             uint32_t inUseCount = 1;
             uint32_t totalUsed = 0;
-            void add();
-            bool remove();
+            void Add();
+            bool Remove();
         };
         struct SamplerDuplicateTracker {
             VkSamplerCreateInfo samplerInfo;
@@ -37,12 +28,12 @@ namespace EWE {
             
             SamplerDuplicateTracker(VkSamplerCreateInfo& samplerInfo);
         };
-
+        Sampler();
         std::vector<SamplerDuplicateTracker> storedSamplers{};
 
     public:
-        VkSampler getSampler(VkSamplerCreateInfo& samplerInfo);
-        void removeSampler(VkSampler sampler);
+        static VkSampler GetSampler(VkSamplerCreateInfo& samplerInfo);
+        static void RemoveSampler(VkSampler sampler);
 
     };
 }

@@ -31,11 +31,11 @@
 
 
 namespace EWE {
-	inline void stdcoutamat4(glm::mat4& theMatrix, std::string matrixName) {
-		std::cout << matrixName << " 0 : " << theMatrix[0].x << ":" << theMatrix[0].y << ":" << theMatrix[0].z << ":" << theMatrix[0].w << std::endl;
-		std::cout << matrixName << " 1 : " << theMatrix[1].x << ":" << theMatrix[1].y << ":" << theMatrix[1].z << ":" << theMatrix[1].w << std::endl;
-		std::cout << matrixName << " 2 : " << theMatrix[2].x << ":" << theMatrix[2].y << ":" << theMatrix[2].z << ":" << theMatrix[2].w << std::endl;
-		std::cout << matrixName << " 3 : " << theMatrix[3].x << ":" << theMatrix[3].y << ":" << theMatrix[3].z << ":" << theMatrix[3].w << std::endl;
+	inline void printmat4(glm::mat4& theMatrix, const std::string& matrixName) {
+		printf("matrix values : %s\n", matrixName.c_str());
+		for(uint8_t i = 0; i < 4; i++) {
+			printf("\t%.3f:%.3f:%.3f:%.3f\n", theMatrix[i].x, theMatrix[i].y, theMatrix[i].z, theMatrix[i].w);
+		}
 	}
 	EightWindsEngine::EightWindsEngine(std::string windowName) :
 		//first, any members not mentioned here with brackets will be initialized
@@ -168,12 +168,16 @@ namespace EWE {
 		//LARGE_INTEGER averageEnd;
 		//printf("loading screen entry \n");
 		//SyncHub::GetSyncHubInstance()->waitOnTransferFence();
+		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 		{
 			//initial frame
 			FrameInfo frameInfo = eweRenderer.beginFrame();
-			if(frameInfo.cmdBuf != VK_NULL_HANDLE){
-				syncHub->PostTransitions(frameInfo.cmdBuf, frameInfo.index);
 
+
+			if(frameInfo.cmdBuf != VK_NULL_HANDLE){
+				leafSystem->LoadLeafModel(frameInfo.cmdBuf);
+				
+				auto* transitionContainer = eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
 
 				eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
 				leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);

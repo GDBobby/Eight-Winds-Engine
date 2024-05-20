@@ -1305,9 +1305,12 @@ namespace EWE {
         }
         return deviceMemoryRemaining;
     }
-    void EWEDevice::PostTransitions(VkCommandBuffer cmdBuf, uint8_t frameIndex){
+    QueueTransitionContainer* EWEDevice::PostTransitionsToGraphics(VkCommandBuffer cmdBuf, uint8_t frameIndex){
 		QueueTransitionContainer* transitionContainer = syncHub->transitionManager.PrepareGraphics(frameIndex);
-        syncHub->BeginSingleTimeCommandGraphics();
+        if(transitionContainer == nullptr){
+            return nullptr;
+        }
+
         VkImageLayout dstLayout;
         std::vector<VkImageMemoryBarrier> imageBarriers{};
         std::vector<VkBufferMemoryBarrier> bufferBarriers{};
@@ -1321,22 +1324,22 @@ namespace EWE {
             else{
                 dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
-            imageBarriers.push_back(TransitionImageLayout(transitionInstance.image, 
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dstLayout,
-                transitionInstance.mipLevels,
-                transitionInstance.arrayLayers
-            ));
+            imageBarriers.push_back(
+                TransitionImageLayout(transitionInstance.image, 
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dstLayout,
+                    transitionInstance.mipLevels,
+                    transitionInstance.arrayLayers
+                )
+            );
         }
-
+         
         vkCmdPipelineBarrier(cmdBuf,
-            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
             0,
             0, nullptr,
             bufferBarriers.size(), bufferBarriers.data(),
             imageBarriers.size(), imageBarriers.data()
         );
-        
-        //i might need to use multiple semaphores, not sure yet
-        syncHub->EndSingleTimeCommandGraphics(cmdBuf, transitionContainer->semaphore);
+        return transitionContainer;
     }
 }  // namespace EWE

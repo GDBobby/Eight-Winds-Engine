@@ -22,8 +22,8 @@
 #include <iostream>
 
 namespace EWE {
-    constexpr size_t FLOAT_SIZE3 = sizeof(float) * 3;
-    constexpr size_t FLOAT_SIZE2 = sizeof(float) * 2;
+    constexpr std::size_t FLOAT_SIZE3 = sizeof(float) * 3;
+    constexpr std::size_t FLOAT_SIZE2 = sizeof(float) * 2;
 
     struct MaterialComponent {
         //
@@ -71,13 +71,15 @@ namespace EWE {
         }
 
 
-        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t>const& indices);
+        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t>const& indices);
+        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex);
+        static std::unique_ptr<EWEModel> CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t>const& indices);
+        static std::unique_ptr<EWEModel> CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex);
 
-        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, size_t vertexCount, std::size_t sizeOfVertex);
-
-       EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex, std::vector<uint32_t> const& indices);
-
-        EWEModel(void const* verticesData, size_t vertexCount, size_t sizeOfVertex);
+        EWEModel(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t> const& indices);
+        EWEModel(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex);
+        EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t> const& indices);
+        EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex);
 
 
         void AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data);
@@ -101,7 +103,8 @@ namespace EWE {
         uint32_t GetIndexCount() { return indexCount; }
 
         //delete needs to be called on this at destruction, or put it into a smart pointer
-        static EWEBuffer* CreateIndexBuffer(std::vector<uint32_t> const& indices);
+        //static EWEBuffer* CreateIndexBuffer(std::vector<uint32_t> const& indices);
+        //static EWEBuffer* CreateIndexBuffer(VkCommandBuffer cmdBuf, std::vector<uint32_t> const& indices);
 
     protected:
         //void createVertexBuffers(const std::vector<Vertex>& vertices);
@@ -110,9 +113,12 @@ namespace EWE {
         //void createBobVertexBuffers(const std::vector <bobVertex>& vertices);
 
         void VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data);
+        void VertexBuffers(VkCommandBuffer cmdBuf, uint32_t vertexCount, uint32_t vertexSize, void const* data);
 
-        void CreateGrassIndexBuffer(void* indexData, uint32_t indexCount);
+        void CreateIndexBuffer(void* indexData, uint32_t indexCount);
         void CreateIndexBuffers(const std::vector<uint32_t>& indices);
+        void CreateIndexBuffer(VkCommandBuffer cmdBuf, void* indexData, uint32_t indexCount);
+        void CreateIndexBuffers(VkCommandBuffer cmdBuf, const std::vector<uint32_t>& indices);
 
         std::unique_ptr<EWEBuffer> vertexBuffer;
         uint32_t vertexCount;

@@ -78,7 +78,7 @@ namespace EWE {
         {
             auto foundDSL = descriptorSetLayouts.find(whichDescSet);
             if (foundDSL != descriptorSetLayouts.end()) {
-                return foundDSL->second->getDescriptorSetLayout();
+                return foundDSL->second->GetDescriptorSetLayout();
             }
         }
         //printf("constructing LDSL : %d \n", whichDescSet);
@@ -118,7 +118,7 @@ namespace EWE {
         }
         }
         //printf("returning LDSL : %d \n", whichDescSet);
-        return descriptorSetLayouts.emplace(whichDescSet, dsl).first->second->getDescriptorSetLayout();
+        return descriptorSetLayouts.emplace(whichDescSet, dsl).first->second->GetDescriptorSetLayout();
     }
 
     void DescriptorHandler::initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap) {

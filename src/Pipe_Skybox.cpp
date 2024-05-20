@@ -23,7 +23,7 @@ namespace EWE {
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 		std::vector<VkDescriptorSetLayout> tempDSL = {
 			DescriptorHandler::getDescSetLayout(LDSL_global),
-			TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout()
+			TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->GetDescriptorSetLayout()
 		};
 			
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());

@@ -1,4 +1,5 @@
 #include "EWEngine/Graphics/Texture/UI_Texture.h"
+#include "EWEngine/Graphics/Texture/Sampler.h"
 
 namespace EWE {
     namespace UI_Texture {
@@ -70,7 +71,8 @@ namespace EWE {
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 uiImageInfo.mipLevels, pixelPeek.size()
             );
-            syncHub->EndSingleTimeCommandTransfer(cmdBuf, uiImageInfo.image, false, eweDevice->GetGraphicsIndex());
+            ImageQueueTransitionData transitionData{uiImageInfo.image, uiImageInfo.mipLevels, uiImageInfo.arrayLayers, eweDevice->GetGraphicsIndex()};
+            syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
         }
 
         void CreateUIImageView(ImageInfo& uiImageInfo, uint8_t layerCount) {
@@ -87,10 +89,7 @@ namespace EWE {
             viewInfo.subresourceRange.layerCount = layerCount;
             viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 
-            if (vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &uiImageInfo.imageView) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create texture image view!");
-            }
-
+            EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &uiImageInfo.imageView));
         }
 
         void CreateUISampler(ImageInfo& uiImageInfo) {
@@ -124,10 +123,7 @@ namespace EWE {
             samplerInfo.minLod = 0.f;
             samplerInfo.maxLod = 1.f;
 
-            if (vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &uiImageInfo.sampler) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create texture sampler!");
-            }
-
+            uiImageInfo.sampler = Sampler::GetSampler(samplerInfo);
         }
         //} //namespace internal
     } //namespace UI_Texture

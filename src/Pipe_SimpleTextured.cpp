@@ -29,7 +29,7 @@ namespace EWE {
 		//pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		std::vector<VkDescriptorSetLayout> tempDSL = {
 			DescriptorHandler::getDescSetLayout(LDSL_global),
-			TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout()
+			TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->GetDescriptorSetLayout()
 		};
 
 		//printf("tempDSL size : %d \n", tempDSL->size());

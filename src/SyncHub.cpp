@@ -182,7 +182,7 @@ namespace EWE {
 		EWE_VK_ASSERT(vkWaitForFences(device, 1, &singleTimeFenceGraphics, VK_TRUE, UINT64_MAX));
 		vkFreeCommandBuffers(device, graphicsCommandPool, 1, &cmdBuf);
 	}
-	void SyncHub::EndSingleTimeCommandGraphicsWait(VkCommandBuffer cmdBuf, VkSemaphore waitSemaphore){
+	void SyncHub::EndSingleTimeCommandGraphicsWaitAndSignal(VkCommandBuffer cmdBuf, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore){
 		vkEndCommandBuffer(cmdBuf);
 		vkResetFences(device, 1, &singleTimeFenceGraphics);
 		VkSubmitInfo submitInfo{};
@@ -200,40 +200,36 @@ namespace EWE {
 		vkFreeCommandBuffers(device, graphicsCommandPool, 1, &cmdBuf);
 	}
 
-	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkBuffer buffer, uint32_t dstQueue){
+	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, BufferQueueTransitionData const& bufferData){
 		vkEndCommandBuffer(cmdBuf);		
-		transitionManager.GetStagingBuffer()->buffers.emplace_back(buffer, dstQueue);
-		
 		transferBuffers[transferFlipFlop].push_back(cmdBuf);
+		transitionManager.GetStagingBuffer()->buffers.push_back(bufferData);
 		AttemptTransferSubmission();
 	}
-	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkBuffer* buffers, uint8_t bufferCount, uint32_t dstQueue){
+	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, std::vector<BufferQueueTransitionData> const& bufferData){
 		vkEndCommandBuffer(cmdBuf);
 		transferBuffers[transferFlipFlop].push_back(cmdBuf);
 
 		auto* stagingBuffer = transitionManager.GetStagingBuffer();
-		for(uint8_t i = 0; i < bufferCount; i++){
-			stagingBuffer->buffers.emplace_back(buffers[i], dstQueue);
-		}
+    	std::copy(bufferData.begin(), bufferData.end(), std::back_inserter(stagingBuffer->buffers));
 
 		AttemptTransferSubmission();
 	}
-	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkImage image, bool generateMips, uint32_t dstQueue) {
+	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, ImageQueueTransitionData const& imageData) {
 		vkEndCommandBuffer(cmdBuf);
 		
 		transferBuffers[transferFlipFlop].push_back(cmdBuf);
-		transitionManager.GetStagingBuffer()->images.emplace_back(image, generateMips, dstQueue);
+		transitionManager.GetStagingBuffer()->images.push_back(imageData);
 
 		AttemptTransferSubmission();
 	}
-	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, VkImage* images, uint8_t imageCount, bool generateMips, uint32_t dstQueue){
+	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, std::vector<ImageQueueTransitionData> const& imageData){
 		vkEndCommandBuffer(cmdBuf);
 
 		transferBuffers[transferFlipFlop].push_back(cmdBuf);
 		auto* stagingBuffer = transitionManager.GetStagingBuffer();
-		for(uint8_t i = 0; i < imageCount; i++){
-			stagingBuffer->images.emplace_back(images[i], generateMips, dstQueue);
-		}
+
+    	std::copy(imageData.begin(), imageData.end(), std::back_inserter(stagingBuffer->images));
 		AttemptTransferSubmission();
 	}
 	void SyncHub::AttemptTransferSubmission(){

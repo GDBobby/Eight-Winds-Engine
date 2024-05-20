@@ -73,18 +73,18 @@ namespace EWE {
 
         uint16_t imageCount = 0;
         for (uint8_t i = 0; i < 6; i++) {
-            dslInfo.setStageTextureCount(stageFlags, imageCI[i].size());
+            dslInfo.SetStageTextureCount(stageFlags, imageCI[i].size());
             stageFlags <<= 1;
             imageCount += imageCI[i].size();
         }
-        dslInfo.setStageTextureCount(VK_SHADER_STAGE_ALL_GRAPHICS, imageCI[6].size());
+        dslInfo.SetStageTextureCount(VK_SHADER_STAGE_ALL_GRAPHICS, imageCI[6].size());
         imageCount += imageCI[6].size();
-        dslInfo.setStageTextureCount(VK_SHADER_STAGE_ALL, imageCI[7].size());
+        dslInfo.SetStageTextureCount(VK_SHADER_STAGE_ALL, imageCI[7].size());
         imageCount += imageCI[7].size();
-        dslInfo.setStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, imageCI[8].size());
+        dslInfo.SetStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, imageCI[8].size());
         imageCount += imageCI[8].size();
 
-        std::vector<Texture_Manager::ImageTracker*> imageInfos{};
+        std::vector<ImageTracker*> imageInfos{};
         imageInfos.resize(imageCount, nullptr);
 
         bool uniqueDescriptor = false;
@@ -104,9 +104,9 @@ namespace EWE {
         }
 
         if (uniqueDescriptor) {
-            EWEDescriptorWriter descBuilder(dslInfo.getDescSetLayout(), DescriptorPool_Global);
+            EWEDescriptorWriter descBuilder(dslInfo.GetDescSetLayout(), DescriptorPool_Global);
             for (uint16_t i = 0; i < imageInfos.size(); i++) {
-                descBuilder.writeImage(i, imageInfos[i]->imageInfo.getDescriptorImageInfo());
+                descBuilder.writeImage(i, imageInfos[i]->imageInfo.GetDescriptorImageInfo());
             }
             TextureDesc retDesc = descBuilder.build();
             for (auto& imageInfo : imageInfos) {
@@ -160,7 +160,7 @@ namespace EWE {
     TextureDesc Texture_Builder::CreateSimpleTexture(std::string path, bool global, bool mipmaps, VkShaderStageFlags shaderStage) {
         Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
 
-        Texture_Manager::ImageTracker* imageInfo;
+        ImageTracker* imageInfo;
         bool uniqueImage = false;
 
         std::string texPath{ TEXTURE_DIR };
@@ -192,12 +192,12 @@ namespace EWE {
                 uniqueImage = true;
                 imageInfo = Texture_Manager::ConstructImageTracker(texPath, mipmaps);
 
-                EWEDescriptorWriter descBuilder(TextureDSLInfo::getSimpleDSL(shaderStage), DescriptorPool_Global);
-                descBuilder.writeImage(0, imageInfo->imageInfo.getDescriptorImageInfo());
+                EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(shaderStage), DescriptorPool_Global);
+                descBuilder.writeImage(0, imageInfo->imageInfo.GetDescriptorImageInfo());
                 TextureDesc retDesc = descBuilder.build();
 
                 imageInfo->usedInTexture.insert(retDesc);
-                tmPtr->textureImages.try_emplace(retDesc, std::vector<Texture_Manager::ImageTracker*>{imageInfo});
+                tmPtr->textureImages.try_emplace(retDesc, std::vector<ImageTracker*>{imageInfo});
 
                 //tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descBuilder.build());
                 if (!global) {
@@ -215,8 +215,6 @@ namespace EWE {
         textureManagerPtr = this;
     }
 
-
-
     void Texture_Manager::Cleanup() {
         //call at end of program
 #if DECONSTRUCTION_DEBUG
@@ -226,7 +224,7 @@ namespace EWE {
 
         for (auto& image : imageMap) {
             //printf("%d tracking \n", tracker++);
-            image.second->imageInfo.destroy();
+            image.second->imageInfo.Destroy();
             image.second->~ImageTracker();
             imageTrackerBucket.freeDataChunk(image.second);
         }
@@ -273,7 +271,7 @@ namespace EWE {
                 imageTracker->usedInTexture.erase(sceneID);
 #endif
                 if (imageTracker->usedInTexture.size() == 0) {
-                    imageTracker->imageInfo.destroy();
+                    imageTracker->imageInfo.Destroy();
                     for (auto iter = imageMap.begin(); iter != imageMap.end(); iter++) {
                         if (iter->second == imageTracker) {
                             
@@ -302,31 +300,15 @@ namespace EWE {
             }
         }
     }
-    /*
-    VkDescriptorSet* Texture_Manager::getDescriptorSet(TextureDesc textureID) {
-        //printf("descriptor set ~ %d \n", textureID);
 
-#ifdef _DEBUG
-            //if (textureID == 13) {
-            //	printf("texture string : %s \n", getTextureData(textureID).first.c_str());
-            //}
-        if (!textureManagerPtr->textureMap.contains(textureID)) {
-            printf("TEXTURE DOES NOT EXIST  : %d \n", textureID);
-            //printf("texture string : %s \n", getTextureData(textureID).path.c_str());
-            throw std::exception("texture descriptor set doesnt exist");
-        }
-#endif
-        return &textureManagerPtr->textureMap.at(textureID);
-    }
-    */
-    Texture_Manager::ImageTracker* Texture_Manager::ConstructImageTracker(std::string const& path, bool mipmap) {
+    ImageTracker* Texture_Manager::ConstructImageTracker(std::string const& path, bool mipmap) {
         ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
 
         new(imageTracker) ImageTracker(path, true);
 
         return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
     }
-    Texture_Manager::ImageTracker* Texture_Manager::ConstructEmptyImageTracker(std::string const& path) {
+    ImageTracker* Texture_Manager::ConstructEmptyImageTracker(std::string const& path) {
 
         ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
         new(imageTracker) ImageTracker();
@@ -347,7 +329,7 @@ namespace EWE {
         arrayImageInfo.descriptorImageInfo.imageView = arrayImageInfo.imageView;
         arrayImageInfo.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        EWEDescriptorWriter descBuilder(TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
+        EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
 
         descBuilder.writeImage(0, &arrayImageInfo.descriptorImageInfo);
         TextureDesc retDesc = descBuilder.build();
@@ -383,5 +365,11 @@ namespace EWE {
 
         }
         return CreateTextureArray(pixelPeeks);
+    }
+
+    TextureDesc Texture_Manager::AddImageInfo(std::string const& path, ImageInfo& imageInfo){
+        
+
+        return VK_NULL_HANDLE;
     }
 }

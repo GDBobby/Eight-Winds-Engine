@@ -1,4 +1,5 @@
 #include "EWEngine/Graphics/Texture/Cube_Texture.h"
+#include "EWEngine/Graphics/Texture/Sampler.h"
 
 namespace EWE {
 
@@ -42,7 +43,7 @@ namespace EWE {
             
         }
         
-        Texture_Manager::ImageTracker* cubeTracker = Texture_Manager::ConstructEmptyImageTracker(texPath);
+        ImageTracker* cubeTracker = Texture_Manager::ConstructEmptyImageTracker(texPath);
         ImageInfo& cubeImage = cubeTracker->imageInfo;
 
         createCubeImage(cubeImage, pixelPeeks);
@@ -53,11 +54,11 @@ namespace EWE {
         cubeImage.descriptorImageInfo.imageView = cubeImage.imageView;
         cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        EWEDescriptorWriter descBuilder(TextureDSLInfo::getSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
+        EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
 
         descBuilder.writeImage(0, &cubeImage.descriptorImageInfo);
         TextureDesc retDesc = descBuilder.build();
-        tmPtr->textureImages.try_emplace(retDesc, std::vector<Texture_Manager::ImageTracker*>{cubeTracker});
+        tmPtr->textureImages.try_emplace(retDesc, std::vector<ImageTracker*>{cubeTracker});
         tmPtr->imageMap.emplace(texPath, cubeTracker);
 
         //cubeVector.emplace_back(EWETexture(eweDevice, texPath, tType_cube));
@@ -130,7 +131,9 @@ namespace EWE {
             cubeTexture.mipLevels, 6
         );
 
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, cubeTexture.image, false, eweDevice->GetGraphicsIndex());
+        ImageQueueTransitionData imageTransitionData{cubeTexture.image, 1, 6, eweDevice->GetGraphicsIndex()};
+
+        syncHub->EndSingleTimeCommandTransfer(cmdBuf, imageTransitionData);
 
     }
 
@@ -148,9 +151,8 @@ namespace EWE {
         viewInfo.subresourceRange.layerCount = 6;
         viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
             
-        if (vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &cubeTexture.imageView) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
-        }
+        EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &cubeTexture.imageView));
+        
         
     }
 
@@ -185,9 +187,6 @@ namespace EWE {
         samplerInfo.minLod = 0.f;
         samplerInfo.maxLod = 1.f;
 
-        if (vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &cubeTexture.sampler) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture sampler!");
-        }
-        
+        cubeTexture.sampler = Sampler::GetSampler(samplerInfo);
     }
 }
