@@ -199,7 +199,8 @@ namespace EWE {
 
         CreateTextureImage(cmdBuf, pixelPeek, mipmapping);
         
-        ImageQueueTransitionData transitionData{image, mipLevels, arrayLayers, EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
+        //ImageQueueTransitionData transitionData{image, mipLevels, arrayLayers};
+        ImageQueueTransitionData transitionData{GenerateTransitionData(EWEDevice::GetEWEDevice()->GetGraphicsIndex())};
         syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
     }
     void ImageInfo::CreateTextureImage(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmapping) {

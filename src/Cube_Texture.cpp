@@ -71,7 +71,8 @@ namespace EWE {
 
     void Cube_Texture::createCubeImage(ImageInfo& cubeTexture, std::vector<PixelPeek>& pixelPeek) {
         uint64_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
-        VkDeviceSize imageSize = layerSize * 6;
+        cubeTexture.arrayLayers = 6;
+        VkDeviceSize imageSize = layerSize * cubeTexture.arrayLayers;
 
         void* data;
         VkBuffer stagingBuffer;
@@ -96,7 +97,7 @@ namespace EWE {
         imageInfo.extent.height = pixelPeek[0].height;
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 6;
+        imageInfo.arrayLayers = cubeTexture.arrayLayers;
 
         imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -116,10 +117,10 @@ namespace EWE {
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
             cubeTexture.image,
             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            cubeTexture.mipLevels, 6
+            cubeTexture.mipLevels, cubeTexture.arrayLayers
         );
         
-        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, cubeTexture.image, pixelPeek[0].width, pixelPeek[0].height, 6);
+        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, cubeTexture.image, pixelPeek[0].width, pixelPeek[0].height, cubeTexture.arrayLayers);
 
         vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
         vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
@@ -128,11 +129,10 @@ namespace EWE {
             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
             cubeTexture.image, 
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
-            cubeTexture.mipLevels, 6
+            cubeTexture.mipLevels, cubeTexture.arrayLayers
         );
 
-        ImageQueueTransitionData imageTransitionData{cubeTexture.image, 1, 6, eweDevice->GetGraphicsIndex()};
-
+        ImageQueueTransitionData imageTransitionData{cubeTexture.GenerateTransitionData(eweDevice->GetGraphicsIndex())};
         syncHub->EndSingleTimeCommandTransfer(cmdBuf, imageTransitionData);
 
     }
@@ -148,7 +148,7 @@ namespace EWE {
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = cubeTexture.mipLevels;
         viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 6;
+        viewInfo.subresourceRange.layerCount = cubeTexture.arrayLayers;
         viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
             
         EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &cubeTexture.imageView));

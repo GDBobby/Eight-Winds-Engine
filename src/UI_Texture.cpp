@@ -7,7 +7,8 @@ namespace EWE {
         //namespace internal {
         void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek) {
             std::size_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
-            VkDeviceSize imageSize = layerSize * pixelPeek.size();
+            uiImageInfo.arrayLayers = pixelPeek.size();
+            VkDeviceSize imageSize = layerSize * uiImageInfo.arrayLayers;
 #ifdef _DEBUG
             assert(pixelPeek.size() > 1 && "creating an array without an array of images?");
             const VkDeviceSize assertionSize = pixelPeek[0].width * pixelPeek[0].height * 4;
@@ -39,8 +40,8 @@ namespace EWE {
             imageInfo.extent.width = pixelPeek[0].width;
             imageInfo.extent.height = pixelPeek[0].height;
             imageInfo.extent.depth = 1;
-            imageInfo.mipLevels = 1;
-            imageInfo.arrayLayers = pixelPeek.size();
+            imageInfo.mipLevels = uiImageInfo.mipLevels;
+            imageInfo.arrayLayers = uiImageInfo.mipLevels;
 
             imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
             imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -60,7 +61,7 @@ namespace EWE {
                 uiImageInfo.image,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 uiImageInfo.mipLevels, pixelPeek.size());
-            eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, uiImageInfo.image, pixelPeek[0].width, pixelPeek[0].height, pixelPeek.size());
+            eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, uiImageInfo.image, pixelPeek[0].width, pixelPeek[0].height, uiImageInfo.arrayLayers);
 
             vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
             vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
@@ -69,13 +70,14 @@ namespace EWE {
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 uiImageInfo.image,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                uiImageInfo.mipLevels, pixelPeek.size()
+                uiImageInfo.mipLevels, uiImageInfo.arrayLayers
             );
-            ImageQueueTransitionData transitionData{uiImageInfo.image, uiImageInfo.mipLevels, uiImageInfo.arrayLayers, eweDevice->GetGraphicsIndex()};
+
+            ImageQueueTransitionData transitionData{uiImageInfo.GenerateTransitionData(eweDevice->GetGraphicsIndex())};
             syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
         }
 
-        void CreateUIImageView(ImageInfo& uiImageInfo, uint8_t layerCount) {
+        void CreateUIImageView(ImageInfo& uiImageInfo) {
 
             VkImageViewCreateInfo viewInfo{};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -86,7 +88,7 @@ namespace EWE {
             viewInfo.subresourceRange.baseMipLevel = 0;
             viewInfo.subresourceRange.levelCount = uiImageInfo.mipLevels;
             viewInfo.subresourceRange.baseArrayLayer = 0;
-            viewInfo.subresourceRange.layerCount = layerCount;
+            viewInfo.subresourceRange.layerCount = uiImageInfo.arrayLayers;
             viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 
             EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &uiImageInfo.imageView));

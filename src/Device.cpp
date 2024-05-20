@@ -910,8 +910,7 @@ namespace EWE {
         // Target layouts (new)
         // The destination access mask controls the dependency for the new image
         // layout.
-        switch (dstLayout)
-        {
+        switch (dstLayout) {
         case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
             // Image will be used as a transfer destination.
             // Make sure any writes to the image have finished.
@@ -935,17 +934,14 @@ namespace EWE {
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
             // Image layout will be used as a depth/stencil attachment.
             // Make sure any writes to depth/stencil buffer have finished.
-            barrier.dstAccessMask
-                = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             break;
 
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
             // Image will be read in a shader (sampler, input attachment).
             // Make sure any writes to the image have finished.
-            if (barrier.srcAccessMask == 0)
-            {
-                barrier.srcAccessMask
-                    = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+            if (barrier.srcAccessMask == 0) {
+                barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
             }
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
             break;
@@ -954,18 +950,18 @@ namespace EWE {
             break;
         default:
             /* Value not used by callers, so not supported. */
+#ifdef _DEBUG
             assert(false && "unsupported dst layout transition");
+#else
+    #if defined(_MSC_VER) && !defined(__clang__) // MSVC
+        __assume(false);
+    #else // GCC, Clang
+        __builtin_unreachable();
+    #endif
+#endif
         }
 
         return barrier;
-        /*
-        vkCmdPipelineBarrier(cmdBuf,
-            sourceStage, destinationStage,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrier);
-        */
     }
     void EWEDevice::TransitionImageLayoutWithBarrier(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount){
         VkImageMemoryBarrier imageBarrier{TransitionImageLayout(image, srcLayout, dstLayout, mipLevels, layerCount)};
@@ -985,7 +981,9 @@ namespace EWE {
         imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         imageBarrier.pNext = nullptr;
         imageBarrier.image = image;
+#ifdef _DEBUG
         assert(imageBarrier.image != VK_NULL_HANDLE && "transfering a null image?");
+#endif
         imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
         imageBarrier.subresourceRange.baseMipLevel = 0;
         imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
@@ -1055,14 +1053,16 @@ namespace EWE {
     }
     void EWEDevice::TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImage> const& images) {
         assert(images.size() > 0);
-        uint32_t imageCount = static_cast<uint32_t>(images.size());
+        const uint32_t imageCount = static_cast<uint32_t>(images.size());
 
         std::vector<VkImageMemoryBarrier> imageBarriers{};
         imageBarriers.resize(imageCount);
         imageBarriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         imageBarriers[0].pNext = nullptr;
         imageBarriers[0].image = images[0];
+#ifdef _DEBUG
         assert(imageBarriers[0].image != VK_NULL_HANDLE && "transfering a null image?");
+#endif
 
         imageBarriers[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
         imageBarriers[0].subresourceRange.baseMipLevel = 0;
@@ -1101,7 +1101,9 @@ namespace EWE {
         for (uint8_t i = 1; i < imageCount; i++) {
             imageBarriers[i] = imageBarriers[0];
             imageBarriers[i].image = images[i];
+#ifdef _DEBUG
             assert(imageBarriers[i].image != VK_NULL_HANDLE && "transfering a null image?");
+#endif
         }
 
         vkCmdPipelineBarrier(

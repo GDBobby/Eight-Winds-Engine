@@ -169,11 +169,9 @@ namespace EWE {
 		//printf("loading screen entry \n");
 		//SyncHub::GetSyncHubInstance()->waitOnTransferFence();
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-		{
-			//initial frame
+
+		{ //initial frame
 			FrameInfo frameInfo = eweRenderer.beginFrame();
-
-
 			if(frameInfo.cmdBuf != VK_NULL_HANDLE){
 				leafSystem->LoadLeafModel(frameInfo.cmdBuf);
 				
@@ -187,14 +185,13 @@ namespace EWE {
 				eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);
 				if (eweRenderer.endFrame()) {
 					//printf("dirty swap on end\n");
-					std::pair<uint32_t, uint32_t> tempPair = eweRenderer.getExtent();
 					//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
+					menuManager.windowResize(eweRenderer.getExtent());
 				}
 			}
 			else {
-				std::pair<uint32_t, uint32_t> tempPair = eweRenderer.getExtent();
 				//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
-				menuManager.windowResize(tempPair);
+				menuManager.windowResize(eweRenderer.getExtent());
 			}
 			renderThreadTime = 0.f;
 			//printf("end rendering thread \n");	
@@ -221,44 +218,14 @@ namespace EWE {
 			if (renderThreadTime > renderTimeCheck) {
 				loadingTime += renderTimeCheck;
 				//printf("rendering loading thread start??? \n");
-				
 				auto frameInfo = eweRenderer.beginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
-#if false//BENCHMARKING_GPU
-					if (queryPool == VK_NULL_HANDLE) {
-						gpuTicksPerSecond = eweDevice.getProperties().limits.timestampPeriod / 1e9f;
+					eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
+					
 
-						VkQueryPoolCreateInfo queryPoolInfo = {};
-						queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-						queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
-						queryPoolInfo.queryCount = 2; // We'll use two timestamps if we run into trouble with framebuffers use 4
-						vkCreateQueryPool(eweDevice.device(), &queryPoolInfo, nullptr, &queryPool);
-					}
-					else {
-						//shouldnt be activated until after the command has already been submitted at least once
-						uint64_t timestampStart, timestampEnd;
-						vkGetQueryPoolResults(eweDevice.device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-						vkGetQueryPoolResults(eweDevice.device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-						elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond * 1000.f;
-						totalElapsedGPUMS += elapsedGPUMS;
-						averageElapsedGPUCounter++;
-						if (averageElapsedGPUCounter == 100) {
-							averageElapsedGPUCounter = 0;
-							averageElapsedGPUMS = totalElapsedGPUMS / 100.f;
-							totalElapsedGPUMS = 0.f;
-						}
-						//need to add this to the text renderer
-						//printf("elapsed GPU seconds : %.5f \n", elapsedGPUMS);
-					}
-
-					vkCmdResetQueryPool(commandBufferPair.first, queryPool, 0, 2);
-					vkCmdWriteTimestamp(commandBufferPair.first, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
-#endif
 					eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
-#if false//BENCHMARKING
-					uiHandler.Benchmarking(renderThreadTime, peakRenderTime, averageRenderTime, minRenderTime, highestRenderTime, averageLogicTime, BENCHMARKING_GPU, elapsedGPUMS, averageElapsedGPUMS);
-#endif
+
 					leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);

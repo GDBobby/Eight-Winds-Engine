@@ -52,6 +52,10 @@ namespace EWE {
 		void GenerateMipmaps(const VkFormat imageFormat, const int width, int height);
 		void GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, int width, int height);
 
+		ImageQueueTransitionData GenerateTransitionData(uint32_t queueIndex){
+			return ImageQueueTransitionData{image, mipLevels, arrayLayers, queueIndex};
+		}
+
 	public:
 		VkDescriptorImageInfo* GetDescriptorImageInfo() {
 			return &descriptorImageInfo;
