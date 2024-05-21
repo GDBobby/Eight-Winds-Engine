@@ -1,5 +1,7 @@
 #pragma once
 
+#include "EWEngine/Data/EngineDataTypes.h"
+
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
@@ -23,7 +25,13 @@ namespace EWE {
 		uint8_t mipLevels;
 		uint8_t arrayLayers;
 		uint32_t dstQueue;
-		ImageQueueTransitionData(VkImage image, uint8_t mips, uint8_t arrayLayers, uint32_t dstQueue) : image{image}, mipLevels{mips}, arrayLayers{arrayLayers}, dstQueue{dstQueue} {}
+		StagingBuffer stagingBuffer;
+		ImageQueueTransitionData(VkImage image, uint8_t mips, uint8_t arrayLayers, uint32_t dstQueue) : 
+			image{image}, 
+			mipLevels{mips}, 
+			arrayLayers{arrayLayers}, 
+			dstQueue{dstQueue} 
+		{}
 	};
 	struct BufferQueueTransitionData{
 		VkBuffer buffer;
@@ -34,10 +42,24 @@ namespace EWE {
 	struct QueueTransitionContainer {
 		std::vector<ImageQueueTransitionData> images{};
 		std::vector<BufferQueueTransitionData> buffers{};
-		VkSemaphore transferSemaphore{VK_NULL_HANDLE};
-		VkSemaphore queueSemaphore{VK_NULL_HANDLE};
+		VkSemaphore semaphore;
 		//i need a callback here, for images that the graphics pipeline is waiting on
 		bool inFlight{false};
+		void DestroyImageStagingBuffers(VkDevice device) {
+			for (auto& image : images) {
+				image.stagingBuffer.Free(device);
+			}
+		}
+		void CreateSemaphore(VkDevice device) {
+			VkSemaphoreCreateInfo semaphoreCreateInfo{};
+			semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+			semaphoreCreateInfo.pNext = nullptr;
+			semaphoreCreateInfo.flags = 0;
+			vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore);
+		}
+		void DestroySemaphore(VkDevice device) {
+			vkDestroySemaphore(device, semaphore, nullptr);
+		}
 	};
 
 	class Transition_Manager {
@@ -50,14 +72,23 @@ namespace EWE {
 			buffers{ new QueueTransitionContainer[max_size] }, 
 			stagingBuffer{buffers},
 			transferInFlightBuffers{new QueueTransitionContainer*[transferFlightCount]},
-			graphicsInFlightBuffers{new QueueTransitionContainer*[graphicsFlightCount]} 
-		{ 
-			// empty 
-		}
+			graphicsInFlightBuffers{new QueueTransitionContainer*[graphicsFlightCount]}
+		{ }
+
 		~Transition_Manager() {
+			for (uint8_t i = 0; i < max_size; i++) {
+				buffers[i].DestroySemaphore(vkDevice);
+			}
 			delete[] buffers;
 			delete[] transferInFlightBuffers;
 			delete[] graphicsInFlightBuffers;
+		}
+
+		void InitializeSemaphores(VkDevice device) {
+			this->vkDevice = device;
+			for (uint8_t i = 0; i < max_size; i++) {
+				buffers[i].CreateSemaphore(device);
+			}
 		}
 
 		QueueTransitionContainer* GetStagingBuffer(){
@@ -65,9 +96,9 @@ namespace EWE {
 			return stagingBuffer;
 		}
 		//this will be called in the main transfer thread, to determine if its possible to spawn the async transfer thread
-		VkSemaphore PrepareSubmission() {
+		QueueTransitionContainer* PrepareSubmission() {
 			if(currentTransferInFlightCount >= transferFlightCount){
-				return VK_NULL_HANDLE;
+				return nullptr;
 			}
 
 			for(uint16_t i = 0; i < max_size; i++){
@@ -91,13 +122,12 @@ namespace EWE {
 				currentTransferInFlightCount++;
 				stagingBuffer = &buffers[i];
 
-				return submissionBuffer->transferSemaphore;
+				return submissionBuffer;
 			
 			}
-//#ifdef _DEBUG
-#if true
+#ifdef _DEBUG
 			assert(false && "buffers are being incorrectly handled in PrepareSubmission");
-			return VK_NULL_HANDLE;
+			return nullptr;
 #else
 #if defined(_MSC_VER) && !defined(__clang__) // MSVC
     __assume(false);
@@ -118,7 +148,7 @@ namespace EWE {
 			}
 
 			assert(false && "buffers are being incorrectly handled in PrepareGraphics");
-			return true;
+			//return true;
 #else
 			transferBuffer->inFlight = false;
 #endif
@@ -160,6 +190,8 @@ namespace EWE {
 		QueueTransitionContainer* stagingBuffer;
 		QueueTransitionContainer** transferInFlightBuffers = nullptr;
 		QueueTransitionContainer** graphicsInFlightBuffers;
+
+		VkDevice vkDevice;
 	};
 } //namespace EWE
 

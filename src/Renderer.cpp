@@ -7,6 +7,22 @@
 #include <iomanip>
 
 namespace EWE {
+	void EWERenderer::BindGraphicsPipeline(VkCommandBuffer commandBuffer, VkPipeline graphicsPipeline) {
+#if _DEBUG
+		if (instance == nullptr) {
+			std::cout << "ewe renderer was nullptr \n";
+			std::cout << "ewe renderer was nullptr \n";
+			std::cout << "ewe renderer was nullptr \n";
+		}
+		assert(instance != nullptr);
+#endif
+
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		vkCmdSetViewport(commandBuffer, 0, 1, &instance->viewport);
+		vkCmdSetScissor(commandBuffer, 0, 1, &instance->scissor);
+	}
+
+
 
 	EWERenderer* EWERenderer::instance{ nullptr };
 
@@ -20,7 +36,7 @@ namespace EWE {
 			logFile.close();
 		}
 #endif
-		recreateSwapChain();
+		RecreateSwapChain();
 #if GPU_LOGGING
 		{
 			std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
@@ -42,7 +58,7 @@ namespace EWE {
 #endif
 	}
 
-	void EWERenderer::recreateSwapChain() {
+	void EWERenderer::RecreateSwapChain() {
 
 		std::cout << "recreating swap chain" << std::endl;
 		needToReadjust = true;
@@ -61,23 +77,20 @@ namespace EWE {
 			std::shared_ptr<EWESwapChain> oldSwapChain = std::move(eweSwapChain);
 			eweSwapChain = std::make_unique<EWESwapChain>(extent, true, oldSwapChain);
 
-			if (!oldSwapChain->compareSwapFormats(*eweSwapChain.get())) {
-				std::cout << "Swap chain image(or depth) format has changed!" << std::endl;
-				throw std::runtime_error("Swap chain image(or depth) format has changed!");
-			}
+			assert(oldSwapChain->CompareSwapFormats(*eweSwapChain.get()) && "Swap chain image(or depth) format has changed!");
 		}
 
 
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(eweSwapChain->getSwapChainExtent().width);
-		viewport.height = static_cast<float>(eweSwapChain->getSwapChainExtent().height);
+		viewport.width = static_cast<float>(eweSwapChain->GetSwapChainExtent().width);
+		viewport.height = static_cast<float>(eweSwapChain->GetSwapChainExtent().height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
-		scissor = { {0, 0}, eweSwapChain->getSwapChainExtent() };
+		scissor = { {0, 0}, eweSwapChain->GetSwapChainExtent() };
 	}
 
-	FrameInfo EWERenderer::beginFrame() {
+	FrameInfo EWERenderer::BeginFrame() {
 #if _DEBUG
 		if (isFrameStarted) {
 			std::cout << "frame was started, finna throw an error " << std::endl;
@@ -87,10 +100,10 @@ namespace EWE {
 
 		//std::cout << "begin frame 1" << std::endl;
 
-		auto result = eweSwapChain->acquireNextImage(&currentImageIndex);
+		auto result = eweSwapChain->AcquireNextImage(&currentImageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 			std::cout << "out of date KHR " << std::endl;
-			recreateSwapChain();
+			RecreateSwapChain();
 			return { VK_NULL_HANDLE, currentFrameIndex };
 		}
 		//std::cout << "begin frame 2" << std::endl;
@@ -110,47 +123,91 @@ namespace EWE {
 		//std::cout << "begin frame 4" << std::endl;
 		
 
-		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-			std::cout << "failed to begin recording command buffer " << std::endl;
-			//printf("failed to begin recording command buffer \n");
-			throw std::runtime_error("failed to begin recording command buffer!");
-		}
+		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
 		return { commandBuffer, currentFrameIndex };
 	}
-	bool EWERenderer::endFrame() {
-		bool restartedSwap = false;
+	bool EWERenderer::EndFrame() {
 		//printf("end frame :: isFrameStarted : %d \n", isFrameStarted);
 		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
 
-		VkResult vkResult = vkEndCommandBuffer(commandBuffer);
-		if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to record command buffer: " << vkResult << std::endl;
-			throw std::runtime_error("failed to record command buffer");
-		}
+		EWE_VK_ASSERT(vkEndCommandBuffer(commandBuffer));
 		//printf("after end command buffer \n");
-		vkResult = eweSwapChain->submitCommandBuffers(&commandBuffer, &currentImageIndex);
+		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&commandBuffer, &currentImageIndex);
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
 			mainWindow.resetWindowResizedFlag();
-			restartedSwap = true;
-			recreateSwapChain();
-			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->extentAspectRatio(), 0.1f, 10000.0f);
+			RecreateSwapChain();
+			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 10000.0f);
+			isFrameStarted = false;
+			currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+			return true;
 		}
 		else if (vkResult != VK_SUCCESS) {
 			std::cout << "failed to present swap chain image: " << vkResult << std::endl;
-			throw std::runtime_error("failed to present swap chain image!");
+			assert(false && "failed to present swap chain image");
 		}
 		//printf("after submitting command buffer \n");
 
 		isFrameStarted = false;
 		currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
-		return restartedSwap;
+		return false;
+	}
+
+	bool EWERenderer::EndFrame(VkSemaphore waitSemaphore) {
+		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
+
+		EWE_VK_ASSERT(vkEndCommandBuffer(commandBuffer));
+		//printf("after end command buffer \n");
+		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&commandBuffer, &currentImageIndex, waitSemaphore);
+		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
+			mainWindow.resetWindowResizedFlag();
+			RecreateSwapChain();
+			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 10000.0f);
+			isFrameStarted = false;
+			currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+			return true;
+		}
+		else if (vkResult != VK_SUCCESS) {
+			std::cout << "failed to present swap chain image: " << vkResult << std::endl;
+			assert(false && "failed to present swap chain image");
+		}
+		//printf("after submitting command buffer \n");
+
+		isFrameStarted = false;
+		currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+
+		return false;
+	}
+
+	bool EWERenderer::EndFrameAndWaitForFence() {
+		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
+
+		EWE_VK_ASSERT(vkEndCommandBuffer(commandBuffer));
+		//printf("after end command buffer \n");
+		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&commandBuffer, &currentImageIndex);
+		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
+			mainWindow.resetWindowResizedFlag();
+			RecreateSwapChain();
+			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 10000.0f);
+			syncHub->WaitOnGraphicsFence(currentFrameIndex);
+			isFrameStarted = false;
+			currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+			return true;
+		}
+		EWE_VK_RESULT_ASSERT(vkResult);
+		//printf("after submitting command buffer \n");
+		syncHub->WaitOnGraphicsFence(currentFrameIndex);
+
+		isFrameStarted = false;
+		currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+
+		return false;
 	}
 	/**/
-	void EWERenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+	void EWERenderer::BeginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
 		assert(isFrameStarted && "Can't call beginSwapChainRenderPass if frame is not in progress!");
-		assert(commandBuffer == getCurrentCommandBuffer() && "can't begin render pass on command buffer from different frame");
+		assert(commandBuffer == GetCurrentCommandBuffer() && "can't begin render pass on command buffer from different frame");
 		/*
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -174,7 +231,7 @@ namespace EWE {
 			.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 			.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			.image = eweSwapChain->getImage(currentImageIndex),
+			.image = eweSwapChain->GetImage(currentImageIndex),
 			.subresourceRange = {
 			  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			  .baseMipLevel = 0,
@@ -192,18 +249,15 @@ namespace EWE {
 			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  // srcStageMask
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // dstStageMask
 			0,
-			0,
-			nullptr,
-			0,
-			nullptr,
-			1, // imageMemoryBarrierCount
-			&image_memory_barrier // pImageMemoryBarriers
+			0, nullptr,
+			0, nullptr,
+			1, &image_memory_barrier
 		);
-		eweSwapChain->beginRender(commandBuffer, currentImageIndex);
+		eweSwapChain->BeginRender(commandBuffer, currentImageIndex);
 	}
-	void EWERenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+	void EWERenderer::EndSwapChainRenderPass(VkCommandBuffer commandBuffer) {
 		assert(isFrameStarted && "Can't call endSwapChainRenderPass if frame is not in progress!");
-		assert(commandBuffer == getCurrentCommandBuffer() && "can't end render pass on command buffer from different frame");
+		assert(commandBuffer == GetCurrentCommandBuffer() && "can't end render pass on command buffer from different frame");
 
 		//vkCmdEndRenderPass(commandBuffer);
 
@@ -217,7 +271,7 @@ namespace EWE {
 			.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 			.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-			.image = eweSwapChain->getImage(currentImageIndex),
+			.image = eweSwapChain->GetImage(currentImageIndex),
 			.subresourceRange = {
 			  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			  .baseMipLevel = 0,
@@ -243,9 +297,4 @@ namespace EWE {
 			&image_memory_barrier // pImageMemoryBarriers
 		);
 	}
-
-
-
-
-
 }

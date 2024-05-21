@@ -37,13 +37,14 @@ namespace EWE {
 
 		TextureDesc Build();
 
-		static TextureDesc CreateSimpleTexture(std::string texPath, bool global, bool mipmaps, VkShaderStageFlags shaderStage);
+		static TextureDesc CreateSimpleTexture(const std::string texPath, bool global, bool mipmaps, VkShaderStageFlags shaderStage);
 	};
 
 	struct ImageTracker {
 		ImageInfo imageInfo;
 		std::unordered_set<TextureDesc> usedInTexture{};
 		ImageTracker(std::string const& path, bool mipmap) : imageInfo{path, mipmap} {}
+		ImageTracker(ImageInfo& imageInfo) : imageInfo{ imageInfo } {}
 		ImageTracker() : imageInfo{} {}
 	};
 
@@ -77,6 +78,7 @@ namespace EWE {
 
 		//this is specifically for CubeImage
 		static ImageTracker* ConstructEmptyImageTracker(std::string const& path);
+		static ImageTracker* ConstructImageTracker(std::string const& path, ImageInfo& imageInfo);
 
 	public:
 		Texture_Manager();
@@ -92,7 +94,7 @@ namespace EWE {
 		static Texture_Manager* GetTextureManagerPtr() { return textureManagerPtr; }
 		static TextureDesc CreateUITexture();
 		static TextureDesc CreateTextureArray(std::vector<PixelPeek> const& pixelPeeks);
-		static TextureDesc AddImageInfo(std::string const& path, ImageInfo& imageInfo);
+		[[nodiscard]] static TextureDesc AddImageInfo(std::string const& path, ImageInfo& imageTemp, VkShaderStageFlagBits shaderStage, bool global);
 		//static VkDescriptorSet* getDescriptorSet(TextureID textureID);
 		//static VkDescriptorSet* getSkyboxDescriptorSet() { return &textureManagerPtr->textureMap.at(textureManagerPtr->skyboxID); }
 

@@ -122,7 +122,7 @@ namespace EWE {
 		}
 
 #ifdef _DEBUG
-        auto emplaceRet = descSetLayouts.try_emplace(*this, buildDSL());
+        auto emplaceRet = descSetLayouts.try_emplace(*this, BuildDSL());
         if (!emplaceRet.second) {
             printf("failed to create dynamic desc set layout \n");
             throw std::runtime_error("failed to create dynamic desc set layout");
@@ -145,14 +145,21 @@ namespace EWE {
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-    ImageInfo::ImageInfo(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmap){
-        CreateTextureImage(cmdBuf, pixelPeek, mipmap);
+    StagingBuffer ImageInfo::Initialize(VkCommandBuffer cmdBuf, std::string const& path, bool mipmap) {
+        PixelPeek pixelPeek{ path };
+
+        return Initialize(cmdBuf, pixelPeek, mipmap);
+    }
+    StagingBuffer ImageInfo::Initialize(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmap) {
+        StagingBuffer stagingBuffer = CreateTextureImage(cmdBuf, pixelPeek, mipmap);
         CreateTextureImageView();
         CreateTextureSampler();
 
         descriptorImageInfo.sampler = sampler;
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        return stagingBuffer;
     }
 
     ImageInfo::ImageInfo(std::string const& path, bool mipmap) {
@@ -168,22 +175,11 @@ namespace EWE {
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-    ImageInfo::ImageInfo(VkCommandBuffer cmdBuf, std::string const& path, bool mipmap){
-        PixelPeek pixelPeek{path};
-
-        CreateTextureImage(cmdBuf, pixelPeek, mipmap);
-        CreateTextureImageView();
-        CreateTextureSampler();
-
-        descriptorImageInfo.sampler = sampler;
-        descriptorImageInfo.imageView = imageView;
-        descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    }
 
 
     void ImageInfo::Destroy() {
         VkDevice const& vkDevice = EWEDevice::GetVkDevice();
-        vkDestroySampler(vkDevice, sampler, nullptr);
+        Sampler::RemoveSampler(sampler);
         
         vkDestroyImageView(vkDevice, imageView, nullptr);
         
@@ -197,13 +193,14 @@ namespace EWE {
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
 
-        CreateTextureImage(cmdBuf, pixelPeek, mipmapping);
+        StagingBuffer stagingBuffer = CreateTextureImage(cmdBuf, pixelPeek, mipmapping);
         
         //ImageQueueTransitionData transitionData{image, mipLevels, arrayLayers};
         ImageQueueTransitionData transitionData{GenerateTransitionData(EWEDevice::GetEWEDevice()->GetGraphicsIndex())};
+        transitionData.stagingBuffer = stagingBuffer;
         syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
     }
-    void ImageInfo::CreateTextureImage(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmapping) {
+    StagingBuffer ImageInfo::CreateTextureImage(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmapping) {
         int width = pixelPeek.width;
         int height = pixelPeek.height;
 
@@ -213,20 +210,19 @@ namespace EWE {
         if (MIPMAP_ENABLED && mipmapping) {
             mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height))) + 1);
         }
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
+        StagingBuffer stagingBuffer;
         //printf("before creating buffer \n");
 
         EWEDevice* const eweDevice = EWEDevice::GetEWEDevice();
 
-        eweDevice->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        eweDevice->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
         //printf("before memory mapping \n");
         void* data;
-        vkMapMemory(eweDevice->Device(), stagingBufferMemory, 0, imageSize, 0, &data);
+        vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, imageSize, 0, &data);
         //printf("memcpy \n");
         memcpy(data, pixelPeek.pixels, static_cast<std::size_t>(imageSize));
         //printf("unmapping \n");
-        vkUnmapMemory(eweDevice->Device(), stagingBufferMemory);
+        vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
         //printf("freeing pixels \n");
         stbi_image_free(pixelPeek.pixels);
         //printf("after memory mapping \n");
@@ -265,11 +261,8 @@ namespace EWE {
         //printf("before copy buffer to image \n");
         VkImageLayout dstLayout;
 
-        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, image, width, height, arrayLayers);
-
-        //i might need to hold the buffer until after the command has completed
-        vkDestroyBuffer(eweDevice->Device(), stagingBuffer, nullptr);
-        vkFreeMemory(eweDevice->Device(), stagingBufferMemory, nullptr);
+        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer.buffer, image, width, height, arrayLayers);
+        return stagingBuffer;
     }
 
     void ImageInfo::CreateTextureImageView() {

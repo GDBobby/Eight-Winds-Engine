@@ -17,6 +17,18 @@ typedef uint16_t Compute_TextureID;
 typedef uint32_t SkeletonID;
 typedef uint32_t PipelineID;
 
+struct StagingBuffer {
+	VkBuffer buffer{ VK_NULL_HANDLE };
+	VkDeviceMemory memory;
+	StagingBuffer() {}
+	void Free(VkDevice device) {
+		if (buffer != VK_NULL_HANDLE) {
+			vkDestroyBuffer(device, buffer, nullptr);
+			vkFreeMemory(device, memory, nullptr);
+		}
+	}
+};
+
 struct MaterialTextureInfo {
 	MaterialFlags materialFlags;
 	TextureDesc texture;
@@ -43,4 +55,5 @@ struct FrameInfo {
 	VkCommandBuffer cmdBuf;
 	uint8_t index;
 	FrameInfo(VkCommandBuffer cmdBuffer, uint8_t frameIndex) : cmdBuf{ cmdBuffer }, index{ frameIndex } {}
+	FrameInfo() {}
 };

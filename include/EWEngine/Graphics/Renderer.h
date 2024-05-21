@@ -17,20 +17,7 @@ namespace EWE {
 
 	public:
 
-		static void bindGraphicsPipeline(VkCommandBuffer commandBuffer, VkPipeline graphicsPipeline) {
-#if _DEBUG
-			if (instance == nullptr) {
-				std::cout << "ewe renderer was nullptr \n";
-				std::cout << "ewe renderer was nullptr \n";
-				std::cout << "ewe renderer was nullptr \n";
-			}
-			assert(instance != nullptr);
-#endif
-
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-			vkCmdSetViewport(commandBuffer, 0, 1, &instance->viewport);
-			vkCmdSetScissor(commandBuffer, 0, 1, &instance->scissor);
-		}
+		static void BindGraphicsPipeline(VkCommandBuffer commandBuffer, VkPipeline graphicsPipeline);
 
 		EWERenderer(MainWindow& window, EWECamera& camera);
 		~EWERenderer();
@@ -39,37 +26,39 @@ namespace EWE {
 		EWERenderer& operator=(const EWERenderer&) = delete;
 
 		//VkRenderPass getSwapChainRenderPass() const { return eweSwapChain->getRenderPass(); }
-		float getAspectRatio() const { return eweSwapChain->extentAspectRatio(); }
+		float GetAspectRatio() const { return eweSwapChain->ExtentAspectRatio(); }
 
-		std::pair<uint32_t, uint32_t> getExtent() { 
+		std::pair<uint32_t, uint32_t> GetExtent() { 
 			needToReadjust = false;
-			return eweSwapChain->getExtent(); 
+			return eweSwapChain->GetExtent(); 
 		}
 
-		bool isFrameInProgresss() const { return isFrameStarted; }
-		VkCommandBuffer getCurrentCommandBuffer() const { 
+		bool IsFrameInProgresss() const { return isFrameStarted; }
+		VkCommandBuffer GetCurrentCommandBuffer() const { 
 			assert(isFrameStarted && "Cannot get command buffer when frame is not in progress!");
 			//printf("currentFrameIndex: commandBuffers size, maxFIF - %d:%d:%d \n", currentFrameIndex, commandBuffers.size(), MAX_FRAMES_IN_FLIGHT);
 			return syncHub->GetRenderBuffer(currentFrameIndex);
 		}
-		int getFrameIndex() const {
+		int GetFrameIndex() const {
 			assert(isFrameStarted && "Cannot get frameindex when frame is not in progress!");
 			return currentFrameIndex;
 		}
 
-		FrameInfo beginFrame();
-		bool endFrame();
+		FrameInfo BeginFrame();
+		bool EndFrame();
+		bool EndFrame(VkSemaphore waitSemaphore);
+		bool EndFrameAndWaitForFence();
 
 		//void beginSecondarySwapChainRenderPass(std::pair<VkCommandBuffer, VkCommandBuffer> commandBufferPair);
-		void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
-		void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
-		TextOverlay* makeTextOverlay() {
+		void BeginSwapChainRenderPass(VkCommandBuffer commandBuffer);
+		void EndSwapChainRenderPass(VkCommandBuffer commandBuffer);
+		TextOverlay* MakeTextOverlay() {
 			//assert(!loadingState && "text overlay being made in loading screen renderer?");
 			assert(!hasTextOverlayBeenMade && "textoverlay has already been made?");
 			hasTextOverlayBeenMade = true;
 			printf("CREATING TEXT OVERLAY\n");
 
-			return new TextOverlay{static_cast<float>(eweSwapChain->width()), static_cast<float>(eweSwapChain->height()), *eweSwapChain->getPipelineInfo()};
+			return new TextOverlay{static_cast<float>(eweSwapChain->Width()), static_cast<float>(eweSwapChain->Height()), *eweSwapChain->GetPipelineInfo()};
 		}
 
 		//void updateTextOverlay(float time, float peakTime, float averageTime, float minTime, float highTime, VkCommandBuffer commandBuffer);
@@ -78,7 +67,7 @@ namespace EWE {
 		bool needToReadjust = false;
 
 		VkPipelineRenderingCreateInfo* getPipelineInfo() {
-			return eweSwapChain->getPipelineInfo();
+			return eweSwapChain->GetPipelineInfo();
 		}
 
 	private:
@@ -86,10 +75,10 @@ namespace EWE {
 		VkRect2D scissor{};
 
 		
-		void createCommandBuffers();
-		void freeCommandBuffers();
+		//void createCommandBuffers();
+		//void freeCommandBuffers();
 
-		void recreateSwapChain();
+		void RecreateSwapChain();
 
 		bool hasTextOverlayBeenMade = false;
 		

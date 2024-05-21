@@ -75,11 +75,11 @@ namespace EWE {
         VkDeviceSize imageSize = layerSize * cubeTexture.arrayLayers;
 
         void* data;
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
 
-        EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-        vkMapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
+        StagingBuffer stagingBuffer{};
+
+        EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+        vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer.memory, 0, imageSize, 0, &data);
         uint64_t memAddress = reinterpret_cast<uint64_t>(data);
         cubeTexture.mipLevels = 1;
         for (int i = 0; i < 6; i++) {
@@ -87,7 +87,7 @@ namespace EWE {
             stbi_image_free(pixelPeek[i].pixels);
             memAddress += layerSize;
         }
-        vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory);
+        vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer.memory);
 
         VkImageCreateInfo imageInfo;
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -120,19 +120,26 @@ namespace EWE {
             cubeTexture.mipLevels, cubeTexture.arrayLayers
         );
         
-        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, cubeTexture.image, pixelPeek[0].width, pixelPeek[0].height, cubeTexture.arrayLayers);
+        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer.buffer, cubeTexture.image, pixelPeek[0].width, pixelPeek[0].height, cubeTexture.arrayLayers);
 
-        vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
-        vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
-
-        eweDevice->TransitionImageLayoutWithBarrier(cmdBuf, 
-            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            cubeTexture.image, 
+        VkImageMemoryBarrier imageBarrier = eweDevice->TransitionImageLayout(cubeTexture.image, 
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
             cubeTexture.mipLevels, cubeTexture.arrayLayers
         );
+        imageBarrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetTransferIndex();
+        imageBarrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex();
+        //cmdBuf, 
+        //VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        vkCmdPipelineBarrier(cmdBuf, 
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 
+            0, 
+            0, nullptr, 
+            0, nullptr, 
+            1, &imageBarrier
+        );
 
         ImageQueueTransitionData imageTransitionData{cubeTexture.GenerateTransitionData(eweDevice->GetGraphicsIndex())};
+        imageTransitionData.stagingBuffer = stagingBuffer;
         syncHub->EndSingleTimeCommandTransfer(cmdBuf, imageTransitionData);
 
     }

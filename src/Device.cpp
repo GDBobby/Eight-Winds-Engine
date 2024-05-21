@@ -1,5 +1,7 @@
 #include "EWEngine/Graphics/Device.hpp"
 
+#include "EWEngine/Graphics/Texture/Sampler.h" //this is only for construction and deconstruction, do not call Sampler directly from device.cpp
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
@@ -48,16 +50,21 @@ namespace EWE {
                 break;
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
                 std::cout << "validation error: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
-                assert(0 && "validation layer error");
+                assert(false && "validation layer error");
 				break;
-            default:{
+            default:
+#ifdef _DEBUG
+                printf("validation default: %s \n", pCallbackData->pMessage);
+                assert(false && "why is this reachable");
+#else
 #if defined(_MSC_VER) && !defined(__clang__) // MSVC
     __assume(false);
 #else // GCC, Clang
     __builtin_unreachable();
 #endif
+#endif
                 break;
-            }
+            
         }
         //throw std::exception("validition layer \n");
         return VK_FALSE;
@@ -204,6 +211,7 @@ namespace EWE {
             logFile.close();
         }
 #endif
+        Sampler::Initialize();
 
         CreateInstance();
         //printf("after creating device instance \n");
@@ -240,6 +248,7 @@ namespace EWE {
         //printf("after creating transfer command pool \n");
 
         //mainThreadID = std::this_thread::get_id();
+
         SyncHub::Initialize(device_, graphicsQueue_, presentQueue_, computeQueue_, transferQueue_, commandPool, computeCommandPool, transferCommandPool, queueData.index[QueueData::Queue_Enum::q_transfer]);
         syncHub = SyncHub::GetSyncHubInstance();
         
@@ -251,6 +260,7 @@ namespace EWE {
     }
 
     EWEDevice::~EWEDevice() {
+        Sampler::Deconstruct();
         syncHub->Destroy(commandPool, computeCommandPool, transferCommandPool);
 #if DECONSTRUCTION_DEBUG
         printf("beginning EWEdevice deconstruction \n");
@@ -532,6 +542,9 @@ namespace EWE {
         if (queueData.index[QueueData::q_graphics] != queueData.index[QueueData::q_present]) {
             vkGetDeviceQueue(device_, queueData.index[QueueData::q_present], 0, &presentQueue_);
         }
+        else{
+            presentQueue_ = graphicsQueue_;
+		}
 
         vkGetDeviceQueue(device_, queueData.index[QueueData::q_compute], 0, &computeQueue_);
 

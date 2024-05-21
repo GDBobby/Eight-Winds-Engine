@@ -28,8 +28,10 @@ namespace EWE {
         VkDescriptorBufferInfo* DescriptorInfoForIndex(int index);
         VkResult InvalidateIndex(int index);
 
-        VkBuffer GetBuffer() const { return buffer_info.buffer; } //temporarily making this non-const
-        void* GetMappedMemory() const { return mapped; }
+        [[nodiscard]] VkBuffer GetBuffer() const { return buffer_info.buffer; } //temporarily making this non-const
+        
+        [[nodiscard]] void* GetMappedMemory() const { return mapped; }
+
         //uint32_t getInstanceCount() const { return instanceCount; }
         //VkDeviceSize getInstanceSize() const { return instanceSize; }
         //VkDeviceSize getAlignmentSize() const { return instanceSize; }

@@ -18,11 +18,10 @@ namespace EWE {
 #endif
 
             void* data;
-            VkBuffer stagingBuffer;
-            VkDeviceMemory stagingBufferMemory;
+            StagingBuffer stagingBuffer{};
 
-            EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-            vkMapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
+            EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+            vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer.memory, 0, imageSize, 0, &data);
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             uiImageInfo.mipLevels = 1;
 
@@ -31,7 +30,7 @@ namespace EWE {
                 stbi_image_free(pixelPeek[i].pixels);
                 memAddress += layerSize;
             }
-            vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBufferMemory);
+            vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer.memory);
 
             VkImageCreateInfo imageInfo;
             imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -61,10 +60,7 @@ namespace EWE {
                 uiImageInfo.image,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 uiImageInfo.mipLevels, pixelPeek.size());
-            eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer, uiImageInfo.image, pixelPeek[0].width, pixelPeek[0].height, uiImageInfo.arrayLayers);
-
-            vkDestroyBuffer(EWEDevice::GetVkDevice(), stagingBuffer, nullptr);
-            vkFreeMemory(EWEDevice::GetVkDevice(), stagingBufferMemory, nullptr);
+            eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer.buffer, uiImageInfo.image, pixelPeek[0].width, pixelPeek[0].height, uiImageInfo.arrayLayers);
 
             eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
@@ -74,6 +70,8 @@ namespace EWE {
             );
 
             ImageQueueTransitionData transitionData{uiImageInfo.GenerateTransitionData(eweDevice->GetGraphicsIndex())};
+            transitionData.stagingBuffer = stagingBuffer;
+
             syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
         }
 

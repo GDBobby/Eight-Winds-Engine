@@ -18,6 +18,8 @@
 
 #include "EWEngine/Graphics/LightBufferObject.h"
 
+#include "EWEngine/Graphics/Texture/Sampler.h"
+
 #include <functional>
 #include <memory>
 #include <vector>

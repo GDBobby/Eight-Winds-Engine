@@ -54,7 +54,7 @@ namespace EWE {
 
 		void LeafPhysicsInitialization();
 		void FallCalculation(float timeStep, uint8_t frameIndex);
-		void LoadLeafModel(VkCommandBuffer cmdBuf);
+		StagingBuffer LoadLeafModel(VkCommandBuffer cmdBuf);
 		void DestroySemaphores();
 		void Render(FrameInfo& frameInfo);
 

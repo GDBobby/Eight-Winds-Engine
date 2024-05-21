@@ -24,16 +24,11 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &tempDSL;
 
-		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_2d) != VK_SUCCESS) {
-			printf("failed to create 2d pipe layout\n");
-			throw std::runtime_error("Failed to create pipe layout \n");
-		}
-
+		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_2d));
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 		EWEPipeline::enableAlphaBlending(pipelineConfig);
-
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexUI>();
 		pipelineConfig.attributeDescriptions = VertexUI::GetAttributeDescriptions();
 		pipelineConfig.pipelineLayout = PL_2d;
@@ -41,11 +36,7 @@ namespace EWE {
 
 		VkPipelineCacheCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-		if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &cache) != VK_SUCCESS) {
-			// handle error
-			printf("failed to create 2d cache \n");
-			throw std::runtime_error("failed to create 2d pipeline cache");
-		}
+		EWE_VK_ASSERT(vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &cache));
 
 		pipelineConfig.cache = cache;
 
@@ -56,10 +47,7 @@ namespace EWE {
 		printf("after constructing with UI shaders\n");
 
 		pushConstantRange.size = sizeof(NineUIPushConstantData);
-		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_9) != VK_SUCCESS) {
-			printf("failed to create 2d pipe layout\n");
-			throw std::runtime_error("Failed to create pipe layout \n");
-		}
+		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_9));
 		pipelineConfig.pipelineLayout = PL_9;
 
 		vertString = "NineUI.vert.spv";
@@ -72,13 +60,10 @@ namespace EWE {
 
 
 	void Dimension2::Init() {
-		if (dimension2Ptr != nullptr) {
-			printf("initing twice??? \n");
-			throw std::runtime_error("initing twice?");
-			return;
-		}
-		dimension2Ptr = reinterpret_cast<Dimension2*>(ewe_alloc(sizeof(Dimension2), 1));
-		new(dimension2Ptr) Dimension2();
+		assert(dimension2Ptr == nullptr && "initing dimension2 twice?");
+		dimension2Ptr = new Dimension2();
+		ewe_alloc_mem_track(dimension2Ptr, ewe_call_trace);
+		//dimension2Ptr = ConstructSingular<Dimension2>(ewe_call_trace);
 
 	}
 	void Dimension2::Destruct() {

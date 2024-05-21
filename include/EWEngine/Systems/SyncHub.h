@@ -62,7 +62,8 @@ namespace EWE {
 		std::vector<VkFence> inFlightFences{}; //resized to maxFramesInFlight
 		std::vector<VkFence> imagesInFlight{}; //resized to maxFramesInFlight
 
-		VkSemaphore transferSemaphore{}; //currently doing dom cuck sync
+		//currently doing dom cuck sync, so this isnt used
+		//VkSemaphore transferSemaphore{}; 
 
 		bool transferring = false;
 
@@ -86,13 +87,8 @@ namespace EWE {
 			return syncHubSingleton;
 			
 		}
-		SyncHub() : transitionManager{2, 2} {
-
-			std::cout << "COSTRUCTING SYNCHUB" << std::endl;
-		}
-		~SyncHub() {
-			std::cout << "DE COSTRUCTING SYNCHUB" << std::endl;
-		}
+		SyncHub();
+		~SyncHub();
 
 		//only class this from EWEDevice
 		static void Initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool, uint32_t transferQueueIndex);
@@ -117,7 +113,9 @@ namespace EWE {
 		}
 
 		void SubmitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex);
+		void SubmitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex, VkSemaphore waitSemaphore);
 		VkResult PresentKHR(VkPresentInfoKHR& presentInfo, uint8_t currentFrame);
+		void WaitOnGraphicsFence(const uint8_t frameIndex);
 
 		void DomDemand();
 		void DomRelease();
@@ -155,7 +153,7 @@ namespace EWE {
 		void SetMaxFramesInFlight();
 		void CreateBuffers(VkCommandPool commandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool);
 
-		void SubmitTransferBuffers(VkSemaphore signalSemaphore);
+		void SubmitTransferBuffers(QueueTransitionContainer* transitionContainer);
 
 	};
 }

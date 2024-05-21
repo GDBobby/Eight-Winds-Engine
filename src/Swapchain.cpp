@@ -13,16 +13,17 @@ namespace EWE {
 
     EWESwapChain::EWESwapChain(VkExtent2D extent, bool fullscreen)
         : windowExtent{ extent }, syncHub{SyncHub::GetSyncHubInstance()} {
-        init(fullscreen);
+
+        Init(fullscreen);
         //deviceRef.receiveImageInFlightFences(&imagesInFlight);
     }
     EWESwapChain::EWESwapChain(VkExtent2D extent, bool fullscreen, std::shared_ptr<EWESwapChain> previous)
         : windowExtent{ extent }, oldSwapChain{ previous }, syncHub{ SyncHub::GetSyncHubInstance() } {
-        init(fullscreen);
+        Init(fullscreen);
         oldSwapChain.reset();
         //deviceRef.receiveImageInFlightFences(&imagesInFlight);
     }
-    void EWESwapChain::init(bool fullScreen) {
+    void EWESwapChain::Init(bool fullScreen) {
        // logFile.open("log.log");
        // logFile << "initializing swap chain \n";
         //printf("init swap chain \n");
@@ -39,17 +40,12 @@ namespace EWE {
         surfaceFullScreenExclusiveWin32InfoEXT.hmonitor = MonitorFromWindow(MainWindow::GetHWND(), MONITOR_DEFAULTTONEAREST);
         FULL SCREEN SHIT */
 
-        createSwapChain();
-        createImageViews();
-
-
-        //EXPERIMENTAL
-        //createTextureImageViews();
-        //
+        CreateSwapChain();
+        CreateImageViews();
 
         //createRenderPass();
-        createDepthResources();
-        initDynamicStruct();
+        CreateDepthResources();
+        InitDynamicStruct();
         //createFramebuffers();
         //createSyncObjects();
 
@@ -97,7 +93,7 @@ namespace EWE {
         //    vkDestroyFence(EWEDevice::GetVkDevice(), inFlightFences[i], nullptr);
         //}
     }
-    VkResult EWESwapChain::acquireNextImage(uint32_t* imageIndex) {
+    VkResult EWESwapChain::AcquireNextImage(uint32_t* imageIndex) {
        // printf("pre-wait for ANI inflightfences \n");
 
         vkWaitForFences(
@@ -122,7 +118,7 @@ namespace EWE {
         return result;
     }
 
-    VkResult EWESwapChain::submitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex) {
+    VkResult EWESwapChain::SubmitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex) {
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -139,24 +135,42 @@ namespace EWE {
         presentInfo.pSwapchains = &swapChain;
         presentInfo.pImageIndices = imageIndex;
         auto result = syncHub->PresentKHR(presentInfo, currentFrame);
-        if (result != VK_SUCCESS) {
-            printf("failed to present KHR \n");
-        }
+
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+        return result;
+    }
+    VkResult EWESwapChain::SubmitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex, VkSemaphore waitSemaphore) {
+
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = buffers;
+
+        syncHub->SubmitGraphics(submitInfo, currentFrame, imageIndex, waitSemaphore);
+
+        VkPresentInfoKHR presentInfo = {};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = &swapChain;
+        presentInfo.pImageIndices = imageIndex;
+        auto result = syncHub->PresentKHR(presentInfo, currentFrame);
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
         return result;
     }
 
-    void EWESwapChain::createSwapChain() {
+    void EWESwapChain::CreateSwapChain() {
         //logFile << "creating swap chain \n";
         //printf("create swap chain \n");
 
         EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
         SwapChainSupportDetails swapChainSupport = eweDevice->GetSwapChainSupport();
 
-        VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-        VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-        VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+        VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
+        VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
+        VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
         uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
         if (swapChainSupport.capabilities.maxImageCount > 0 &&
@@ -205,29 +219,24 @@ namespace EWE {
         createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapChain;
 
         //logFile << "values initialized, vkcreateswapchain now \n";
-        if (vkCreateSwapchainKHR(EWEDevice::GetVkDevice(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-            printf("failed to create swap chain \n");
-            throw std::runtime_error("failed to create swap chain!");
-        }
+        EWE_VK_ASSERT(vkCreateSwapchainKHR(EWEDevice::GetVkDevice(), &createInfo, nullptr, &swapChain));
         //logFile << "afterr vkswapchain \n";
         // we only specified a minimum number of images in the swap chain, so the implementation is
         // allowed to create a swap chain with more. That's why we'll first query the final number of
         // images with vkGetSwapchainImagesKHR, then resize the container and finally call it again to
         // retrieve the handles.
-        vkGetSwapchainImagesKHR(EWEDevice::GetVkDevice(), swapChain, &imageCount, nullptr);
-        if (imageCount <= 0) {
-            printf("failed to get swap chain images \n");
-		    throw std::runtime_error("failed to get swap chain images!");
-        }
-            swapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(EWEDevice::GetVkDevice(), swapChain, &imageCount, swapChainImages.data());
+        EWE_VK_ASSERT(vkGetSwapchainImagesKHR(EWEDevice::GetVkDevice(), swapChain, &imageCount, nullptr));
+        assert(imageCount > 0 && "failed to get swap chain images\n");
+
+        swapChainImages.resize(imageCount);
+        EWE_VK_ASSERT(vkGetSwapchainImagesKHR(EWEDevice::GetVkDevice(), swapChain, &imageCount, swapChainImages.data()));
         //logFile << "after vkgetswapchain images \n";
 
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extent;
      }
 
-    void EWESwapChain::createImageViews() {
+    void EWESwapChain::CreateImageViews() {
         swapChainImageViews.resize(swapChainImages.size());
         for (std::size_t i = 0; i < swapChainImages.size(); i++) {
             VkImageViewCreateInfo viewInfo{};
@@ -241,15 +250,12 @@ namespace EWE {
             viewInfo.subresourceRange.baseArrayLayer = 0;
             viewInfo.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &swapChainImageViews[i]) !=
-                VK_SUCCESS) {
-                throw std::runtime_error("failed to create texture image view!");
-            }
+            EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &swapChainImageViews[i]));
         }
     }
 
     
-    void EWESwapChain::initDynamicStruct() {
+    void EWESwapChain::InitDynamicStruct() {
 
         dynamicStructs.reserve(swapChainImages.size());
         for (uint8_t i = 0; i < swapChainImages.size(); i++) {
@@ -284,14 +290,15 @@ namespace EWE {
     }
     */
 
-    void EWESwapChain::createDepthResources() {
-        VkFormat depthFormat = findDepthFormat();
+    void EWESwapChain::CreateDepthResources() {
+        VkFormat depthFormat = FindDepthFormat();
         swapChainDepthFormat = depthFormat;
-        VkExtent2D swapChainExtent = getSwapChainExtent();
+        VkExtent2D swapChainExtent = GetSwapChainExtent();
 
-        depthImages.resize(imageCount());
-        depthImageMemorys.resize(imageCount());
-        depthImageViews.resize(imageCount());
+        const std::size_t imageCount = swapChainImages.size();
+        depthImages.resize(imageCount);
+        depthImageMemorys.resize(imageCount);
+        depthImageViews.resize(imageCount);
 
         for (int i = 0; i < depthImages.size(); i++) {
             VkImageCreateInfo imageInfo{};
@@ -328,9 +335,7 @@ namespace EWE {
             viewInfo.subresourceRange.baseArrayLayer = 0;
             viewInfo.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &depthImageViews[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create texture image view!");
-            }
+            EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &depthImageViews[i]));
         }
     }
     /*
@@ -350,7 +355,7 @@ namespace EWE {
     }
     */
 
-    VkSurfaceFormatKHR EWESwapChain::chooseSwapSurfaceFormat(
+    VkSurfaceFormatKHR EWESwapChain::ChooseSwapSurfaceFormat(
         const std::vector<VkSurfaceFormatKHR> &availableFormats) {
         for (const auto &availableFormat : availableFormats) {
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
@@ -362,7 +367,7 @@ namespace EWE {
         return availableFormats[0];
     }
 
-    VkPresentModeKHR EWESwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
+    VkPresentModeKHR EWESwapChain::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
         for (const auto &availablePresentMode : availablePresentModes) {
             if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
                 std::cout << "Present mode: Mailbox" << std::endl;
@@ -411,7 +416,7 @@ namespace EWE {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D EWESwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+    VkExtent2D EWESwapChain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
         } 
@@ -430,12 +435,42 @@ namespace EWE {
         }
     }
 
-    VkFormat EWESwapChain::findDepthFormat() {
+    VkFormat EWESwapChain::FindDepthFormat() {
         return EWEDevice::GetEWEDevice()->FindSupportedFormat(
             {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
             VK_IMAGE_TILING_OPTIMAL,
             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
         );
+    }
+
+
+    EWESwapChain::DynamicStructs::DynamicStructs(VkImageView swapImageView, VkImageView depthImageView, uint32_t width, uint32_t height) {
+
+        color_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        color_attachment_info.pNext = NULL;
+        color_attachment_info.imageView = swapImageView;
+        color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+        color_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        color_attachment_info.clearValue = { 0.f, 0.f, 0.f, 1.0f };
+
+        depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depth_attachment_info.pNext = NULL;
+        depth_attachment_info.imageView = depthImageView;
+        depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+        depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment_info.clearValue = { 1.0f, 0 };
+
+
+        render_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        render_info.pNext = nullptr;
+        render_info.renderArea = { 0, 0, width, height };
+        render_info.layerCount = 1;
+        render_info.colorAttachmentCount = 1;
+        render_info.pStencilAttachment = nullptr;
+        render_info.pColorAttachments = &color_attachment_info;
+        render_info.pDepthAttachment = &depth_attachment_info;
     }
 
 }  // namespace EWE

@@ -71,18 +71,18 @@ namespace EWE {
         }
 
 
-        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t>const& indices);
-        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex);
-        static std::unique_ptr<EWEModel> CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t>const& indices);
-        static std::unique_ptr<EWEModel> CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex);
+        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices);
+        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex);
+        static std::unique_ptr<EWEModel> CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices);
+        static std::unique_ptr<EWEModel> CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex);
 
-        EWEModel(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t> const& indices);
-        EWEModel(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex);
-        EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t> const& indices);
-        EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex);
+        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices);
+        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex);
+        EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices);
+        EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex);
 
 
-        void AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data);
+        void AddInstancing(uint32_t instanceCount, const uint32_t instanceSize, void* data);
 
 
         EWEModel(const EWEModel&) = delete;

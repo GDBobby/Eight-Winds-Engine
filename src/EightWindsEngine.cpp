@@ -50,7 +50,7 @@ namespace EWE {
 		//imguiHandler{ mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT, eweRenderer.getSwapChainRenderPass() },
 
 		/*2000 is ballparked, if its not set high enough then all textures will be moved, and invalidate the data*/
-		uiHandler{ SettingsJSON::settingsData.getDimensions(), mainWindow.getGLFWwindow(), eweRenderer.makeTextOverlay() },
+		uiHandler{ SettingsJSON::settingsData.getDimensions(), mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
 		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), mainWindow.getGLFWwindow(), uiHandler.getTextOverlay() },
 		advancedRS{ objectManager, menuManager},
 		skinnedRS{ },
@@ -59,7 +59,7 @@ namespace EWE {
 		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = eweRenderer.getPipelineInfo();
 
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
-		camera.SetPerspectiveProjection(glm::radians(70.0f), eweRenderer.getAspectRatio(), 0.1f, 10000.0f);
+		camera.SetPerspectiveProjection(glm::radians(70.0f), eweRenderer.GetAspectRatio(), 0.1f, 10000.0f);
 
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
 		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
@@ -139,7 +139,7 @@ namespace EWE {
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			//allocate buffer memory
 			bufferMap.at(Buff_ubo)[i] = ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-			bufferMap.at(Buff_ubo)[i]->GetMappedMemory();
+			bufferMap.at(Buff_ubo)[i]->Map();
 
 			bufferMap.at(Buff_gpu)[i] = EWEBuffer::CreateAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
@@ -153,10 +153,6 @@ namespace EWE {
 		printf("BEGINNING LEAF RENDER ~~~~~~~~~~~~~~~~ \n");
 		//printf("beginning of leaf loading screen, thread ID : %d \n", std::this_thread::get_id());
 		//QueryPerformanceCounter(&QPCstart);
-		double renderThreadTime = 0.0;
-		const double renderTimeCheck = 1.0 / 60.0;
-		auto startThreadTime = std::chrono::high_resolution_clock::now();
-		auto endThreadTime = startThreadTime;
 
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
 		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
@@ -169,31 +165,34 @@ namespace EWE {
 		//printf("loading screen entry \n");
 		//SyncHub::GetSyncHubInstance()->waitOnTransferFence();
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-
 		{ //initial frame
-			FrameInfo frameInfo = eweRenderer.beginFrame();
-			if(frameInfo.cmdBuf != VK_NULL_HANDLE){
-				leafSystem->LoadLeafModel(frameInfo.cmdBuf);
-				
-				auto* transitionContainer = eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
+			FrameInfo frameInfo;
+			do {
+				frameInfo = eweRenderer.BeginFrame();
+				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
+					StagingBuffer stagingBuffer = leafSystem->LoadLeafModel(frameInfo.cmdBuf);
 
-				eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
-				leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
+					//auto* transitionContainer = eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
 
-				leafSystem->Render(frameInfo);
-				//uiHandler.drawMenuMain(commandBuffer);
-				eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);
-				if (eweRenderer.endFrame()) {
-					//printf("dirty swap on end\n");
-					//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
-					menuManager.windowResize(eweRenderer.getExtent());
+					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
+					leafSystem->FallCalculation(0.f, frameInfo.index);
+
+					leafSystem->Render(frameInfo);
+					//uiHandler.drawMenuMain(commandBuffer);
+					eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
+					if (eweRenderer.EndFrameAndWaitForFence()) {
+						//printf("dirty swap on end\n");
+						//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
+						menuManager.windowResize(eweRenderer.GetExtent());
+					}
+					stagingBuffer.Free(EWEDevice::GetVkDevice());
 				}
-			}
-			else {
-				//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
-				menuManager.windowResize(eweRenderer.getExtent());
-			}
-			renderThreadTime = 0.f;
+				else {
+					//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
+					menuManager.windowResize(eweRenderer.GetExtent());
+				}
+			} while (frameInfo.cmdBuf == VK_NULL_HANDLE);
+
 			//printf("end rendering thread \n");	
 		}
 		//printf("end of initial frame \n");
@@ -201,6 +200,10 @@ namespace EWE {
 		
 
 
+		double renderThreadTime = 0.0;
+		const double renderTimeCheck = 1.0 / 60.0;
+		auto startThreadTime = std::chrono::high_resolution_clock::now();
+		auto endThreadTime = startThreadTime;
 
 		//printf("starting loading thread loop \n");
 		while (loadingEngine || (loadingTime < 2.0)) {
@@ -218,25 +221,25 @@ namespace EWE {
 			if (renderThreadTime > renderTimeCheck) {
 				loadingTime += renderTimeCheck;
 				//printf("rendering loading thread start??? \n");
-				auto frameInfo = eweRenderer.beginFrame();
+				auto frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
-					eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
+					auto* transitionContainer = eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
 					
 
-					eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
+					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
 
 					leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
-					eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);
-					if (eweRenderer.endFrame()) {
+					eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
+					if (eweRenderer.EndFrame(transitionContainer->semaphore)) {
 						//printf("dirty swap on end\n");
-						std::pair<uint32_t, uint32_t> tempPair = eweRenderer.getExtent();
+						std::pair<uint32_t, uint32_t> tempPair = eweRenderer.GetExtent();
 						//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
 					}
 				}
 				else {
-					std::pair<uint32_t, uint32_t> tempPair = eweRenderer.getExtent();
+					std::pair<uint32_t, uint32_t> tempPair = eweRenderer.GetExtent();
 					//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
 					menuManager.windowResize(tempPair);
 				}
@@ -250,7 +253,7 @@ namespace EWE {
 		printf(" ~~~~ END OF LOADING SCREEN FUNCTION \n");
 	}
 	FrameInfo EightWindsEngine::BeginRenderWithoutPass() {
-		FrameInfo frameInfo{ eweRenderer.beginFrame() };
+		FrameInfo frameInfo{ eweRenderer.BeginFrame() };
 		if (frameInfo.cmdBuf) {
 			if (displayingRenderInfo) {
 #if BENCHMARKING_GPU
@@ -298,7 +301,7 @@ namespace EWE {
 
 	FrameInfo EightWindsEngine::BeginRender() {
 		//printf("begin render \n");
-		FrameInfo frameInfo{ eweRenderer.beginFrame() };
+		FrameInfo frameInfo{ eweRenderer.BeginFrame() };
 		if (frameInfo.cmdBuf) {
 			if (displayingRenderInfo) {
 #if BENCHMARKING_GPU
@@ -334,7 +337,7 @@ namespace EWE {
 
 #endif
 			}
-			eweRenderer.beginSwapChainRenderPass(frameInfo.cmdBuf);
+			eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 			skinnedRS.setFrameIndex(frameInfo.index);
 		}
 		else {
@@ -405,7 +408,7 @@ namespace EWE {
 			vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 1);
 		}
 #endif
-		eweRenderer.endSwapChainRenderPass(frameInfo.cmdBuf);
+		eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
 	}
 
 	void EightWindsEngine::EndFrame(FrameInfo const& frameInfo) {
@@ -414,12 +417,12 @@ namespace EWE {
 
 
 		//printf("after ending swap chain \n");
-		if (eweRenderer.endFrame()) {
+		if (eweRenderer.EndFrame()) {
 			printf("dirty swap on end\n");
 			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain recreation
 			//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
 			//uiHandler.windowResize(eweRenderer.getExtent());
-			menuManager.windowResize(eweRenderer.getExtent());
+			menuManager.windowResize(eweRenderer.GetExtent());
 		}
 	}
 }

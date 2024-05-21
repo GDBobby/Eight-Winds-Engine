@@ -157,7 +157,7 @@ namespace EWE {
     }
 
 
-    TextureDesc Texture_Builder::CreateSimpleTexture(std::string path, bool global, bool mipmaps, VkShaderStageFlags shaderStage) {
+    TextureDesc Texture_Builder::CreateSimpleTexture(const std::string path, bool global, bool mipmaps, VkShaderStageFlags shaderStage) {
         Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
 
         ImageTracker* imageInfo;
@@ -226,7 +226,7 @@ namespace EWE {
             //printf("%d tracking \n", tracker++);
             image.second->imageInfo.Destroy();
             image.second->~ImageTracker();
-            imageTrackerBucket.freeDataChunk(image.second);
+            imageTrackerBucket.FreeDataChunk(image.second);
         }
         imageMap.clear();
         textureImages.clear();
@@ -280,7 +280,7 @@ namespace EWE {
                         }
                     }
                     imageTracker->~ImageTracker();
-                    imageTrackerBucket.freeDataChunk(imageTracker);
+                    imageTrackerBucket.FreeDataChunk(imageTracker);
 
                     textureImages.erase(sceneID);
                 }
@@ -302,15 +302,22 @@ namespace EWE {
     }
 
     ImageTracker* Texture_Manager::ConstructImageTracker(std::string const& path, bool mipmap) {
-        ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
+        ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.GetDataChunk());
 
         new(imageTracker) ImageTracker(path, true);
 
         return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
     }
+    ImageTracker* Texture_Manager::ConstructImageTracker(std::string const& path, ImageInfo& imageInfo) {
+        ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.GetDataChunk());
+        new(imageTracker) ImageTracker(imageInfo);
+        return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
+    
+    }
+
     ImageTracker* Texture_Manager::ConstructEmptyImageTracker(std::string const& path) {
 
-        ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.getDataChunk());
+        ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.GetDataChunk());
         new(imageTracker) ImageTracker();
 
         return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
@@ -322,7 +329,7 @@ namespace EWE {
         ImageInfo arrayImageInfo{};
 
         UI_Texture::CreateUIImage(arrayImageInfo, pixelPeeks);
-        UI_Texture::CreateUIImageView(arrayImageInfo, pixelPeeks.size());
+        UI_Texture::CreateUIImageView(arrayImageInfo);
         UI_Texture::CreateUISampler(arrayImageInfo);
 
         arrayImageInfo.descriptorImageInfo.sampler = arrayImageInfo.sampler;
@@ -367,9 +374,38 @@ namespace EWE {
         return CreateTextureArray(pixelPeeks);
     }
 
-    TextureDesc Texture_Manager::AddImageInfo(std::string const& path, ImageInfo& imageInfo){
-        
+    TextureDesc Texture_Manager::AddImageInfo(std::string const& path, ImageInfo& imageTemp, VkShaderStageFlagBits shaderStage, bool global){
+        Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
 
-        return VK_NULL_HANDLE;
+        ImageTracker* imageTracker;
+        bool uniqueImage = false;
+
+        std::string texPath{ TEXTURE_DIR };
+        texPath += path;
+
+
+#ifdef _DEBUG
+        if (tmPtr->imageMap.find(path) != tmPtr->imageMap.end()) {
+            assert(false && "image should not be constructed outside of the texture manager if it already exist");
+            return VK_NULL_HANDLE;
+        }
+#endif
+
+        uniqueImage = true;
+        imageTracker = Texture_Manager::ConstructImageTracker(path, imageTemp);
+
+        EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(shaderStage), DescriptorPool_Global);
+        descBuilder.writeImage(0, imageTracker->imageInfo.GetDescriptorImageInfo());
+        TextureDesc retDesc = descBuilder.build();
+
+        imageTracker->usedInTexture.insert(retDesc);
+        tmPtr->textureImages.try_emplace(retDesc, std::vector<ImageTracker*>{imageTracker});
+
+        //tmPtr->textureMap.emplace(tmPtr->currentTextureCount, descBuilder.build());
+        if (!global) {
+            tmPtr->sceneIDs.push_back(retDesc);
+        }
+        tmPtr->currentTextureCount++;
+        return retDesc;
     }
 }

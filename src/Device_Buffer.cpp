@@ -77,7 +77,9 @@ namespace EWE {
      * @return VkResult of the buffer mapping call
      */
     VkResult EWEBuffer::Map(VkDeviceSize size, VkDeviceSize offset) {
+#ifdef _DEBUG
         assert(buffer_info.buffer && memory && "Called map on buffer before create");
+#endif
         return vkMapMemory(EWEDevice::GetEWEDevice()->Device(), memory, offset, size, 0, &mapped);
     }
 

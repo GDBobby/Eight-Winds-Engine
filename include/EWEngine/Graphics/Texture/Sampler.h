@@ -9,10 +9,15 @@
 
 * i dont think a hash function is reasonable for VkSamplerCreateInfo
 * vector isnt great either
+* i dont want memory to be moved, and I don't want to create a hash for VkSamplerCreateInfo
 */
+
+#define SAMPLER_DUPLICATION_TRACKING true
+
 namespace EWE {
     class Sampler {
     private:
+#if SAMPLER_DUPLICATION_TRACKING
         static Sampler* samplerPtr;
         struct SamplerTracker {
             uint32_t inUseCount = 1;
@@ -22,18 +27,23 @@ namespace EWE {
         };
         struct SamplerDuplicateTracker {
             VkSamplerCreateInfo samplerInfo;
-            VkSampler sampler{};
+            VkSampler sampler;
             //putting the tracker here instead of using a unordered_map<SamplerTracker, VkSampler>
             SamplerTracker tracker{}; 
             
-            SamplerDuplicateTracker(VkSamplerCreateInfo& samplerInfo);
+            SamplerDuplicateTracker(VkSamplerCreateInfo const& samplerInfo);
         };
         Sampler();
         std::vector<SamplerDuplicateTracker> storedSamplers{};
+#else
+        std::vector<VkSampler> storedSamplers{};
+#endif
 
     public:
-        static VkSampler GetSampler(VkSamplerCreateInfo& samplerInfo);
+        static VkSampler GetSampler(VkSamplerCreateInfo const& samplerInfo);
         static void RemoveSampler(VkSampler sampler);
+        static void Initialize();
+        static void Deconstruct();
 
     };
 }

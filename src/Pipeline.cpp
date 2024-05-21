@@ -27,6 +27,10 @@ namespace EWE {
 
 			std::ifstream shaderFile;
 			shaderFile.open(enginePath, std::ios::binary);
+//#ifdef _DEBUG
+//			const std::string errorPrint = "failed to open shader : " + enginePath;
+//			assert(shaderFile.is_open() && errorPrint.c_str());
+//#endif
 			if(!shaderFile.is_open()){
 				printf("failed to open shader : %s\n", enginePath.c_str());
 				throw std::runtime_error("failed to open shader file");
@@ -50,9 +54,7 @@ namespace EWE {
 			//printf("template data size : %d \n", data.size());
 			createInfo.pCode = (const uint32_t*)data.data();
 
-			if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
-				throw std::runtime_error("failed to create shader module");
-			}
+			EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule));
 		}
 		void createShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
@@ -61,9 +63,7 @@ namespace EWE {
 			//printf("uint32_t data size : %d \n", data.size());
 			createInfo.pCode = data.data();
 
-			if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
-				throw std::runtime_error("failed to create shader module");
-			}
+			EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule));
 		}
 		template <typename T>
 		void createShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule) {
@@ -73,21 +73,14 @@ namespace EWE {
 			//printf("template data size : %d \n", data.size());
 			createInfo.pCode = (const uint32_t*)data.data();
 
-			if (vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
-				throw std::runtime_error("failed to create shader module");
-			}
+			EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule));
 		}
 		void createShaderModule(const void* data, size_t dataSize, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.codeSize = dataSize;
 			//printf("uint32_t data size : %d \n", data.size());
-			createInfo.pCode = reinterpret_cast<const uint32_t*>(data);
-			VkResult vkResult = vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
-			if (vkResult != VK_SUCCESS) {
-				printf("vkResult : %d \n", vkResult);
-				throw std::runtime_error("failed to create shader module");
-			}
+			EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule));
 		}
 	}
 
@@ -99,9 +92,8 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(computeDSL.size());
 		pipelineLayoutInfo.pSetLayouts = computeDSL.data();
 
-		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &ret.pipe_layout) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create compute pipeline layout!");
-		}
+		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &ret.pipe_layout));
+		
 
 		VkComputePipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -116,7 +108,7 @@ namespace EWE {
 		computeShaderStageInfo.module = ret.shader;
 		computeShaderStageInfo.pName = "main";
 		pipelineInfo.stage = computeShaderStageInfo;
-		vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
+		EWE_VK_ASSERT(vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline));
 		return ret;
 	}
 	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(VkPipelineLayout pipe_layout, std::string compute_path) {
@@ -133,7 +125,7 @@ namespace EWE {
 		computeShaderStageInfo.module = ret.shader;
 		computeShaderStageInfo.pName = "computeMain";
 		pipelineInfo.stage = computeShaderStageInfo;
-		vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
+		EWE_VK_ASSERT(vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline));
 		return ret;
 	}
 
@@ -151,6 +143,8 @@ namespace EWE {
 		else {
 			vertShaderModule = shaderModuleMap[vertFilepath];
 		}
+
+
 		if (shaderModuleMap.find(fragFilepath) == shaderModuleMap.end()) {
 			auto fragCode = Pipeline_Helper_Functions::readFile(fragFilepath);
 			Pipeline_Helper_Functions::createShaderModule(fragCode, &fragShaderModule);
@@ -235,7 +229,7 @@ namespace EWE {
 	}
 
 	void EWEPipeline::bind(VkCommandBuffer commandBuffer) {
-		EWERenderer::bindGraphicsPipeline(commandBuffer, graphicsPipeline);
+		EWERenderer::BindGraphicsPipeline(commandBuffer, graphicsPipeline);
 	}
 
 	void EWEPipeline::createGraphicsPipeline(const PipelineConfigInfo& configInfo) {
@@ -297,11 +291,7 @@ namespace EWE {
 		}
 		pipelineInfo.flags = configInfo.flags;
 #endif
-		if (vkCreateGraphicsPipelines(EWEDevice::GetVkDevice(), configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create graphics pipeline");
-		}
-
-
+		EWE_VK_ASSERT(vkCreateGraphicsPipelines(EWEDevice::GetVkDevice(), configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline));
 	}
 
 	void EWEPipeline::enable2DConfig(PipelineConfigInfo& configInfo) {

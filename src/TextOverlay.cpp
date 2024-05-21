@@ -2,6 +2,8 @@
 #include "EWEngine/Graphics/Renderer.h"
 #include "EWEngine/Graphics/TextOverlay.h"
 
+#include "EWEngine/Graphics/Texture/Sampler.h"
+
 #include <stdexcept>
 //#include <iostream>
 #include <sstream>
@@ -21,13 +23,9 @@ namespace EWE {
 		VkPipelineRenderingCreateInfo const& pipelineInfo
 	) : frameBufferWidth{ framebufferwidth }, frameBufferHeight{ framebufferheight }, scale{ frameBufferWidth / DEFAULT_WIDTH }
 	{
-		if (textOverlayPtr == nullptr) {
-			textOverlayPtr = this;
-		}
-		else {
-			printf("double initializing textoverlay \n");
-			throw std::runtime_error("double init on textoverlay");
-		}
+		assert(textOverlayPtr == nullptr && "trying to recreate textoverlay??");
+		textOverlayPtr = this;
+
 		//printf("text overlay construction \n");
 
 		cmdBuffers.resize(MAX_FRAMES_IN_FLIGHT);
@@ -125,24 +123,20 @@ namespace EWE {
 		// Vertex buffer
 		VkDeviceSize bufferSize = TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4);
 
-		VkCommandBufferAllocateInfo cmdBuffAllocateInfo;
+		VkCommandBufferAllocateInfo cmdBuffAllocateInfo{};
 		cmdBuffAllocateInfo.pNext = nullptr;
 		cmdBuffAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		cmdBuffAllocateInfo.commandPool = EWEDevice::GetEWEDevice()->getTransferCommandPool();
 		cmdBuffAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		cmdBuffAllocateInfo.commandBufferCount = (uint32_t)cmdBuffers.size();
 
-		if (vkAllocateCommandBuffers(EWEDevice::GetVkDevice(), &cmdBuffAllocateInfo, cmdBuffers.data()) != VK_SUCCESS) {
-			throw std::runtime_error("failed to alocate cmd bfuer!");
-		}
+		EWE_VK_ASSERT(vkAllocateCommandBuffers(EWEDevice::GetVkDevice(), &cmdBuffAllocateInfo, cmdBuffers.data()));
 
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 		bufferInfo.size = bufferSize;
-		if (vkCreateBuffer(EWEDevice::GetVkDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create cmd bfuer!");
-		}
+		EWE_VK_ASSERT(vkCreateBuffer(EWEDevice::GetVkDevice(), &bufferInfo, nullptr, &buffer));
 
 		VkMemoryRequirements memReqs;
 		vkGetBufferMemoryRequirements(EWEDevice::GetVkDevice(), buffer, &memReqs);
@@ -153,10 +147,8 @@ namespace EWE {
 		allocInfo.memoryTypeIndex = EWEDevice::GetEWEDevice()->FindMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		//allocInfo.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-		if (vkAllocateMemory(EWEDevice::GetVkDevice(), &allocInfo, nullptr, &memory) != VK_SUCCESS) {
-			throw std::runtime_error("failed to alocate!");
-		}
-		vkBindBufferMemory(EWEDevice::GetVkDevice(), buffer, memory, 0);
+		EWE_VK_ASSERT(vkAllocateMemory(EWEDevice::GetVkDevice(), &allocInfo, nullptr, &memory));
+		EWE_VK_ASSERT(vkBindBufferMemory(EWEDevice::GetVkDevice(), buffer, memory, 0));
 		//std::cout << "bind buffer memory result : " << printInt << std::endl;
 		/*
 		if(vkBindBufferMemory(EWEDevice::GetVkDevice(), buffer, memory, 0) != VK_SUCCESS) {
@@ -165,7 +157,7 @@ namespace EWE {
 		*/
 
 		// Font texture
-		VkImageCreateInfo imageInfo;
+		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageInfo.pNext = nullptr;
 		imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -196,16 +188,11 @@ namespace EWE {
 
 		EWE_VK_ASSERT(vkAllocateMemory(EWEDevice::GetVkDevice(), &allocInfo, nullptr, &imageMemory));
 
-		if (vkBindImageMemory(EWEDevice::GetVkDevice(), image, imageMemory, 0) != VK_SUCCESS) {
-			throw std::runtime_error("failed to bind image memory!");
-		}
+		EWE_VK_ASSERT(vkBindImageMemory(EWEDevice::GetVkDevice(), image, imageMemory, 0));
 
 
 		// Staging
-		struct {
-			VkDeviceMemory memory;
-			VkBuffer buffer;
-		} stagingBuffer;
+		StagingBuffer stagingBuffer{};
 
 		eweDevice->CreateBuffer(allocInfo.allocationSize,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -216,9 +203,7 @@ namespace EWE {
 
 
 		uint8_t* data;
-		if (vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, allocInfo.allocationSize, 0, (void**)&data) != VK_SUCCESS) {
-			throw std::runtime_error("failed to map memory!");
-		}
+		EWE_VK_ASSERT(vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, allocInfo.allocationSize, 0, (void**)&data));
 		// Size of the font texture is WIDTH * HEIGHT * 1 byte (only one channel)
 		memcpy(data, &font24pixels[0][0], fontWidth * fontHeight);
 		vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
@@ -230,14 +215,12 @@ namespace EWE {
 
 
 		cmdBuffAllocateInfo.commandBufferCount = 1;
-		if (vkAllocateCommandBuffers(eweDevice->Device(), &cmdBuffAllocateInfo, &copyCmd) != VK_SUCCESS){
-			throw std::runtime_error("failed to create command bfufer!");
-		}
+		EWE_VK_ASSERT(vkAllocateCommandBuffers(eweDevice->Device(), &cmdBuffAllocateInfo, &copyCmd));
 
 		VkCommandBufferBeginInfo cmdBufInfo{};
 		cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		//cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		vkBeginCommandBuffer(copyCmd, &cmdBufInfo);
+		EWE_VK_ASSERT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
 		//std::cout << "begin command bfufer result : " << printInt << std::endl;
 		/*
 		if ((vkBeginCommandBuffer(copyCmd, &cmdBufInfo)) != VK_SUCCESS) {
@@ -250,6 +233,8 @@ namespace EWE {
 		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		subresourceRange.baseMipLevel = 0;
 		subresourceRange.levelCount = 1;
+		subresourceRange.baseArrayLayer = 0;
+		subresourceRange.layerCount = 1;
 
 		eweDevice->SetImageLayout(
 			copyCmd,
@@ -262,6 +247,8 @@ namespace EWE {
 		VkBufferImageCopy bufferCopyRegion{};
 		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		bufferCopyRegion.imageSubresource.mipLevel = 0;
+		bufferCopyRegion.imageSubresource.layerCount = 1;
+		bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
 		bufferCopyRegion.imageSubresource.layerCount = 1;
 		bufferCopyRegion.imageExtent.width = fontWidth;
 		bufferCopyRegion.imageExtent.height = fontHeight;
@@ -290,10 +277,8 @@ namespace EWE {
 		eweDevice->TransitionFromTransfer(copyCmd, EWE::QueueData::q_graphics, image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		ImageQueueTransitionData transitionData{image, 1, 1, eweDevice->GetGraphicsIndex()};
+		transitionData.stagingBuffer = stagingBuffer;
 		SyncHub::GetSyncHubInstance()->EndSingleTimeCommandTransfer(copyCmd, transitionData);
-
-		vkFreeMemory(eweDevice->Device(), stagingBuffer.memory, nullptr);
-		vkDestroyBuffer(eweDevice->Device(), stagingBuffer.buffer, nullptr);
 
 		VkImageViewCreateInfo imageViewInfo{};
 		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -319,7 +304,8 @@ namespace EWE {
 		samplerInfo.minLod = 0.0f;
 		samplerInfo.maxLod = 1.0f;
 		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-		EWE_VK_ASSERT(vkCreateSampler(eweDevice->Device(), &samplerInfo, nullptr, &sampler));
+
+		sampler = Sampler::GetSampler(samplerInfo);
 
 		// Descriptor
 		// Font uses a separate descriptor pool
@@ -343,8 +329,6 @@ namespace EWE {
 		setLayoutBindings[0].binding = 0;
 		setLayoutBindings[0].descriptorCount = 1;
 
-		
-
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
 		descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		descriptorSetLayoutInfo.pNext = nullptr;
@@ -355,13 +339,6 @@ namespace EWE {
 
 		EWE_VK_ASSERT(vkCreateDescriptorSetLayout(eweDevice->Device(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout));
 		//std::cout << "vkcreatedescriptorsetlayout return : " << printInt << std::endl;
-
-		/*
-		if ((vkCreateDescriptorSetLayout(EWEDevice::GetVkDevice(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout)) != VK_SUCCESS){
-			//throw std::runtime_error("failed to create descriptor set layout!");
-			
-		}
-		*/
 
 		// Pipeline layout
 		//std::cout << "pipeline info1??" << std::endl;
@@ -376,7 +353,6 @@ namespace EWE {
 
 		EWE_VK_ASSERT(vkCreatePipelineLayout(eweDevice->Device(), &pipelineLayoutInfo, nullptr, &pipelineLayout));
 		//std::cout << "pipeline info2??" << std::endl;
-
 
 		// Descriptor set
 		VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
@@ -417,8 +393,7 @@ namespace EWE {
 
 		//std::cout << "end of function" << std::endl;
 	}
-	void TextOverlay::preparePipeline(VkPipelineRenderingCreateInfo renderingInfo)
-	{
+	void TextOverlay::preparePipeline(VkPipelineRenderingCreateInfo renderingInfo) {
 		//printf("preparing pipeline \n");
 		VkPipelineColorBlendAttachmentState blendAttachmentState{};
 		blendAttachmentState.blendEnable = VK_TRUE;
@@ -494,12 +469,14 @@ namespace EWE {
 		vertexInputAttributes[1].format = VK_FORMAT_R32G32_SFLOAT;
 		vertexInputAttributes[1].offset = sizeof(glm::vec2);
 		//printf("after vertex input attributes \n");
+
 		VkPipelineVertexInputStateCreateInfo vertexInputState{};
 		vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindings.size());
 		vertexInputState.pVertexBindingDescriptions = vertexInputBindings.data();
 		vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInputAttributes.size());
 		vertexInputState.pVertexAttributeDescriptions = vertexInputAttributes.data();
+
 		//printf("after vertex input state \n");
 		auto vertCode = Pipeline_Helper_Functions::readFile("textoverlay.vert.spv");
 		//printf("after vert code read file \n");
@@ -749,7 +726,7 @@ namespace EWE {
 	}
 
 	void TextOverlay::draw(VkCommandBuffer commandBuffer) {
-			EWERenderer::bindGraphicsPipeline(commandBuffer, pipeline);
+			EWERenderer::BindGraphicsPipeline(commandBuffer, pipeline);
 
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 

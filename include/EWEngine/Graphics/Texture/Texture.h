@@ -43,7 +43,9 @@ namespace EWE {
 		VkDescriptorImageInfo descriptorImageInfo;
 
 		void CreateTextureImage(PixelPeek& pixelPeek, bool mipmapping = true);
-		void CreateTextureImage(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmapping = true);
+
+		[[nodiscard("this staging buffer needs to be handled outside of this function")]] 
+		StagingBuffer CreateTextureImage(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmapping = true);
 
 		void CreateTextureImageView();
 
@@ -61,9 +63,13 @@ namespace EWE {
 			return &descriptorImageInfo;
 		}
 		ImageInfo(PixelPeek& pixelPeek, bool mipmap);
-		ImageInfo(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmap);
 		ImageInfo(std::string const& path, bool mipmap);
-		ImageInfo(VkCommandBuffer cmdBuf, std::string const& path, bool mipmap);
+
+		[[nodiscard("this StagingBuffer needs to be handled outside of this function")]]
+		StagingBuffer Initialize(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmap);
+
+		[[nodiscard("this StagingBuffer needs to be handled outside of this function")]]
+		StagingBuffer Initialize(VkCommandBuffer cmdBuf, std::string const& path, bool mipmap);
 		ImageInfo() {}
 		void Destroy();
 	};

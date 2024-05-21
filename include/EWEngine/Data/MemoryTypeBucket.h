@@ -22,18 +22,17 @@ namespace EWE {
 		}
 
 		~MemoryTypeBucket() {
-			if (dataChunkTracker.any()) {
-				printf("improper memory bucket deconstruction, items still exist \n");
-				//throw std::runtime_error("deconstructing a memory bucket while elements inside are still allocated");
-			}
+#ifdef _DEBUG
+			assert(!dataChunkTracker.any() && "improper memory bucket deconstruction");
+#endif
 			free(reservedMemory);
 		}
 
-		size_t getRemainingSpace() {
+		size_t GetRemainingSpace() {
 			return dataChunkTracker.size() - dataChunkTracker.count();
 		}
-		void* getDataChunk() {
-			if (getRemainingSpace() == 0) {
+		void* GetDataChunk() {
+			if (GetRemainingSpace() == 0) {
 				return nullptr;
 			}
 			for (size_t i = 0; i < dataChunkTracker.size(); i++) {
@@ -42,18 +41,14 @@ namespace EWE {
 					return reinterpret_cast<char*>(reservedMemory) + elementSize * i;
 				}
 			}
-			printf("failed to find a data chunk in getDataChunk\n");
-			throw std::runtime_error("failed to find a data chunk in getDataChunk");
+			assert(false && "failed to find a data chunk in getDataChunk");
 			return nullptr; //just to squash warnings/compiler errors
 		}
-		void freeDataChunk(void* location) {
+		void FreeDataChunk(void* location) {
 			size_t freeLocation = (reinterpret_cast<char*>(location) - reinterpret_cast<char*>(reservedMemory)) / elementSize;
 
 #ifdef _DEBUG
-			if (!dataChunkTracker[freeLocation]) {
-				printf("freeing data from bucket that wasn't allocated\n");
-				throw std::runtime_error("freeing data from bucket that wasn't allocated");
-			}
+			assert(dataChunkTracker[freeLocation] && "freeing data from bucket that wasn't allocated");
 #endif
 
 			dataChunkTracker[freeLocation] = 0;

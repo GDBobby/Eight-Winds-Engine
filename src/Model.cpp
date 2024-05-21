@@ -54,20 +54,35 @@ struct std::hash<EWE::GrassVertex> {
 };
 
 namespace EWE {
-    EWEModel::EWEModel(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
+    EWEModel::EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
         assert(vertexCount >= 3 && "vertex count must be at least 3");
         VertexBuffers(vertexCount, sizeOfVertex, verticesData);
         CreateIndexBuffers(indices);
     }
-    EWEModel::EWEModel(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex) {
+    EWEModel::EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
+        assert(vertexCount >= 3 && "vertex count must be at least 3");
+        VertexBuffers(cmdBuf, vertexCount, sizeOfVertex, verticesData);
+        CreateIndexBuffers(cmdBuf, indices);
+    }
+    EWEModel::EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex) {
         assert(vertexCount >= 3 && "vertex count must be at least 3");
         VertexBuffers(vertexCount, sizeOfVertex, verticesData);
     }
-    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
+    EWEModel::EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex) {
+        assert(vertexCount >= 3 && "vertex count must be at least 3");
+        VertexBuffers(cmdBuf, vertexCount, sizeOfVertex, verticesData);
+    }
+    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
         return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex, indices);
     }
-    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, std::size_t vertexCount, std::size_t sizeOfVertex) {
+    std::unique_ptr<EWEModel> EWEModel::CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
+        return std::make_unique<EWEModel>(cmdBuf, verticesData, vertexCount, sizeOfVertex, indices);
+    }
+    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex) {
         return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex);
+    }
+    std::unique_ptr<EWEModel> EWEModel::CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex) {
+        return std::make_unique<EWEModel>(cmdBuf, verticesData, vertexCount, sizeOfVertex);
     }
 
     std::unique_ptr<EWEModel> EWEModel::CreateModelFromFile(const std::string& filepath) {
@@ -86,7 +101,7 @@ namespace EWE {
         return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
     }
 
-    void EWEModel::AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data) {
+    void EWEModel::AddInstancing(const uint32_t instanceCount, const uint32_t instanceSize, void* data) {
         VkDeviceSize bufferSize = instanceSize * instanceCount;
         this->instanceCount = instanceCount;
         EWEBuffer stagingBuffer{
