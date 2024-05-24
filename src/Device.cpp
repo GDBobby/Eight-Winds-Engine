@@ -16,7 +16,19 @@
 
 #define ENGINE_DIR "../"
 
+#define AMD_TARGET true
+
 namespace EWE {
+
+
+
+#if DEBUGGING_DEVICE_LOST
+    void EWEDevice::AddCheckpoint(VkCommandBuffer cmdBuf, const char* name, VKDEBUG::GFX_vk_checkpoint_type type) {
+        deviceLostDebug.AddCheckpoint(cmdBuf, name, type);
+    }
+#endif
+
+
     EWEDevice* EWEDevice::eweDevice = nullptr;
 
 
@@ -32,13 +44,9 @@ namespace EWE {
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData) {
+        void* pUserData) 
+    {
         switch (messageSeverity) {
-
-            //VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT = 0x00000001,
-            //    VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT = 0x00000010,
-            //    VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT = 0x00000100,
-            //    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT = 0x00001000,
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
 				std::cout << "validation verbose: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
 				break;
@@ -77,7 +85,8 @@ namespace EWE {
         VkDebugUtilsMessengerEXT* pDebugMessenger) {
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
             instance,
-            "vkCreateDebugUtilsMessengerEXT");
+            "vkCreateDebugUtilsMessengerEXT"
+        );
         if (func != nullptr) {
             return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
         }
@@ -95,7 +104,6 @@ namespace EWE {
             func(instance, debugMessenger, pAllocator);
         }
     }
-
 
     void QueueData::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface_) {
 
@@ -211,7 +219,6 @@ namespace EWE {
             logFile.close();
         }
 #endif
-        Sampler::Initialize();
 
         CreateInstance();
         //printf("after creating device instance \n");
@@ -249,8 +256,15 @@ namespace EWE {
 
         //mainThreadID = std::this_thread::get_id();
 
-        SyncHub::Initialize(device_, graphicsQueue_, presentQueue_, computeQueue_, transferQueue_, commandPool, computeCommandPool, transferCommandPool, queueData.index[QueueData::Queue_Enum::q_transfer]);
+        SyncHub::Initialize(device_, queues[QueueData::q_graphics], queues[QueueData::q_present], queues[QueueData::q_compute], queues[QueueData::q_transfer], commandPool, computeCommandPool, transferCommandPool, queueData.index[QueueData::Queue_Enum::q_transfer]);
         syncHub = SyncHub::GetSyncHubInstance();
+        Sampler::Initialize(device_);
+
+#if DEBUGGING_DEVICE_LOST
+        VKDEBUG::Initialize(device_, queues, optionalExtensions.at(VK_EXT_DEVICE_FAULT_EXTENSION_NAME), deviceLostDebug.NVIDIAdebug, deviceLostDebug.AMDdebug);
+#endif
+
+        deviceLostDebug.Initialize(device_);
         
         /*
         createTextureImage();
@@ -303,9 +317,9 @@ namespace EWE {
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "Eight Winds";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 1, 1);
         appInfo.pEngineName = "Eight Winds Engine";
-        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.engineVersion = VK_MAKE_VERSION(1, 1, 1);
         appInfo.apiVersion = VK_API_VERSION_1_3;
 
         VkInstanceCreateInfo createInfo = {};
@@ -379,7 +393,11 @@ namespace EWE {
             score += (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) * 1000;
             score += properties.limits.maxImageDimension2D;
             std::string deviceNameTemp = properties.deviceName;
-            score += ((deviceNameTemp.find("AMD") != deviceNameTemp.npos) && (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) * 100000;
+#if AMD_TARGET
+            if ((deviceNameTemp.find("AMD") != deviceNameTemp.npos) && (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
+                score = UINT32_MAX;
+			}
+#endif
             //properties.limits.maxFramebufferWidth;
 
             printf("Device Name:Score %s:%d \n", properties.deviceName, score);
@@ -418,8 +436,13 @@ namespace EWE {
             logFile << "Failed to find a suitable GPU! " << std::endl;
             logFile.close();
 #endif
-            throw std::runtime_error("failed to find a suitable GPU!");
+            assert(false && "failed to find a suitable GPU!");
         }
+#if DEBUGGING_DEVICE_LOST
+
+#endif
+        CheckOptionalExtensions();
+
         //printf("before get physical device properties \n");
         vkGetPhysicalDeviceProperties(physicalDevice, &properties);
         std::cout << "Physical Device: " << properties.deviceName << std::endl;
@@ -501,8 +524,26 @@ namespace EWE {
             printf("\t %d : %s \n", i, deviceExtensions[i]);
         }
         */
+#if DEBUGGING_DEVICE_LOST
+        deviceLostDebug.GetVendorDebugExtension(physicalDevice);
+        std::vector<const char*> debugDeviceExtensions{deviceExtensions};
+        std::copy(deviceLostDebug.debugExtensions.begin(), deviceLostDebug.debugExtensions.end(), std::back_inserter(debugDeviceExtensions));
+
+        //temp debug check
+        printf("\ntotal extensions activated\n");
+        for (uint32_t i = 0; i < debugDeviceExtensions.size(); i++) {
+            printf("\t%s\n", debugDeviceExtensions[i]);
+        }
+        printf("\n");
+
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(debugDeviceExtensions.size());
+        createInfo.ppEnabledExtensionNames = debugDeviceExtensions.data();
+#else
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+#endif
+
+
 
         // might not really be necessary anymore because device specific validation layers
         // have been deprecated
@@ -537,18 +578,18 @@ namespace EWE {
         std::cout << "\t compute family:queue index - " << queueData.index[QueueData::q_compute] << std::endl;
         std::cout << "\t transfer family:queue index - " << queueData.index[QueueData::q_transfer] << std::endl;
         //printf("before graphics queue \n");
-        vkGetDeviceQueue(device_, queueData.index[QueueData::q_graphics], 0, &graphicsQueue_);
+        vkGetDeviceQueue(device_, queueData.index[QueueData::q_graphics], 0, &queues[QueueData::q_graphics]);
         //printf("after graphics queue \n");
         if (queueData.index[QueueData::q_graphics] != queueData.index[QueueData::q_present]) {
-            vkGetDeviceQueue(device_, queueData.index[QueueData::q_present], 0, &presentQueue_);
+            vkGetDeviceQueue(device_, queueData.index[QueueData::q_present], 0, &queues[QueueData::q_present]);
         }
         else{
-            presentQueue_ = graphicsQueue_;
+            queues[QueueData::q_present] = queues[QueueData::q_graphics];
 		}
 
-        vkGetDeviceQueue(device_, queueData.index[QueueData::q_compute], 0, &computeQueue_);
+        vkGetDeviceQueue(device_, queueData.index[QueueData::q_compute], 0, &queues[QueueData::q_compute]);
 
-        vkGetDeviceQueue(device_, queueData.index[QueueData::q_transfer], 0, &transferQueue_);
+        vkGetDeviceQueue(device_, queueData.index[QueueData::q_transfer], 0, &queues[QueueData::q_transfer]);
         printf("after transfer qeuue \n");
 
 #if GPU_LOGGING
@@ -721,14 +762,14 @@ namespace EWE {
 
     bool EWEDevice::CheckDeviceExtensionSupport(VkPhysicalDevice device) {
         uint32_t extensionCount;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+        EWE_VK_ASSERT(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr));
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(
+        EWE_VK_ASSERT(vkEnumerateDeviceExtensionProperties(
             device,
             nullptr,
             &extensionCount,
-            availableExtensions.data());
+            availableExtensions.data()));
 
         std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -736,6 +777,8 @@ namespace EWE {
             //printf("device extension name available : %s \n", extension.extensionName);
             requiredExtensions.erase(extension.extensionName);
         }
+
+
         for (auto iter = requiredExtensions.begin(); iter != requiredExtensions.end(); iter++) {
 #if GPU_LOGGING
             std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
@@ -746,6 +789,37 @@ namespace EWE {
         }
 
         return requiredExtensions.empty();
+    }
+    void EWEDevice::CheckOptionalExtensions() {
+        if (optionalExtensions.size() == 0) {
+            return;
+        }
+        uint32_t extensionCount;
+
+        EWE_VK_ASSERT(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr));
+
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        EWE_VK_ASSERT(vkEnumerateDeviceExtensionProperties(
+            physicalDevice,
+            nullptr,
+            &extensionCount,
+            availableExtensions.data())
+        );
+
+        for (auto& extension : availableExtensions) {
+            //printf("device extension name available : %s \n", extension.extensionName);
+            auto optionalExtension = optionalExtensions.find(extension.extensionName);
+            if (optionalExtension != optionalExtensions.end()) {
+                optionalExtension->second = true;
+            }
+        }
+
+
+        for (const auto& optional : optionalExtensions) {
+            if (!optional.second) {
+                printf("optional extensions not supported : %s \n", optional.first.c_str());
+            }
+        }
     }
 
 

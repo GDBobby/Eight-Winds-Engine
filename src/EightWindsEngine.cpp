@@ -170,6 +170,15 @@ namespace EWE {
 			do {
 				frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
+					eweDevice.AddCheckpoint(frameInfo.cmdBuf, "beginning of pipe", VKDEBUG::GFX_vk_checkpoint_type::begin_render_pass);
+					eweDevice.AddCheckpoint(frameInfo.cmdBuf, "first push", VKDEBUG::GFX_vk_checkpoint_type::push_marker);
+					eweDevice.AddCheckpoint(frameInfo.cmdBuf, "draw", VKDEBUG::GFX_vk_checkpoint_type::draw);
+					eweDevice.AddCheckpoint(frameInfo.cmdBuf, "end render pass", VKDEBUG::GFX_vk_checkpoint_type::end_render_pass);
+					eweDevice.AddCheckpoint(frameInfo.cmdBuf, "second push", VKDEBUG::GFX_vk_checkpoint_type::push_marker);
+					eweDevice.AddCheckpoint(frameInfo.cmdBuf, "third push", VKDEBUG::GFX_vk_checkpoint_type::push_marker);
+					eweDevice.AddCheckpoint(frameInfo.cmdBuf, "pop marker", VKDEBUG::GFX_vk_checkpoint_type::pop_marker);
+					eweDevice.AddCheckpoint(frameInfo.cmdBuf, "generic", VKDEBUG::GFX_vk_checkpoint_type::generi_c);
+
 					StagingBuffer stagingBuffer = leafSystem->LoadLeafModel(frameInfo.cmdBuf);
 
 					//auto* transitionContainer = eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
@@ -232,16 +241,17 @@ namespace EWE {
 					leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
-					if (eweRenderer.EndFrame(transitionContainer->semaphore)) {
-						//printf("dirty swap on end\n");
-						std::pair<uint32_t, uint32_t> tempPair = eweRenderer.GetExtent();
-						//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
+					if (transitionContainer != nullptr) {
+						if (eweRenderer.EndFrame(transitionContainer->semaphore)) {
+							menuManager.windowResize(eweRenderer.GetExtent());
+						}
+					}
+					else if (eweRenderer.EndFrame()) {
+						menuManager.windowResize(eweRenderer.GetExtent());
 					}
 				}
 				else {
-					std::pair<uint32_t, uint32_t> tempPair = eweRenderer.GetExtent();
 					//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
-					menuManager.windowResize(tempPair);
 				}
 				renderThreadTime = 0.f;
 				//printf("end rendering thread \n");

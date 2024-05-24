@@ -12,14 +12,15 @@
 #include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <unordered_map>
 
 #include <list>
 #include <utility>
 
 
 
-
 namespace EWE {
+
 
     struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
@@ -83,20 +84,20 @@ namespace EWE {
         VkDevice Device() { return device_; }
         VkPhysicalDevice GetPhysicalDevice() { return physicalDevice; }
         VkSurfaceKHR surface() { return surface_; }
-        VkQueue GetGraphicsQueue() { return graphicsQueue_; }
+        VkQueue GetGraphicsQueue() { return queues[QueueData::q_graphics]; }
         uint32_t GetGraphicsIndex() { return queueData.index[QueueData::q_graphics]; }
 
-        VkQueue GetPresentQueue() { return presentQueue_; }
+        VkQueue GetPresentQueue() { return queues[QueueData::q_present]; }
         uint32_t GetPresentIndex() { return queueData.index[QueueData::q_present]; }
 
-        //VkQueue computeQueue() { return computeQueue_; }
+        //VkQueue computeQueue() { return queue[QueueData::q_compute]; }
         //uint32_t getComputeIndex() { return computeIndex; }
 
         uint32_t GetTransferIndex() { return queueData.index[QueueData::q_transfer]; }
-        VkQueue GetTransferQueue() { return transferQueue_; }
+        VkQueue GetTransferQueue() { return queues[QueueData::q_transfer]; }
 
         uint32_t GetComputeIndex() { return queueData.index[QueueData::q_compute]; }
-        VkQueue GetComputeQueue() { return computeQueue_; }
+        VkQueue GetComputeQueue() { return queues[QueueData::q_compute]; }
 
 
         std::string deviceName;
@@ -134,7 +135,6 @@ namespace EWE {
         VkDeviceSize GetMemoryRemaining();
 
 
-
     private:
         VkPhysicalDeviceProperties properties{};
         QueueData queueData;
@@ -151,17 +151,29 @@ namespace EWE {
 
         VkDevice device_;
         VkSurfaceKHR surface_;
-        VkQueue graphicsQueue_;
-        VkQueue presentQueue_;
-        VkQueue computeQueue_;
-        VkQueue transferQueue_;
+        std::array<VkQueue, 4> queues = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
 
         SyncHub* syncHub;
 
-
+        //DEBUGGING_DEVICE_LOST
         const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-        const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME };
-        // if doing full screen                                                              VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
+        const std::vector<const char*> deviceExtensions = { 
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME, 
+            VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+        };
+
+        struct OptionalExtension {
+            const char* extension;
+            bool enabled{ false };
+            OptionalExtension(const char* extension) : extension{ extension } {}
+        };
+        std::unordered_map<std::string, bool> optionalExtensions = {
+#if DEBUGGING_DEVICE_LOST
+            {VK_EXT_DEVICE_FAULT_EXTENSION_NAME, false},
+            //{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}
+#endif
+        };
+        void CheckOptionalExtensions();
 
         void CreateInstance();
         void SetupDebugMessenger();
@@ -183,7 +195,11 @@ namespace EWE {
         bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
         SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 
-
+#if DEBUGGING_DEVICE_LOST
+    public:
+        void AddCheckpoint(VkCommandBuffer cmdBuf, const char* name, VKDEBUG::GFX_vk_checkpoint_type type);
+        VKDEBUG::DeviceLostDebugStructure deviceLostDebug{};
+#endif
 
     };
 

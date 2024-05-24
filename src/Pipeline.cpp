@@ -135,23 +135,26 @@ namespace EWE {
 	VkPipelineRenderingCreateInfo* EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic;
 
 	EWEPipeline::EWEPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo) {
-		if (shaderModuleMap.find(vertFilepath) == shaderModuleMap.end()) {
+
+		const auto vertFind = shaderModuleMap.find(vertFilepath);
+		if (vertFind == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilepath);
 			Pipeline_Helper_Functions::createShaderModule(vertCode, &vertShaderModule);
-			shaderModuleMap[vertFilepath] = vertShaderModule;
+
+			shaderModuleMap.try_emplace(vertFilepath, vertShaderModule);
 		}
 		else {
-			vertShaderModule = shaderModuleMap[vertFilepath];
+			vertShaderModule = vertFind->second;
 		}
 
-
-		if (shaderModuleMap.find(fragFilepath) == shaderModuleMap.end()) {
+		const auto fragFind = shaderModuleMap.find(fragFilepath);
+		if (fragFind == shaderModuleMap.end()) {
 			auto fragCode = Pipeline_Helper_Functions::readFile(fragFilepath);
 			Pipeline_Helper_Functions::createShaderModule(fragCode, &fragShaderModule);
-			shaderModuleMap[fragFilepath] = fragShaderModule;
+			shaderModuleMap.try_emplace(fragFilepath, fragShaderModule);
 		}
 		else {
-			fragShaderModule = shaderModuleMap[fragFilepath];
+			fragShaderModule = fragFind->second;
 		}
 		createGraphicsPipeline(configInfo);
 	}
@@ -169,25 +172,27 @@ namespace EWE {
 		else {
 			vertPath += "dynamic/" + std::to_string(boneCount) + ".vert.spv";
 		}
-		if (shaderModuleMap.find(vertPath) == shaderModuleMap.end()) {
+		const auto vertFind = shaderModuleMap.find(vertPath);
+		if (vertFind == shaderModuleMap.end()) {
 			printf("creating vertex shader - %d:%d \n", boneCount, flags);
 			//auto vertCode = readFile(vertPath);
 			Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getVertexShader(hasNormal, boneCount, true), &vertShaderModule);
-			shaderModuleMap[vertPath] = vertShaderModule;
+			shaderModuleMap.try_emplace(vertPath, vertShaderModule);
 		}
 		else {
-			vertShaderModule = shaderModuleMap[vertPath];
+			vertShaderModule = vertFind->second;
 		}
 		std::string fragPath = SHADER_DIR;
 		fragPath += "dynamic/" + std::to_string(flags) + "b.frag.spv";
-		if (shaderModuleMap.find(fragPath) == shaderModuleMap.end()) {
+		const auto fragFind = shaderModuleMap.find(fragPath);
+		if (fragFind == shaderModuleMap.end()) {
 			printf("creating fragment shader : %d \n", flags);
 			Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getFragmentShader(flags, true), &fragShaderModule);
 			//fragPath = ENGINE_DIR + fragPath; //wtf
-			shaderModuleMap[fragPath] = fragShaderModule;
+			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 		}
 		else {
-			fragShaderModule = shaderModuleMap[fragPath];
+			fragShaderModule = fragFind->second;
 		}
 
 		createGraphicsPipeline(configInfo);
@@ -195,7 +200,7 @@ namespace EWE {
 
 	EWEPipeline::EWEPipeline(std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones) {
 
-		auto vertModuleIter = shaderModuleMap.find(vertFilePath);
+		const auto vertModuleIter = shaderModuleMap.find(vertFilePath);
 		if (vertModuleIter == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilePath);
 			Pipeline_Helper_Functions::createShaderModule(vertCode, &vertShaderModule);
@@ -211,7 +216,7 @@ namespace EWE {
 		}
 		fragPath += ".frag.spv";
 
-		auto fragModuleIter = shaderModuleMap.find(fragPath);
+		const auto fragModuleIter = shaderModuleMap.find(fragPath);
 		if (fragModuleIter == shaderModuleMap.end()) {
 			Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getFragmentShader(flags, hasBones), &fragShaderModule);
 			fragPath = SHADER_DIR + fragPath;
