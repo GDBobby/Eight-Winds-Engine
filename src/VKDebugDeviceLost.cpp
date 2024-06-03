@@ -108,6 +108,20 @@ namespace EWE::VKDEBUG {
 		vkCmdSetCheckpointNVX(cmdBuf, &thisPtr->checkpoints.back());
 	}
 	void DeviceLostDebugStructure::AddAMDCheckpoint(DeviceLostDebugStructure* thisPtr, VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
+		printf("not implemented\n");
+		/*
+		from what I saw, 
+			forge uses aftermath for device lost
+			o3de uses aftermath
+			nabla does nothing
+			ogre does nothing, or uses aftermath, i cant remember
+
+		point being, i havent seen anybody debug AMD device lost
+
+		*/
+
+
+		
 		//i want it to write when i tell it to :(
 		//vkCmdWriteBufferMarkerAMD(cmdBuf, VK_PIPELINE_STAGE_NONE, buffer, offset, marker);
 
@@ -120,7 +134,6 @@ namespace EWE::VKDEBUG {
 	void DeviceLostDebugStructure::ClearCheckpoints() {
 		checkpoints.clear();
 	}
-
 
 	bool deviceFaultEnabled = false;
 	bool nvidiaCheckpoint = false;
@@ -208,8 +221,8 @@ namespace EWE::VKDEBUG {
 			if (faultCounts.vendorInfoCount > 0) {
 				delete[] faultInfo.pVendorInfos;
 			}
-
 			faultInfo.pVendorInfos = nullptr;
+
 			if (faultCounts.addressInfoCount > 0) {
 				delete[] faultInfo.pAddressInfos;
 			}

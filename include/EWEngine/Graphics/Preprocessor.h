@@ -1,0 +1,11 @@
+#pragma once
+
+
+#define DEBUGGING_DEVICE_LOST true
+#define USING_NVIDIA_AFTERMATH true && DEBUGGING_DEVICE_LOST
+
+#define GPU_LOGGING true
+#define DECONSTRUCTION_DEBUG true
+
+#define DEBUGGING_PIPELINES false
+#define DEBUGGING_DYNAMIC_PIPE false

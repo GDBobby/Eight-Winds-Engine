@@ -13,7 +13,6 @@
 #include <iostream>
 #include <stdexcept>
 
-#define DECONSTRUCTION_DEBUG true
 
 static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {

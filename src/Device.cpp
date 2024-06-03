@@ -28,9 +28,7 @@ namespace EWE {
     }
 #endif
 
-
     EWEDevice* EWEDevice::eweDevice = nullptr;
-
 
 #ifdef NDEBUG
     const bool enableValidationLayers = false;

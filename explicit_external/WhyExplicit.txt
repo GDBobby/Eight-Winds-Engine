@@ -1,0 +1,9 @@
+In short
+this is for libraries that I'm either not allowed to redistribute (Nvidia Aftermath)
+or for libraries in which it'd be significantly easier for the user to set up the library rather than cmake
+
+I'm not a lawyer, so I don't quite understand if I'm allowed to redistribute Aftermath including the license or not, but I don't see any of the other engines I referenced including it, so there's that.
+
+Instructions for setting up Nvidia Aftermath (why can't I do preprocessor instructions to determine whether a lib should be included or not?)
+1. Obtain SDK - https://developer.nvidia.com/nsight-aftermath
+2. 

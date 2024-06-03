@@ -17,8 +17,6 @@
 
 
 
-#define DEBUGGING_PIPELINES false
-#define DEBUGGING_DYNAMIC_PIPE false
 
 
 //#define GRASS_ENABLED false

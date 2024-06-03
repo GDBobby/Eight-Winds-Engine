@@ -3,7 +3,7 @@ VulkanAfterCrash.h
 
 Author:  Adam Sawicki, http://asawicki.info, adam__REMOVE__@asawicki.info
 Version: 1.0.1, 2018-05-16
-License: MIT
+License: MIT (located at bottom of file)
 
 This is a simple, single-header, C++ library for Vulkan that simplifies writing
 32-bit markers to a buffer that can be read after graphics driver crash and thus
@@ -25,32 +25,6 @@ How to use it:
    function like vkQueueSubmit. After it happened, inspect values under pData
    pointer returned by VkAfterCrash_CreateBuffer to see value of markers
    successfully written.
-
-See blog post:
-http://asawicki.info/news_1677_debugging_vulkan_driver_crash_-_equivalent_of_nvidia_aftermath.html
-Similar library for Direct3D 12:
-http://asawicki.info/news_1690_debugging_d3d12_driver_crash.html
-
-////////////////////////////////////////////////////////////////////////////////
-
-Copyright 2018 Adam Sawicki
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #ifndef VULKAN_AFTER_CRASH_H
@@ -67,12 +41,12 @@ extern "C" {
     */
     VK_DEFINE_HANDLE(VkAfterCrash_Device)
 
-        /*
-        Represent buffer in system memory that can hold a number of 32-bit markers.
-        */
-        VK_DEFINE_HANDLE(VkAfterCrash_Buffer)
+    /*
+    Represent buffer in system memory that can hold a number of 32-bit markers.
+    */
+    VK_DEFINE_HANDLE(VkAfterCrash_Buffer)
 
-        typedef enum VkAfterCrash_DeviceCreateFlagBits {
+    typedef enum VkAfterCrash_DeviceCreateFlagBits {
         /*
         Use this flag if you found and enabled "VK_AMD_buffer_marker" device extension.
         It is required if you want to use function VkAfterCrash_CmdWriteMarkerExtended.
@@ -412,3 +386,33 @@ void VkAfterCrash_CmdWriteMarkerExtended(
 }
 
 #endif // #ifdef VULKAN_AFTER_CRASH_IMPLEMENTATION
+
+
+/*
+
+See blog post:
+http://asawicki.info/news_1677_debugging_vulkan_driver_crash_-_equivalent_of_nvidia_aftermath.html
+Similar library for Direct3D 12:
+http://asawicki.info/news_1690_debugging_d3d12_driver_crash.html
+
+////////////////////////////////////////////////////////////////////////////////
+
+Copyright 2018 Adam Sawicki
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/

@@ -1,6 +1,6 @@
 #pragma once
+#include "EWEngine/Graphics/Preprocessor.h"
 
-#define DEBUGGING_DEVICE_LOST true
 #if DEBUGGING_DEVICE_LOST
 #include "vulkan/vulkan.h"
 #include <array>
@@ -8,9 +8,14 @@
 #include "EWEngine/Data/MemoryTypeBucket.h"
 #include <future>
 #include <type_traits>
+#if USING_NVIDIA_AFTERMATH
+#include "EWEngine/Graphics/Debug/NSightAftermathGpuCrashTracker.h"
+#endif
 
 //there's a license in there, not sure if i need to copy it or not
 //https://github.com/ConfettiFX/The-Forge/blob/23483a282ddc8a917f8b292b0250dec122eab6a9/Common_3/Graphics/Vulkan/Vulkan.cpp#L741
+
+
 
 namespace EWE {
     template<typename F, typename... Args>
@@ -32,11 +37,6 @@ namespace EWE {
 		}
         //do something with the return
 
-    }
-    template<typename F, typename... Args>
-    void vkWrapVoid(F&& f, Args&&... args) {
-        auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-        auto ret = task();
     }
 
     namespace VKDEBUG {
