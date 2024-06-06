@@ -65,7 +65,7 @@ namespace EWE {
         size_t nameSum = tempData.meshExport.meshes.size() + tempData.meshNTExport.meshes.size() + tempData.meshSimpleExport.meshes.size() + tempData.meshNTSimpleExport.meshes.size();
 
         if (nameSum != meshes.size()) {
-            printf("mesh to name mismatch - %lu:%lu \n", nameSum, meshes.size());
+            printf("mesh to name mismatch - %zu:%zu \n", nameSum, meshes.size());
             throw std::runtime_error("failed to match mesh to name");
         }
     }

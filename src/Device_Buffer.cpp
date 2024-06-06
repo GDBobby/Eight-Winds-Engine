@@ -30,7 +30,7 @@ namespace EWE {
         }
 
         if (minOffsetAlignment > 0) {
-            //printf("get alignment size : %lu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
+            //printf("get alignment size : %zu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
             return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
         }
         return instanceSize;
@@ -111,7 +111,7 @@ namespace EWE {
 #if _DEBUG
         uint64_t offset = alignmentOffset * alignmentSize;
         if ((offset + size) > bufferSize) {
-            printf("overflow error in buffer - %lu:%lu \n", offset + size, bufferSize);
+            printf("overflow error in buffer - %zu:%zu \n", offset + size, bufferSize);
             throw std::exception("DATA TOO LARGE FOR BUFFER");
         }
         memOffset += offset;
@@ -133,7 +133,7 @@ namespace EWE {
         else {
 #if _DEBUG
             if ((offset + size) > bufferSize) {
-                printf("overflow error in buffer - %lu:%lu \n", offset+size, bufferSize);
+                printf("overflow error in buffer - %zu:%zu \n", offset+size, bufferSize);
                 throw std::exception("DATA TOO LARGE FOR BUFFER");
             }
 #endif
@@ -171,7 +171,7 @@ namespace EWE {
         mappedRange.offset = trueOffset;
         mappedRange.size = minOffsetAlignment;
 #ifdef _DEBUG
-        printf("flushing minimal : %lu \n", minOffsetAlignment);
+        printf("flushing minimal : %zu \n", minOffsetAlignment);
 #endif
         return vkFlushMappedMemoryRanges(EWEDevice::GetEWEDevice()->Device(), 1, &mappedRange);
     }

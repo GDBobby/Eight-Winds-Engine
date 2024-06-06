@@ -43,7 +43,6 @@ namespace EWE {
 	PipelineSystem* PipelineSystem::At(PipelineID pipeID) {
 		auto foundPipe = pipelineSystem.find(pipeID);
 
-
 		assert(foundPipe != pipelineSystem.end() && "searching invalid pipe \n");
 #ifdef _DEBUG
 		currentPipe = pipeID;

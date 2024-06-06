@@ -188,18 +188,18 @@ namespace EWE {
 
             uint64_t size;
             Reading::UInt64FromFile(inFile, &size);
-            printf("after reading vertex count file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+            printf("after reading vertex count file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
             vertices.resize(size);
-            printf("vertex size : %lu:%lu \n", sizeof(V_Type), size);
+            printf("vertex size : %zu:%zu \n", sizeof(V_Type), size);
             inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(V_Type));
-            printf("after reading vertices data file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+            printf("after reading vertices data file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
             printf("before reading index size \n");
             Reading::UInt64FromFile(inFile, &size);
-            printf("after reading index count file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+            printf("after reading index count file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
             indices.resize(size);
-            printf("indices size : %lu \n", size);
+            printf("indices size : %zu \n", size);
             inFile.read(reinterpret_cast<char*>(&indices[0]), size * sizeof(uint32_t));
-            printf("after reading indices data file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+            printf("after reading indices data file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
 
         }
         void readFromFileSwapEndian(std::ifstream& inFile) {

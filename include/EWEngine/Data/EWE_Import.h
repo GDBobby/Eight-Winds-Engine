@@ -48,12 +48,12 @@ namespace EWE {
                     printf(" foudn null after version \n");
                     inFile.seekg(1, std::ios::cur);
                 }
-                printf("after reading version file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+                printf("after reading version file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
 
                 uint64_t size;
                 Reading::UInt64FromFile(inFile, &size);
-                printf("after reading mesh count file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
-                printf("size of meshes : %lu \n", size);
+                printf("after reading mesh count file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
+                printf("size of meshes : %zu \n", size);
                 meshes.resize(size);
                 for (auto& mesh : meshes) {
                     mesh.readFromFile(inFile);

@@ -24,7 +24,7 @@ namespace EWE {
 
 
 		if (returnValues.first == UIT_ClickTextBox) {
-			//printf("object comparison : %lu:%lu \n", (uint64_t)this, (uint64_t)uiPointer);
+			//printf("object comparison : %zu:%zu \n", (uint64_t)this, (uint64_t)uiPointer);
 
 
 			printf("processing main menu click text box, returnValues.second : %d \n", returnValues.second);

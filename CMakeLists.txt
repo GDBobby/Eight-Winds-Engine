@@ -97,18 +97,42 @@ set(GLSLANG_LIBS
 	glslang
 )
 
+#potentially use a cmake command, USE_AFTERMATH
+#if(USE_AFTERMATH)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/")
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8) #64bit, x64
+message(STATUS "including 64 bit Aftermath")
+	set(AFTERMATH_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/Aftermath/lib/x64/")
+	
+	set(AFTERMATH_LIBS
+		GFSDK_Aftermath_Lib.x64
+	)
+
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) #32bit, x86
+	message(FATAL_ERROR "Don't expect x86 to work")
+	set(AFTERMATH_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/Aftermath/lib/x86")
+	
+	set(AFTERMATH_LIBS
+		GFSDK_Aftermath_Lib.x86
+	)
+endif()
+
+
+
+
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES} ${SOURCES_C} ${HEADER_FILES} ${HEADER_FILES_PP})
 
 # 1. Set VULKAN_SDK_PATH in .env.cmake to target specific vulkan version
 if (DEFINED VULKAN_SDK_PATH)
   set(Vulkan_INCLUDE_DIR "${VULKAN_SDK_PATH}/Include") # 1.1 Make sure this include path is correct
-  set(Vulkan_LIB "${VULKAN_SDK_PATH}/Lib") # 1.2 Make sure lib path is correct
+  set(Vulkan_LIB_DIR "${VULKAN_SDK_PATH}/Lib") # 1.2 Make sure lib path is correct
   set(Vulkan_FOUND "True")
   if(UNIX)
-  	set(Vulkan_LIBRARY libvulkan.so) #this hasnt been tested, may not work
+  	set(Vulkan_LIBRARY libvulkan.so)
   else()
-	set(Vulkan_LIBRARY vulkan-1) #the windows version should work regardless, but also hasnt been tested yet
+	set(Vulkan_LIBRARY vulkan-1)
   endif()
 else()
   message(STATUS "Vulkan path undefined in .env")
@@ -132,8 +156,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	
 )
 message(STATUS "linking directories")
+
 target_link_directories(${PROJECT_NAME} PUBLIC
-	${Vulkan_LIB}
+	${Vulkan_LIB_DIR}
+	$<$<CONFIG:Debug>:${AFTERMATH_LIB_DIR}>
 )
 
 message(STATUS "linking libs")
@@ -143,6 +169,7 @@ target_link_libraries(${PROJECT_NAME}
 	glfw
 	${Vulkan_LIBRARY}
 	${GLSLANG_LIBS}
+	$<$<CONFIG:Debug>:${AFTERMATH_LIBS}>
 )
 
 if(EWE_EXAMPLES)

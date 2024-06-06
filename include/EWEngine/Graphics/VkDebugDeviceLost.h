@@ -96,7 +96,7 @@ namespace EWE {
 
 
 
-        void Initialize(VkDevice vkDevice, std::array<VkQueue, 4>& queues, bool deviceFaultEnabledParam, bool nvidiaCheckpointEnabled, bool amdCheckpointEnabled);
+        void Initialize(VkDevice vkDevice, VkInstance vkInstance, std::array<VkQueue, 4>& queues, bool deviceFaultEnabledParam, bool nvidiaCheckpointEnabled, bool amdCheckpointEnabled);
         void OnDeviceLost();
     } //namespace VKDEBUG
 } //namespace EWE

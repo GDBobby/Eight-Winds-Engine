@@ -9,7 +9,7 @@
 //https://github.com/ConfettiFX/The-Forge/blob/23483a282ddc8a917f8b292b0250dec122eab6a9/Common_3/Graphics/Vulkan/Vulkan.cpp#L741
 //im pretty much copy and pasting with minor adjustments
 
-PFN_vkGetDeviceFaultInfoEXT func;
+PFN_vkGetDeviceFaultInfoEXT vkGetDeviceFaultInfoEXTX;
 PFN_vkGetQueueCheckpointDataNV vkGetQueueCheckpointDataNVX;
 PFN_vkCmdSetCheckpointNV vkCmdSetCheckpointNVX;
 PFN_vkCmdWriteBufferMarkerAMD vkCmdWriteBufferMarkerAMDX;
@@ -17,6 +17,7 @@ PFN_vkCmdWriteBufferMarkerAMD vkCmdWriteBufferMarkerAMDX;
 
 namespace EWE::VKDEBUG {
 	VkDevice device;
+	VkInstance instance;
 
 	DeviceLostDebugStructure::DeviceLostDebugStructure() {
 
@@ -61,14 +62,19 @@ namespace EWE::VKDEBUG {
 				i--;
 			}
 		}
+
 		for (const auto& extension : debugExtensions) {
 			if (strcmp(extension, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME) == 0) {
 				NVIDIAdebug = true;
+				printf("using nvidia debug\n");
 				InitNvidiaDebug();
+				break;
 			}
-			else if (strcmp(extension, VK_AMD_BUFFER_MARKER_EXTENSION_NAME)) {
+			else if (strcmp(extension, VK_AMD_BUFFER_MARKER_EXTENSION_NAME) == 0) {
 				AMDdebug = true;
+				printf("using amd debug\n");
 				InitAMDDebug();
+				break;
 			}
 		}
 
@@ -76,8 +82,9 @@ namespace EWE::VKDEBUG {
 		return debugExtensions.size() != inSize;
 	}
 
-
+	//function ptr
 	void (*checkpointPtr)(DeviceLostDebugStructure*, VkCommandBuffer, const char*, GFX_vk_checkpoint_type);
+
 
 	void DeviceLostDebugStructure::InitNvidiaDebug() {
 		vkCmdSetCheckpointNVX = reinterpret_cast<PFN_vkCmdSetCheckpointNV>(vkGetDeviceProcAddr(device, "vkCmdSetCheckpointNV"));
@@ -87,6 +94,7 @@ namespace EWE::VKDEBUG {
 	}
 	void DeviceLostDebugStructure::InitAMDDebug() {
 		vkCmdWriteBufferMarkerAMDX = reinterpret_cast<PFN_vkCmdWriteBufferMarkerAMD>(vkGetDeviceProcAddr(device, "vkCmdWriteBufferMarkerAMDX"));
+
 		checkpointPtr = &DeviceLostDebugStructure::AddAMDCheckpoint;
 	}
 
@@ -104,7 +112,6 @@ namespace EWE::VKDEBUG {
 		thisPtr->checkpoints.push_back(baseCopy);
 
 		assert(thisPtr->checkpoints.size() < 50 && "checkpoints is getting oversized, missed a clear?");
-		printf("\n\n *** ADDING CHECKPOINT *** \n\n");
 		vkCmdSetCheckpointNVX(cmdBuf, &thisPtr->checkpoints.back());
 	}
 	void DeviceLostDebugStructure::AddAMDCheckpoint(DeviceLostDebugStructure* thisPtr, VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
@@ -129,6 +136,8 @@ namespace EWE::VKDEBUG {
 	}
 
 	void DeviceLostDebugStructure::AddCheckpoint(VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
+
+		printf("\n\n *** ADDING CHECKPOINT *** \n\n");
 		checkpointPtr(this, cmdBuf, name, type);
 	}
 	void DeviceLostDebugStructure::ClearCheckpoints() {
@@ -140,28 +149,34 @@ namespace EWE::VKDEBUG {
 	bool amdCheckpoint = false;
 	std::array<VkQueue, 4> queues;
 
-	void Initialize(VkDevice vkDevice, std::array<VkQueue, 4>& queuesParam, bool deviceFaultEnabledParam, bool nvidiaCheckpointEnabled, bool amdCheckpointEnabled) {
+	void Initialize(VkDevice vkDevice, VkInstance vkInstance, std::array<VkQueue, 4>& queuesParam, bool deviceFaultEnabledParam, bool nvidiaCheckpointEnabled, bool amdCheckpointEnabled) {
 		device = vkDevice;
+		instance = vkInstance;
+
 		deviceFaultEnabled = deviceFaultEnabledParam;
 		nvidiaCheckpoint = nvidiaCheckpointEnabled;
 		amdCheckpoint = amdCheckpointEnabled;
 
 		queues = queuesParam;
 		if (deviceFaultEnabled) {
-			func = (PFN_vkGetDeviceFaultInfoEXT)vkGetDeviceProcAddr(device, "vkGetDeviceFaultInfoEXT");
+			//func =				   (PFN_vkGetDeviceFaultInfoEXT)vkGetDeviceProcAddr(device, "vkGetDeviceFaultInfoEXT");
+			vkGetDeviceFaultInfoEXTX = (PFN_vkGetDeviceFaultInfoEXT)vkGetInstanceProcAddr(instance, "vkGetDeviceFaultInfoEXT");
+			
+			assert(vkGetDeviceFaultInfoEXTX != nullptr && "vkGetDeviceFaultInfoEXT proc addr was nullptr");
 		}
 		if (nvidiaCheckpointEnabled) {
 			vkGetQueueCheckpointDataNVX = (PFN_vkGetQueueCheckpointDataNV)vkGetDeviceProcAddr(device, "vkGetQueueCheckpointDataNV");
+			assert(vkGetQueueCheckpointDataNVX != nullptr && "vkGetQueueCheckpointDataNVX proc addr was nullptr");
 		}
 	}
 	void OnDeviceLost() {
 		if (deviceFaultEnabled) {
-			printf("device fault extension not supported, device lost debugging not supported\n");
 
 
 			VkDeviceFaultCountsEXT faultCounts = { VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT };
 			printf("immediately before device lost function\n");
-			VkResult               vkres = func(device, &faultCounts, nullptr);
+
+			VkResult               vkres = vkGetDeviceFaultInfoEXTX(device, &faultCounts, nullptr);
 			if (vkres != VK_SUCCESS) {
 				printf("device lost analysis failed : %d", vkres);
 				assert(false && "failed to get device fault info");
@@ -180,7 +195,7 @@ namespace EWE::VKDEBUG {
 			}
 
 			faultCounts.vendorBinarySize = 0;
-			vkres = func(device, &faultCounts, &faultInfo);
+			vkres = vkGetDeviceFaultInfoEXTX(device, &faultCounts, &faultInfo);
 			if (vkres != VK_SUCCESS) {
 				printf("device lost analysis failed on the second request : %d", vkres);
 				assert(false && "failed to get device fault info");
@@ -226,6 +241,9 @@ namespace EWE::VKDEBUG {
 			if (faultCounts.addressInfoCount > 0) {
 				delete[] faultInfo.pAddressInfos;
 			}
+		}
+		else {
+			printf("device fault extension not supported\n");
 		}
 		printf("before nvidiaa checkpoint branch\n");
 		if (nvidiaCheckpoint) {

@@ -22,12 +22,13 @@
 //
 //*********************************************************
 
+#include "EWEngine/Graphics/Debug/NsightAftermathGpuCrashTracker.h"
+#if USING_NVIDIA_AFTERMATH
 #include <fstream>
 #include <iomanip>
 #include <string>
 #include <array>
 
-#include "NsightAftermathGpuCrashTracker.h"
 
 //*********************************************************
 // GpuCrashTracker implementation
@@ -379,3 +380,6 @@ void GpuCrashTracker::ShaderSourceDebugInfoLookupCallback(
     GpuCrashTracker* pGpuCrashTracker = reinterpret_cast<GpuCrashTracker*>(pUserData);
     pGpuCrashTracker->OnShaderSourceDebugInfoLookup(*pShaderDebugName, setShaderBinary);
 }
+
+
+#endif //USING_NVIDIA_AFTERMATH

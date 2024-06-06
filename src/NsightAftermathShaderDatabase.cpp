@@ -21,11 +21,11 @@
 //  DEALINGS IN THE SOFTWARE.
 //
 //*********************************************************
-
+#include "EWEngine/Graphics/Debug/NsightAftermathShaderDatabase.h"
+#if USING_NVIDIA_AFTERMATH
 #include <fstream>
 #include <iomanip>
 
-#include "NsightAftermathShaderDatabase.h"
 
 //*********************************************************
 // ShaderDatabase implementation
@@ -145,3 +145,5 @@ bool ShaderDatabase::FindShaderBinaryWithDebugData(const GFSDK_Aftermath_ShaderD
     shader = i_shader->second;
     return true;
 }
+
+#endif //USING_NVIDIA_AFTERMATH

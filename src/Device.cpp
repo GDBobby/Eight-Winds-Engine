@@ -110,7 +110,7 @@ namespace EWE {
         
         queueFamilies.resize(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-        printf("queue family count : %d:%lu \n", queueFamilyCount, queueFamilies.size());
+        printf("queue family count : %d:%zu \n", queueFamilyCount, queueFamilies.size());
 
         //i want a designated graphics/present queue, or throw an error
         //i want a dedicated async compute queue
@@ -259,7 +259,7 @@ namespace EWE {
         Sampler::Initialize(device_);
 
 #if DEBUGGING_DEVICE_LOST
-        VKDEBUG::Initialize(device_, queues, optionalExtensions.at(VK_EXT_DEVICE_FAULT_EXTENSION_NAME), deviceLostDebug.NVIDIAdebug, deviceLostDebug.AMDdebug);
+        VKDEBUG::Initialize(device_, instance, queues, optionalExtensions.at(VK_EXT_DEVICE_FAULT_EXTENSION_NAME), deviceLostDebug.NVIDIAdebug, deviceLostDebug.AMDdebug);
 #endif
 
         deviceLostDebug.Initialize(device_);
@@ -310,7 +310,7 @@ namespace EWE {
             logFile.close();
 #endif
             printf("validation layers not available \n");
-            throw std::runtime_error("validation layers requested, but not available!");
+            assert(false && "validation layers requested, but not available!");
         }
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -380,7 +380,7 @@ namespace EWE {
             logFile.close();
 
 #endif
-            throw std::runtime_error("failed to find GPUs with Vulkan support!");
+            assert(false && "failed to find GPUs with Vulkan support!");
         }
 
         for (uint32_t i = 0; i < deviceCount; i++) {
