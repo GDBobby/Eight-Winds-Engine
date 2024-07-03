@@ -13,12 +13,7 @@ namespace EWE {
             auto foundImage = tmPtr->imageMap.find(texPath);
             if (foundImage != tmPtr->imageMap.end()) {
 #ifdef _DEBUG
-                if (foundImage->second->usedInTexture.size() != 1) {
-                    //im trusting the user here to not cube images in multiple descriptors
-                    //if the application has a need for cube images to be in multipel descriptors, this will need to be reworked
-                    //the rework should be as simple as rewriting the return for this scope
-                    throw std::runtime_error("cube image used in multiple descriptors");
-                }
+                assert(foundImage->second->usedInTexture.size() == 1 && "cube image used in multiple descriptors");
 #endif
                 return *foundImage->second->usedInTexture.begin();
             }
@@ -37,10 +32,7 @@ namespace EWE {
 
             pixelPeeks.emplace_back(individualPath);
 
-            if ((i > 0) && ((pixelPeeks[i].width != pixelPeeks[i - 1].width) || (pixelPeeks[i].height != pixelPeeks[i - 1].height))) {
-                throw std::runtime_error("failed to load cube texture, bad dimensions");
-            }
-            
+            assert(!((i > 0) && ((pixelPeeks[i].width != pixelPeeks[i - 1].width) || (pixelPeeks[i].height != pixelPeeks[i - 1].height))) && "failed to load cube texture, bad dimensions");
         }
         
         ImageTracker* cubeTracker = Texture_Manager::ConstructEmptyImageTracker(texPath);
@@ -108,7 +100,7 @@ namespace EWE {
         imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
         EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
-        eweDevice->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeTexture.image, cubeTexture.imageMemory);
+        Image::CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeTexture.image, cubeTexture.imageMemory);
 
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();

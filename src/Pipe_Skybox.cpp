@@ -1,6 +1,6 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Pipe_Skybox.h"
 #include "EWEngine/Graphics/DescriptorHandler.h"
-#include "EWEngine/Graphics/Texture/Texture.h"
+#include "EWEngine/Graphics/Texture/Image.h"
 
 namespace EWE {
 	Pipe_Skybox::Pipe_Skybox()

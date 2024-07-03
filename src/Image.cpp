@@ -1,4 +1,4 @@
-#include "EWEngine/Graphics/Texture/Texture.h"
+#include "EWEngine/Graphics/Texture/Image.h"
 
 #include "EWEngine/Graphics/Texture/Sampler.h"
 
@@ -13,12 +13,33 @@
 #define MIPMAP_ENABLED true
 
 namespace EWE {
+
+    namespace Image {
+        void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, const VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+            VkDevice vkDevice = EWEDevice::GetVkDevice();
+
+            EWE_VK_ASSERT(vkCreateImage(vkDevice, &imageInfo, nullptr, &image));
+
+            VkMemoryRequirements memRequirements;
+            vkGetImageMemoryRequirements(vkDevice, image, &memRequirements);
+
+            VkMemoryAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            allocInfo.allocationSize = memRequirements.size;
+            allocInfo.memoryTypeIndex = EWEDevice::FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+            EWE_VK_ASSERT(vkAllocateMemory(vkDevice, &allocInfo, nullptr, &imageMemory));
+
+            EWE_VK_ASSERT(vkBindImageMemory(vkDevice, image, imageMemory, 0));
+        }
+    }
+
+
     PixelPeek::PixelPeek(std::string const& path) {
         pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-        if ((!pixels) || ((width * height) <= 0)) {
-            printf("failed to construct pixel peek : %s \n", path.c_str());
-            throw std::runtime_error("failed to load texture image with stb");
-        }
+#if _DEBUG
+        assert(pixels && ((width * height) > 0) && path.c_str());
+#endif
     }
 
     std::unordered_map<TextureDSLInfo, EWEDescriptorSetLayout*> TextureDSLInfo::descSetLayouts;
@@ -51,7 +72,7 @@ namespace EWE {
             break;
         }
         case VK_SHADER_STAGE_ALL_GRAPHICS: {
-            //im pretty sure that _ALL_GRAPHICS and _ALL are both noob traps, but ill put them in anyways
+            //_ALL_GRAPHICS and _ALL feel like noob traps, but ill put them in anyways
             stageCounts[6] = textureCount;
             break;
         }
@@ -104,12 +125,11 @@ namespace EWE {
         TextureDSLInfo dslInfo{};
         dslInfo.SetStageTextureCount(stageFlag, 1);
 
-        {
-            auto dslIter = descSetLayouts.find(dslInfo);
-            if (dslIter != descSetLayouts.end()) {
-                return dslIter->second;
-            }
+        auto dslIter = descSetLayouts.find(dslInfo);
+        if (dslIter != descSetLayouts.end()) {
+            return dslIter->second;
         }
+        
         EWEDescriptorSetLayout::Builder dslBuilder{};
         dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlag);
         return descSetLayouts.emplace(dslInfo, dslBuilder.build()).first->second;
@@ -123,19 +143,16 @@ namespace EWE {
 
 #ifdef _DEBUG
         auto emplaceRet = descSetLayouts.try_emplace(*this, BuildDSL());
-        if (!emplaceRet.second) {
-            printf("failed to create dynamic desc set layout \n");
-            throw std::runtime_error("failed to create dynamic desc set layout");
-        }
+        assert(emplaceRet.second && "failed to create dynamic desc set layout");
         return emplaceRet.first->second;
 #else
         return descSetLayouts.try_emplace(*this, BuildDSL()).first->second;
 #endif
     }
 
-    ImageInfo::ImageInfo(PixelPeek& pixelPeek, bool mipmap) {
+    ImageInfo::ImageInfo(PixelPeek& pixelPeek, bool mipmap, Queue::Enum whichQueue) {
 
-        CreateTextureImage(pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        CreateTextureImage(whichQueue, pixelPeek, mipmap); //strange to pass in the first, btu whatever
         //printf("after create image \n");
         CreateTextureImageView();
         //printf("after image view \n");
@@ -145,13 +162,14 @@ namespace EWE {
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-    StagingBuffer ImageInfo::Initialize(VkCommandBuffer cmdBuf, std::string const& path, bool mipmap) {
+    StagingBuffer ImageInfo::Initialize(std::string const& path, bool mipmap, Queue::Enum whichQueue) {
         PixelPeek pixelPeek{ path };
 
-        return Initialize(cmdBuf, pixelPeek, mipmap);
+        return Initialize(pixelPeek, mipmap, whichQueue);
     }
-    StagingBuffer ImageInfo::Initialize(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmap) {
-        StagingBuffer stagingBuffer = CreateTextureImage(cmdBuf, pixelPeek, mipmap);
+    StagingBuffer ImageInfo::Initialize(PixelPeek& pixelPeek, bool mipmap, Queue::Enum whichQueue) {
+
+        StagingBuffer stagingBuffer = CreateTextureImage(whichQueue, pixelPeek, mipmap);
         CreateTextureImageView();
         CreateTextureSampler();
 
@@ -162,10 +180,10 @@ namespace EWE {
         return stagingBuffer;
     }
 
-    ImageInfo::ImageInfo(std::string const& path, bool mipmap) {
+    ImageInfo::ImageInfo(std::string const& path, bool mipmap, Queue::Enum whichQueue) {
         PixelPeek pixelPeek{ path };
 
-        CreateTextureImage(pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        CreateTextureImage(whichQueue, pixelPeek, mipmap); //strange to pass in the first, btu whatever
         //printf("after create image \n");
         CreateTextureImageView();
         //printf("after image view \n");
@@ -189,50 +207,26 @@ namespace EWE {
         //printf("after image destruction \n");
         vkFreeMemory(vkDevice, imageMemory, nullptr);
     }
-    void ImageInfo::CreateTextureImage(PixelPeek& pixelPeek, bool mipmapping){
-        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
 
-        StagingBuffer stagingBuffer = CreateTextureImage(cmdBuf, pixelPeek, mipmapping);
-        
-        //ImageQueueTransitionData transitionData{image, mipLevels, arrayLayers};
-        ImageQueueTransitionData transitionData{GenerateTransitionData(EWEDevice::GetEWEDevice()->GetGraphicsIndex())};
-        transitionData.stagingBuffer = stagingBuffer;
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
-    }
-    StagingBuffer ImageInfo::CreateTextureImage(VkCommandBuffer cmdBuf, PixelPeek& pixelPeek, bool mipmapping) {
-        int width = pixelPeek.width;
-        int height = pixelPeek.height;
 
-        VkDeviceSize imageSize = width * height * 4;
+    StagingBuffer ImageInfo::CreateTextureImage(Queue::Enum whichQueue, PixelPeek& pixelPeek, bool mipmapping) {
+
+        StagingBuffer stagingBuffer = StageImage(pixelPeek);
         //printf("image dimensions : %d:%d \n", width[i], height[i]);
         //printf("beginning of create image, dimensions - %d : %d : %d \n", width[i], height[i], pixelPeek[i].channels);
         if (MIPMAP_ENABLED && mipmapping) {
-            mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height))) + 1);
+            mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(pixelPeek.width, pixelPeek.height))) + 1);
         }
-        StagingBuffer stagingBuffer;
         //printf("before creating buffer \n");
 
         EWEDevice* const eweDevice = EWEDevice::GetEWEDevice();
-
-        eweDevice->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
-        //printf("before memory mapping \n");
-        void* data;
-        vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, imageSize, 0, &data);
-        //printf("memcpy \n");
-        memcpy(data, pixelPeek.pixels, static_cast<std::size_t>(imageSize));
-        //printf("unmapping \n");
-        vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
-        //printf("freeing pixels \n");
-        stbi_image_free(pixelPeek.pixels);
-        //printf("after memory mapping \n");
 
         VkImageCreateInfo imageInfo;
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.pNext = nullptr;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = width;
-        imageInfo.extent.height = height;
+        imageInfo.extent.width = pixelPeek.width;
+        imageInfo.extent.height = pixelPeek.height;
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = mipLevels;
         imageInfo.arrayLayers = arrayLayers;
@@ -249,22 +243,90 @@ namespace EWE {
         imageInfo.flags = 0; // Optional
 
         //printf("before image info \n");
-        eweDevice->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+        Image::CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
         //printf("before transition \n");
         
-        eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,  
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-            image, 
-            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            mipLevels
-        );
-        //printf("before copy buffer to image \n");
-        VkImageLayout dstLayout;
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 
-        eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer.buffer, image, width, height, arrayLayers);
+        {
+            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(whichQueue);
+
+            EWEDevice::TransitionImageLayoutWithBarrier(cmdBuf,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                image,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                mipLevels
+            );
+            if (whichQueue == Queue::graphics) {
+                syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+            }
+            else if (whichQueue == Queue::transfer) {
+                //this doesnt want a transition, need to fix that
+                //syncHub::EndSingleTimeCommandTransfer(cmdBuf);
+                syncHub->EndSingleTimeCommandTransfer(cmdBuf, ImageQueueTransitionData{ image, mipLevels, arrayLayers, Queue::transfer });
+            }
+        }
+        //printf("before copy buffer to image \n");
+        {
+            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(whichQueue);
+            eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer.buffer, image, pixelPeek.width, pixelPeek.height, arrayLayers);
+            if (whichQueue == Queue::graphics) {
+                syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+            }
+            else if (whichQueue == Queue::transfer) {
+                //this doesnt want a transition, need to fix that
+                //syncHub::EndSingleTimeCommandTransfer(cmdBuf);
+                syncHub->EndSingleTimeCommandTransfer(cmdBuf, ImageQueueTransitionData{ image, mipLevels, arrayLayers, Queue::transfer });
+            }
+
+        }
+        //stagingBuffer.Free(eweDevice->GetVkDevice());
         return stagingBuffer;
     }
 
+    StagingBuffer ImageInfo::StageImage(PixelPeek& pixelPeek) {
+        const int width = pixelPeek.width;
+        const int height = pixelPeek.height;
+
+        const VkDeviceSize imageSize = width * height * 4;
+
+        StagingBuffer stagingBuffer;
+
+        EWEDevice* const eweDevice = EWEDevice::GetEWEDevice();
+        eweDevice->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+        void* data;
+        vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, imageSize, 0, &data);
+        //printf("memcpy \n");
+        memcpy(data, pixelPeek.pixels, static_cast<std::size_t>(imageSize));
+        //printf("unmapping \n");
+        vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
+        //printf("freeing pixels \n");
+        stbi_image_free(pixelPeek.pixels);
+
+        return stagingBuffer;
+    }
+    StagingBuffer ImageInfo::StageImage(std::vector<PixelPeek>& pixelPeek) {
+        const int width = pixelPeek[0].width;
+        const int height = pixelPeek[0].height;
+        const uint64_t layerSize = width * height * 4;
+        const VkDeviceSize imageSize = layerSize * pixelPeek.size();
+        void* data;
+
+        StagingBuffer stagingBuffer{};
+
+        EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+        vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer.memory, 0, imageSize, 0, &data);
+        uint64_t memAddress = reinterpret_cast<uint64_t>(data);
+
+        for (int i = 0; i < pixelPeek.size(); i++) {
+            memcpy(reinterpret_cast<void*>(memAddress), pixelPeek[i].pixels, static_cast<std::size_t>(layerSize)); //static_cast<void*> unnecessary>?
+            stbi_image_free(pixelPeek[i].pixels);
+            memAddress += layerSize;
+        }
+        vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer.memory);
+
+        return stagingBuffer;
+    }
     void ImageInfo::CreateTextureImageView() {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -315,10 +377,34 @@ namespace EWE {
     }
 
     //this needs to happen in the graphics queue
-    void ImageInfo::GenerateMipmaps(const VkFormat imageFormat, const int width, const int height){
-
+    void ImageInfo::GenerateMipmaps(Queue::Enum whichQueue, const VkFormat imageFormat, const int width, const int height){
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
+        switch (whichQueue) {
+        case Queue::graphics: {
+            //does nothing
+            break;
+        }
+        case Queue::transfer: {
+            //transfer
+            //need to look back at this, probably fucked
+            EWEDevice::GetEWEDevice()->TransitionFromTransferToGraphics(cmdBuf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, image);
+
+            break;
+        }
+        default: {
+#ifdef _DEBUG
+            //compute not supported
+            assert(false && "default mip mapping queue? ");
+#else
+#if defined(_MSC_VER) && !defined(__clang__) // MSVC
+            __assume(false);
+#else // GCC, Clang
+            __builtin_unreachable();
+#endif
+#endif
+        }
+        }
 
         GenerateMipmaps(cmdBuf, imageFormat, width, height);
 

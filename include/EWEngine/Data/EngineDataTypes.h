@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <cassert>
 
 #include "vulkan/vulkan.h"
 
@@ -19,13 +20,14 @@ typedef uint32_t PipelineID;
 
 struct StagingBuffer {
 	VkBuffer buffer{ VK_NULL_HANDLE };
-	VkDeviceMemory memory;
-	StagingBuffer() {}
+	VkDeviceMemory memory{ VK_NULL_HANDLE };
 	void Free(VkDevice device) {
-		if (buffer != VK_NULL_HANDLE) {
-			vkDestroyBuffer(device, buffer, nullptr);
-			vkFreeMemory(device, memory, nullptr);
-		}
+#ifdef _DEBUG
+		assert(buffer != VK_NULL_HANDLE);
+#endif
+		vkDestroyBuffer(device, buffer, nullptr);
+		vkFreeMemory(device, memory, nullptr);
+		
 	}
 };
 

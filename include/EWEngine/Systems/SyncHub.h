@@ -16,6 +16,16 @@
 
 static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {
+
+	namespace Queue {
+		enum Enum : uint32_t {
+			graphics,
+			present,
+			compute,
+			transfer,
+		};
+	} //namespace Queue
+
 	class SyncHub {
 	private:
 		friend class EWEDevice;
@@ -128,10 +138,13 @@ namespace EWE {
 
 		VkCommandBuffer BeginSingleTimeCommandTransfer();
 
+		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf);
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, BufferQueueTransitionData const& bufferData);
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, std::vector<BufferQueueTransitionData> const& bufferData);
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, ImageQueueTransitionData const& imageData);
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, std::vector<ImageQueueTransitionData> const& imageData);
+
+		VkCommandBuffer BeginSingleTimeCommand(Queue::Enum whichQueue);
 
 		//void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer buffer, uint32_t dstQueue);
 		//void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer* buffers, uint8_t bufferCount, uint32_t dstQueue);

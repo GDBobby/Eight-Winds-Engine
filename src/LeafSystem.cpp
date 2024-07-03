@@ -295,21 +295,20 @@ namespace EWE {
 		//could use a buffer and trim instances that are out of view, might be a compute shader kinda thing
 
 	}
-	StagingBuffer LeafSystem::LoadLeafModel(VkCommandBuffer cmdBuf) {
+
+	////this should be a graphics queue command buffer
+	void LeafSystem::LoadLeafModel(VkCommandBuffer cmdBuf) {
 		//printf("loading leaf model \n");
 		std::ifstream inFile("models/leaf_simpleNTMesh.ewe", std::ifstream::binary);
 		//inFile.open();
-		if (!inFile.is_open()) {
-			printf("failed to open leaf model \n");
-			throw std::runtime_error("failed to open leaf model");
-		}
+		assert(inFile.is_open() && "failed to open leaf model");
 		//printf("before formatingg input file in mesh \n");
 		//printf("before synchronizing \n");
 		//binary_input_archive& fileData;
 		ImportData::TemplateMeshData<VertexNT> importMesh;
 
 		uint32_t endianTest = 1;
-		bool endian = (*((char*)&endianTest) == 1);
+		bool endian = (*((char*)&endianTest) == static_cast<char>(1));
 
 		if (endian) {
 			importMesh.readFromFile(inFile);
@@ -324,14 +323,15 @@ namespace EWE {
 		semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		semInfo.pNext = nullptr;
 		semInfo.flags = 0;
-		vkCreateSemaphore(EWEDevice::GetVkDevice(), &semInfo, nullptr, &modelSemaphore);
+		EWE_VK_ASSERT(vkCreateSemaphore(EWEDevice::GetVkDevice(), &semInfo, nullptr, &modelSemaphore));
 
 		leafModel = EWEModel::CreateMesh(cmdBuf, importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices);
 		//leafTextureID = Texture_Builder::CreateSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
-		
+	}
+	StagingBuffer LeafSystem::LoadLeafTexture(VkCommandBuffer cmdBuf) {
 		const std::string fullLeafTexturePath = "textures/leaf.jpg";
 		ImageInfo imageInfo{};
-		StagingBuffer stagingBuffer = imageInfo.Initialize(cmdBuf, fullLeafTexturePath, false);
+		StagingBuffer stagingBuffer = imageInfo.Initialize(fullLeafTexturePath, false, Queue::graphics);
 
 		EWEDevice::GetEWEDevice()->TransitionImageLayoutWithBarrier(cmdBuf,
 			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -345,6 +345,7 @@ namespace EWE {
 		//printf("leaf model loaded \n");
 		return stagingBuffer;
 	}
+
 	void LeafSystem::DestroySemaphores(){
 		vkDestroySemaphore(EWEDevice::GetVkDevice(), modelSemaphore, nullptr);
 		vkDestroySemaphore(EWEDevice::GetVkDevice(), textureSemaphore, nullptr);

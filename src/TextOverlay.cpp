@@ -274,7 +274,7 @@ namespace EWE {
 		//	VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		//	subresourceRange
 		//);
-		eweDevice->TransitionFromTransfer(copyCmd, EWE::QueueData::q_graphics, image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		eweDevice->TransitionFromTransfer(copyCmd, EWE::Queue::graphics, image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		ImageQueueTransitionData transitionData{image, 1, 1, eweDevice->GetGraphicsIndex()};
 		transitionData.stagingBuffer = stagingBuffer;

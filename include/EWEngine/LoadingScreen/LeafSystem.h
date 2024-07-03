@@ -54,7 +54,13 @@ namespace EWE {
 
 		void LeafPhysicsInitialization();
 		void FallCalculation(float timeStep, uint8_t frameIndex);
-		StagingBuffer LoadLeafModel(VkCommandBuffer cmdBuf);
+
+		////this should be a graphics queue command buffer
+		void LoadLeafModel(VkCommandBuffer cmdBuf);
+
+		[[nodiscard("this staging buffer needs to be handled outside of this function")]]
+		StagingBuffer LoadLeafTexture(VkCommandBuffer cmdBuf);
+
 		void DestroySemaphores();
 		void Render(FrameInfo& frameInfo);
 

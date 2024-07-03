@@ -1,5 +1,6 @@
 #include "EWEngine/Systems/Ocean/Ocean.h"
 #include "EWEngine/Data/TransformInclude.h"
+#include "EWEngine/Graphics/Texture/Image.h"
 
 namespace EWE {
 	namespace Ocean {
@@ -84,11 +85,11 @@ namespace EWE {
 			imageCreateInfo.sharingMode = (VkSharingMode)differentFamilies;
 			imageCreateInfo.queueFamilyIndexCount = 1 + differentFamilies;
 			imageCreateInfo.pQueueFamilyIndices = queueData;
-			eweDevice->CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanOutputImages, oceanOutputImageMemory);
+			Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanOutputImages, oceanOutputImageMemory);
 
 			imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
 			imageCreateInfo.arrayLayers = cascade_count;
-			eweDevice->CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanFreqImages, oceanFreqImageMemory);
+			Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanFreqImages, oceanFreqImageMemory);
 
 
 			SyncHub* syncHub = SyncHub::GetSyncHubInstance();

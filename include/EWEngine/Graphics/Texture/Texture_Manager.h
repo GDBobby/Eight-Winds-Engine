@@ -2,7 +2,7 @@
 
 #include <EWEngine/Data/EngineDataTypes.h>
 
-#include <EWEngine/Graphics/Texture/Texture.h>
+#include <EWEngine/Graphics/Texture/Image.h>
 
 #include <EWEngine/Data/MemoryTypeBucket.h>
 

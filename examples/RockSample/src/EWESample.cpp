@@ -28,7 +28,7 @@ namespace EWE {
 
 		addModulesToMenuManager(screenWidth, screenHeight);
 		loadGlobalObjects();
-		currentScene = scene_ocean;
+		//currentScene = scene_ocean;
 		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine));
 		scenes.emplace(scene_ocean, std::make_unique<OceanScene>(ewEngine, skyboxInfo));
 		scenes.emplace(scene_shaderGen, std::make_unique<ShaderGenerationScene>(ewEngine));
@@ -55,7 +55,7 @@ namespace EWE {
 		if (SettingsJSON::settingsData.FPS == 0) {
 			//small value, for effectively uncapped frame rate
 			//given recent games frying GPUs while frame rate is unlimited, users have to go into their settings file and change their frame rate to 0
-			//idk if that will be an issue or not, but this is intentionally obscure
+			//idk if GPU frying will be an issue or not, but this is intentionally obscure
 			renderRefreshRate = 0.00001;
 		}
 		else {

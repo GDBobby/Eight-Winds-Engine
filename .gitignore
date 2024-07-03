@@ -35,3 +35,5 @@ Projects/
 debuggers/
 external/
 compile.bat
+*.dll
+*.json

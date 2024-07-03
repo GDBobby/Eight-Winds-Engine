@@ -2,15 +2,17 @@
 #include "EWEngine/Graphics/Preprocessor.h"
 
 #if DEBUGGING_DEVICE_LOST
-#include "vulkan/vulkan.h"
-#include <array>
-#include <vector>
 #include "EWEngine/Data/MemoryTypeBucket.h"
-#include <future>
-#include <type_traits>
 #if USING_NVIDIA_AFTERMATH
 #include "EWEngine/Graphics/Debug/NSightAftermathGpuCrashTracker.h"
 #endif
+
+#include "vulkan/vulkan.h"
+
+#include <array>
+#include <vector>
+#include <future>
+#include <type_traits>
 
 //there's a license in there, not sure if i need to copy it or not
 //https://github.com/ConfettiFX/The-Forge/blob/23483a282ddc8a917f8b292b0250dec122eab6a9/Common_3/Graphics/Vulkan/Vulkan.cpp#L741

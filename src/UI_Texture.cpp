@@ -51,7 +51,7 @@ namespace EWE {
             imageInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
             EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
-            eweDevice->CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.imageMemory);
+            Image::CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.imageMemory);
 
             SyncHub* syncHub = SyncHub::GetSyncHubInstance();
             VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();

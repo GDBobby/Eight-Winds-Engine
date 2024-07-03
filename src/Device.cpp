@@ -16,7 +16,7 @@
 
 #define ENGINE_DIR "../"
 
-#define AMD_TARGET true
+#define AMD_TARGET false
 
 namespace EWE {
 
@@ -81,10 +81,10 @@ namespace EWE {
         const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
         const VkAllocationCallbacks* pAllocator,
         VkDebugUtilsMessengerEXT* pDebugMessenger) {
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
+        auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(
             instance,
             "vkCreateDebugUtilsMessengerEXT"
-        );
+        ));
         if (func != nullptr) {
             return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
         }
@@ -97,7 +97,7 @@ namespace EWE {
         VkInstance instance,
         VkDebugUtilsMessengerEXT debugMessenger,
         const VkAllocationCallbacks* pAllocator) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
         if (func != nullptr) {
             func(instance, debugMessenger, pAllocator);
         }
@@ -135,10 +135,10 @@ namespace EWE {
             if ((presentSupport && graphicsSupport && computeSupport) == true) {
                 //im pretty sure compute and graphics in a queue is a vulkan requirement, but not 100%
                 foundDedicatedGraphicsPresent = true;
-                index[QueueData::q_graphics] = currentIndex;
-                index[QueueData::q_present] = currentIndex;
-                found[QueueData::q_graphics] = true;
-                found[QueueData::q_present] = true;
+                index[Queue::graphics] = currentIndex;
+                index[Queue::present] = currentIndex;
+                found[Queue::graphics] = true;
+                found[Queue::present] = true;
                 break;
             }
             currentIndex++;
@@ -152,7 +152,7 @@ namespace EWE {
 
         currentIndex = 0;
         for (const auto& queueFamily : queueFamilies) {
-            if (currentIndex == index[QueueData::q_graphics]) {
+            if (currentIndex == index[Queue::graphics]) {
                 currentIndex++;
                 continue;
             }
@@ -172,35 +172,35 @@ namespace EWE {
         }
         printf("after the queue family \n");
         if (dedicatedComputeFamilies.size() > 0) {
-            index[QueueData::q_compute] = dedicatedComputeFamilies.top();
-            found[QueueData::q_compute] = true;
+            index[Queue::compute] = dedicatedComputeFamilies.top();
+            found[Queue::compute] = true;
         }
         if (dedicatedTransferFamilies.size() > 0) {
-            index[QueueData::q_transfer] = dedicatedTransferFamilies.top();
-            found[QueueData::q_transfer] = true;
+            index[Queue::transfer] = dedicatedTransferFamilies.top();
+            found[Queue::transfer] = true;
         }
         if (combinedTransferComputeFamilies.size() > 0) {
-            if ((!found[QueueData::q_compute]) && (!found[QueueData::q_transfer])) {
+            if ((!found[Queue::compute]) && (!found[Queue::transfer])) {
                 assert(combinedTransferComputeFamilies.size() >= 2 && "not enough queues for transfer and compute");
 
-                index[QueueData::q_compute] = combinedTransferComputeFamilies.top();
-                found[QueueData::q_compute] = true;
+                index[Queue::compute] = combinedTransferComputeFamilies.top();
+                found[Queue::compute] = true;
                 combinedTransferComputeFamilies.pop();
 
-                index[QueueData::q_transfer] = combinedTransferComputeFamilies.top();
-                found[QueueData::q_transfer] = true;
+                index[Queue::transfer] = combinedTransferComputeFamilies.top();
+                found[Queue::transfer] = true;
             }
-            else if (!found[QueueData::q_compute]) {
-                index[QueueData::q_compute] = combinedTransferComputeFamilies.top();
-                found[QueueData::q_compute] = true;
+            else if (!found[Queue::compute]) {
+                index[Queue::compute] = combinedTransferComputeFamilies.top();
+                found[Queue::compute] = true;
             }
-            else if (!found[QueueData::q_transfer]) {
-                index[QueueData::q_transfer] = combinedTransferComputeFamilies.top();
-                found[QueueData::q_transfer] = true;
+            else if (!found[Queue::transfer]) {
+                index[Queue::transfer] = combinedTransferComputeFamilies.top();
+                found[Queue::transfer] = true;
             }
         }
-        assert(found[QueueData::q_compute] && found[QueueData::q_transfer] && "did not find a dedicated transfer or compute queue");
-        assert(index[QueueData::q_compute] != index[QueueData::q_transfer] && "compute queue and transfer q should not be the same");
+        assert(found[Queue::compute] && found[Queue::transfer] && "did not find a dedicated transfer or compute queue");
+        assert(index[Queue::compute] != index[Queue::transfer] && "compute queue and transfer q should not be the same");
     }
 
     // class member functions
@@ -217,7 +217,7 @@ namespace EWE {
             logFile.close();
         }
 #endif
-
+        printf("creating device stuff\n");
         CreateInstance();
         //printf("after creating device instance \n");
         SetupDebugMessenger();
@@ -254,7 +254,7 @@ namespace EWE {
 
         //mainThreadID = std::this_thread::get_id();
 
-        SyncHub::Initialize(device_, queues[QueueData::q_graphics], queues[QueueData::q_present], queues[QueueData::q_compute], queues[QueueData::q_transfer], commandPool, computeCommandPool, transferCommandPool, queueData.index[QueueData::Queue_Enum::q_transfer]);
+        SyncHub::Initialize(device_, queues[Queue::graphics], queues[Queue::present], queues[Queue::compute], queues[Queue::transfer], commandPool, computeCommandPool, transferCommandPool, queueData.index[Queue::transfer]);
         syncHub = SyncHub::GetSyncHubInstance();
         Sampler::Initialize(device_);
 
@@ -471,22 +471,22 @@ namespace EWE {
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::vector<std::vector<float>> queuePriorities{};
 
-        queueData.index[QueueData::q_present] = queueData.index[QueueData::q_graphics];
+        queueData.index[Queue::present] = queueData.index[Queue::graphics];
 
         queuePriorities.emplace_back().push_back(1.f);
         VkDeviceQueueCreateInfo queueCreateInfo = {};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.queueFamilyIndex = queueData.index[QueueData::q_graphics];
+        queueCreateInfo.queueFamilyIndex = queueData.index[Queue::graphics];
 
         queueCreateInfo.queueCount = 1;
         queueCreateInfos.push_back(queueCreateInfo);
 
         queuePriorities.emplace_back().push_back(0.9f);
-        queueCreateInfo.queueFamilyIndex = queueData.index[QueueData::q_compute];
+        queueCreateInfo.queueFamilyIndex = queueData.index[Queue::compute];
         queueCreateInfos.push_back(queueCreateInfo);
 
         queuePriorities.emplace_back().push_back(0.8f);
-        queueCreateInfo.queueFamilyIndex = queueData.index[QueueData::q_transfer];
+        queueCreateInfo.queueFamilyIndex = queueData.index[Queue::transfer];
         queueCreateInfos.push_back(queueCreateInfo);
         //not currently doing a separate queue for present. its currently combined with graphics
         //not sure how much wrok it'll be to fix that, i'll come back to it later
@@ -497,12 +497,28 @@ namespace EWE {
         }
 
         VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_feature{};
-        dynamic_rendering_feature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
         dynamic_rendering_feature.pNext = nullptr;
+        dynamic_rendering_feature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
         dynamic_rendering_feature.dynamicRendering = VK_TRUE;
+
         VkPhysicalDeviceSynchronization2FeaturesKHR synchronization_2_feature{};
-        synchronization_2_feature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
         synchronization_2_feature.pNext = &dynamic_rendering_feature;
+        synchronization_2_feature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
+
+#if USING_NVIDIA_AFTERMATH
+        VkDeviceDiagnosticsConfigCreateInfoNV nvDiagCreateInfo{};
+        if (deviceLostDebug.NVIDIAdebug) {
+            nvDiagCreateInfo.pNext = nullptr;
+            nvDiagCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV;
+            nvDiagCreateInfo.flags =
+                VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_RESOURCE_TRACKING_BIT_NV |
+                VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV |
+                VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV;
+
+            dynamic_rendering_feature.pNext = &nvDiagCreateInfo;
+        }
+#endif
+        
 
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -571,23 +587,23 @@ namespace EWE {
 #endif
         
         std::cout << "getting device queues \n";
-        std::cout << "\t graphics family:queue index - " << queueData.index[QueueData::q_graphics] << std::endl;
-        std::cout << "\t present family:queue index - " << queueData.index[QueueData::q_present] << std::endl;
-        std::cout << "\t compute family:queue index - " << queueData.index[QueueData::q_compute] << std::endl;
-        std::cout << "\t transfer family:queue index - " << queueData.index[QueueData::q_transfer] << std::endl;
+        std::cout << "\t graphics family:queue index - " << queueData.index[Queue::graphics] << std::endl;
+        std::cout << "\t present family:queue index - " << queueData.index[Queue::present] << std::endl;
+        std::cout << "\t compute family:queue index - " << queueData.index[Queue::compute] << std::endl;
+        std::cout << "\t transfer family:queue index - " << queueData.index[Queue::transfer] << std::endl;
         //printf("before graphics queue \n");
-        vkGetDeviceQueue(device_, queueData.index[QueueData::q_graphics], 0, &queues[QueueData::q_graphics]);
+        vkGetDeviceQueue(device_, queueData.index[Queue::graphics], 0, &queues[Queue::graphics]);
         //printf("after graphics queue \n");
-        if (queueData.index[QueueData::q_graphics] != queueData.index[QueueData::q_present]) {
-            vkGetDeviceQueue(device_, queueData.index[QueueData::q_present], 0, &queues[QueueData::q_present]);
+        if (queueData.index[Queue::graphics] != queueData.index[Queue::present]) {
+            vkGetDeviceQueue(device_, queueData.index[Queue::present], 0, &queues[Queue::present]);
         }
         else{
-            queues[QueueData::q_present] = queues[QueueData::q_graphics];
+            queues[Queue::present] = queues[Queue::graphics];
 		}
 
-        vkGetDeviceQueue(device_, queueData.index[QueueData::q_compute], 0, &queues[QueueData::q_compute]);
+        vkGetDeviceQueue(device_, queueData.index[Queue::compute], 0, &queues[Queue::compute]);
 
-        vkGetDeviceQueue(device_, queueData.index[QueueData::q_transfer], 0, &queues[QueueData::q_transfer]);
+        vkGetDeviceQueue(device_, queueData.index[Queue::transfer], 0, &queues[Queue::transfer]);
         printf("after transfer qeuue \n");
 
 #if GPU_LOGGING
@@ -602,7 +618,7 @@ namespace EWE {
     void EWEDevice::CreateComputeCommandPool() {
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = queueData.index[QueueData::q_compute];
+        poolInfo.queueFamilyIndex = queueData.index[Queue::compute];
 
         //sascha doesnt use TRANSIENT_BIT
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -613,7 +629,7 @@ namespace EWE {
     void EWEDevice::CreateCommandPool() {
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = queueData.index[QueueData::q_graphics];
+        poolInfo.queueFamilyIndex = queueData.index[Queue::graphics];
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
         EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool));
@@ -622,13 +638,13 @@ namespace EWE {
 
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        if (queueData.found[QueueData::q_transfer]) {
+        if (queueData.found[Queue::transfer]) {
             printf("transfer command pool created with transfer queue family \n");
-            poolInfo.queueFamilyIndex = queueData.index[QueueData::q_transfer];
+            poolInfo.queueFamilyIndex = queueData.index[Queue::transfer];
         }
         else {
             printf("transfer command pool created with graphics queue family \n");
-            poolInfo.queueFamilyIndex = queueData.index[QueueData::q_graphics];
+            poolInfo.queueFamilyIndex = queueData.index[Queue::graphics];
         }
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
@@ -865,9 +881,9 @@ namespace EWE {
         throw std::runtime_error("failed to find supported format!");
     }
 
-    uint32_t EWEDevice::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+    uint32_t EWEDevice::FindMemoryType(uint32_t typeFilter, const VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(eweDevice->physicalDevice, &memProperties);
 
         /*
         printf("memory heap count : %d \n", memProperties.memoryHeapCount);
@@ -887,8 +903,16 @@ namespace EWE {
             }
         }
 
-        printf("failed to find suitable memory type \n");
-        throw std::runtime_error("failed to find suitable memory type!");
+#ifdef _DEBUG
+        assert(false && "find memory type unsupported");
+        return 0;
+#else
+#if defined(_MSC_VER) && !defined(__clang__) // MSVC
+        __assume(false);
+#else // GCC, Clang
+        __builtin_unreachable();
+#endif
+#endif
     }
 
     void EWEDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
@@ -939,8 +963,7 @@ namespace EWE {
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = layerCount;
 
-        switch (srcLayout)
-        {
+        switch (srcLayout) {
         case VK_IMAGE_LAYOUT_UNDEFINED:
             // Image layout is undefined (or does not matter).
             // Only valid as initial layout. No flags required.
@@ -987,6 +1010,7 @@ namespace EWE {
         case VK_IMAGE_LAYOUT_GENERAL:
             barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
             barrier.srcAccessMask |= VK_ACCESS_SHADER_READ_BIT * (dstLayout == VK_IMAGE_LAYOUT_GENERAL);
+            break;
         default:
             /* Value not used by callers, so not supported. */
             assert(false && "unsupported src layout transition");
@@ -1154,9 +1178,9 @@ namespace EWE {
         imageBarriers[0].subresourceRange.levelCount = 1;
         imageBarriers[0].subresourceRange.baseArrayLayer = 0;
         imageBarriers[0].subresourceRange.layerCount = 1;
-        if (queueData.index[QueueData::q_compute] != queueData.index[QueueData::q_graphics]) {
-            imageBarriers[0].srcQueueFamilyIndex = queueData.index[QueueData::q_compute];
-            imageBarriers[0].dstQueueFamilyIndex = queueData.index[QueueData::q_graphics];
+        if (queueData.index[Queue::compute] != queueData.index[Queue::graphics]) {
+            imageBarriers[0].srcQueueFamilyIndex = queueData.index[Queue::compute];
+            imageBarriers[0].dstQueueFamilyIndex = queueData.index[Queue::graphics];
         }
         else {
             imageBarriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1203,7 +1227,7 @@ namespace EWE {
     }
 
 
-    void EWEDevice::TransitionFromTransfer(VkCommandBuffer cmdBuf, QueueData::Queue_Enum dstQueueIndex, VkImage const& image, VkImageLayout finalLayout) {
+    void EWEDevice::TransitionFromTransfer(VkCommandBuffer cmdBuf, Queue::Enum dstQueueIndex, VkImage const& image, VkImageLayout finalLayout) {
         VkImageMemoryBarrier imageBarrier{};
         imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         imageBarrier.pNext = nullptr;
@@ -1215,13 +1239,13 @@ namespace EWE {
         imageBarrier.subresourceRange.baseArrayLayer = 0;
         imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
-        imageBarrier.srcQueueFamilyIndex = queueData.index[QueueData::q_transfer];
+        imageBarrier.srcQueueFamilyIndex = queueData.index[Queue::transfer];
 
         imageBarrier.dstQueueFamilyIndex = queueData.index[dstQueueIndex];
 
         imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         imageBarrier.newLayout = finalLayout;
-        assert((dstQueueIndex == QueueData::q_graphics) || (dstQueueIndex == QueueData::q_compute));
+        assert((dstQueueIndex == Queue::graphics) || (dstQueueIndex == Queue::compute));
 
         imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // Access mask for compute shader writes
         imageBarrier.dstAccessMask = 0; // Access mask for transfer read operation
@@ -1246,9 +1270,9 @@ namespace EWE {
         imageBarrier.subresourceRange.baseArrayLayer = 0;
         imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
-        imageBarrier.srcQueueFamilyIndex = queueData.index[QueueData::q_transfer];
+        imageBarrier.srcQueueFamilyIndex = queueData.index[Queue::transfer];
 
-        imageBarrier.dstQueueFamilyIndex = queueData.index[QueueData::q_graphics];
+        imageBarrier.dstQueueFamilyIndex = queueData.index[Queue::graphics];
 
         imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
@@ -1296,8 +1320,8 @@ namespace EWE {
 
             imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             imageMemoryBarrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-            imageMemoryBarrier.srcQueueFamilyIndex = queueData.q_transfer;
-            imageMemoryBarrier.dstQueueFamilyIndex = queueData.q_graphics;
+            imageMemoryBarrier.srcQueueFamilyIndex = queueData.index[Queue::transfer];
+            imageMemoryBarrier.dstQueueFamilyIndex = queueData.index[Queue::graphics];
 
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
@@ -1336,27 +1360,9 @@ namespace EWE {
         vkCmdCopyBufferToImage(
             cmdBuf,
             buffer,
-            image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1,
-            &region);
-    }
-
-    void EWEDevice::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
-        EWE_VK_ASSERT(vkCreateImage(device_, &imageInfo, nullptr, &image));
-
-
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(device_, image, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-        EWE_VK_ASSERT(vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory));
-
-        EWE_VK_ASSERT(vkBindImageMemory(device_, image, imageMemory, 0));
+            image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &region
+        );
     }
 
     VkDeviceSize EWEDevice::GetMemoryRemaining() {
@@ -1394,7 +1400,7 @@ namespace EWE {
     }
     QueueTransitionContainer* EWEDevice::PostTransitionsToGraphics(VkCommandBuffer cmdBuf, uint8_t frameIndex){
 		QueueTransitionContainer* transitionContainer = syncHub->transitionManager.PrepareGraphics(frameIndex);
-        if(transitionContainer == nullptr){
+        if(transitionContainer == nullptr) [[unlikely]] {
             return nullptr;
         }
 

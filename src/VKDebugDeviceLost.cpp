@@ -4,6 +4,7 @@
 #include <cassert>
 #include <set>
 #include <string>
+#include <chrono>
 
 //there's a license in there, not sure if i need to copy it or not
 //https://github.com/ConfettiFX/The-Forge/blob/23483a282ddc8a917f8b292b0250dec122eab6a9/Common_3/Graphics/Vulkan/Vulkan.cpp#L741
@@ -18,9 +19,14 @@ PFN_vkCmdWriteBufferMarkerAMD vkCmdWriteBufferMarkerAMDX;
 namespace EWE::VKDEBUG {
 	VkDevice device;
 	VkInstance instance;
+	GpuCrashTracker::MarkerMap* markerMap;
+	GpuCrashTracker* gpuCrashTracker;
 
 	DeviceLostDebugStructure::DeviceLostDebugStructure() {
-
+		printf("initializing gpuCrashTracker\n");
+		markerMap = new GpuCrashTracker::MarkerMap();
+		gpuCrashTracker = new GpuCrashTracker(*markerMap);
+		gpuCrashTracker->Initialize();
 	}
 	void DeviceLostDebugStructure::Initialize(VkDevice vkDevice) {
 		device = vkDevice;
@@ -87,13 +93,18 @@ namespace EWE::VKDEBUG {
 
 
 	void DeviceLostDebugStructure::InitNvidiaDebug() {
+		vkGetQueueCheckpointDataNVX = reinterpret_cast<PFN_vkGetQueueCheckpointDataNV>(vkGetDeviceProcAddr(device, "vkGetQueueCheckpointDataNV"));
 		vkCmdSetCheckpointNVX = reinterpret_cast<PFN_vkCmdSetCheckpointNV>(vkGetDeviceProcAddr(device, "vkCmdSetCheckpointNV"));
+		//assert(vkCmdSetCheckpointNVX != nullptr);
+		//assert(vkGetQueueCheckpointDataNVX != nullptr);
+
 		checkpoints.reserve(50);
 
 		checkpointPtr = &DeviceLostDebugStructure::AddNvidiaCheckpoint;
 	}
 	void DeviceLostDebugStructure::InitAMDDebug() {
 		vkCmdWriteBufferMarkerAMDX = reinterpret_cast<PFN_vkCmdWriteBufferMarkerAMD>(vkGetDeviceProcAddr(device, "vkCmdWriteBufferMarkerAMDX"));
+		//assert(vkCmdWriteBufferMarkerAMDX != nullptr);
 
 		checkpointPtr = &DeviceLostDebugStructure::AddAMDCheckpoint;
 	}
@@ -138,7 +149,7 @@ namespace EWE::VKDEBUG {
 	void DeviceLostDebugStructure::AddCheckpoint(VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
 
 		printf("\n\n *** ADDING CHECKPOINT *** \n\n");
-		checkpointPtr(this, cmdBuf, name, type);
+		//checkpointPtr(this, cmdBuf, name, type);
 	}
 	void DeviceLostDebugStructure::ClearCheckpoints() {
 		checkpoints.clear();
@@ -160,15 +171,55 @@ namespace EWE::VKDEBUG {
 		queues = queuesParam;
 		if (deviceFaultEnabled) {
 			//func =				   (PFN_vkGetDeviceFaultInfoEXT)vkGetDeviceProcAddr(device, "vkGetDeviceFaultInfoEXT");
-			vkGetDeviceFaultInfoEXTX = (PFN_vkGetDeviceFaultInfoEXT)vkGetInstanceProcAddr(instance, "vkGetDeviceFaultInfoEXT");
+			vkGetDeviceFaultInfoEXTX = reinterpret_cast<PFN_vkGetDeviceFaultInfoEXT>(vkGetDeviceProcAddr(device, "vkGetDeviceFaultInfoEXT"));
+			if (vkGetDeviceFaultInfoEXTX == nullptr) {
+				deviceFaultEnabled = false;
+			}
+			//assert(vkGetDeviceFaultInfoEXTX != nullptr && "vkGetDeviceFaultInfoEXT proc addr was nullptr");
 			
-			assert(vkGetDeviceFaultInfoEXTX != nullptr && "vkGetDeviceFaultInfoEXT proc addr was nullptr");
 		}
 		if (nvidiaCheckpointEnabled) {
-			vkGetQueueCheckpointDataNVX = (PFN_vkGetQueueCheckpointDataNV)vkGetDeviceProcAddr(device, "vkGetQueueCheckpointDataNV");
-			assert(vkGetQueueCheckpointDataNVX != nullptr && "vkGetQueueCheckpointDataNVX proc addr was nullptr");
+			vkGetQueueCheckpointDataNVX = reinterpret_cast<PFN_vkGetQueueCheckpointDataNV>(vkGetDeviceProcAddr(device, "vkGetQueueCheckpointDataNV"));
+			vkCmdSetCheckpointNVX = reinterpret_cast<PFN_vkCmdSetCheckpointNV>(vkGetDeviceProcAddr(device, "vkCmdSetCheckpointNV"));
+			assert(vkCmdSetCheckpointNVX != nullptr);
+			assert(vkGetQueueCheckpointDataNVX != nullptr);
 		}
 	}
+	void NSightActivate() {
+		printf("activating nsight aftermath??\n");
+		// Device lost notification is asynchronous to the NVIDIA display
+		// driver's GPU crash handling. Give the Nsight Aftermath GPU crash dump
+		// thread some time to do its work before terminating the process.
+		auto tdrTerminationTimeout = std::chrono::seconds(3);
+		auto tStart = std::chrono::steady_clock::now();
+		auto tElapsed = std::chrono::milliseconds::zero();
+
+		GFSDK_Aftermath_CrashDump_Status status = GFSDK_Aftermath_CrashDump_Status_Unknown;
+		AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_GetCrashDumpStatus(&status));
+
+		while (status != GFSDK_Aftermath_CrashDump_Status_CollectingDataFailed &&
+			status != GFSDK_Aftermath_CrashDump_Status_Finished &&
+			tElapsed < tdrTerminationTimeout)
+		{
+			// Sleep 50ms and poll the status again until timeout or Aftermath finished processing the crash dump.
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_GetCrashDumpStatus(&status));
+
+			auto tEnd = std::chrono::steady_clock::now();
+			tElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart);
+		}
+
+		if (status != GFSDK_Aftermath_CrashDump_Status_Finished) {
+			std::stringstream err_msg;
+			err_msg << "Unexpected crash dump status: " << status;
+			assert(false && err_msg.str().c_str());
+		}
+
+		// Terminate on failure
+		//handled in the calling function
+	}
+
+
 	void OnDeviceLost() {
 		if (deviceFaultEnabled) {
 
@@ -176,11 +227,8 @@ namespace EWE::VKDEBUG {
 			VkDeviceFaultCountsEXT faultCounts = { VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT };
 			printf("immediately before device lost function\n");
 
-			VkResult               vkres = vkGetDeviceFaultInfoEXTX(device, &faultCounts, nullptr);
-			if (vkres != VK_SUCCESS) {
-				printf("device lost analysis failed : %d", vkres);
-				assert(false && "failed to get device fault info");
-			}
+			VkResult vkres = vkGetDeviceFaultInfoEXTX(device, &faultCounts, nullptr);
+			assert(vkres == VK_SUCCESS && "failed to get device fault info");
 
 			VkDeviceFaultInfoEXT faultInfo = { VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_EXT };
 
@@ -196,10 +244,8 @@ namespace EWE::VKDEBUG {
 
 			faultCounts.vendorBinarySize = 0;
 			vkres = vkGetDeviceFaultInfoEXTX(device, &faultCounts, &faultInfo);
-			if (vkres != VK_SUCCESS) {
-				printf("device lost analysis failed on the second request : %d", vkres);
-				assert(false && "failed to get device fault info");
-			}
+			assert(vkres == VK_SUCCESS && "failed to get device fault info");
+
 			printf("** Report from VK_EXT_device_fault ** \n");
 			printf("Description : %s\n", faultInfo.description);
 			printf("Vendor Infos : \n");
@@ -248,6 +294,11 @@ namespace EWE::VKDEBUG {
 		printf("before nvidiaa checkpoint branch\n");
 		if (nvidiaCheckpoint) {
 			printf("finna get into nvidia checkpoitns\n");
+
+			//go into aftermath here
+			NSightActivate();
+
+			/*
 			for (uint8_t i = 0; i < 4; i++) {
 				uint32_t checkpointCount;
 
@@ -264,6 +315,8 @@ namespace EWE::VKDEBUG {
 					}
 				}
 			}
+			*/
+			printf("end of nvidia checkpoint\n");
 		}
 		else if (amdCheckpoint) {
 

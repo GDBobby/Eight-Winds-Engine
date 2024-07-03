@@ -1,5 +1,7 @@
 #include "EWEngine/Graphics/Swapchain.hpp"
 
+#include "EWEngine/Graphics/Texture/Image.h"
+
 // std
 #include <array>
 #include <cstdlib>
@@ -317,7 +319,7 @@ namespace EWE {
             imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             imageInfo.flags = 0;
 
-            EWEDevice::GetEWEDevice()->CreateImageWithInfo(
+            Image::CreateImageWithInfo(
                 imageInfo,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 depthImages[i],

@@ -79,6 +79,7 @@ namespace EWE {
 #endif
 	}
 
+
 	void SyncHub::SetMaxFramesInFlight() {
 		imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -104,9 +105,11 @@ namespace EWE {
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
 		VkFenceCreateInfo fenceInfo = {};
+		fenceInfo.pNext = nullptr;
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		vkCreateFence(device, &fenceInfo, nullptr, &singleTimeFenceTransfer);
+		EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &singleTimeFenceTransfer));
+		EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &singleTimeFenceGraphics));
 		
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -131,7 +134,7 @@ namespace EWE {
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 		return commandBuffer;
 	}
 
@@ -155,7 +158,28 @@ namespace EWE {
 		vkBeginCommandBuffer(commandBuffer, &beginInfo);
 		return commandBuffer;
 	}
-	//this might turn legacy
+
+	VkCommandBuffer SyncHub::BeginSingleTimeCommand(Queue::Enum whichQueue) {
+		if (whichQueue == Queue::transfer) {
+			return BeginSingleTimeCommandTransfer();
+		}
+		else if (whichQueue == Queue::graphics) {
+			return BeginSingleTimeCommandGraphics();
+		}
+		else if (whichQueue == Queue::compute) {
+			//i dont know if a single time command will ever be done in compute, mayeb for mip generation or smoething like that, forge used a few one time commands
+			//return BeginSingleTimeCommandCompute();
+			assert(false && "compute queue single time command not supported yet");
+		}
+
+#if defined(_MSC_VER) && !defined(__clang__) // MSVC
+		__assume(false);
+#else // GCC, Clang
+		__builtin_unreachable();
+#endif
+	}
+
+	//this needs to be called from the graphics thread
 	void SyncHub::EndSingleTimeCommandGraphics(VkCommandBuffer cmdBuf) {
 		vkEndCommandBuffer(cmdBuf);
 		///prepTransferSubmission(cmdBuf);

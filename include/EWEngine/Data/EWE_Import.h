@@ -42,7 +42,7 @@ namespace EWE {
                 std::getline(inFile, versionTracker, (char)0);
                 if (strcmp(versionTracker.c_str(), EXPECTED_IMPORT_VERSION)) {
                     printf("incorrect import version : %s \n", versionTracker.c_str());
-                    throw std::runtime_error("incorrect import version");
+                    assert(false && "incorrect import version");
                 }
                 if (inFile.peek() == '\n') {
                     printf(" foudn null after version \n");
