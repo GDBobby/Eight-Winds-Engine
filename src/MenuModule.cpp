@@ -5,8 +5,8 @@
 
 namespace EWE {
 
-	std::unique_ptr<EWEModel> MenuModule::model2D;
-	std::unique_ptr<EWEModel> MenuModule::nineUIModel;
+	EWEModel* MenuModule::model2D;
+	EWEModel* MenuModule::nineUIModel;
 
 	TextureDesc MenuModule::textureArray{ VK_NULL_HANDLE };
 
@@ -17,8 +17,8 @@ namespace EWE {
 	void MenuModule::initTextures() {
 		//these textures are deleted in EWETexture, when the program is cleaning itself up on close
 
-		model2D = Basic_Model::generate2DQuad();
-		nineUIModel = Basic_Model::generateNineUIQuad();
+		model2D = Basic_Model::Quad2D(Queue::transfer);
+		nineUIModel = Basic_Model::NineUIQuad(Queue::transfer);
 	}
 
 	std::pair<UIComponentTypes, int16_t> MenuModule::checkClick(double xpos, double ypos) {

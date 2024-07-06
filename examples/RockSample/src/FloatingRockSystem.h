@@ -19,6 +19,7 @@ namespace EWE {
 	public:
 
 		FloatingRock();
+		~FloatingRock();
 
 		FloatingRock(const FloatingRock&) = delete;
 		FloatingRock& operator=(const FloatingRock&) = delete;
@@ -29,7 +30,7 @@ namespace EWE {
 
 		void render(FrameInfo& frameInfo);
 	private:
-		std::unique_ptr<EWEModel> rockModel;
+		EWEModel* rockModel;
 		TextureDesc rockTexture{ TEXTURE_UNBINDED_DESC };
 		glm::mat4 renderModelMatrix{};
 		glm::mat3 renderNormalMatrix{};

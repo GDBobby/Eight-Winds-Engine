@@ -56,15 +56,14 @@ namespace EWE {
 		void FallCalculation(float timeStep, uint8_t frameIndex);
 
 		////this should be a graphics queue command buffer
-		void LoadLeafModel(VkCommandBuffer cmdBuf);
+		void LoadLeafModel();
 
-		[[nodiscard("this staging buffer needs to be handled outside of this function")]]
-		StagingBuffer LoadLeafTexture(VkCommandBuffer cmdBuf);
+		void LoadLeafTexture();
 
 		void DestroySemaphores();
 		void Render(FrameInfo& frameInfo);
 
-		std::unique_ptr<EWEModel> leafModel;
+		EWEModel* leafModel;
 		TextureDesc leafTextureID = 0;
 
 	protected:

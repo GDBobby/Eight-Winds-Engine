@@ -31,7 +31,7 @@ namespace EWE {
 		printf("ARS constructor \n");
 		EWEDescriptorPool::BuildGlobalPool();
 
-		model2D = Basic_Model::generate2DQuad();
+		model2D = Basic_Model::Quad2D(Queue::transfer);
 		printf("after ARS constructor finished \n");
 	}
 
@@ -63,7 +63,7 @@ namespace EWE {
 
 		//RenderDynamicMaterials(frameInfo);
 
-		RigidRenderingSystem::render(frameInfo);
+		RigidRenderingSystem::Render(frameInfo);
 #if DEBUGGING_PIPELINES
 		printf("after rendering dynamic \n");
 #endif
@@ -147,7 +147,7 @@ namespace EWE {
 		pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
 		pipe->BindDescriptor(1, &objectManager.skybox.second);
 
-		pipe->BindModel(objectManager.skybox.first.get());
+		pipe->BindModel(objectManager.skybox.first);
 		pipe->DrawModel();
 		
 	}

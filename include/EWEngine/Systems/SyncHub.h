@@ -144,7 +144,7 @@ namespace EWE {
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, ImageQueueTransitionData const& imageData);
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, std::vector<ImageQueueTransitionData> const& imageData);
 
-		VkCommandBuffer BeginSingleTimeCommand(Queue::Enum whichQueue);
+		VkCommandBuffer BeginSingleTimeCommand(Queue::Enum queue);
 
 		//void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer buffer, uint32_t dstQueue);
 		//void PrepTransferSubmission(VkCommandBuffer transferBuffer, VkBuffer* buffers, uint8_t bufferCount, uint32_t dstQueue);

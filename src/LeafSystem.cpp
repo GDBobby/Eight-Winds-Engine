@@ -1,7 +1,5 @@
 #include "EWEngine/LoadingScreen/LeafSystem.h"
 
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
-
 namespace EWE {
 	//id like to move some of the random generation components to local scope on leaf generation, not sure which ones yet
 	//id also like to attempt to move this entire calculation to the GPU on compute shaders
@@ -43,6 +41,7 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
 		printf("begin deconstructing leaf system \n");
 #endif
+		delete leafModel;
 		vkDestroyShaderModule(EWEDevice::GetVkDevice(), vertexShaderModule, nullptr);
 		vkDestroyShaderModule(EWEDevice::GetVkDevice(), fragmentShaderModule, nullptr);
 
@@ -297,7 +296,7 @@ namespace EWE {
 	}
 
 	////this should be a graphics queue command buffer
-	void LeafSystem::LoadLeafModel(VkCommandBuffer cmdBuf) {
+	void LeafSystem::LoadLeafModel() {
 		//printf("loading leaf model \n");
 		std::ifstream inFile("models/leaf_simpleNTMesh.ewe", std::ifstream::binary);
 		//inFile.open();
@@ -325,25 +324,28 @@ namespace EWE {
 		semInfo.flags = 0;
 		EWE_VK_ASSERT(vkCreateSemaphore(EWEDevice::GetVkDevice(), &semInfo, nullptr, &modelSemaphore));
 
-		leafModel = EWEModel::CreateMesh(cmdBuf, importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices);
+		leafModel = EWEModel::CreateMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::graphics);
 		//leafTextureID = Texture_Builder::CreateSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 	}
-	StagingBuffer LeafSystem::LoadLeafTexture(VkCommandBuffer cmdBuf) {
+	void LeafSystem::LoadLeafTexture() {
 		const std::string fullLeafTexturePath = "textures/leaf.jpg";
 		ImageInfo imageInfo{};
-		StagingBuffer stagingBuffer = imageInfo.Initialize(fullLeafTexturePath, false, Queue::graphics);
+		imageInfo.Initialize(fullLeafTexturePath, false, Queue::graphics);
 
+		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+
+		VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
 		EWEDevice::GetEWEDevice()->TransitionImageLayoutWithBarrier(cmdBuf,
 			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 			imageInfo.image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			imageInfo.mipLevels
 		);
+		syncHub->EndSingleTimeCommandGraphics(cmdBuf);
 
 		const std::string leafTexturePath = "leaf.jpg";
 		leafTextureID = Texture_Manager::AddImageInfo(leafTexturePath, imageInfo, VK_SHADER_STAGE_FRAGMENT_BIT, false);
 		//printf("leaf model loaded \n");
-		return stagingBuffer;
 	}
 
 	void LeafSystem::DestroySemaphores(){
@@ -405,9 +407,6 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
 		pipelineLayoutInfo.pSetLayouts = setLayouts.data();
 
-		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout) != VK_SUCCESS) {
-			printf("failed to create leaf pipe layout\n");
-			throw std::runtime_error("Failed to create pipe layout");
-		}
+		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout));
 	}
 }

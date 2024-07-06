@@ -276,9 +276,8 @@ namespace EWE {
 		//);
 		eweDevice->TransitionFromTransfer(copyCmd, EWE::Queue::graphics, image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-		ImageQueueTransitionData transitionData{image, 1, 1, eweDevice->GetGraphicsIndex()};
-		transitionData.stagingBuffer = stagingBuffer;
-		SyncHub::GetSyncHubInstance()->EndSingleTimeCommandTransfer(copyCmd, transitionData);
+		SyncHub::GetSyncHubInstance()->EndSingleTimeCommandTransfer(copyCmd, ImageQueueTransitionData{ image, 1, 1, eweDevice->GetGraphicsIndex(), stagingBuffer });
+		stagingBuffer.Free(eweDevice->Device());
 
 		VkImageViewCreateInfo imageViewInfo{};
 		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

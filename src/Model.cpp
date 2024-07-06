@@ -54,82 +54,68 @@ struct std::hash<EWE::GrassVertex> {
 };
 
 namespace EWE {
-    EWEModel::EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
+    EWEModel::EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices, Queue::Enum queue) {
         assert(vertexCount >= 3 && "vertex count must be at least 3");
-        VertexBuffers(vertexCount, sizeOfVertex, verticesData);
-        CreateIndexBuffers(indices);
+        VertexBuffers(vertexCount, sizeOfVertex, verticesData, queue);
+        CreateIndexBuffers(indices, queue);
     }
-    EWEModel::EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
+    EWEModel::EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue) {
         assert(vertexCount >= 3 && "vertex count must be at least 3");
-        VertexBuffers(cmdBuf, vertexCount, sizeOfVertex, verticesData);
-        CreateIndexBuffers(cmdBuf, indices);
-    }
-    EWEModel::EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex) {
-        assert(vertexCount >= 3 && "vertex count must be at least 3");
-        VertexBuffers(vertexCount, sizeOfVertex, verticesData);
-    }
-    EWEModel::EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex) {
-        assert(vertexCount >= 3 && "vertex count must be at least 3");
-        VertexBuffers(cmdBuf, vertexCount, sizeOfVertex, verticesData);
-    }
-    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
-        return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex, indices);
-    }
-    std::unique_ptr<EWEModel> EWEModel::CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices) {
-        return std::make_unique<EWEModel>(cmdBuf, verticesData, vertexCount, sizeOfVertex, indices);
-    }
-    std::unique_ptr<EWEModel> EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex) {
-        return std::make_unique<EWEModel>(verticesData, vertexCount, sizeOfVertex);
-    }
-    std::unique_ptr<EWEModel> EWEModel::CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex) {
-        return std::make_unique<EWEModel>(cmdBuf, verticesData, vertexCount, sizeOfVertex);
+        VertexBuffers(vertexCount, sizeOfVertex, verticesData, queue);
     }
 
-    std::unique_ptr<EWEModel> EWEModel::CreateModelFromFile(const std::string& filepath) {
+
+    EWEModel* EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices, Queue::Enum queue) {
+        return new EWEModel(verticesData, vertexCount, sizeOfVertex, indices, queue);
+    }
+    EWEModel* EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue) {
+        return new EWEModel(verticesData, vertexCount, sizeOfVertex, queue);
+    }
+
+    EWEModel* EWEModel::CreateModelFromFile(const std::string& filepath, Queue::Enum queue) {
         Builder builder{};
         builder.LoadModel(filepath);
-        return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
+        return new EWEModel(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue);
     }
-    std::unique_ptr<EWEModel> EWEModel::CreateSimpleModelFromFile(const std::string& filePath) {
+    EWEModel* EWEModel::CreateSimpleModelFromFile(const std::string& filePath, Queue::Enum queue) {
         SimpleBuilder builder{};
         builder.LoadModel(filePath);
-        return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
+        return new EWEModel(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue);
     }
-    std::unique_ptr<EWEModel> EWEModel::CreateGrassModelFromFile(const std::string& filePath) {
+    EWEModel* EWEModel::CreateGrassModelFromFile(const std::string& filePath, Queue::Enum queue) {
         GrassBuilder builder{};
         builder.LoadModel(filePath);
-        return std::make_unique<EWEModel>(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices);
+        return new EWEModel(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue);
     }
 
-    void EWEModel::AddInstancing(const uint32_t instanceCount, const uint32_t instanceSize, void* data) {
+    void EWEModel::AddInstancing(const uint32_t instanceCount, const uint32_t instanceSize, void const* data, Queue::Enum queue) {
         VkDeviceSize bufferSize = instanceSize * instanceCount;
         this->instanceCount = instanceCount;
-        EWEBuffer stagingBuffer{
-            instanceSize,
-            instanceCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
 
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer(data);
+        StagingBuffer stagingBuffer;
+        EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
+        uint64_t alignmentSize = EWEBuffer::GetAlignment(instanceSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, eweDevice) * instanceCount;
+        eweDevice->CreateBuffer(alignmentSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+        //i need to look into how this is different from StagingBuffer
+        void* stagingData;
+        vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, alignmentSize, 0, &stagingData);
+        memcpy(stagingData, data, alignmentSize);
+        vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
 
 
-        instanceBuffer = std::make_unique<EWEBuffer>(
+        instanceBuffer = new EWEBuffer(
             instanceSize,
             instanceCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+        );
         
+        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer, instanceBuffer->GetBuffer(), bufferSize, queue);
+        if (queue == Queue::graphics) {
+            stagingBuffer.Free(eweDevice->Device());
+        }
 
-        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), instanceBuffer->GetBuffer(), bufferSize);
-
-        BufferQueueTransitionData transitionData{instanceBuffer->GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
-
-        //this staging buffer needs to be destroyed
+        assert(queue != Queue::transfer && "staging buffer is getting destroyed before it's time");
     }
     /*
     void EWEModel::updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf) {
@@ -157,104 +143,57 @@ namespace EWE {
         eweDevice.copySecondaryBuffer(stagingBuffer.getBuffer(), instanceBuffer[instanceIndex]->getBuffer(), bufferSize, cmdBuf);
     }
     */
-    void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data) {
-        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
-        VertexBuffers(cmdBuf, vertexCount, vertexSize, data);
-        BufferQueueTransitionData transitionData{vertexBuffer->GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
-    }
-    void EWEModel::VertexBuffers(VkCommandBuffer cmdBuf, uint32_t vertexCount, uint32_t vertexSize, void const* data){
+
+    void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data, Queue::Enum queue){
         VkDeviceSize bufferSize = vertexSize * vertexCount;
 
-        EWEBuffer stagingBuffer{
-            vertexSize,
-            vertexCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
+        StagingBuffer stagingBuffer;
+        EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
+        eweDevice->CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+        //i need to look into how this is different from StagingBuffer
 
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer(data);
+        void* stagingData;
+        vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, bufferSize, 0, &stagingData);
+        memcpy(stagingData, data, bufferSize);
+        vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
 
-        vertexBuffer = std::make_unique<EWEBuffer>(
+        vertexBuffer = new EWEBuffer(
             vertexSize,
             vertexCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
 
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), vertexBuffer->GetBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer, vertexBuffer->GetBuffer(), bufferSize, queue);
     }
 
-    void EWEModel::CreateIndexBuffer(void* indexData, uint32_t indexCount) {
-        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
-        CreateIndexBuffer(cmdBuf, indexData, indexCount);
-        BufferQueueTransitionData transitionData{indexBuffer->GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
-    }
-    void EWEModel::CreateIndexBuffer(VkCommandBuffer cmdBuf, void* indexData, uint32_t indexCount){
+    void EWEModel::CreateIndexBuffer(const void* indexData, uint32_t indexCount, Queue::Enum queue){
         const uint32_t indexSize = sizeof(uint32_t);
-        const VkDeviceSize bufferSize = indexCount * indexSize;
+        this->indexCount = indexCount;
 
-        EWEBuffer stagingBuffer{
-            indexSize,
-            indexCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
+        StagingBuffer stagingBuffer;
+        EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
+        uint64_t bufferSize = indexSize * indexCount;
+        eweDevice->CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+        //i need to look into how this is different from StagingBuffer
+        void* stagingData;
+        vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, bufferSize, 0, &stagingData);
+        memcpy(stagingData, indexData, bufferSize);
+        vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
 
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer(indexData);
-
-        indexBuffer = std::make_unique<EWEBuffer>(
+        indexBuffer = new EWEBuffer(
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
 
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), indexBuffer->GetBuffer(), bufferSize);
+        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer, indexBuffer->GetBuffer(), bufferSize, queue);
     }
 
-    void EWEModel::CreateIndexBuffers(std::vector<uint32_t> const& indices) {
-
-        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
-        CreateIndexBuffers(cmdBuf, indices);
-        BufferQueueTransitionData transitionData{indexBuffer->GetBuffer(), EWEDevice::GetEWEDevice()->GetGraphicsIndex()};
-        syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
-    }
-    void EWEModel::CreateIndexBuffers(VkCommandBuffer cmdBuf, std::vector<uint32_t> const& indices){
-                indexCount = static_cast<uint32_t>(indices.size());
-        hasIndexBuffer = indexCount > 0;
-
-        if (!hasIndexBuffer) {
-            std::cout << "no index" << std::endl;
-            return;
-        }
-
-        VkDeviceSize bufferSize = sizeof(uint32_t) * indexCount;
-        uint32_t indexSize = sizeof(uint32_t);
-
-        EWEBuffer stagingBuffer{
-            indexSize,
-            indexCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
-
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer((void*)indices.data());
-
-        indexBuffer = std::make_unique<EWEBuffer>(
-            indexSize,
-            indexCount,
-            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.GetBuffer(), indexBuffer->GetBuffer(), bufferSize);
+    void EWEModel::CreateIndexBuffers(std::vector<uint32_t> const& indices, Queue::Enum queue){
+        indexCount = static_cast<uint32_t>(indices.size());
+        CreateIndexBuffer(static_cast<const void*>(indices.data()), indexCount, queue);
     }
 
 
@@ -487,7 +426,7 @@ namespace EWE {
 
 
     /*
-    std::unique_ptr<EWEModel> EWEModel::LoadGrassField() {
+    EWEModel* EWEModel::LoadGrassField() {
         printf("beginning load grass field \n");
         std::ifstream grassFile{ "..//models//grassField.gs" };
         if (!grassFile.is_open()) {

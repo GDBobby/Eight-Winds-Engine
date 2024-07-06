@@ -934,16 +934,27 @@ namespace EWE {
 
         EWE_VK_ASSERT(vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory));
 
-        vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+        EWE_VK_ASSERT(vkBindBufferMemory(device_, buffer, bufferMemory, 0));
     }
 
-    void EWEDevice::CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+    void EWEDevice::CopyBuffer(StagingBuffer stagingBuffer, VkBuffer dstBuffer, VkDeviceSize size, Queue::Enum queue) {
         //printf("COPY SECONDARY BUFFER, thread ID: %d \n", std::this_thread::get_id());
         VkBufferCopy copyRegion{};
         copyRegion.srcOffset = 0;  // Optional
         copyRegion.dstOffset = 0;  // Optional
         copyRegion.size = size;
-        vkCmdCopyBuffer(cmdBuf, srcBuffer, dstBuffer, 1, &copyRegion);
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(queue);
+        vkCmdCopyBuffer(cmdBuf, stagingBuffer.buffer, dstBuffer, 1, &copyRegion);
+        if (queue == Queue::graphics) {
+            syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+        }
+        else if (queue == Queue::transfer) {
+            //transitioning from transfer to compute not supported currently
+            syncHub->EndSingleTimeCommandTransfer(cmdBuf, BufferQueueTransitionData{ dstBuffer, Queue::graphics, stagingBuffer });
+        }
+        else if (queue == Queue::compute) {
+            assert(false && "compute queue not currently supported\n");
+        }
     }
 
     //need to find the usage and have it create the single time command

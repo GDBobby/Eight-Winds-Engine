@@ -98,7 +98,6 @@ namespace EWE {
             }
             boneCount = static_cast<uint16_t>(fullAnimationData[0][0].size());
         }
-
     }
 
     void SkeletonBase::loadTextures(std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath) {
@@ -137,7 +136,7 @@ namespace EWE {
         //printf("after mesh nt texutres \n");
     }
 
-    SkeletonBase::SkeletonBase(std::string importPath, std::string texturePath, bool instanced) {
+    SkeletonBase::SkeletonBase(std::string importPath, std::string texturePath, Queue::Enum queue, bool instanced) {
         printf("skeleton : improting data : %s \n", importPath.c_str());
 
         mySkeletonID = SkinRenderSystem::getSkinID();
@@ -200,7 +199,7 @@ namespace EWE {
             //printf("mesh thread 1 finished \n");
 
             for (auto const& mesh : importMesh.meshes) {
-                meshes.push_back(EWEModel::CreateMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMesh.vertex_size, mesh.indices));
+                meshes.push_back(EWEModel::CreateMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMesh.vertex_size, mesh.indices, queue));
             }
         }
         if (meshThread2Exist) {
@@ -208,32 +207,23 @@ namespace EWE {
             meshThread2.join();
 
             for (auto const& mesh : importMeshNT.meshes) {
-                meshes.push_back(EWEModel::CreateMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMeshNT.vertex_size, mesh.indices));
+                meshes.push_back(EWEModel::CreateMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMeshNT.vertex_size, mesh.indices, queue));
             }
             //printf("mesh thread 2 finished \n");
         }
 #endif
 
 #ifdef _DEBUG
-        if (textureMappingTracker.first.size() != meshes.size()) {
-            std::cout << "mesh to name mismatch - " << textureMappingTracker.first.size() << ":" << meshes.size() << std::endl;
-            //std throw
-            throw std::runtime_error("failed to match mesh to name");
-        }
-        if (textureMappingTracker.second.size() != meshesNT.size()) {
-            std::cout << "meshNT to name mismatch - " << textureMappingTracker.second.size() << ":" << meshesNT.size() << std::endl;
-            //std throw
-            throw std::runtime_error("failed to match meshNT to nameNT");
-        }
+        assert(textureMappingTracker.first.size() == meshes.size() && "failed to match mesh to name");
+        assert(textureMappingTracker.second.size() == meshesNT.size() && "failed to match meshNT to nameNT");
 #endif
 
         for (int i = 0; i < meshes.size(); i++) {
-            SkinRenderSystem::addSkeleton(textureMappingTracker.first[i], boneCount, meshes[i].get(), mySkeletonID, instanced);
+            SkinRenderSystem::addSkeleton(textureMappingTracker.first[i], boneCount, meshes[i], mySkeletonID, instanced);
         }
         for (int i = 0; i < meshesNT.size(); i++) {
-            SkinRenderSystem::addSkeleton(textureMappingTracker.second[i], boneCount, meshesNT[i].get(), mySkeletonID, instanced);
+            SkinRenderSystem::addSkeleton(textureMappingTracker.second[i], boneCount, meshesNT[i], mySkeletonID, instanced);
         }
-        return;
 
         // printf("mesh sizes - %d:%d \n", meshes.size(), meshesNT.size());
 

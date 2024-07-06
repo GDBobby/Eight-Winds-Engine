@@ -23,8 +23,8 @@ namespace EWE {
 			UIImageStruct() {}
 			UIImageStruct(TextureDesc texture, Transform2dComponent& transform) : texture{ texture }, transform{ transform } {}
 		};
-		static std::unique_ptr<EWEModel> model2D;
-		static std::unique_ptr<EWEModel> nineUIModel;
+		static EWEModel* model2D;
+		static EWEModel* nineUIModel;
 
 
 		static void (*changeMenuStateFromMM)(uint8_t, unsigned char);
@@ -52,8 +52,8 @@ namespace EWE {
 		}
 
 		static void cleanup() {
-			model2D.reset();
-			nineUIModel.reset();
+			delete model2D;
+			delete nineUIModel;
 		}
 
 		//thread pool functions repurposed, not sure if i need these yet?

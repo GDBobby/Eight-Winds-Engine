@@ -74,7 +74,7 @@ namespace EWE {
 		PipelineSystem::Emplace(Pipe::skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>(ewe_call_trace)));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
-		RigidRenderingSystem::getRigidRSInstance();
+		RigidRenderingSystem::Initialize();
 
 		printf("end of EightWindsEngine constructor \n");
 	}
@@ -103,7 +103,7 @@ namespace EWE {
 		DescriptorHandler::cleanup();
 
 
-		RigidRenderingSystem::destruct();
+		RigidRenderingSystem::Destruct();
 		MaterialPipelines::cleanupStaticVariables();
 
 		for (auto& dsl : TextureDSLInfo::descSetLayouts) {
@@ -167,63 +167,11 @@ namespace EWE {
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 		printf("before init leaf data on GPU\n");
 
-		{
-			VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
-			leafSystem->LoadLeafModel(cmdBuf);
-			syncHub->EndSingleTimeCommandGraphics(cmdBuf);
-			printf("after leaf mesh\n");
-		}
-		{
-			VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
-			StagingBuffer stagingBuffer = leafSystem->LoadLeafTexture(cmdBuf);
-
-			//EndSingleTimeCommandGraphics is going to wait on it's own fence
-			syncHub->EndSingleTimeCommandGraphics(cmdBuf);
-			stagingBuffer.Free(eweDevice.Device());
-			printf("after leaf texture\n");
-		}
-		printf("after initializing leaf data on GPU\n");
-		{ //initial frame
-			FrameInfo frameInfo;
-			do {
-				frameInfo = eweRenderer.BeginFrame();
-				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
-					//eweDevice.AddCheckpoint(frameInfo.cmdBuf, "beginning of pipe", VKDEBUG::GFX_vk_checkpoint_type::begin_render_pass);
-					//eweDevice.AddCheckpoint(frameInfo.cmdBuf, "first push", VKDEBUG::GFX_vk_checkpoint_type::push_marker);
-					//eweDevice.AddCheckpoint(frameInfo.cmdBuf, "draw", VKDEBUG::GFX_vk_checkpoint_type::draw);
-					//eweDevice.AddCheckpoint(frameInfo.cmdBuf, "end render pass", VKDEBUG::GFX_vk_checkpoint_type::end_render_pass);
-					//eweDevice.AddCheckpoint(frameInfo.cmdBuf, "second push", VKDEBUG::GFX_vk_checkpoint_type::push_marker);
-					//eweDevice.AddCheckpoint(frameInfo.cmdBuf, "third push", VKDEBUG::GFX_vk_checkpoint_type::push_marker);
-					//eweDevice.AddCheckpoint(frameInfo.cmdBuf, "pop marker", VKDEBUG::GFX_vk_checkpoint_type::pop_marker);
-					//eweDevice.AddCheckpoint(frameInfo.cmdBuf, "generic", VKDEBUG::GFX_vk_checkpoint_type::generi_c);
-
-
-					//auto* transitionContainer = eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
-
-					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
-					leafSystem->FallCalculation(0.f, frameInfo.index);
-
-					leafSystem->Render(frameInfo);
-					//uiHandler.drawMenuMain(commandBuffer);
-					eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
-					if (eweRenderer.EndFrameAndWaitForFence()) {
-						//printf("dirty swap on end\n");
-						//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
-						menuManager.windowResize(eweRenderer.GetExtent());
-					}
-				}
-				else {
-					//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
-					menuManager.windowResize(eweRenderer.GetExtent());
-				}
-			} while (frameInfo.cmdBuf == VK_NULL_HANDLE);
-
-			//printf("end rendering thread \n");	
-		}
-		//printf("end of initial frame \n");
-
+		leafSystem->LoadLeafModel();
+		printf("after leaf mesh\n");
 		
-
+		leafSystem->LoadLeafTexture();
+		printf("after leaf texture\n");
 
 		double renderThreadTime = 0.0;
 		const double renderTimeCheck = 1.0 / 60.0;
@@ -246,11 +194,11 @@ namespace EWE {
 			if (renderThreadTime > renderTimeCheck) {
 				loadingTime += renderTimeCheck;
 				//printf("rendering loading thread start??? \n");
+
 				auto frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 					auto* transitionContainer = eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
 					
-
 					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
 

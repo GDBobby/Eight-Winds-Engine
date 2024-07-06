@@ -41,7 +41,7 @@ namespace EWE {
 		ObjectManager& objectManager;
 		MenuManager& menuManager;
 
-		std::shared_ptr<EWEModel> get2DModel() {
+		EWEModel* get2DModel() {
 			return model2D;
 		}
 
@@ -51,7 +51,7 @@ namespace EWE {
 
 		//bool globalDescriptorSetBound = false;
 
-		std::shared_ptr<EWEModel> model2D;
+		EWEModel* model2D;
 
 		void renderSkybox(FrameInfo& frameInfo);
 		void renderTexturedGameObjects(FrameInfo& frameInfo);

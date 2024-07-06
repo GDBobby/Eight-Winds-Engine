@@ -69,8 +69,7 @@ namespace EWE {
                 uiImageInfo.mipLevels, uiImageInfo.arrayLayers
             );
 
-            ImageQueueTransitionData transitionData{uiImageInfo.GenerateTransitionData(eweDevice->GetGraphicsIndex())};
-            transitionData.stagingBuffer = stagingBuffer;
+            ImageQueueTransitionData transitionData{uiImageInfo.GenerateTransitionData(eweDevice->GetGraphicsIndex(), stagingBuffer)};
 
             syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
         }

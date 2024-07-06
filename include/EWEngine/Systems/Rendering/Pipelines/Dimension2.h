@@ -23,8 +23,8 @@ namespace EWE {
 		VkPipelineLayout PL_9;
 		TextureDesc bindedTexture;
 		VkPipelineCache cache;
-		std::unique_ptr<EWEModel> model2D;
-		std::unique_ptr<EWEModel> nineUIModel;
+		EWEModel* model2D;
+		EWEModel* nineUIModel;
 		VkCommandBuffer cmdBuffer;
 		uint8_t frameIndex;
 

@@ -1,6 +1,7 @@
 #include "EWEngine/Graphics/Texture/Image.h"
 
 #include "EWEngine/Graphics/Texture/Sampler.h"
+#include "EWEngine/Graphics/TransferCommandManager.h"
 
 #include <string>
 #include <iostream>
@@ -150,9 +151,9 @@ namespace EWE {
 #endif
     }
 
-    ImageInfo::ImageInfo(PixelPeek& pixelPeek, bool mipmap, Queue::Enum whichQueue) {
+    ImageInfo::ImageInfo(PixelPeek& pixelPeek, bool mipmap, Queue::Enum queue) {
 
-        CreateTextureImage(whichQueue, pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        CreateTextureImage(queue, pixelPeek, mipmap); //strange to pass in the first, btu whatever
         //printf("after create image \n");
         CreateTextureImageView();
         //printf("after image view \n");
@@ -162,28 +163,25 @@ namespace EWE {
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-    StagingBuffer ImageInfo::Initialize(std::string const& path, bool mipmap, Queue::Enum whichQueue) {
+    void ImageInfo::Initialize(std::string const& path, bool mipmap, Queue::Enum queue) {
         PixelPeek pixelPeek{ path };
-
-        return Initialize(pixelPeek, mipmap, whichQueue);
+        Initialize(pixelPeek, mipmap, queue);
     }
-    StagingBuffer ImageInfo::Initialize(PixelPeek& pixelPeek, bool mipmap, Queue::Enum whichQueue) {
+    void ImageInfo::Initialize(PixelPeek& pixelPeek, bool mipmap, Queue::Enum queue) {
 
-        StagingBuffer stagingBuffer = CreateTextureImage(whichQueue, pixelPeek, mipmap);
+        CreateTextureImage(queue, pixelPeek, mipmap);
         CreateTextureImageView();
         CreateTextureSampler();
 
         descriptorImageInfo.sampler = sampler;
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        return stagingBuffer;
     }
 
-    ImageInfo::ImageInfo(std::string const& path, bool mipmap, Queue::Enum whichQueue) {
+    ImageInfo::ImageInfo(std::string const& path, bool mipmap, Queue::Enum queue) {
         PixelPeek pixelPeek{ path };
 
-        CreateTextureImage(whichQueue, pixelPeek, mipmap); //strange to pass in the first, btu whatever
+        CreateTextureImage(queue, pixelPeek, mipmap); //strange to pass in the first, btu whatever
         //printf("after create image \n");
         CreateTextureImageView();
         //printf("after image view \n");
@@ -209,7 +207,7 @@ namespace EWE {
     }
 
 
-    StagingBuffer ImageInfo::CreateTextureImage(Queue::Enum whichQueue, PixelPeek& pixelPeek, bool mipmapping) {
+    void ImageInfo::CreateTextureImage(Queue::Enum queue, PixelPeek& pixelPeek, bool mipmapping) {
 
         StagingBuffer stagingBuffer = StageImage(pixelPeek);
         //printf("image dimensions : %d:%d \n", width[i], height[i]);
@@ -247,9 +245,9 @@ namespace EWE {
         //printf("before transition \n");
         
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-
+        SyncedCommandQueue* commandQueue = nullptr;
         {
-            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(whichQueue);
+            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(queue);
 
             EWEDevice::TransitionImageLayoutWithBarrier(cmdBuf,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -257,31 +255,67 @@ namespace EWE {
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 mipLevels
             );
-            if (whichQueue == Queue::graphics) {
+            if (queue == Queue::graphics) {
                 syncHub->EndSingleTimeCommandGraphics(cmdBuf);
             }
-            else if (whichQueue == Queue::transfer) {
+            else if (queue == Queue::transfer) {
                 //this doesnt want a transition, need to fix that
                 //syncHub::EndSingleTimeCommandTransfer(cmdBuf);
-                syncHub->EndSingleTimeCommandTransfer(cmdBuf, ImageQueueTransitionData{ image, mipLevels, arrayLayers, Queue::transfer });
+                commandQueue = TransferCommandManager::BeginCommandQueue();
+                commandQueue->Push(cmdBuf);
             }
         }
         //printf("before copy buffer to image \n");
         {
-            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(whichQueue);
+            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(queue);
             eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer.buffer, image, pixelPeek.width, pixelPeek.height, arrayLayers);
-            if (whichQueue == Queue::graphics) {
+            if (queue == Queue::graphics) {
                 syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+                stagingBuffer.Free(eweDevice->Device());
+                if (mipmapping && MIPMAP_ENABLED) {
+                    GenerateMipmaps(imageInfo.format, imageInfo.extent.width, imageInfo.extent.height, Queue::graphics);
+                }
             }
-            else if (whichQueue == Queue::transfer) {
+            else if (queue == Queue::transfer) {
                 //this doesnt want a transition, need to fix that
                 //syncHub::EndSingleTimeCommandTransfer(cmdBuf);
-                syncHub->EndSingleTimeCommandTransfer(cmdBuf, ImageQueueTransitionData{ image, mipLevels, arrayLayers, Queue::transfer });
-            }
+                commandQueue->Push(cmdBuf);
 
+                commandQueue->SetStagingBuffer(stagingBuffer);
+                {
+
+                    VkCommandBuffer transitionCmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+                    VkImageMemoryBarrier imageBarrier{};
+                    imageBarrier.pNext = nullptr;
+                    imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    imageBarrier.image = image;
+                    imageBarrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetTransferIndex();
+                    imageBarrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex();
+                    imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    imageBarrier.subresourceRange.baseArrayLayer = 0;
+                    imageBarrier.subresourceRange.layerCount = 1;
+                    imageBarrier.subresourceRange.levelCount = 1;
+                    imageBarrier.subresourceRange.baseMipLevel = 0;
+                    imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                    imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                    imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                    imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+                    //cmdBuf, 
+                    PipelineBarrier pipeBarrier;
+                    pipeBarrier.AddBarrier(imageBarrier);
+                    pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                    pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                    pipeBarrier.SubmitBarrier(transitionCmdBuf);
+
+                    commandQueue->Push(transitionCmdBuf);
+                    commandQueue->SetBarrier(pipeBarrier);
+                    commandQueue->SetStagingBuffer(stagingBuffer);
+                    commandQueue->GenerateMips(true);
+                    TransferCommandManager::EndCommandQueue(commandQueue);
+                }
+            }
         }
-        //stagingBuffer.Free(eweDevice->GetVkDevice());
-        return stagingBuffer;
     }
 
     StagingBuffer ImageInfo::StageImage(PixelPeek& pixelPeek) {
@@ -352,9 +386,8 @@ namespace EWE {
         samplerInfo.minFilter = VK_FILTER_LINEAR;
 
         samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-        samplerInfo.addressModeV = samplerInfo.addressModeU;
-        samplerInfo.addressModeW = samplerInfo.addressModeU;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
         samplerInfo.anisotropyEnable = VK_TRUE;
         samplerInfo.maxAnisotropy = EWEDevice::GetEWEDevice()->GetProperties().limits.maxSamplerAnisotropy;
@@ -377,41 +410,16 @@ namespace EWE {
     }
 
     //this needs to happen in the graphics queue
-    void ImageInfo::GenerateMipmaps(Queue::Enum whichQueue, const VkFormat imageFormat, const int width, const int height){
+    void ImageInfo::GenerateMipmaps(const VkFormat imageFormat, const int width, const int height, Queue::Enum srcQueue){
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
-        switch (whichQueue) {
-        case Queue::graphics: {
-            //does nothing
-            break;
-        }
-        case Queue::transfer: {
-            //transfer
-            //need to look back at this, probably fucked
-            EWEDevice::GetEWEDevice()->TransitionFromTransferToGraphics(cmdBuf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, image);
 
-            break;
-        }
-        default: {
-#ifdef _DEBUG
-            //compute not supported
-            assert(false && "default mip mapping queue? ");
-#else
-#if defined(_MSC_VER) && !defined(__clang__) // MSVC
-            __assume(false);
-#else // GCC, Clang
-            __builtin_unreachable();
-#endif
-#endif
-        }
-        }
-
-        GenerateMipmaps(cmdBuf, imageFormat, width, height);
+        GenerateMipmaps(cmdBuf, imageFormat, width, height, srcQueue);
 
         syncHub->EndSingleTimeCommandGraphics(cmdBuf);
     }
 
-    void ImageInfo::GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, int width, int height) {
+    void ImageInfo::GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue) {
         // Check if image format supports linear blitting
         VkFormatProperties formatProperties = EWEDevice::GetEWEDevice()->GetVkFormatProperties(imageFormat);
 
@@ -422,9 +430,9 @@ namespace EWE {
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.image = image;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = image; 
+        barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetQueueIndex(srcQueue);
+        barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex(); //graphics queue is the only queue that can support vkCmdBlitImage
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
@@ -444,6 +452,9 @@ namespace EWE {
                 0, nullptr,
                 1, &barrier
             );
+            //this is going to be set again for each mip level, extremely small performance hit, potentially optimized away
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             //printf("after cmd pipeline barreir \n");
             VkImageBlit blit{};
             blit.srcOffsets[0] = { 0, 0, 0 };

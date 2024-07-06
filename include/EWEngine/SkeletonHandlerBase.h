@@ -9,14 +9,20 @@ namespace EWE {
     public:
         static uint32_t nextSkeletonID;
 
-        SkeletonBase(std::string importPath, std::string texturePath, bool instanced = false);
+        SkeletonBase(std::string importPath, std::string texturePath, Queue::Enum queue, bool instanced = false);
 #if DECONSTRUCTION_DEBUG
         ~SkeletonBase() {
             printf("Deconstructing player skeleton \n");
+            for (auto& mesh : meshes) {
+                delete mesh;
+            }
+            for (auto& mesh : meshesNT) {
+                delete mesh;
+            }
         }
 #endif
-        std::vector<std::unique_ptr<EWEModel>> meshes{}; //this will hold the vertex/index buffers
-        std::vector<std::unique_ptr<EWEModel>> meshesNT{};
+        std::vector<EWEModel*> meshes{}; //this will hold the vertex/index buffers
+        std::vector<EWEModel*> meshesNT{};
         std::vector<TextureDesc> textureIDs{};
         std::vector<TextureDesc> textureNTIDs{};
 

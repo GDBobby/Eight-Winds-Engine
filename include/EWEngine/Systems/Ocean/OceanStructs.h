@@ -175,7 +175,7 @@ namespace EWE {
             std::unique_ptr<EWEPipeline> pipe;
             VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
             VkDescriptorSet descriptorSet[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
-            std::unique_ptr<EWEModel> oceanModel{ nullptr };
+            EWEModel* oceanModel{ nullptr };
             EWEBuffer* renderData[2] = { nullptr, nullptr };
             EWEDescriptorSetLayout* eweDSL{ nullptr };
             OceanRenderParameters oceanRenderParameters{};

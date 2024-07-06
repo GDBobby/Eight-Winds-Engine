@@ -71,26 +71,24 @@ namespace EWE {
         }
 
 
-        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices);
-        static std::unique_ptr<EWEModel> CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex);
-        static std::unique_ptr<EWEModel> CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices);
-        static std::unique_ptr<EWEModel> CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex);
+        static EWEModel* CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices, Queue::Enum queue);
+        static EWEModel* CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue);
+        static EWEModel* CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices, Queue::Enum queue);
+        static EWEModel* CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue);
 
-        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices);
-        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex);
-        EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices);
-        EWEModel(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex);
+        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices, Queue::Enum queue);
+        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue);
 
 
-        void AddInstancing(uint32_t instanceCount, const uint32_t instanceSize, void* data);
+        void AddInstancing(uint32_t instanceCount, const uint32_t instanceSize, void const* data, Queue::Enum queue);
 
 
         EWEModel(const EWEModel&) = delete;
         EWEModel& operator=(const EWEModel&) = delete;
 
-        static std::unique_ptr<EWEModel> CreateModelFromFile(const std::string& filepath);
-        static std::unique_ptr<EWEModel> CreateSimpleModelFromFile(const std::string& filePath);
-        static std::unique_ptr<EWEModel> CreateGrassModelFromFile(const std::string& filePath);
+        static EWEModel* CreateModelFromFile(const std::string& filepath, Queue::Enum queue);
+        static EWEModel* CreateSimpleModelFromFile(const std::string& filePath, Queue::Enum queue);
+        static EWEModel* CreateGrassModelFromFile(const std::string& filePath, Queue::Enum queue);
 
         void BindAndDraw(VkCommandBuffer commandBuffer);
         void Bind(VkCommandBuffer commandBuffer);
@@ -112,23 +110,20 @@ namespace EWE {
         //void createBoneVertexBuffers(const std::vector<boneVertex>& vertices);
         //void createBobVertexBuffers(const std::vector <bobVertex>& vertices);
 
-        void VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data);
-        void VertexBuffers(VkCommandBuffer cmdBuf, uint32_t vertexCount, uint32_t vertexSize, void const* data);
+        void VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data, Queue::Enum queue);
 
-        void CreateIndexBuffer(void* indexData, uint32_t indexCount);
-        void CreateIndexBuffers(const std::vector<uint32_t>& indices);
-        void CreateIndexBuffer(VkCommandBuffer cmdBuf, void* indexData, uint32_t indexCount);
-        void CreateIndexBuffers(VkCommandBuffer cmdBuf, const std::vector<uint32_t>& indices);
+        void CreateIndexBuffer(void const* indexData, uint32_t indexCount, Queue::Enum queue);
+        void CreateIndexBuffers(const std::vector<uint32_t>& indices, Queue::Enum queue);
 
-        std::unique_ptr<EWEBuffer> vertexBuffer;
+        EWEBuffer* vertexBuffer{ nullptr };
         uint32_t vertexCount;
 
         bool hasIndexBuffer = false;
-        std::unique_ptr<EWEBuffer> indexBuffer;
+        EWEBuffer* indexBuffer{ nullptr };
         uint32_t indexCount;
 
         bool hasInstanceBuffer = false;
-        std::unique_ptr<EWEBuffer> instanceBuffer;
+        EWEBuffer* instanceBuffer{ nullptr };
         uint32_t instanceCount;
     };
 } //namespace EWE

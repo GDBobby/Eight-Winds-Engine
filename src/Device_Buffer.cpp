@@ -15,6 +15,27 @@ namespace EWE {
      *
      * @return VkResult of the buffer mapping call
      */
+
+    VkDeviceSize EWEBuffer::GetAlignment(VkDeviceSize instanceSize, VkBufferUsageFlags usageFlags, EWEDevice* device) {
+        VkDeviceSize minOffsetAlignment = 1;
+        if (((usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) == VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) ||
+            ((usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) == VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
+            ) {
+            minOffsetAlignment = 1;
+        }
+        else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
+            minOffsetAlignment = EWEDevice::GetEWEDevice()->GetProperties().limits.minUniformBufferOffsetAlignment;
+        }
+        else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
+            minOffsetAlignment = EWEDevice::GetEWEDevice()->GetProperties().limits.minStorageBufferOffsetAlignment;
+        }
+
+        if (minOffsetAlignment > 0) {
+            //printf("get alignment size : %zu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
+            return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
+        }
+        return instanceSize;
+    }
     VkDeviceSize EWEBuffer::GetAlignment(VkDeviceSize instanceSize) {
 
         if (((usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) == VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) ||

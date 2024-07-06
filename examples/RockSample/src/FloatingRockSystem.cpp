@@ -4,7 +4,7 @@
 
 namespace EWE {
 	FloatingRock::FloatingRock() {
-		rockModel = EWEModel::CreateModelFromFile("rock1.obj");
+		rockModel = EWEModel::CreateModelFromFile("rock1.obj", Queue::transfer);
 		rockTexture = Texture_Builder::CreateSimpleTexture("rock/rock_albedo.jpg", true, true, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		//RANDOM NUMBER GENERATOR
@@ -56,6 +56,9 @@ namespace EWE {
 		renderNormalMatrix = renderTransform.normalMatrix();
 
 	}
+	FloatingRock::~FloatingRock() {
+		delete rockModel;
+	}
 	void FloatingRock::update() {
 		for (auto& rock : rockField) {
 			for (int j = 0; j < rock.currentPosition.size(); j++) {
@@ -76,7 +79,7 @@ namespace EWE {
 		pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
 		pipe->BindDescriptor(1, &rockTexture);
 
-		pipe->BindModel(rockModel.get());
+		pipe->BindModel(rockModel);
 
 
 		SimplePushConstantData push{ renderModelMatrix, renderNormalMatrix };

@@ -54,8 +54,8 @@ namespace EWE {
 		fragString = "NineUI.frag.spv";
 		pipe9 = ConstructSingular<EWEPipeline>(ewe_call_trace, vertString, fragString, pipelineConfig);
 
-		model2D = Basic_Model::generate2DQuad();
-		nineUIModel = Basic_Model::generateNineUIQuad();
+		model2D = Basic_Model::Quad2D(Queue::transfer);
+		nineUIModel = Basic_Model::NineUIQuad(Queue::transfer);
 	}
 
 
@@ -71,8 +71,8 @@ namespace EWE {
 
 		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_2d, nullptr);
 		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_9, nullptr);
-		dimension2Ptr->model2D.reset();
-		dimension2Ptr->nineUIModel.reset();
+		delete dimension2Ptr->model2D;
+		delete dimension2Ptr->nineUIModel;
 
 		dimension2Ptr->pipe2d->~EWEPipeline();
 		dimension2Ptr->pipe9->~EWEPipeline();

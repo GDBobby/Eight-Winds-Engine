@@ -26,143 +26,132 @@ namespace EWE {
         }
     }
 
+    namespace RigidRenderingSystem {
+        std::unordered_map<MaterialFlags, MaterialRenderInfo>* materialMap;
 
-    RigidRenderingSystem* RigidRenderingSystem::rigidInstance{nullptr};
 
-    //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& RigidRenderingSystem::cleanAndGetMaterialMap() {
-    //    for (auto iter = materialMap.begin(); iter != materialMap.end();) {
-    //        if (iter->second.size() == 0) {
-    //            iter = materialMap.erase(iter);
-    //            //clean up pipeline or leave it be? not sure how expensive it is to maintain while not in use
-    //        }
-    //        else {
-    //            iter++;
-    //        }
-    //    }
-    //    return materialMap;
-    //}
-
-    void RigidRenderingSystem::addMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
-        if (renderInfo.meshPtr == nullptr) {
-            printf("NULLTPR MESH EXCEPTION \n");
-            throw std::runtime_error("nullptr mesh");
+        void Initialize() {
+            materialMap = new std::unordered_map<MaterialFlags, MaterialRenderInfo>();
         }
-        if (!materialMap.contains(materialInfo.materialFlags)) {
-            auto empRet = materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
-            empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
-        }
-        else{
-            materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).push_back(renderInfo);
-        }
-    }
-    void RigidRenderingSystem::addMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
-        if (modelPtr == nullptr) {
-            printf("NULLTPR MESH EXCEPTION \n");
-            throw std::runtime_error("nullptr mesh");
+        void Destruct() {
+            materialMap->clear();
+            delete materialMap;
         }
 
-        if (!materialMap.contains(materialInfo.materialFlags)) {
-            auto empRet = materialMap.try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
-            empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{MaterialObjectInfo{ownerTransform, modelPtr, drawable}});
+        void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
+            if (renderInfo.meshPtr == nullptr) {
+                printf("NULLTPR MESH EXCEPTION \n");
+                throw std::runtime_error("nullptr mesh");
+            }
+            if (!materialMap->contains(materialInfo.materialFlags)) {
+                auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
+                empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
+            }
+            else {
+                materialMap->at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).push_back(renderInfo);
+            }
         }
-        else{
-            materialMap.at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).emplace_back(ownerTransform, modelPtr, drawable);
+        void AddMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
+            assert(modelPtr != nullptr && "nullptr mesh in AddMaterialObject");
+            if (modelPtr == nullptr) {
+                printf("NULLTPR MESH EXCEPTION \n");
+                throw std::runtime_error("nullptr mesh");
+            }
+
+            if (!materialMap->contains(materialInfo.materialFlags)) {
+                auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
+                empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{MaterialObjectInfo{ ownerTransform, modelPtr, drawable }});
+            }
+            else {
+                materialMap->at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).emplace_back(ownerTransform, modelPtr, drawable);
+            }
         }
-    }
-    void RigidRenderingSystem::addMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr) {
-        for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
-            for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
-                if (iterTexID->first == copyID) {
-                    if (iterTexID->second.size() == 0 || iterTexID->second[0].meshPtr == nullptr) {
-                        printf("NULLTPR MESH EXCEPTION or SIZE IS 0 \n");
-                        throw std::runtime_error("nullptr mesh or size is 0");
+        void AddMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr) {
+            for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
+                for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
+                    if (iterTexID->first == copyID) {
+                        if (iterTexID->second.size() == 0 || iterTexID->second[0].meshPtr == nullptr) {
+                            printf("NULLTPR MESH EXCEPTION or SIZE IS 0 \n");
+                            throw std::runtime_error("nullptr mesh or size is 0");
+                        }
+
+                        iterTexID->second.push_back(iterTexID->second[0]);
+                        iterTexID->second.back().ownerTransform = ownerTransform;
+                        iterTexID->second.back().meshPtr = iterTexID->second[0].meshPtr;
+                        iterTexID->second.back().drawable = drawablePtr;
+                        return;
                     }
-
-                    iterTexID->second.push_back(iterTexID->second[0]);
-                    iterTexID->second.back().ownerTransform = ownerTransform;
-                    iterTexID->second.back().meshPtr = iterTexID->second[0].meshPtr;
-                    iterTexID->second.back().drawable = drawablePtr;
-                    return;
                 }
             }
         }
-    }
-    void RigidRenderingSystem::removeByTransform(TextureDesc textureID, TransformComponent* ownerTransform) {
-        for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
-            for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
-                if (iterTexID->first == textureID) {
-                    for (int i = 0; i < iterTexID->second.size(); i++) {
-                        if (iterTexID->second[i].ownerTransform == ownerTransform) {
-                            iterTexID->second.erase(iterTexID->second.begin() + i);
-                            i--;
+        void RemoveByTransform(TextureDesc textureID, TransformComponent* ownerTransform) {
+            for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
+                for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
+                    if (iterTexID->first == textureID) {
+                        for (int i = 0; i < iterTexID->second.size(); i++) {
+                            if (iterTexID->second[i].ownerTransform == ownerTransform) {
+                                iterTexID->second.erase(iterTexID->second.begin() + i);
+                                i--;
+                            }
                         }
                     }
                 }
+
             }
-
         }
-    }
-    std::vector<TextureDesc> RigidRenderingSystem::checkAndClearTextures() {
-        std::vector<TextureDesc> returnVector;
-        for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
+        std::vector<TextureDesc> CheckAndClearTextures() {
+            std::vector<TextureDesc> returnVector;
+            for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
 
-            //bool removedTexID = false;
-            for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end();) {
-                if (iterTexID->second.size() == 0) {
-                    returnVector.push_back(iterTexID->first);
-                    iterTexID = iter->second.materialMap.erase(iterTexID);
-                    //removedTexID = true;
+                //bool removedTexID = false;
+                for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end();) {
+                    if (iterTexID->second.size() == 0) {
+                        returnVector.push_back(iterTexID->first);
+                        iterTexID = iter->second.materialMap.erase(iterTexID);
+                        //removedTexID = true;
+                    }
+                    else {
+                        iterTexID++;
+                    }
                 }
-                else {
-                    iterTexID++;
-                }
+                //if (!removedTexID) {
+                //    iter++;
+                //}
             }
-            //if (!removedTexID) {
-            //    iter++;
-            //}
+            return returnVector;
         }
-        return returnVector;
-    }
-    
-    void RigidRenderingSystem::render(FrameInfo const& frameInfo) {
-        //ill replace this shit eventually
-#ifdef _DEBUG
-        assert(rigidInstance != nullptr && "material handler instance is nullptr while trying to render with it");
-#endif
-        MaterialPipelines::setFrameInfo(frameInfo);
 
-        rigidInstance->renderMemberMethod(frameInfo);
-    }
-    void RigidRenderingSystem::renderMemberMethod(FrameInfo const& frameInfo){
+        void Render(FrameInfo const& frameInfo) {
+            //ill replace this shit eventually
+            MaterialPipelines::setFrameInfo(frameInfo);
 
-        for (auto iter = materialMap.begin(); iter != materialMap.end(); iter++) {
+            RenderMemberMethod(frameInfo);
+        }
+        void RenderMemberMethod(FrameInfo const& frameInfo) {
+
+            for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
 
 #if DEBUGGING_DYNAMIC_PIPE || DEBUGGING_PIPELINES
-            printf("checking validity of map iter? \n");
-            printf("iter->first:second - %d:%d \n", iter->first, iter->second.size());
-            uint8_t flags = iter->first;
-            printf("Drawing dynamic materials : %d \n", flags);
-            if (flags & 128) {
-                printf("should not have bonesin static rendering \n");
-                throw std::runtime_error("should not have boens here");
-            }
+                printf("checking validity of map iter? \n");
+                printf("iter->first:second - %d:%d \n", iter->first, iter->second.size());
+                uint8_t flags = iter->first;
+                printf("Drawing dynamic materials : %d \n", flags);
+                assert(((flags & 128) == 0) && "should not have bones here");
 #elif _DEBUG
 
-            uint8_t flags = iter->first;
-            if (flags & 128) {
-                printf("should not have bonesin static rendering \n");
-                throw std::runtime_error("should not have boens here");
-            }
+                uint8_t flags = iter->first;
+                assert(((flags & 128) == 0) && "should not have bones here");
 #endif
-            iter->second.render(frameInfo.index);
+                iter->second.render(frameInfo.index);
 
 
 #if DEBUGGING_DYNAMIC_PIPE
-            printf("finished drawing dynamic material flag : %d \n", flags);
+                printf("finished drawing dynamic material flag : %d \n", flags);
+#endif
+            }
+#if DEBUGGING_PIPELINES || DEBUGGING_DYNAMIC_PIPE
+            printf("finished dynamic render \n");
 #endif
         }
-#if DEBUGGING_PIPELINES || DEBUGGING_DYNAMIC_PIPE
-        printf("finished dynamic render \n");
-#endif
-    }
-}
+    }//namespace RigidRenderingSystem
+} //namespace EWE

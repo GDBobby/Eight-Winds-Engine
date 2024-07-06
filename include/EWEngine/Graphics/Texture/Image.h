@@ -47,36 +47,37 @@ namespace EWE {
 		uint8_t arrayLayers{1};
 		VkDescriptorImageInfo descriptorImageInfo;
 
+
+		[[nodiscard("this staging buffer needs to be handled outside of this function")]]
 		static StagingBuffer StageImage(PixelPeek& pixelPeek);
+
+		[[nodiscard("this staging buffer needs to be handled outside of this function")]]
 		static StagingBuffer StageImage(std::vector<PixelPeek>& pixelPeek);
 
-		[[nodiscard("this staging buffer needs to be handled outside of this function")]] 
-		StagingBuffer CreateTextureImage(Queue::Enum whichQueue, PixelPeek& pixelPeek, bool mipmapping = true);
+		void CreateTextureImage(Queue::Enum queue, PixelPeek& pixelPeek, bool mipmapping = true);
 
 		void CreateTextureImageView();
 
 		void CreateTextureSampler();
 
-		void GenerateMipmaps(Queue::Enum whichQueue, const VkFormat imageFormat, int width, int height);
+		void GenerateMipmaps(const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue);
 
-		ImageQueueTransitionData GenerateTransitionData(uint32_t queueIndex){
-			return ImageQueueTransitionData{image, mipLevels, arrayLayers, queueIndex};
+		ImageQueueTransitionData GenerateTransitionData(uint32_t queueIndex, StagingBuffer stagingBuffer){
+			return ImageQueueTransitionData{image, mipLevels, arrayLayers, queueIndex, stagingBuffer};
 		}
 	private: 
-		void GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, int width, int height);
+		void GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue);
 
 	public:
 		VkDescriptorImageInfo* GetDescriptorImageInfo() {
 			return &descriptorImageInfo;
 		}
-		ImageInfo(PixelPeek& pixelPeek, bool mipmap, Queue::Enum whichQueue = Queue::transfer);
-		ImageInfo(std::string const& path, bool mipmap, Queue::Enum whichQueue = Queue::transfer);
+		ImageInfo(PixelPeek& pixelPeek, bool mipmap, Queue::Enum queue = Queue::transfer);
+		ImageInfo(std::string const& path, bool mipmap, Queue::Enum queue = Queue::transfer);
 
-		[[nodiscard("this StagingBuffer needs to be handled outside of this function")]]
-		StagingBuffer Initialize(PixelPeek& pixelPeek, bool mipmap, Queue::Enum whichQueue);
+		void Initialize(std::string const& path, bool mipmap, Queue::Enum queue);
+		void Initialize(PixelPeek& pixelPeek, bool mipmap, Queue::Enum queue);
 
-		[[nodiscard("this StagingBuffer needs to be handled outside of this function")]]
-		StagingBuffer Initialize(std::string const& path, bool mipmap, Queue::Enum whichQueue);
 		ImageInfo() {}
 		void Destroy();
 	};

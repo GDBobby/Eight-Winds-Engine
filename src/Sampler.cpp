@@ -20,14 +20,14 @@ namespace EWE {
             inUseCount++;
             totalUsed++;
 
-    #ifdef _DEBUG
+#ifdef _DEBUG
             printf("sampler count after add : %d \n", inUseCount);
-    #endif
+#endif
         }
         bool Remove() {
-    #ifdef _DEBUG
+#ifdef _DEBUG
             assert(inUseCount > 0 && "removing sampler from tracker when none exist");
-    #endif
+#endif
             inUseCount--;
             return inUseCount == 0;
         }
@@ -45,9 +45,9 @@ namespace EWE {
 
 
     std::vector<SamplerDuplicateTracker> storedSamplers{};
-    #else
+#else
     std::vector<VkSampler> storedSamplers{};
-    #endif
+#endif
 
 #if SAMPLER_DUPLICATION_TRACKING
     inline bool BitwiseEqualOperator(VkSamplerCreateInfo const& lhs, VkSamplerCreateInfo const& rhs) {

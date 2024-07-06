@@ -18,16 +18,27 @@ typedef uint16_t Compute_TextureID;
 typedef uint32_t SkeletonID;
 typedef uint32_t PipelineID;
 
+//struct MappedStagingBuffer {
+//	VkBuffer buffer{ VK_NULL_HANDLE };
+//	VkDeviceMemory memory{ VK_NULL_HANDLE };
+//	void Free(VkDevice device) {
+//#ifdef _DEBUG
+//		assert(buffer != VK_NULL_HANDLE);
+//#endif
+//		vkUnmapMemory(device, memory);
+//		vkDestroyBuffer(device, buffer, nullptr);
+//		vkFreeMemory(device, memory, nullptr);
+//	}
+//};
 struct StagingBuffer {
 	VkBuffer buffer{ VK_NULL_HANDLE };
 	VkDeviceMemory memory{ VK_NULL_HANDLE };
 	void Free(VkDevice device) {
-#ifdef _DEBUG
-		assert(buffer != VK_NULL_HANDLE);
-#endif
+		if (buffer == VK_NULL_HANDLE) {
+			return;
+		}
 		vkDestroyBuffer(device, buffer, nullptr);
 		vkFreeMemory(device, memory, nullptr);
-		
 	}
 };
 

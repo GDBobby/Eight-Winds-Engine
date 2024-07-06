@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EWEngine/Data/EngineDataTypes.h"
+#include "EWEngine/Global_Macros.h"
 
 #include <vulkan/vulkan.h>
 
@@ -10,14 +11,11 @@
 #include <vector>
 #include <cassert>
 
-
 namespace EWE {
 	/*
 	* the current design is built around the current transfer thread structure
 	* 	the main transfer thread stages transfers
 	* 	an async transfer thread submits and waits on the transfer
-	*	
-	
 	*/
 
 	struct ImageQueueTransitionData {
@@ -26,17 +24,35 @@ namespace EWE {
 		uint8_t arrayLayers;
 		uint32_t dstQueue;
 		StagingBuffer stagingBuffer;
-		ImageQueueTransitionData(VkImage image, uint8_t mips, uint8_t arrayLayers, uint32_t dstQueue) : 
+		ImageQueueTransitionData(VkImage image, uint8_t mips, uint8_t arrayLayers, uint32_t dstQueue, StagingBuffer stagingBuffer) : 
 			image{image}, 
 			mipLevels{mips}, 
 			arrayLayers{arrayLayers}, 
-			dstQueue{dstQueue} 
+			dstQueue{dstQueue},
+			stagingBuffer{stagingBuffer}
 		{}
 	};
 	struct BufferQueueTransitionData{
 		VkBuffer buffer;
 		uint32_t dstQueue;
-		BufferQueueTransitionData(VkBuffer buffer, uint32_t dstQueue) : buffer{buffer}, dstQueue{dstQueue} {}
+		StagingBuffer stagingBuffer;
+		BufferQueueTransitionData(VkBuffer buffer, uint32_t dstQueue, StagingBuffer stagingBuffer) :
+			buffer{buffer}, 
+			dstQueue{dstQueue},
+			stagingBuffer{ stagingBuffer } 
+		{}
+	};
+	struct TransitionBarrierData {
+		VkMemoryBarrier barrier;
+		StagingBuffer stagingBuffer;
+		TransitionBarrierData(VkMemoryBarrier barrier, StagingBuffer stagingBuffer) :
+			barrier{ barrier },
+			stagingBuffer{ stagingBuffer }
+		{}
+		TransitionBarrierData(VkMemoryBarrier barrier) :
+			barrier{ barrier },
+			stagingBuffer{}
+		{}
 	};
 
 	struct QueueTransitionContainer {
@@ -55,45 +71,48 @@ namespace EWE {
 			semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 			semaphoreCreateInfo.pNext = nullptr;
 			semaphoreCreateInfo.flags = 0;
-			vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore);
+			EWE_VK_ASSERT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore));
 		}
 		void DestroySemaphore(VkDevice device) {
 			vkDestroySemaphore(device, semaphore, nullptr);
+		}
+		bool Empty() const {
+			return (images.size() == 0) && (buffers.size() == 0);
 		}
 	};
 
 	class Transition_Manager {
 	public:
 		//size is 1 for the staging transfer buffer, one for each transition that can be waiting on the graphics queue, one for each graphics frame that can be in flight
-		explicit Transition_Manager(uint8_t max_pending_graphics, uint8_t max_frames_in_flight) : 
+		explicit Transition_Manager(uint8_t max_pending_graphics, uint8_t max_frames_in_flight) :
 			transferFlightCount{max_pending_graphics}, 
 			graphicsFlightCount{max_frames_in_flight}, 
 			max_size{(uint8_t)(1 + transferFlightCount + graphicsFlightCount)}, 
-			buffers{ new QueueTransitionContainer[max_size] }, 
-			stagingBuffer{buffers},
+			transitionBuffers{ new QueueTransitionContainer[max_size] },
+			transferStagingBuffer{ transitionBuffers},
 			transferInFlightBuffers{new QueueTransitionContainer*[transferFlightCount]},
 			graphicsInFlightBuffers{new QueueTransitionContainer*[graphicsFlightCount]}
-		{ }
+		{}
 
 		~Transition_Manager() {
 			for (uint8_t i = 0; i < max_size; i++) {
-				buffers[i].DestroySemaphore(vkDevice);
+				transitionBuffers[i].DestroySemaphore(vkDevice);
 			}
-			delete[] buffers;
+			delete[] transitionBuffers;
 			delete[] transferInFlightBuffers;
 			delete[] graphicsInFlightBuffers;
 		}
 
-		void InitializeSemaphores(VkDevice device) {
-			this->vkDevice = device;
+		void InitializeSemaphores(VkDevice vkDevice) {
+			this->vkDevice = vkDevice;
 			for (uint8_t i = 0; i < max_size; i++) {
-				buffers[i].CreateSemaphore(device);
+				transitionBuffers[i].CreateSemaphore(vkDevice);
 			}
 		}
 
 		QueueTransitionContainer* GetStagingBuffer(){
 			//the main transfer thread is going to keep track of whether or not this can be written to
-			return stagingBuffer;
+			return transferStagingBuffer;
 		}
 		//this will be called in the main transfer thread, to determine if its possible to spawn the async transfer thread
 		QueueTransitionContainer* PrepareSubmission() {
@@ -103,12 +122,12 @@ namespace EWE {
 
 			for(uint16_t i = 0; i < max_size; i++){
 				bool bufferNotAvailable = false;
-				bufferNotAvailable |= &buffers[i] == stagingBuffer;
+				bufferNotAvailable |= &transitionBuffers[i] == transferStagingBuffer;
 				for(uint8_t j = 0; j < transferFlightCount; j++){
-					bufferNotAvailable |= &buffers[i] == transferInFlightBuffers[j];
+					bufferNotAvailable |= &transitionBuffers[i] == transferInFlightBuffers[j];
 				}
 				for(uint8_t j = 0; j < graphicsFlightCount; j++){
-					bufferNotAvailable |= &buffers[i] == graphicsInFlightBuffers[j];
+					bufferNotAvailable |= &transitionBuffers[i] == graphicsInFlightBuffers[j];
 				}
 				if(bufferNotAvailable){
 					continue;
@@ -117,10 +136,10 @@ namespace EWE {
 				std::lock_guard<std::mutex> lock(mut);
 				auto*& submissionBuffer = transferInFlightBuffers[currentTransferInFlightCount];
 
-				submissionBuffer = stagingBuffer;
+				submissionBuffer = transferStagingBuffer;
 				submissionBuffer->inFlight = true;
 				currentTransferInFlightCount++;
-				stagingBuffer = &buffers[i];
+				transferStagingBuffer = &transitionBuffers[i];
 
 				return submissionBuffer;
 			
@@ -143,6 +162,12 @@ namespace EWE {
 			for(uint8_t i = 0; i < currentTransferInFlightCount; i++){
 				if(transferBuffer == transferInFlightBuffers[i]){
 					transferBuffer->inFlight = false;
+					for (auto& buffers : transferBuffer->buffers) {
+						buffers.stagingBuffer.Free(vkDevice);
+					}
+					for (auto& images : transferBuffer->images) {
+						images.stagingBuffer.Free(vkDevice);
+					}
 					return;
 				}
 			}
@@ -151,6 +176,12 @@ namespace EWE {
 			//return true;
 #else
 			transferBuffer->inFlight = false;
+			for (auto& buffers : transferBuffer->buffers) {
+				buffers.stagingBuffer.Free(device);
+			}
+			for (auto& images : transferBuffer->images) {
+				images.stagingBuffer.Free(device);
+			}
 #endif
 		}
 		QueueTransitionContainer* PrepareGraphics(uint8_t frameIndex){
@@ -173,7 +204,7 @@ namespace EWE {
 		}
 
 		bool Empty() const {
-			return ((stagingBuffer->images.size() == 0) && (currentTransferInFlightCount == 0));
+			return (transferStagingBuffer->Empty() && (currentTransferInFlightCount == 0));
 		}
 		bool TransferFull()  const {
 			return transferFlightCount == currentTransferInFlightCount;
@@ -186,8 +217,8 @@ namespace EWE {
 		uint8_t currentTransferInFlightCount = 0;
 		
 		std::mutex mut;
-		QueueTransitionContainer* buffers;
-		QueueTransitionContainer* stagingBuffer;
+		QueueTransitionContainer* transitionBuffers;
+		QueueTransitionContainer* transferStagingBuffer;
 		QueueTransitionContainer** transferInFlightBuffers = nullptr;
 		QueueTransitionContainer** graphicsInFlightBuffers;
 

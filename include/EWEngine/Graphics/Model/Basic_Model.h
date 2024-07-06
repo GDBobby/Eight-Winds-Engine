@@ -2,13 +2,13 @@
 #include "Model.h"
 
 namespace EWE {
-    struct Basic_Model {
-        static std::unique_ptr<EWEModel> generateQuad(glm::vec2 uvScale = glm::vec2{ 1.f });
-        static std::unique_ptr<EWEModel> generateQuadPNU(glm::vec2 uvScale = glm::vec2{ 1.f });
-        static std::unique_ptr<EWEModel> GenerateSimple3DQuad(glm::vec2 uvScale = glm::vec2{ 1.f });
-        static std::unique_ptr<EWEModel> generate3DTileQuad(glm::vec2 uvScale);
+    namespace Basic_Model {
+        EWEModel* Quad(Queue::Enum queue, glm::vec2 uvScale = glm::vec2{ 1.f });
+        EWEModel* QuadPNU(Queue::Enum queue, glm::vec2 uvScale = glm::vec2{ 1.f });
+        EWEModel* Simple3DQuad(Queue::Enum queue, glm::vec2 uvScale = glm::vec2{ 1.f });
+        EWEModel* TileQuad3D(Queue::Enum queue, glm::vec2 uvScale);
         /*
-        static std::unique_ptr<EWEModel> generateSimpleZedQuad(glm::vec2 uvScale = glm::vec2{ 1.f }) {
+        EWEModel* generateSimpleZedQuad(glm::vec2 uvScale = glm::vec2{ 1.f }) {
             std::vector<EffectVertex> vertices{
                 {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
                 {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},
@@ -20,14 +20,14 @@ namespace EWE {
         }
         */
 
-        static std::unique_ptr<EWEModel> generate2DGrid(glm::vec2 scale = { 1.f,1.f });
-        static std::unique_ptr<EWEModel> generate2DQuad(glm::vec2 scale = { 1.f,1.f });
+        EWEModel* Grid2D(Queue::Enum queue, glm::vec2 scale = { 1.f,1.f });
+        EWEModel* Quad2D(Queue::Enum queue, glm::vec2 scale = { 1.f,1.f });
 
-        static std::unique_ptr<EWEModel> generateNineUIQuad();
+        EWEModel* NineUIQuad(Queue::Enum queue);
 
-        static std::unique_ptr<EWEModel> generateCircle(uint16_t const points, float radius = 0.5f);
+        EWEModel* Circle(Queue::Enum queue, uint16_t const points, float radius = 0.5f);
 
-        static std::unique_ptr<EWEModel> createSkyBox(float scale);
+        EWEModel* SkyBox(Queue::Enum queue, float scale);
     };
 }
 

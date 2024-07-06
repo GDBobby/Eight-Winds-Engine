@@ -127,11 +127,11 @@ namespace EWE {
 
 	void EWESample::loadGlobalObjects() {
 		std::string skyboxLoc = "nasa/";
-		TextureDesc skyboxID = Cube_Texture::createCubeTexture(skyboxLoc);
+		TextureDesc skyboxID = Cube_Texture::CreateCubeTexture(skyboxLoc, Queue::transfer);
 		skyboxInfo = Texture_Manager::GetDescriptorImageInfo(skyboxLoc);
 
 		//i dont even know if the engine will work if this isnt constructed
-		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(10000.f), skyboxID };
+		ewEngine.objectManager.skybox = { Basic_Model::SkyBox(Queue::transfer, 10000.f), skyboxID };
 
 		//point lights are off by default
 		std::vector<glm::vec3> lightColors{

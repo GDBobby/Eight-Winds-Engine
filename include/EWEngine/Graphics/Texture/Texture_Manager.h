@@ -69,23 +69,24 @@ namespace EWE {
 
 		uint32_t currentTextureCount{ 0 };
 
-		friend class Cube_Texture;
 		friend class Material_Texture;
 		friend class Texture_Builder;
 
 		static Texture_Manager* textureManagerPtr;
 		static ImageTracker* ConstructImageTracker(std::string const& path, bool mipmap);
 
+	public:
 		//this is specifically for CubeImage
 		static ImageTracker* ConstructEmptyImageTracker(std::string const& path);
 		static ImageTracker* ConstructImageTracker(std::string const& path, ImageInfo& imageInfo);
 
-	public:
 		Texture_Manager();
 
 		static VkDescriptorImageInfo* GetDescriptorImageInfo(std::string const& imageName) {
 			return textureManagerPtr->imageMap.at(imageName)->imageInfo.GetDescriptorImageInfo();
 		}
+		static ImageTracker* FindByPath(std::string const& path);
+		static TextureDesc EmplaceSkyboxImageTracker(ImageTracker* imageTracker, std::string const& texPath);
 
 		void ClearSceneTextures();
 		void RemoveMaterialTexture(TextureDesc removeID);

@@ -128,7 +128,7 @@ namespace EWE {
 		allocInfo.commandPool = graphicsCommandPool;
 
 		VkCommandBuffer commandBuffer{ VK_NULL_HANDLE };
-		vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+		EWE_VK_ASSERT(vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer));
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -148,25 +148,25 @@ namespace EWE {
 		VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
 		{
 			std::lock_guard<std::mutex> lock(transferPoolMutex);
-			vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+			EWE_VK_ASSERT(vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer));
 		}
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 		return commandBuffer;
 	}
 
-	VkCommandBuffer SyncHub::BeginSingleTimeCommand(Queue::Enum whichQueue) {
-		if (whichQueue == Queue::transfer) {
+	VkCommandBuffer SyncHub::BeginSingleTimeCommand(Queue::Enum queue) {
+		if (queue == Queue::transfer) {
 			return BeginSingleTimeCommandTransfer();
 		}
-		else if (whichQueue == Queue::graphics) {
+		else if (queue == Queue::graphics) {
 			return BeginSingleTimeCommandGraphics();
 		}
-		else if (whichQueue == Queue::compute) {
+		else if (queue == Queue::compute) {
 			//i dont know if a single time command will ever be done in compute, mayeb for mip generation or smoething like that, forge used a few one time commands
 			//return BeginSingleTimeCommandCompute();
 			assert(false && "compute queue single time command not supported yet");
@@ -202,6 +202,7 @@ namespace EWE {
 
 		vkFreeCommandBuffers(device, graphicsCommandPool, 1, &cmdBuf);
 	}
+
 	void SyncHub::EndSingleTimeCommandGraphicsSignal(VkCommandBuffer cmdBuf, VkSemaphore signalSemaphore){
 		vkEndCommandBuffer(cmdBuf);
 		vkResetFences(device, 1, &singleTimeFenceGraphics);
@@ -237,6 +238,11 @@ namespace EWE {
 		vkFreeCommandBuffers(device, graphicsCommandPool, 1, &cmdBuf);
 	}
 
+	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf) {
+		vkEndCommandBuffer(cmdBuf);
+		transferBuffers[transferFlipFlop].push_back(cmdBuf);
+		AttemptTransferSubmission();
+	}
 	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, BufferQueueTransitionData const& bufferData){
 		vkEndCommandBuffer(cmdBuf);		
 		transferBuffers[transferFlipFlop].push_back(cmdBuf);

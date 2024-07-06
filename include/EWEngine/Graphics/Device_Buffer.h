@@ -43,6 +43,7 @@ namespace EWE {
 
         static EWEBuffer* CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 
+        static VkDeviceSize GetAlignment(VkDeviceSize instanceSize, VkBufferUsageFlags usageFlags, EWEDevice* device);
     private:
         VkDeviceSize GetAlignment(VkDeviceSize instanceSize);
 

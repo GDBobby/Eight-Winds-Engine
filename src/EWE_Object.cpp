@@ -3,35 +3,35 @@
 #include "EWEngine/Graphics/Texture/Material_Textures.h"
 
 namespace EWE {
-    EweObject::EweObject(std::string objectPath, bool globalTextures) {
+    EweObject::EweObject(std::string objectPath, bool globalTextures, Queue::Enum queue) {
 
         ImportData tempData = ImportData::loadData(objectPath);
         TextureMapping textureTracker;
         loadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
 
-        addToRigidRenderingSystem(tempData, textureTracker);
+        addToRigidRenderingSystem(tempData, textureTracker, queue);
     }
-    EweObject::EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID) : mySkinID{ SkinRenderSystem::getSkinID() } {
+    EweObject::EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, Queue::Enum queue) : mySkinID{ SkinRenderSystem::getSkinID() } {
         std::cout << "weapon object construction : objectPath - " << objectPath << std::endl;
         ImportData tempData = ImportData::loadData(objectPath);
         TextureMapping textureTracker;
         loadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
 
         //addToRigidRenderingSystem(device, tempData, textureTracker);
-        addToSkinHandler(tempData, textureTracker, ownerID);
+        addToSkinHandler(tempData, textureTracker, ownerID, queue);
     }
     EweObject::~EweObject() {
-        auto materialInstance = RigidRenderingSystem::getRigidRSInstance();
 
         //printf("before removing textures \n");
         for (auto iter = ownedTextures.begin(); iter != ownedTextures.end(); iter++) {
-            materialInstance->removeByTransform(*iter, &transform);
+            RigidRenderingSystem::RemoveByTransform(*iter, &transform);
+        }
+        for (auto& mesh : meshes) {
+            delete mesh;
         }
         //printf("after removing textures \n");
     }
-    void EweObject::addToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker) {
-
-        RigidRenderingSystem* materialInstance = RigidRenderingSystem::getRigidRSInstance();
+    void EweObject::addToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker, Queue::Enum queue) {
 
         //Actor_Type actorType = (Actor_Type)(1 + isKatana);
         /*
@@ -53,49 +53,45 @@ namespace EWE {
 
         auto const& meshSimple = tempData.meshSimpleExport.meshes;
         for (int i = 0; i < tempData.meshSimpleExport.meshes.size(); i++) {
-            meshes.emplace_back(EWEModel::CreateMesh(meshSimple[i].vertices.data(), meshSimple[i].vertices.size(), tempData.meshSimpleExport.vertex_size, meshSimple[i].indices));
-            materialInstance->addMaterialObject(textureTracker.meshSimpleNames[i], &transform, meshes.back().get(), &drawable);
+            meshes.emplace_back(EWEModel::CreateMesh(meshSimple[i].vertices.data(), meshSimple[i].vertices.size(), tempData.meshSimpleExport.vertex_size, meshSimple[i].indices, queue));
+            RigidRenderingSystem::AddMaterialObject(textureTracker.meshSimpleNames[i], &transform, meshes.back(), &drawable);
         }
         auto const& meshNTSimple = tempData.meshNTSimpleExport.meshes;
         for (int i = 0; i < tempData.meshNTSimpleExport.meshes.size(); i++) {
-            meshes.emplace_back(EWEModel::CreateMesh(meshNTSimple[i].vertices.data(), meshNTSimple[i].vertices.size(), tempData.meshNTSimpleExport.vertex_size, meshNTSimple[i].indices));
-            materialInstance->addMaterialObject(textureTracker.meshNTSimpleNames[i], &transform, meshes.back().get(), &drawable);
+            meshes.emplace_back(EWEModel::CreateMesh(meshNTSimple[i].vertices.data(), meshNTSimple[i].vertices.size(), tempData.meshNTSimpleExport.vertex_size, meshNTSimple[i].indices, queue));
+            RigidRenderingSystem::AddMaterialObject(textureTracker.meshNTSimpleNames[i], &transform, meshes.back(), &drawable);
         }
 
         size_t nameSum = tempData.meshExport.meshes.size() + tempData.meshNTExport.meshes.size() + tempData.meshSimpleExport.meshes.size() + tempData.meshNTSimpleExport.meshes.size();
 
-        if (nameSum != meshes.size()) {
-            printf("mesh to name mismatch - %zu:%zu \n", nameSum, meshes.size());
-            throw std::runtime_error("failed to match mesh to name");
-        }
+        assert(nameSum == meshes.size() && "failed to match mesh to name");
     }
 
-    void EweObject::addToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, SkeletonID skeletonOwner) {
+    void EweObject::addToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, SkeletonID skeletonOwner, Queue::Enum queue) {
         if ((tempData.meshNTSimpleExport.meshes.size() > 0) || (tempData.meshSimpleExport.meshes.size() > 0)) {
             printf("weapon can not have simple meshes \n");
-            throw std::runtime_error("object can not have both simple meshes");
+            assert(false && "object can not have both simple meshes");
         }
 
         if (tempData.meshExport.meshes.size() > 0) {
             meshes.reserve(tempData.meshExport.meshes.size());
             auto const& mesh = tempData.meshExport.meshes;
             for (uint16_t i = 0; i < tempData.meshExport.meshes.size(); i++) {
-                meshes.push_back(EWEModel::CreateMesh(mesh[i].vertices.data(), mesh[i].vertices.size(), tempData.meshExport.vertex_size, mesh[i].indices));
-                SkinRenderSystem::addWeapon(textureTracker.meshNames[i], meshes[i].get(), mySkinID, skeletonOwner);
+                meshes.push_back(EWEModel::CreateMesh(mesh[i].vertices.data(), mesh[i].vertices.size(), tempData.meshExport.vertex_size, mesh[i].indices, queue));
+                SkinRenderSystem::addWeapon(textureTracker.meshNames[i], meshes[i], mySkinID, skeletonOwner);
             }
         }
         else if (tempData.meshNTExport.meshes.size() > 0) {
             meshes.reserve(tempData.meshNTExport.meshes.size());
             auto const& meshNT = tempData.meshNTExport.meshes;
-            ;
+            
             for (uint16_t i = 0; i < tempData.meshNTExport.meshes.size(); i++) {
-                meshes.push_back(EWEModel::CreateMesh(meshNT[i].vertices.data(), meshNT[i].vertices.size(), tempData.meshNTExport.vertex_size, tempData.meshNTExport.meshes[i].indices));
-                SkinRenderSystem::addWeapon(textureTracker.meshNTNames[i], meshes[i].get(), mySkinID, skeletonOwner);
+                meshes.push_back(EWEModel::CreateMesh(meshNT[i].vertices.data(), meshNT[i].vertices.size(), tempData.meshNTExport.vertex_size, tempData.meshNTExport.meshes[i].indices, queue));
+                SkinRenderSystem::addWeapon(textureTracker.meshNTNames[i], meshes[i], mySkinID, skeletonOwner);
             }
         }
         else {
-            std::cout << "invalid weapon type \n";
-            throw std::runtime_error("invalid weapon type?");
+            assert(false && "invalid weapon type");
         }
        
     }
@@ -171,9 +167,6 @@ namespace EWE {
 
             textureTracker.meshNTSimpleNames.push_back(returnPair);
             ownedTextures.emplace(returnPair.texture);
-            
         }
     }
-
-
-}
+}//namespace EWE

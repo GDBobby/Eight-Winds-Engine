@@ -34,7 +34,7 @@ namespace EWE {
 		//std::vector<SpotLight> spotLights;
 
 		//global right now because i only have 1, need to make it scene based
-		std::pair<std::unique_ptr<EWEModel>, TextureDesc> skybox{}; //model and textureID
+		std::pair<EWEModel*, TextureDesc> skybox{}; //model and textureID
 
 
 		void InitCollision() {

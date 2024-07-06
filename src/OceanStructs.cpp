@@ -302,6 +302,7 @@ namespace EWE {
             ewe_free(renderData[0]);
             renderData[1]->~EWEBuffer();
             ewe_free(renderData[1]);
+            delete oceanModel;
         }
 
         void OceanGraphicsGPUData::CreateDescriptorSet(VkDescriptorImageInfo* outputImage, VkDescriptorImageInfo* skyboxImage) {
@@ -412,7 +413,7 @@ namespace EWE {
                 }
             }
 
-            oceanModel = EWEModel::CreateMesh(gridVertices.data(), gridVertices.size(), sizeof(gridVertices[0]), gridIndices);
+            oceanModel = EWEModel::CreateMesh(gridVertices.data(), gridVertices.size(), sizeof(gridVertices[0]), gridIndices, Queue::graphics);
         }
 
         void OceanGraphicsGPUData::Render(FrameInfo const& frameInfo) {

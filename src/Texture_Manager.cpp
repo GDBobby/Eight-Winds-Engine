@@ -408,4 +408,26 @@ namespace EWE {
         tmPtr->currentTextureCount++;
         return retDesc;
     }
+    ImageTracker* Texture_Manager::FindByPath(std::string const& path) {
+        auto foundImage = textureManagerPtr->imageMap.find(path);
+        if (foundImage == textureManagerPtr->imageMap.end()) {
+            return nullptr;
+        }
+        return foundImage->second;
+    }
+    TextureDesc Texture_Manager::EmplaceSkyboxImageTracker(ImageTracker* imageTracker, std::string const& texPath) {
+
+        EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
+
+        descBuilder.writeImage(0, imageTracker->imageInfo.GetDescriptorImageInfo());
+        TextureDesc retDesc = descBuilder.build();
+
+        textureManagerPtr->textureImages.try_emplace(retDesc, std::vector<ImageTracker*>{imageTracker});
+        textureManagerPtr->imageMap.emplace(texPath, imageTracker);
+
+        textureManagerPtr->skyboxID = retDesc;
+        textureManagerPtr->currentTextureCount++;
+
+        return retDesc;
+    }
 }

@@ -31,14 +31,13 @@ namespace EWE {
 		printf("clearing ewe objects \n");
 
 
-		auto materialHandler = RigidRenderingSystem::getRigidRSInstance();
 		for (int i = 0; i < materialGameObjects.size(); i++) {
-			materialHandler->removeByTransform(materialGameObjects[i].textureID, &materialGameObjects[i].transform);
+			RigidRenderingSystem::RemoveByTransform(materialGameObjects[i].textureID, &materialGameObjects[i].transform);
 		}
 		materialGameObjects.clear();
 		eweObjects.clear();
 		printf("after clearing ewe \n");
-		auto clearTextures = materialHandler->checkAndClearTextures();
+		auto clearTextures = RigidRenderingSystem::CheckAndClearTextures();
 		printf("afterr clear texutres \n");
 		Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
 		for (auto& texture : clearTextures) {

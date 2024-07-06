@@ -84,6 +84,9 @@ namespace EWE {
         VkQueue GetPresentQueue() const { return queues[Queue::present]; }
         uint32_t GetPresentIndex() const { return queueData.index[Queue::present]; }
 
+        VkQueue GetQueue(Queue::Enum queue) const { return queues[queue]; }
+        uint32_t GetQueueIndex(Queue::Enum queue) const { return queueData.index[queue]; }
+
         //VkQueue computeQueue() { return queue[Queue::compute]; }
         //uint32_t getComputeIndex() { return computeIndex; }
 
@@ -106,7 +109,7 @@ namespace EWE {
         void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         //void endSingleTimeCommandsSecondThread(VkCommandBuffer commandBuffer);
         //void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        void CopyBuffer(StagingBuffer stagingBuffer, VkBuffer dstBuffer, VkDeviceSize size, Queue::Enum queue);
 
         static VkImageMemoryBarrier TransitionImageLayout(VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
         static void TransitionImageLayoutWithBarrier(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
