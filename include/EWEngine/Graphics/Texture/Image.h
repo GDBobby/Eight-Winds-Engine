@@ -60,6 +60,7 @@ namespace EWE {
 
 		void CreateTextureSampler();
 
+		//(&ImageInfo::GenerateMipmaps, &imageInfo, format, width, height, srcQueue)
 		void GenerateMipmaps(const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue);
 
 		ImageQueueTransitionData GenerateTransitionData(uint32_t queueIndex, StagingBuffer stagingBuffer){

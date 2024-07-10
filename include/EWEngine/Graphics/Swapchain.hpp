@@ -3,7 +3,7 @@
 #include "Device.hpp"
 
 //#if !defined (_WIN32)
-#include <vulkan/vulkan.h>
+#include "EWEngine/Graphics/VulkanHeader.h"
 //#endif
 
 // std lib headers

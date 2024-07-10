@@ -1,13 +1,14 @@
 #pragma once
 
+#include "EWEngine/Graphics/VulkanHeader.h"
 #include <EWEngine/Data/EWE_Memory.h>
 #include <EWEngine/Data/TransitionManager.h>
+#include "EWEngine/Graphics/SyncPool.h"
 
 #include <mutex>
 #include <condition_variable>
 #include <vector>
 
-#include <vulkan/vulkan.h>
 #include <array>
 
 #include <iostream>
@@ -17,14 +18,6 @@
 static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {
 
-	namespace Queue {
-		enum Enum : uint32_t {
-			graphics,
-			present,
-			compute,
-			transfer,
-		};
-	} //namespace Queue
 
 	class SyncHub {
 	private:
@@ -32,15 +25,16 @@ namespace EWE {
 
 		static SyncHub* syncHubSingleton;
 
-		VkDevice device{};
+		SyncPool syncPool;
+		
+		VkDevice device;
 		VkQueue graphicsQueue;
 		VkQueue presentQueue;
 		VkQueue computeQueue;
 		VkQueue transferQueue;
 		uint32_t transferQueueIndex;
 
-		VkCommandPool transferCommandPool;
-		VkCommandPool graphicsCommandPool;
+		VkCommandPool commandPools[Queue::_count];
 		VkCommandBufferBeginInfo bufferBeginInfo{};
 
 		VkSubmitInfo transferSubmitInfo{};
@@ -60,7 +54,7 @@ namespace EWE {
 
 		using StageMask = std::vector<VkSemaphore>;
 		//VkFence fence{ VK_NULL_HANDLE };
-		VkFence singleTimeFenceGraphics{VK_NULL_HANDLE};
+		VkFence singleTimeFenceGraphics{ VK_NULL_HANDLE };
 		VkFence singleTimeFenceTransfer{ VK_NULL_HANDLE };
 
 		std::vector<VkSemaphore> imageAvailableSemaphores{}; //resized to maxFramesInFlight
@@ -96,7 +90,7 @@ namespace EWE {
 			return syncHubSingleton;
 			
 		}
-		SyncHub();
+		SyncHub(VkDevice device);
 		~SyncHub();
 
 		//only class this from EWEDevice
@@ -134,15 +128,13 @@ namespace EWE {
 		VkCommandBuffer BeginSingleTimeCommandGraphics();
 		void EndSingleTimeCommandGraphics(VkCommandBuffer cmdBuf);
 		void EndSingleTimeCommandGraphicsSignal(VkCommandBuffer cmdBuf, VkSemaphore signalSemaphore);
-		void EndSingleTimeCommandGraphicsWaitAndSignal(VkCommandBuffer cmdBuf, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore);
+		void EndSingleTimeCommandGraphicsWaitAndSignal(VkCommandBuffer cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
 
 		VkCommandBuffer BeginSingleTimeCommandTransfer();
 
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf);
-		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, BufferQueueTransitionData const& bufferData);
-		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, std::vector<BufferQueueTransitionData> const& bufferData);
-		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, ImageQueueTransitionData const& imageData);
-		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, std::vector<ImageQueueTransitionData> const& imageData);
+		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, std::function<void()> func);
+		void EndSingleTimeCommandTransfer(SyncedCommandQueue* cmdQueue);
 
 		VkCommandBuffer BeginSingleTimeCommand(Queue::Enum queue);
 
@@ -165,7 +157,7 @@ namespace EWE {
 		void SetMaxFramesInFlight();
 		void CreateBuffers(VkCommandPool commandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool);
 
-		void SubmitTransferBuffers(QueueTransitionContainer* transitionContainer);
+		void SubmitTransferBuffers();
 
 	};
 }

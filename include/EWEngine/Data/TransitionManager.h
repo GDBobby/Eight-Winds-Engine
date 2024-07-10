@@ -2,10 +2,10 @@
 
 #include "EWEngine/Data/EngineDataTypes.h"
 #include "EWEngine/Global_Macros.h"
+#include "EWEngine/Graphics/TransferCommandManager.h"
 
-#include <vulkan/vulkan.h>
+#include "EWEngine/Graphics/VulkanHeader.h"
 
-#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -43,15 +43,13 @@ namespace EWE {
 		{}
 	};
 	struct TransitionBarrierData {
-		VkMemoryBarrier barrier;
-		StagingBuffer stagingBuffer;
-		TransitionBarrierData(VkMemoryBarrier barrier, StagingBuffer stagingBuffer) :
-			barrier{ barrier },
-			stagingBuffer{ stagingBuffer }
+		PipelineBarrier barrier;
+		std::vector<StagingBuffer> stagingBuffers{};
+		TransitionBarrierData(PipelineBarrier barrier, StagingBuffer stagingBuffer) :
+			barrier{ barrier }
 		{}
-		TransitionBarrierData(VkMemoryBarrier barrier) :
-			barrier{ barrier },
-			stagingBuffer{}
+		TransitionBarrierData(PipelineBarrier barrier) :
+			barrier{ barrier }
 		{}
 	};
 
@@ -177,10 +175,10 @@ namespace EWE {
 #else
 			transferBuffer->inFlight = false;
 			for (auto& buffers : transferBuffer->buffers) {
-				buffers.stagingBuffer.Free(device);
+				buffers.stagingBuffer.Free(vkDevice);
 			}
 			for (auto& images : transferBuffer->images) {
-				images.stagingBuffer.Free(device);
+				images.stagingBuffer.Free(vkDevice);
 			}
 #endif
 		}

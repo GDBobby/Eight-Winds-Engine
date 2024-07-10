@@ -1,8 +1,10 @@
 #pragma once
+
+#include "EWEngine/Graphics/VulkanHeader.h"
+
 #include <stdint.h>
 #include <cassert>
 
-#include "vulkan/vulkan.h"
 
 typedef uint8_t MaterialFlags;
 typedef VkDescriptorSet TextureDesc;
