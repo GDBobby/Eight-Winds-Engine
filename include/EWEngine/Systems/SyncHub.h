@@ -11,9 +11,6 @@
 
 #include <array>
 
-#include <iostream>
-#include <stdexcept>
-
 
 static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {

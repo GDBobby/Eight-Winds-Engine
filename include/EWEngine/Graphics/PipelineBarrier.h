@@ -17,23 +17,18 @@ namespace EWE {
 			return (memoryBarriers.size() + imageBarriers.size() + bufferBarriers.size()) == 0;
 		}
 
-		void AddBarrier(VkMemoryBarrier& memoryBarrier) {
+		void AddBarrier(VkMemoryBarrier const& memoryBarrier) {
 			memoryBarriers.push_back(memoryBarrier);
 		}
-		void AddBarrier(VkImageMemoryBarrier& imageBarrier) {
+		void AddBarrier(VkImageMemoryBarrier const& imageBarrier) {
 			imageBarriers.push_back(imageBarrier);
 		}
-		void AddBarrier(VkBufferMemoryBarrier& bufferBarrier) {
+		void AddBarrier(VkBufferMemoryBarrier const& bufferBarrier) {
 			bufferBarriers.push_back(bufferBarrier);
 		}
-		void SubmitBarrier(VkCommandBuffer cmdBuf) {
-			vkCmdPipelineBarrier(cmdBuf,
-				srcStageMask, dstStageMask,
-				dependencyFlags,
-				memoryBarriers.size(), memoryBarriers.data(),
-				bufferBarriers.size(), bufferBarriers.data(),
-				imageBarriers.size(), imageBarriers.data()
-			);
-		}
+		void SubmitBarrier(VkCommandBuffer cmdBuf);
+
+		//the parameter object passed in is no longer usable, submitting both barriers will potentially lead to errors
+		void Merge(PipelineBarrier const& other);
 	};
 }

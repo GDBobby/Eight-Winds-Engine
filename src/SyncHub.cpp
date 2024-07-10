@@ -9,12 +9,12 @@ namespace EWE {
 
 	SyncHub::SyncHub(VkDevice device) : transitionManager{ 2, 2 }, device{device}, syncPool{32, device} {
 #ifdef _DEBUG
-		std::cout << "COSTRUCTING SYNCHUB" << std::endl;
+		printf("COSTRUCTING SYNCHUB\n");
 #endif
 	}
 	SyncHub::~SyncHub() {
 #ifdef _DEBUG
-		std::cout << "DE COSTRUCTING SYNCHUB" << std::endl;
+		printf("DE COSTRUCTING SYNCHUB\n");
 #endif
 	}
 

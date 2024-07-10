@@ -1,0 +1,89 @@
+#include "EWEngine/Systems/ThreadPool.h"
+
+
+
+namespace EWE {
+    ThreadPool* ThreadPool::singleton{ nullptr };
+    void ThreadPool::Construct() {
+        assert(singleton == nullptr && "constructing Threadpool twice");
+        singleton = new ThreadPool(std::thread::hardware_concurrency() - 2);
+        //1 thread reserved for graphics, which is the calling thread
+        //1 thread is reserved for transfer executive, i need to come back and see if an executive transfer thread is necessary, or if it could be considered a worker thread
+        //might be necessary to reserve a thread for compute, and logic. not sure if they can also be considered worker threads
+    }
+    void ThreadPool::Deconstruct() {
+        delete singleton;
+    }
+
+    ThreadPool::ThreadPool(size_t numThreads) {
+        for (size_t i = 0; i < numThreads; ++i) {
+            threads.emplace_back(
+                [this] {
+                    while (true) {
+                        std::unique_lock<std::mutex> lock(this->queueMutex);
+                        this->condition.wait(lock,
+                            [this] {
+                                return this->stop || !this->tasks.empty();
+                            }
+                        );
+                        if (this->stop && this->tasks.empty()) {
+                            return;
+                        }
+                        auto task = std::move(this->tasks.front());
+                        this->tasks.pop();
+                        lock.unlock();
+                        task();
+
+                        // Increment the number of tasks completed
+                        std::unique_lock<std::mutex> counterLock(this->counterMutex);
+                        this->numTasksCompleted++;
+                        // Notify any waiting threads if all tasks have completed
+                        if (this->numTasksCompleted == this->numTasksEnqueued) {
+                            this->counterCondition.notify_all();
+                        }
+                    }
+                }
+            );
+        }
+    }
+    ThreadPool::~ThreadPool() {
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            stop = true;
+        }
+        condition.notify_all();
+        for (std::thread& thread : threads) {
+            thread.join();
+        }
+    }
+
+    bool ThreadPool::WaitCondition() {
+#ifdef _DEBUG
+        printf("waiting for completion of thread pool - %zu:%zu \n", singleton->numTasksCompleted, singleton->numTasksEnqueued);
+#endif
+        if (singleton->numTasksCompleted == singleton->numTasksEnqueued) {
+            singleton->numTasksCompleted = 0;
+            singleton->numTasksEnqueued = 0;
+            return true;
+        }
+        return false;
+    }
+
+    void ThreadPool::WaitForCompletion() {
+        std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
+        singleton->counterCondition.wait(counterLock,
+            [&] {
+#ifdef _DEBUG
+                printf("waiting for completion of thread pool - %zu:%zu \n", singleton->numTasksCompleted, singleton->numTasksEnqueued);
+#endif
+                if (singleton->numTasksCompleted == singleton->numTasksEnqueued) {
+                    singleton->numTasksCompleted = 0;
+                    singleton->numTasksEnqueued = 0;
+                    return true;
+                }
+                return false;
+            }
+
+        );
+    }
+}//namespace EWE

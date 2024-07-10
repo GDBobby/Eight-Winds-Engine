@@ -11,9 +11,9 @@ int main() {
 
 		eweSample = new EWE::EWESample(ewEngine);
 		};
-	std::thread loadThread(loadPart2);
+	EWE::ThreadPool::EnqueueVoid(loadPart2);
 	ewEngine.LoadingScreen();
-	loadThread.join();
+	EWE::ThreadPool::WaitForCompletion();
 
 	try {
 		eweSample->mainThread();

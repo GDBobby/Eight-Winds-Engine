@@ -35,7 +35,7 @@ namespace EWE {
         std::vector<VkQueueFamilyProperties> queueFamilies{};
         void FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface_);
 
-        bool isComplete() { return found[Queue::graphics] && found[Queue::present] && found[Queue::transfer] && found[Queue::compute]; }
+        bool isComplete() const { return found[Queue::graphics] && found[Queue::present] && found[Queue::transfer] && found[Queue::compute]; }
     };
 
     //std::vector<VkDeviceQueueCreateInfo> queueInfo;

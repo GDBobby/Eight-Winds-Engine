@@ -1,5 +1,7 @@
 #include "EWEngine/Graphics/TransferCommandManager.h"
 
+#include <iterator>
+
 namespace EWE {
 	VkCommandBuffer SyncedCommandQueue::Pop() {
 		assert(size > 0 && "popping from an empty queue?");
