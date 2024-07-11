@@ -3,6 +3,44 @@
 #include <iterator>
 
 namespace EWE {
+	std::function<void()> CommandCallbacks::CombineCallbacks(VkDevice vkDevice) {
+		for (uint16_t i = 0; i < callbacks.size(); i++) {
+			if (callbacks[i] == nullptr) {
+				callbacks.erase(callbacks.begin() + i);
+				i--;
+			}
+		}
+		if (callbacks.size() == 0) {
+			return nullptr;
+		}
+
+		return [cbs = std::move(callbacks), sbs = std::move(stagingBuffers), device = vkDevice] {
+			for (auto& stagingBuffer : sbs) {
+				stagingBuffer.Free(device);
+			}
+			for (auto const& cb : cbs) {
+				cb();
+			}
+		};
+	}
+	std::function<void()> CommandCallbacks::CombineGraphicsCallbacks() {
+		for (uint16_t i = 0; i < graphicsCallbacks.size(); i++) {
+			if (graphicsCallbacks[i] == nullptr) {
+				graphicsCallbacks.erase(graphicsCallbacks.begin() + i);
+				i--;
+			}
+		}
+		if (graphicsCallbacks.size() == 0) {
+			return nullptr;
+		}
+
+		return [cbs = std::move(graphicsCallbacks)] {
+			for (auto const& cb : cbs) {
+				cb();
+			}
+		};
+	}
+
 	VkCommandBuffer SyncedCommandQueue::Pop() {
 		assert(size > 0 && "popping from an empty queue?");
 		const uint8_t retIndex = currentIndex;

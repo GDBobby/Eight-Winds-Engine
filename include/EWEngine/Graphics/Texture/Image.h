@@ -62,10 +62,11 @@ namespace EWE {
 
 		//(&ImageInfo::GenerateMipmaps, &imageInfo, format, width, height, srcQueue)
 		void GenerateMipmaps(const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue);
+		static void GenerateMipmaps(VkImage image, uint8_t mipLevels, const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue);
 
-		ImageQueueTransitionData GenerateTransitionData(uint32_t queueIndex, StagingBuffer stagingBuffer){
-			return ImageQueueTransitionData{image, mipLevels, arrayLayers, queueIndex, stagingBuffer};
-		}
+		//ImageQueueTransitionData GenerateTransitionData(uint32_t queueIndex, StagingBuffer stagingBuffer){
+		//	return ImageQueueTransitionData{image, mipLevels, arrayLayers, queueIndex, stagingBuffer};
+		//}
 	private: 
 		void GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue);
 

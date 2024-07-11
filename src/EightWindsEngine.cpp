@@ -197,7 +197,6 @@ namespace EWE {
 
 				auto frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
-					auto* transitionContainer = eweDevice.PostTransitionsToGraphics(frameInfo.cmdBuf, frameInfo.index);
 					
 					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
@@ -205,12 +204,7 @@ namespace EWE {
 					leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
-					if (transitionContainer != nullptr) {
-						if (eweRenderer.EndFrame(transitionContainer->semaphore)) {
-							menuManager.windowResize(eweRenderer.GetExtent());
-						}
-					}
-					else if (eweRenderer.EndFrame()) {
+					if (eweRenderer.EndFrame()) {
 						menuManager.windowResize(eweRenderer.GetExtent());
 					}
 				}

@@ -109,7 +109,7 @@ namespace EWE {
         void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         //void endSingleTimeCommandsSecondThread(VkCommandBuffer commandBuffer);
         //void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void CopyBuffer(StagingBuffer stagingBuffer, VkBuffer dstBuffer, VkDeviceSize size, Queue::Enum queue);
+        void CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         static VkImageMemoryBarrier TransitionImageLayout(VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
         static void TransitionImageLayoutWithBarrier(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
@@ -119,7 +119,7 @@ namespace EWE {
         void TransitionFromTransfer(VkCommandBuffer cmdBuf, Queue::Enum dstQueueIndex, VkImage const& image, VkImageLayout finalLayout);
         void TransitionFromTransferToGraphics(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image);
 
-        QueueTransitionContainer* PostTransitionsToGraphics(VkCommandBuffer cmdBuf, uint8_t frameIndex);
+        //QueueTransitionContainer* PostTransitionsToGraphics(VkCommandBuffer cmdBuf, uint8_t frameIndex);
 
         void SetImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange);
 

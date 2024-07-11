@@ -9,3 +9,4 @@ Instructions for setting up Nvidia Aftermath (why can't I do preprocessor instru
 2. From the downloaded SDK file
 	2.1 copy the include folder to Eight-Winds-Engine/explicit_external/Aftermath/
 	2.2 copy the GFSDK_Aftermath_Lib.x64.lib file to Eight-Winds-Engine/explicit_external/Aftermath/lib/
+	

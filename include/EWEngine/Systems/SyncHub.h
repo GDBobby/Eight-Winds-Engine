@@ -1,9 +1,9 @@
 #pragma once
 
-#include "EWEngine/Graphics/VulkanHeader.h"
-#include <EWEngine/Data/EWE_Memory.h>
-#include <EWEngine/Data/TransitionManager.h>
 #include "EWEngine/Graphics/SyncPool.h"
+#include "EWEngine/Data/EWE_Memory.h"
+#include "EWEngine/Graphics/TransferCommandManager.h"
+#include "EWEngine/Graphics/TransitionManager.h
 
 #include <mutex>
 #include <condition_variable>
@@ -12,7 +12,6 @@
 #include <array>
 
 
-static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace EWE {
 
 
@@ -23,12 +22,10 @@ namespace EWE {
 		static SyncHub* syncHubSingleton;
 
 		SyncPool syncPool;
+		TransitionManager transitionManager;
 		
 		VkDevice device;
-		VkQueue graphicsQueue;
-		VkQueue presentQueue;
-		VkQueue computeQueue;
-		VkQueue transferQueue;
+		VkQueue queues[Queue::_count];
 		uint32_t transferQueueIndex;
 
 		VkCommandPool commandPools[Queue::_count];
@@ -42,37 +39,22 @@ namespace EWE {
 		//std::mutex mutexNextTransmit{};
 		bool transferFlipFlop = false;
 
-		//one in flight, one being built
-		//the transfer queue doesn't work like the graphics queue, which could have 2 frames in flight
-		//the transfer queue will only have one submission in flight
-		std::array<std::vector<VkCommandBuffer>, 2> transferBuffers{};
-		Transition_Manager transitionManager;
 
-
-		using StageMask = std::vector<VkSemaphore>;
 		//VkFence fence{ VK_NULL_HANDLE };
 		VkFence singleTimeFenceGraphics{ VK_NULL_HANDLE };
-		VkFence singleTimeFenceTransfer{ VK_NULL_HANDLE };
 
-		std::vector<VkSemaphore> imageAvailableSemaphores{}; //resized to maxFramesInFlight
-		std::vector<VkSemaphore> renderFinishedSemaphores{};//resized to maxFramesInFlight
-		std::vector<VkCommandBuffer> renderBuffers{};
-		VkCommandBuffer transferBuffer{ VK_NULL_HANDLE };
+		VkCommandBuffer renderBuffers[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+		RenderSyncData renderSyncData;
 
-		std::vector<VkFence> inFlightFences{}; //resized to maxFramesInFlight
-		std::vector<VkFence> imagesInFlight{}; //resized to maxFramesInFlight
+		VkFence inFlightFences[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+		std::vector<VkFence> imagesInFlight{};
 
-		//currently doing dom cuck sync, so this isnt used
-		//VkSemaphore transferSemaphore{}; 
+		std::vector<VkCommandBuffer> graphicsSTCGroup{};
 
 		bool transferring = false;
 
-		bool oceanComputing = false;
-		bool computing = false;
-		bool rendering = true;
-		std::vector<StageMask> graphicsWait{};
-		std::vector<StageMask> graphicsSignal{};
-
+		//this is designed for synchronizing 2 threads, in which the cuck thread defers to the dom thread
+		//specifically, it'd be used if one of the 2 threads has a higher priority
 		struct DomCuckSync {
 			std::mutex domMutex{};
 			std::mutex cuckMutex{};
@@ -97,23 +79,18 @@ namespace EWE {
 		}
 		void Destroy(VkCommandPool renderPool, VkCommandPool computePool, VkCommandPool transferPool);
 
-		//void enableCompute();
-		//void disableCompute();
-
 		VkCommandBuffer GetRenderBuffer(uint8_t frameIndex) {
 			return renderBuffers[frameIndex];
 		}
 
-		//void setComputeMask(VkSubmitInfo& computeSubmitInfo);
-		VkFence* GetFlightFence(uint8_t frameIndex) {
-			return &inFlightFences[frameIndex];
-		}
-		VkSemaphore GetImageAvailableSemaphore(uint8_t frameIndex) {
-			return imageAvailableSemaphores[frameIndex];
-		}
+		//VkFence* GetFlightFence(uint8_t frameIndex) {
+		//	return &inFlightFences[frameIndex];
+		//}
+		//VkSemaphore GetImageAvailableSemaphore(uint8_t frameIndex) {
+		//	return imageAvailableSemaphores[frameIndex];
+		//}
 
 		void SubmitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex);
-		void SubmitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex, VkSemaphore waitSemaphore);
 		VkResult PresentKHR(VkPresentInfoKHR& presentInfo, uint8_t currentFrame);
 		void WaitOnGraphicsFence(const uint8_t frameIndex);
 
@@ -123,9 +100,15 @@ namespace EWE {
 		void CuckSubmit();
 
 		VkCommandBuffer BeginSingleTimeCommandGraphics();
+
+		//this needs to be called from the graphics thread
+		//these have a fence with themselves
 		void EndSingleTimeCommandGraphics(VkCommandBuffer cmdBuf);
 		void EndSingleTimeCommandGraphicsSignal(VkCommandBuffer cmdBuf, VkSemaphore signalSemaphore);
 		void EndSingleTimeCommandGraphicsWaitAndSignal(VkCommandBuffer cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
+
+		void EndSingleTimeCommandGraphicsGroup(VkCommandBuffer cmdBuf);
+		void SubmitGraphicsSTCGroup();
 
 		VkCommandBuffer BeginSingleTimeCommandTransfer();
 

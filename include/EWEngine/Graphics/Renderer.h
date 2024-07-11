@@ -46,7 +46,6 @@ namespace EWE {
 
 		FrameInfo BeginFrame();
 		bool EndFrame();
-		bool EndFrame(VkSemaphore waitSemaphore);
 		bool EndFrameAndWaitForFence();
 
 		//void beginSecondarySwapChainRenderPass(std::pair<VkCommandBuffer, VkCommandBuffer> commandBufferPair);

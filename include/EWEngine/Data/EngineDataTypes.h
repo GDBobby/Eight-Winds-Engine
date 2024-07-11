@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EWEngine/Graphics/VulkanHeader.h"
+#include "vulkan/vulkan.h"
 
 #include <stdint.h>
 #include <cassert>
@@ -42,6 +42,13 @@ struct StagingBuffer {
 		vkDestroyBuffer(device, buffer, nullptr);
 		vkFreeMemory(device, memory, nullptr);
 	}
+	void Free(VkDevice device) const {
+		if (buffer == VK_NULL_HANDLE) {
+			return;
+		}
+		vkDestroyBuffer(device, buffer, nullptr);
+		vkFreeMemory(device, memory, nullptr);
+	}
 };
 
 struct MaterialTextureInfo {
@@ -52,6 +59,19 @@ struct MaterialTextureInfo {
 	MaterialTextureInfo(MaterialFlags flags, TextureDesc texID) : materialFlags{ flags }, texture{ texID } {}
 };
 
+namespace Material {
+	enum Flags : uint8_t {
+		AO = 1,
+		Metal = 1 << 1,
+		Rough = 1 << 2,
+		Normal = 1 << 3,
+		Bump = 1 << 4,
+
+		Instanced = 1 << 6,
+		Bones = 1 << 7,
+	};
+}
+//replacing MaterialAttrributes with Material::Flags
 enum MaterialAttributes : uint8_t {
 	MaterialF_hasAO = 1,
 	MaterialF_hasMetal = 2,

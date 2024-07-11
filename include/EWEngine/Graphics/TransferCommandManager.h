@@ -20,25 +20,19 @@ namespace EWE {
 		std::vector<VkCommandBuffer> commands{};
 		std::vector<StagingBuffer> stagingBuffers{}; //need to be freed
 		std::vector<std::function<void()>> callbacks{};
+		std::vector<std::function<void()>> graphicsCallbacks{};
 
 		void PushBack(CommandWithCallback const& cmdCb) {
 			commands.push_back(cmdCb.cmdBuf);
 			callbacks.push_back(cmdCb.callback);
 		}
-		std::function<void()> CombineCallbacks() {
-			for(uint16_t i = 0; i < callbacks.size(); i++){
-				if(callbacks[i] == nullptr){
-					callbacks.erase(callbacks.begin() + i);
-					i--;
-				}
-			}
-
-			return [cbs = std::move(callbacks)]{
-				for(auto const& cb : cbs){
-					cb();
-				}
-			};
-		}
+		std::function<void()> CombineCallbacks(VkDevice vkDevice);
+		std::function<void()> CombineGraphicsCallbacks();
+	};
+	struct GraphicsCallbacks {
+		VkSemaphore waitSemaphore{};
+		VkSemaphore signalSemaphore{};
+		std::vector<std::function<void()>> callbacks;
 	};
 
 	class SyncedCommandQueue {
@@ -56,6 +50,7 @@ namespace EWE {
 		StagingBuffer stagingBuffer{};
 
 		std::function<void()> callback{nullptr};
+		std::function<void()> graphicsCallback{ nullptr };
 		SyncedCommandQueue() {}
 		VkCommandBuffer Pop();
 		void Push(VkCommandBuffer cmdBuf);
@@ -68,14 +63,14 @@ namespace EWE {
 	namespace TransferCommandManager {
 
 		bool Empty();
+		CommandCallbacks PrepareSubmit(VkSubmitInfo& submitInfo);
+		void AddCommand(VkCommandBuffer cmdBuf, std::function<void()> fnc);
 		template<typename F, typename ... Args>
-		void AddCommand(VkCommandBuffer cmdBuf, F&& f, Args&&... args){
+		void AddCommand(VkCommandBuffer cmdBuf, F&& f, Args&&... args) {
 			requires(std::is_invocable_v<F, Args>)
 			AddCommand(cmdBuf, std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 		}
 
-		CommandCallbacks PrepareSubmit(VkSubmitInfo& submitInfo);
-		void AddCommand(VkCommandBuffer cmdBuf, std::function<void()> fnc);
 
 		SyncedCommandQueue* BeginCommandQueue();
 		void AddCommand(VkCommandBuffer cmdBuf);

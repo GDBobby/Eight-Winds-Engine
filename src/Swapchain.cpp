@@ -141,51 +141,26 @@ namespace EWE {
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
         return result;
     }
-    VkResult EWESwapChain::SubmitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex, VkSemaphore waitSemaphore) {
-
-        VkSubmitInfo submitInfo = {};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = buffers;
-
-        syncHub->SubmitGraphics(submitInfo, currentFrame, imageIndex, waitSemaphore);
-
-        VkPresentInfoKHR presentInfo = {};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = &swapChain;
-        presentInfo.pImageIndices = imageIndex;
-        auto result = syncHub->PresentKHR(presentInfo, currentFrame);
-
-        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-        return result;
-    }
 
     void EWESwapChain::CreateSwapChain() {
         //logFile << "creating swap chain \n";
         //printf("create swap chain \n");
 
-        EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
+        EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
         SwapChainSupportDetails swapChainSupport = eweDevice->GetSwapChainSupport();
 
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
         VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
-        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-        if (swapChainSupport.capabilities.maxImageCount > 0 &&
-            imageCount > swapChainSupport.capabilities.maxImageCount) {
-            imageCount = swapChainSupport.capabilities.maxImageCount;
-        }
+        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + (swapChainSupport.capabilities.minImageCount < swapChainSupport.capabilities.maxImageCount);
         syncHub->SetImageCount(imageCount);
 
 
         VkSwapchainCreateInfoKHR createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         //createInfo.pNext = &surfaceFullScreenExclusiveInfoEXT;
-        createInfo.surface = eweDevice->surface(); //im assuming this automatically creates a VkWin32SurfaceCreateInfoKHR if in WIN32
+        createInfo.surface = eweDevice->surface();
 
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;

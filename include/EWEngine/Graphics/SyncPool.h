@@ -9,6 +9,7 @@
 #include <cassert>
 #include <thread>
 
+
 /*
 * std::this_thread::sleep_for(std::chrono::microseconds(1));
     this is a small amount of time, 
@@ -67,31 +68,60 @@ namespace EWE{
         SemaphoreData* waitSemaphore{nullptr};
         SemaphoreData* signalSemaphore{nullptr};
 
-        SemaphoreData* Reset(VkDevice device){
-            EWE_VK_ASSERT(vkResetFences(device, 1, &fence));
-            if(waitSemaphore != nullptr){
-                waitSemaphore->FinishWaiting();
-                waitSemaphore = nullptr;
+        SemaphoreData* Reset(VkDevice device);
+        void PrepareSubmitInfo(VkSubmitInfo& submitInfo);
+    };
+    struct RenderSyncData {
+    private:
+        std::mutex waitMutex{};
+        std::mutex signalMutex{};
+    public:
+        VkFence inFlight[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+        VkSemaphore imageAvailable[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+        VkSemaphore renderFinished[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+        std::vector<VkSemaphore> waitSemaphores{};
+        std::vector<VkSemaphore> signalSemaphores{};
+
+        RenderSyncData(VkDevice device) {
+            VkFenceCreateInfo fenceInfo{};
+            fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+            fenceInfo.pNext = nullptr;
+            fenceInfo.flags = 0;
+
+            VkSemaphoreCreateInfo semInfo{};
+            semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+            semInfo.pNext = nullptr;
+            for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &inFlight[i]));
+                EWE_VK_ASSERT(vkCreateSemaphore(device, &semInfo, nullptr, &imageAvailable[i]));
+                EWE_VK_ASSERT(vkCreateSemaphore(device, &semInfo, nullptr, &renderFinished[i]));
             }
-            if(signalSemaphore != nullptr){
-                signalSemaphore->FinishSignaling();
-                if(!signalSemaphore->waiting){
-                    inUse = false;
-                    SemaphoreData* retData = signalSemaphore;
-                    signalSemaphore = nullptr;
-                    return signalSemaphore;
-                }
-                signalSemaphore = nullptr;
-            }
-            inUse = false;
-            return nullptr;
         }
-        void PrepareSubmitInfo(VkSubmitInfo& submitInfo){
-            submitInfo.pSignalSemaphores = &signalSemaphore->semaphore;
-            submitInfo.signalSemaphoreCount = signalSemaphore != nullptr;
-            
-            submitInfo.pWaitSemaphores = &waitSemaphore->semaphore;
-            submitInfo.waitSemaphoreCount = waitSemaphore != nullptr;
+        void AddWaitSemaphore(VkSemaphore semaphore) {
+            waitMutex.lock();
+            waitSemaphores.push_back(semaphore);
+            waitMutex.unlock();
+        }
+        void AddSignalSemaphore(VkSemaphore semaphore) {
+            signalMutex.lock();
+            signalSemaphores.push_back(semaphore);
+            signalMutex.unlock();
+        }
+        std::vector<VkSemaphore> GetWaitData(uint8_t frameIndex) {
+            waitMutex.lock();
+            std::vector<VkSemaphore> ret{waitSemaphores};
+            waitSemaphores.clear();
+            waitMutex.unlock();
+            ret.push_back(imageAvailable[frameIndex]);
+            return ret;
+        }
+        std::vector<VkSemaphore> GetSignalData(uint8_t frameIndex) {
+            signalMutex.lock();
+            std::vector<VkSemaphore> ret{ signalSemaphores };
+            signalSemaphores.clear();
+            signalMutex.unlock();
+            ret.push_back(imageAvailable[frameIndex]);
+            return ret;
         }
     };
 
@@ -101,51 +131,17 @@ namespace EWE{
 
         FenceData* fences;
         SemaphoreData* semaphores;
-        SemaphoreData* lastSignaledSemaphore[Queue::_count];
+        SemaphoreData* transitionSemaphores;
 
         const uint8_t size;
         VkDevice device;
 
-        public:
-        SyncPool(uint8_t size, VkDevice device) : 
-            size{size}, 
-            device{device}, 
-            fences{new FenceData[size]}, 
-            semaphores{new SemaphoreData[size * 2]} 
-        {
-            assert(size <= 64 && "this isn't optimized very well, don't use big size"); //big size probably also isn't necessary
+    public:
+        SyncPool(uint8_t size, VkDevice device);
 
-            VkFenceCreateInfo fenceInfo{};
-            fenceInfo.flags = 0;
-            fenceInfo.pNext = nullptr;
-            fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-            for(uint16_t i = 0; i < size; i++){
-                EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &fences[i].fence));
-            }
+        ~SyncPool();
 
-            VkSemaphoreCreateInfo semInfo{};
-            semInfo.flags = 0;
-            semInfo.pNext = nullptr;
-            semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-            for(uint16_t i = 0; i < size * 2; i++){
-                EWE_VK_ASSERT(vkCreateSemaphore(device, &semInfo, nullptr, &semaphores[i].semaphore));
-            }
-        }
-
-        ~SyncPool(){
-            delete[] fences;
-            delete[] semaphores;
-        }
-        SemaphoreData& GetSemaphoreData(VkSemaphore semaphore){
-            for(uint8_t i = 0; i < size * 2; i++){
-                if(semaphores[i].semaphore == semaphore){
-                    return semaphores[i];
-                }
-            }
-            assert(false && "failed to find SemaphoreData");
-            return semaphores[0]; //DO NOT return this, error silencing
-            //only way for this to not return an error is if the return type is changed to pointer and nullptr is returned if not found, or std::conditional which im not a fan of
-        }
+        SemaphoreData& GetSemaphoreData(VkSemaphore semaphore);
         void SemaphoreBeginWaiting(VkSemaphore semaphore){
             GetSemaphoreData(semaphore).BeginWaiting();
         }
@@ -159,76 +155,11 @@ namespace EWE{
             GetSemaphoreData(semaphore).BeginSignaling();
         }
         
-        void CheckFences(){
+        void CheckFences();
 
-            std::vector<std::function<void()>> callbacks{};
-            for(uint16_t i = 0; i < size; i++){
-                if(fences[i].inUse){
-                    VkResult ret = vkWaitForFences(device, 1, &fences[i].fence, true, 0);
-                    if(ret == VK_SUCCESS){
-                        SemaphoreData* idleSem = fences[i].Reset(device);
-                        //idleSem is nullptr if the owned signaler semaphore is also being waited on
-                        //i could store the queue but it seems like a bit of a waste, in the following code im checking if it's equal, then setting to nullptr
-                        lastSignaledSemaphore[Queue::graphics] = reinterpret_cast<SemaphoreData*>(reinterpret_cast<std::size_t>(lastSignaledSemaphore[Queue::graphics]) * (lastSignaledSemaphore[Queue::graphics] != idleSem));
-                        lastSignaledSemaphore[Queue::transfer] = reinterpret_cast<SemaphoreData*>(reinterpret_cast<std::size_t>(lastSignaledSemaphore[Queue::transfer]) * (lastSignaledSemaphore[Queue::transfer] != idleSem));
-                        lastSignaledSemaphore[Queue::compute] = reinterpret_cast<SemaphoreData*>(reinterpret_cast<std::size_t>(lastSignaledSemaphore[Queue::compute]) * (lastSignaledSemaphore[Queue::compute] != idleSem));
-
-                        //do an assembly comparison when i have internet again
-                    }
-                    else if(ret != VK_TIMEOUT){
-                        EWE_VK_ASSERT(ret);
-                    }
-                }
-            }
-        }
-
-        SemaphoreData& GetSemaphore(){
-            //to wait for one to be free, or consider none available to be an error?
-            for(uint16_t i = 0; i < size * 2; i++){
-                if(semaphores[i].Idle()){
-                    return semaphores[i];
-                }
-            }
-            assert(false && "no semaphore available");//if waiting for the semaphore instead of crashing is acceptable, do the following
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
-            return GetSemaphore();
-        }
-        FenceData& GetFence(Queue::Enum queue){
-            //potential risk of stack overflow if recursive calls get too large
-            for(uint8_t i = 0; i < size; i++){
-                if(!fences[i].inUse){
-                    if(lastSignaledSemaphore[queue] != nullptr){
-                        fences[i].waitSemaphore = lastSignaledSemaphore[queue];
-                        lastSignaledSemaphore[queue]->BeginWaiting();
-                    }
-                    return fences[i];
-                }
-            }
-            assert(false && "no available fence when requested"); //if waiting for the fence instead of crashing is acceptable, do the following
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
-            //there is potential for a stack overflow if catastrophic errors occur, not sure if possible or how to detect before they occur
-            return GetFence(queue);
-        }
-        FenceData& GetFenceSignal(Queue::Enum queue){
-            //potential risk of stack overflow if recursive calls get too large
-            for(uint8_t i = 0; i < size; i++){
-                if(!fences[i].inUse){
-                    fences[i].inUse = true;
-                    fences[i].signalSemaphore = &GetSemaphore();
-                    fences[i].signalSemaphore->BeginSignaling();
-                    if(lastSignaledSemaphore[queue] != nullptr){
-                        fences[i].waitSemaphore = lastSignaledSemaphore[queue];
-                        lastSignaledSemaphore[queue]->waiting = true;
-                    }
-                    lastSignaledSemaphore[queue] = fences[i].signalSemaphore;
-                    return fences[i];
-                }
-            }
-            assert(false && "no available fence when requested"); //if waiting for the fence instead of crashing is acceptable, do the following
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
-            //there is potential for a stack overflow if catastrophic errors occur, not sure if possible or how to detect before they occur
-            return GetFenceSignal(queue);
-        }
+        SemaphoreData& GetSemaphore();
+        FenceData& GetFence(Queue::Enum queue);
+        FenceData& GetFenceSignal(Queue::Enum queue);
         
     };
 } //namespace EWE

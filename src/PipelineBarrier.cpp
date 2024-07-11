@@ -1,5 +1,7 @@
 #include "EWEngine/Graphics/PipelineBarrier.h"
 
+#include <iterator>
+
 namespace EWE {
 	void PipelineBarrier::SubmitBarrier(VkCommandBuffer cmdBuf) {
 		vkCmdPipelineBarrier(cmdBuf,

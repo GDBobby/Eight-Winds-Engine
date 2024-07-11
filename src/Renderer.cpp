@@ -154,32 +154,6 @@ namespace EWE {
 		return false;
 	}
 
-	bool EWERenderer::EndFrame(VkSemaphore waitSemaphore) {
-		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
-
-		EWE_VK_ASSERT(vkEndCommandBuffer(commandBuffer));
-		//printf("after end command buffer \n");
-		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&commandBuffer, &currentImageIndex, waitSemaphore);
-		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
-			mainWindow.resetWindowResizedFlag();
-			RecreateSwapChain();
-			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 10000.0f);
-			isFrameStarted = false;
-			currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
-			return true;
-		}
-		else if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to present swap chain image: " << vkResult << std::endl;
-			assert(false && "failed to present swap chain image");
-		}
-		//printf("after submitting command buffer \n");
-
-		isFrameStarted = false;
-		currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
-
-		return false;
-	}
-
 	bool EWERenderer::EndFrameAndWaitForFence() {
 		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
 

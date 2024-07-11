@@ -87,6 +87,23 @@ namespace EWE {
         builder.LoadModel(filePath);
         return new EWEModel(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue);
     }
+    
+
+    inline void CopyModelBuffer(StagingBuffer& stagingBuffer, VkBuffer dstBuffer, const VkDeviceSize bufferSize, const Queue::Enum queue) {
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(queue);
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.buffer, dstBuffer, bufferSize);
+
+        if (queue == Queue::graphics) {
+            syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+            stagingBuffer.Free(EWEDevice::GetVkDevice());
+        }
+        else if (queue == Queue::transfer) {
+            //transitioning from transfer to compute not supported currently
+            std::function<void()> callback = [sb = stagingBuffer, vkDevice = EWEDevice::GetVkDevice()] {sb.Free(vkDevice); };
+            syncHub->EndSingleTimeCommandTransfer(cmdBuf, callback);
+        }
+    }
 
     void EWEModel::AddInstancing(const uint32_t instanceCount, const uint32_t instanceSize, void const* data, Queue::Enum queue) {
         VkDeviceSize bufferSize = instanceSize * instanceCount;
@@ -110,12 +127,7 @@ namespace EWE {
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
         
-        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer, instanceBuffer->GetBuffer(), bufferSize, queue);
-        if (queue == Queue::graphics) {
-            stagingBuffer.Free(eweDevice->Device());
-        }
-
-        assert(queue != Queue::transfer && "staging buffer is getting destroyed before it's time");
+        CopyModelBuffer(stagingBuffer, instanceBuffer->GetBuffer(), bufferSize, queue);
     }
     /*
     void EWEModel::updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf) {
@@ -164,7 +176,7 @@ namespace EWE {
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
 
-        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer, vertexBuffer->GetBuffer(), bufferSize, queue);
+        CopyModelBuffer(stagingBuffer, vertexBuffer->GetBuffer(), bufferSize, queue);
     }
 
     void EWEModel::CreateIndexBuffer(const void* indexData, uint32_t indexCount, Queue::Enum queue){
@@ -187,8 +199,7 @@ namespace EWE {
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
-
-        EWEDevice::GetEWEDevice()->CopyBuffer(stagingBuffer, indexBuffer->GetBuffer(), bufferSize, queue);
+        CopyModelBuffer(stagingBuffer, indexBuffer->GetBuffer(), bufferSize, queue);
     }
 
     void EWEModel::CreateIndexBuffers(std::vector<uint32_t> const& indices, Queue::Enum queue){
