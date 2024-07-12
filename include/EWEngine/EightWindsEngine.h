@@ -113,6 +113,7 @@ namespace EWE {
 		FrameInfo BeginRender();
 
 		void RunGraphicsCallbacks() {
+			
 			SyncHub::GetSyncHubInstance()->RunGraphicsCallbacks();
 		}
 

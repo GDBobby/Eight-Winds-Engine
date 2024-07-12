@@ -56,19 +56,12 @@ namespace EWE {
             return res;
         }
 
+        static void EnqueueVoidFunction(std::function<void()> task);
+
         template<typename F, typename... Args>
         static void EnqueueVoid(F&& f, Args&&... args) {
             auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-            {
-                std::unique_lock<std::mutex> lock(singleton->queueMutex);
-                assert(!singleton->stop && "enqueue on stopped threadpool");
-                singleton->tasks.emplace([task]() { task(); });
-
-                // Increment the number of tasks enqueued
-                std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
-                ++singleton->numTasksEnqueued;
-            }
-            singleton->condition.notify_one();
+            EnqueueVoidFunction(task);
         }
 
         static void WaitForCompletion();

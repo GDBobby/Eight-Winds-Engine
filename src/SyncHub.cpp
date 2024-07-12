@@ -133,12 +133,13 @@ namespace EWE {
 		graphicsSTCGroup.push_back(cmdBuf);
 	}
 	void SyncHub::RunGraphicsCallbacks() {
+		syncPool.CheckFences();
+
 		if (transitionManager.Empty()) {
 			return;
 		}
 		TransitionData transitionData = transitionManager.Pull();
 		transitionData.callback();
-
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -148,12 +149,19 @@ namespace EWE {
 
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = &transitionData.waitSemaphore->semaphore;
-		submitInfo.signalSemaphoreCount = 0;
-		submitInfo.pSignalSemaphores = nullptr;
+		submitInfo.signalSemaphoreCount = 1;
+
+		SemaphoreData* signalSemaphore = syncPool.GetSemaphore();
+		signalSemaphore->BeginSignaling();
+		submitInfo.pSignalSemaphores = &signalSemaphore->semaphore;
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
+		submitInfo.pWaitDstStageMask = waitStages;
+
+		renderSyncData.AddWaitSemaphore(signalSemaphore);
 		
 		FenceData& fence = syncPool.GetFence();
+		fence.signalSemaphores[Queue::graphics] = signalSemaphore;
 		fence.waitSemaphores.push_back(transitionData.waitSemaphore);
-
 
 		EWE_VK_ASSERT(vkQueueSubmit(queues[Queue::graphics], 1, &submitInfo, fence.fence));
 		fence.callback = [this, cbs = graphicsSTCGroup] {

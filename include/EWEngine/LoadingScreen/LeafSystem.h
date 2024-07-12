@@ -60,7 +60,6 @@ namespace EWE {
 
 		void LoadLeafTexture();
 
-		void DestroySemaphores();
 		void Render(FrameInfo& frameInfo);
 
 		EWEModel* leafModel;
@@ -102,9 +101,6 @@ namespace EWE {
 
 		VkShaderModule vertexShaderModule{VK_NULL_HANDLE};
 		VkShaderModule fragmentShaderModule{VK_NULL_HANDLE};
-
-		VkSemaphore modelSemaphore{VK_NULL_HANDLE};
-		VkSemaphore textureSemaphore{VK_NULL_HANDLE};
 
 		/*
 		//POSITION:

@@ -177,7 +177,6 @@ namespace EWE {
 		const double renderTimeCheck = 1.0 / 60.0;
 		auto startThreadTime = std::chrono::high_resolution_clock::now();
 		auto endThreadTime = startThreadTime;
-
 		//printf("starting loading thread loop \n");
 		while (loadingEngine || (loadingTime < 2.0)) {
 			
@@ -193,8 +192,8 @@ namespace EWE {
 			//QPCstart = QPCend;
 			if (renderThreadTime > renderTimeCheck) {
 				loadingTime += renderTimeCheck;
-				//printf("rendering loading thread start??? \n");
-
+				printf("rendering loading thread start??? \n");
+				syncHub->RunGraphicsCallbacks();
 				auto frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 					
@@ -257,11 +256,11 @@ namespace EWE {
 #endif
 			}
 		}
-		else {
+		//else {
 			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain resize
 			//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
 			//menuManager.windowResize(eweRenderer.getExtent());
-		}
+		//}
 
 		return frameInfo;
 	}

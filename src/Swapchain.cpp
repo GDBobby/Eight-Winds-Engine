@@ -97,16 +97,17 @@ namespace EWE {
     }
     VkResult EWESwapChain::AcquireNextImage(uint32_t* imageIndex) {
        // printf("pre-wait for ANI inflightfences \n");
-
-        vkWaitForFences(
+        printf("before waiting for in flight fence\n");
+        EWE_VK_ASSERT(vkWaitForFences(
             EWEDevice::GetVkDevice(),
             1,
             syncHub->GetFlightFence(currentFrame),
             //&inFlightFences[currentFrame],
             VK_TRUE,
             std::numeric_limits<uint64_t>::max()
-        );
+        ));
         //printf("after waiting for fence in ANI \n");
+        printf("before acquiring image\n");
         VkResult result = vkAcquireNextImageKHR(
             EWEDevice::GetVkDevice(),
             swapChain,
@@ -116,6 +117,7 @@ namespace EWE {
             VK_NULL_HANDLE,
             imageIndex
         );
+        printf("after acquiring image\n");
 
         return result;
     }

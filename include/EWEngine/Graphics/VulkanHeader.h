@@ -60,7 +60,7 @@ namespace EWE{
         std::vector<SemaphoreData*> waitSemaphores{}; //each wait could potentially be signaled multiple times in a single queue, and then multiple queues
         SemaphoreData* signalSemaphores[Queue::_count] = { nullptr, nullptr, nullptr, nullptr }; //each signal is unique per submit that could wait on it, and right now I'm expecting max 1 wait per queue
 
-        void Reset(VkDevice device);
+        std::function<void()> Reset(VkDevice device);
     };
 
 } //namespace EWE
@@ -80,7 +80,7 @@ namespace EWE{
                         std::ofstream logFile{};                                                                                        \
                         logFile.open(GPU_LOG_FILE, std::ios::app);                                                                      \
                         assert(logFile.is_open() && "Failed to open log file");                                                         \
-                        logFile << "VK_ERROR : " << __FILE__ << '(' << __LINE__ << ") : " << __FUNCTION__ << " - " << result << '\n';   \
+                        logFile << "VK_ERROR : " << __FILE__ << '(' << __LINE__ << ") : " << __FUNCTION__ << " : VkResult(" << result << ")\n";   \
                         logFile.close();                                                                                                \
                         assert(result == VK_SUCCESS && "VK_ERROR");                                                                     \
 	                }
@@ -91,7 +91,7 @@ namespace EWE{
                         std::ofstream logFile{};                                                                                        \
                         logFile.open(GPU_LOG_FILE, std::ios::app);                                                                      \
                         assert(logFile.is_open() && "Failed to open log file");                                                         \
-                        logFile << "VK_ERROR : " << __FILE__ << '(' << __LINE__ << ") : " << __FUNCTION__ << " - " << result << '\n';   \
+                        logFile << "VK_ERROR : " << __FILE__ << '(' << __LINE__ << ") : " << __FUNCTION__ << " : VkResult(" << result << ")\n";   \
                         logFile.close();                                                                                                \
                         assert(result == VK_SUCCESS && "VK_ERROR");                                                                     \
 	                }

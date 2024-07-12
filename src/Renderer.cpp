@@ -109,9 +109,7 @@ namespace EWE {
 		//std::cout << "begin frame 2" << std::endl;
 
 		if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-			std::cout << "failed to acquire next swap chain image " << std::endl;
-			printf("failed to acquire next swap chain image \n");
-			throw std::runtime_error("failed to acquire next swap chain image");
+			EWE_VK_RESULT_ASSERT(result);
 		}
 		//std::cout << "begin frame 3" << std::endl;
 

@@ -1,4 +1,4 @@
-#include "EWEngine/Data/TransitionManager.h"
+#include "EWEngine/Graphics/TransitionManager.h"
 
 namespace EWE {
 

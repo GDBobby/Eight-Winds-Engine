@@ -1,5 +1,7 @@
 #include "EWEngine/Systems/ThreadPool.h"
 
+#include <cstdint>
+
 #define DEBUGGING_THREADS true
 
 namespace EWE {
@@ -95,5 +97,17 @@ namespace EWE {
             }
 
         );
+    }
+    void ThreadPool::EnqueueVoidFunction(std::function<void()> task) {
+        {
+            std::unique_lock<std::mutex> lock(singleton->queueMutex);
+            assert(!singleton->stop && "enqueue on stopped threadpool");
+            singleton->tasks.emplace(task);
+
+            // Increment the number of tasks enqueued
+            std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
+            ++singleton->numTasksEnqueued;
+        }
+        singleton->condition.notify_one();
     }
 }//namespace EWE

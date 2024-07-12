@@ -15,7 +15,7 @@ int main() {
 
 		eweSample = new EWE::EWESample(ewEngine);
 		};
-	EWE::ThreadPool::EnqueueVoid(loadPart2);
+	//EWE::ThreadPool::EnqueueVoid(loadPart2);
 	ewEngine.LoadingScreen();
 	EWE::ThreadPool::WaitForCompletion();
 

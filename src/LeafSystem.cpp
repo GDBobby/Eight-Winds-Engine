@@ -318,12 +318,6 @@ namespace EWE {
 		inFile.close();
 		//printf("file read successfully \n");
 
-		VkSemaphoreCreateInfo semInfo{};
-		semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-		semInfo.pNext = nullptr;
-		semInfo.flags = 0;
-		EWE_VK_ASSERT(vkCreateSemaphore(EWEDevice::GetVkDevice(), &semInfo, nullptr, &modelSemaphore));
-
 		leafModel = EWEModel::CreateMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::graphics);
 		//leafTextureID = Texture_Builder::CreateSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 	}
@@ -347,12 +341,6 @@ namespace EWE {
 		leafTextureID = Texture_Manager::AddImageInfo(leafTexturePath, imageInfo, VK_SHADER_STAGE_FRAGMENT_BIT, false);
 		//printf("leaf model loaded \n");
 	}
-
-	void LeafSystem::DestroySemaphores(){
-		vkDestroySemaphore(EWEDevice::GetVkDevice(), modelSemaphore, nullptr);
-		vkDestroySemaphore(EWEDevice::GetVkDevice(), textureSemaphore, nullptr);
-	}
-
 	void LeafSystem::Render(FrameInfo& frameInfo) {
 		SetFrameInfo(frameInfo);
 #ifdef _DEBUG
