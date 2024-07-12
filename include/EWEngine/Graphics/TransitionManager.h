@@ -10,10 +10,9 @@
 namespace EWE {
 	struct TransitionData {
 		std::function<void()> callback{};
-		VkSemaphore waitSemaphore{ VK_NULL_HANDLE };
-		VkSemaphore signalSemaphore{ VK_NULL_HANDLE };
+		SemaphoreData* waitSemaphore{nullptr};
 		TransitionData() {}
-		TransitionData(std::function<void()> callback, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore) :
+		TransitionData(std::function<void()> callback, SemaphoreData* waitSemaphore) :
 			callback{ callback },
 			waitSemaphore{ waitSemaphore }
 		{}
@@ -24,18 +23,18 @@ namespace EWE {
 		std::queue<TransitionData> transitions{};
 		std::mutex mut{};
 	public:
-		void AddTransition(std::function<void()> callback, VkSemaphore waitSemaphore) {
+		void Add(std::function<void()> callback, SemaphoreData* waitSemaphore) {
 			mut.lock();
 			transitions.emplace(callback, waitSemaphore);
 			mut.unlock();
 		}
-		bool NotEmpty() {
+		bool Empty() {
 			mut.lock();
-			bool ret = transitions.size() != 0;
+			bool ret = transitions.size() == 0;
 			mut.unlock();
 			return ret;
 		}
-		TransitionData PullTransition() {
+		TransitionData Pull() {
 			mut.lock();
 			TransitionData ret = transitions.front();
 			transitions.pop();

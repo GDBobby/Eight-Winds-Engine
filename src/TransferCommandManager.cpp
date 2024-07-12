@@ -3,7 +3,17 @@
 #include <iterator>
 
 namespace EWE {
-	std::function<void()> CommandCallbacks::CombineCallbacks(VkDevice vkDevice) {
+	void CommandCallbacks::PushBack(CommandWithCallback const& cmdCb) {
+		commands.push_back(cmdCb.cmdBuf);
+		if (cmdCb.callback != nullptr) {
+			callbacks.push_back(cmdCb.callback);
+		}
+		if (cmdCb.graphicsCallback != nullptr) {
+			graphicsCallbacks.push_back(cmdCb.graphicsCallback);
+		}
+	}
+
+	std::function<void()> CommandCallbacks::CombineCallbacks(VkDevice vkDevice, VkCommandPool transferPool) {
 		for (uint16_t i = 0; i < callbacks.size(); i++) {
 			if (callbacks[i] == nullptr) {
 				callbacks.erase(callbacks.begin() + i);
@@ -14,33 +24,32 @@ namespace EWE {
 			return nullptr;
 		}
 
-		return [cbs = std::move(callbacks), sbs = std::move(stagingBuffers), device = vkDevice] {
-			for (auto& stagingBuffer : sbs) {
-				stagingBuffer.Free(device);
-			}
+		return [cbs = std::move(callbacks), cmds = this->commands, transferPool, vkDevice] {
+
+			vkFreeCommandBuffers(vkDevice, transferPool, static_cast<uint32_t>(cmds.size()), cmds.data());
+
 			for (auto const& cb : cbs) {
 				cb();
 			}
 		};
 	}
-	std::function<void()> CommandCallbacks::CombineGraphicsCallbacks() {
+	bool CommandCallbacks::CleanGraphicsCallbacks() {
 		for (uint16_t i = 0; i < graphicsCallbacks.size(); i++) {
 			if (graphicsCallbacks[i] == nullptr) {
 				graphicsCallbacks.erase(graphicsCallbacks.begin() + i);
 				i--;
 			}
 		}
-		if (graphicsCallbacks.size() == 0) {
-			return nullptr;
-		}
-
+		return graphicsCallbacks.size() > 0;
+	}
+	std::function<void()> CommandCallbacks::CombineGraphicsCallbacks() {
 		return [cbs = std::move(graphicsCallbacks)] {
 			for (auto const& cb : cbs) {
 				cb();
 			}
 		};
 	}
-
+#if SYNC_QUEUE
 	VkCommandBuffer SyncedCommandQueue::Pop() {
 		assert(size > 0 && "popping from an empty queue?");
 		const uint8_t retIndex = currentIndex;
@@ -63,38 +72,59 @@ namespace EWE {
 	void SyncedCommandQueue::SetBarrier(PipelineBarrier const& pipeBarrier) {
 		pipelineBarrier = pipeBarrier;
 	}
-
-	void SyncedCommandQueue::GenerateMips(const bool generating) {
-		generateMips = generating;
-	}
+#endif
 
 	namespace TransferCommandManager {
-		std::mutex syncQueueMutex{};
-		std::mutex singleMutex{};
-		std::mutex wrappedMutex{};
 		std::mutex callbackMutex{};
 
+#if SYNC_QUEUE
+		std::mutex syncQueueMutex{};
 		std::vector<SyncedCommandQueue*> synchronizedCommandBuffers{};
+#endif
+
+		std::mutex singleMutex{};
 		std::vector<VkCommandBuffer> commandBuffers{};
+
+		std::mutex wrappedMutex{};
 		std::vector<CommandWithCallback> wrappedCmds{};
 
 		bool Empty(){
-			return (synchronizedCommandBuffers.size() == 0) && (commandBuffers.size() == 0) && (wrappedCmds.size() == 0);
+			return 
+#if SYNC_QUEUE
+				(synchronizedCommandBuffers.size() == 0) && 
+#endif
+				(commandBuffers.size() == 0) && (wrappedCmds.size() == 0);
 		}
-
+#if SYNC_QUEUE
 		SyncedCommandQueue* BeginCommandQueue() {
 			return new SyncedCommandQueue();
 		}
+#endif
 
-		CommandCallbacks PrepareSubmit(VkSubmitInfo& submitInfo){
+		CommandCallbacks PrepareSubmit(){
 			CommandCallbacks cmdCbs{};
 
-			cmdCbs.commands.reserve(synchronizedCommandBuffers.size() + wrappedCmds.size() + commandBuffers.size());
-
+			cmdCbs.commands.reserve(
+#if SYNC_QUEUE
+				synchronizedCommandBuffers.size() + 
+#endif
+				wrappedCmds.size() + commandBuffers.size());
+#if SYNC_QUEUE
 			syncQueueMutex.lock();
 			for(uint8_t i = 0; i < synchronizedCommandBuffers.size(); i++){
 				VkCommandBuffer cmdBuf = synchronizedCommandBuffers[i]->Pop();
 				cmdCbs.commands.push_back(cmdBuf);
+				if (synchronizedCommandBuffers[i]->lastSignaled != nullptr) {
+					bool foundDuplicate = false;
+					for (uint8_t j = 0; j < i; j++) {
+						foundDuplicate |= synchronizedCommandBuffers[i] == synchronizedCommandBuffers[j];
+					}
+					if (!foundDuplicate) {
+						cmdCbs.waitSemaphores.push_back(synchronizedCommandBuffers[i]->lastSignaled);
+					}
+					synchronizedCommandBuffers[i]->lastSignaled = nullptr;
+				}
+
 				if(synchronizedCommandBuffers[i]->Finished()){
 					cmdCbs.callbacks.push_back(std::move(synchronizedCommandBuffers[i]->callback));
 					if(synchronizedCommandBuffers[i]->stagingBuffer.buffer != VK_NULL_HANDLE){
@@ -104,8 +134,12 @@ namespace EWE {
 					synchronizedCommandBuffers.erase(synchronizedCommandBuffers.begin() + i);
 					i--;
 				}
+				else {
+					cmdCbs.signalSemaphores.push_back(&synchronizedCommandBuffers[i]->lastSignaled);
+				}
 			}
 			syncQueueMutex.unlock();
+#endif
 
 			singleMutex.lock();
 			std::copy(commandBuffers.begin(), commandBuffers.end(), std::back_inserter(cmdCbs.commands));
@@ -114,16 +148,11 @@ namespace EWE {
 
 			wrappedMutex.lock();
 			for(auto& wrappedCmd : wrappedCmds){
-				cmdCbs.commands.push_back(wrappedCmd.cmdBuf);
 				cmdCbs.PushBack(wrappedCmd);
-
-				cmdCbs.callbacks.push_back(wrappedCmd.callback);
 			}
 			wrappedCmds.clear();
 			wrappedMutex.unlock();
 
-			submitInfo.commandBufferCount = cmdCbs.commands.size();
-			submitInfo.pCommandBuffers = cmdCbs.commands.data();
 			return cmdCbs;
 		}
 		void AddCommand(VkCommandBuffer cmdBuf) {
@@ -132,16 +161,20 @@ namespace EWE {
 			singleMutex.unlock();
 		}
 
-		void AddCommand(VkCommandBuffer cmdBuf, std::function<void()> fnc){
+		void AddCommand(CommandWithCallback cmdCb){
 			wrappedMutex.lock();
-			wrappedCmds.emplace_back(cmdBuf, fnc);
+			wrappedCmds.push_back(cmdCb);
 			wrappedMutex.unlock();
 		}
-
+#if SYNC_QUEUE
 		void EndCommandQueue(SyncedCommandQueue* cmdQ) {
+#ifdef _DEBUG
+			assert(cmdQ != nullptr && "failed to initialize this queue");
+#endif
 			syncQueueMutex.lock();
 			synchronizedCommandBuffers.push_back(cmdQ);
 			syncQueueMutex.unlock();
 		}
-	}
-}
+#endif
+	} //namespace TransferCommandManager
+} //namespace EWE

@@ -127,7 +127,7 @@ namespace EWE {
 
 	void EWESample::loadGlobalObjects() {
 		std::string skyboxLoc = "nasa/";
-		TextureDesc skyboxID = Cube_Texture::CreateCubeTexture(skyboxLoc, Queue::transfer);
+		TextureDesc skyboxID = Cube_Texture::CreateCubeImage(skyboxLoc, Queue::transfer);
 		skyboxInfo = Texture_Manager::GetDescriptorImageInfo(skyboxLoc);
 
 		//i dont even know if the engine will work if this isnt constructed

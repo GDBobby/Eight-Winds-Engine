@@ -100,8 +100,10 @@ namespace EWE {
         }
         else if (queue == Queue::transfer) {
             //transitioning from transfer to compute not supported currently
-            std::function<void()> callback = [sb = stagingBuffer, vkDevice = EWEDevice::GetVkDevice()] {sb.Free(vkDevice); };
-            syncHub->EndSingleTimeCommandTransfer(cmdBuf, callback);
+            CommandWithCallback cb{};
+            cb.cmdBuf = cmdBuf;
+            cb.callback = [sb = stagingBuffer, vkDevice = EWEDevice::GetVkDevice()] {sb.Free(vkDevice); };
+            syncHub->EndSingleTimeCommandTransfer(cb);
         }
     }
 

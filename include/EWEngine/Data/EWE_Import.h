@@ -12,6 +12,8 @@
 
 #define EXPECTED_IMPORT_VERSION "2.1.0" //need to do some SHA256 key or some shit
 
+#define DEBUGGING_MESH_LOAD false
+
 namespace EWE {
     class ImportData {
     public:
@@ -45,15 +47,21 @@ namespace EWE {
                     assert(false && "incorrect import version");
                 }
                 if (inFile.peek() == '\n') {
+#if DEBUGGING_MESH_LOAD
                     printf(" foudn null after version \n");
+#endif
                     inFile.seekg(1, std::ios::cur);
                 }
+#if DEBUGGING_MESH_LOAD
                 printf("after reading version file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
+#endif
 
                 uint64_t size;
                 Reading::UInt64FromFile(inFile, &size);
+#if DEBUGGING_MESH_LOAD
                 printf("after reading mesh count file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
                 printf("size of meshes : %zu \n", size);
+#endif
                 meshes.resize(size);
                 for (auto& mesh : meshes) {
                     mesh.readFromFile(inFile);
@@ -62,10 +70,7 @@ namespace EWE {
             }
             void readFromFileSwapEndian(std::ifstream& inFile) {
                 std::getline(inFile, versionTracker);
-                if (versionTracker != EXPECTED_IMPORT_VERSION) {
-                    printf("incorrect import version \n");
-                    throw std::runtime_error("incorrect import version");
-                }
+                assert(versionTracker == EXPECTED_IMPORT_VERSION && "incorrect import version");
 
                 uint64_t size;
                 Reading::UInt64FromFileSwapEndian(inFile, &size);
@@ -131,10 +136,7 @@ namespace EWE {
             //printf("starting up mesh thread :%s \n", meshPath.c_str());
             std::ifstream inFile(meshPath, std::ifstream::binary);
             //inFile.open();
-            if (!inFile.is_open()) {
-                printf("failed to open : %s \n", meshPath.c_str());
-                //std throw
-            }
+            assert(inFile.is_open() && "failed to open file");
             if (endian) {
                 data.readFromFile(inFile);
             }

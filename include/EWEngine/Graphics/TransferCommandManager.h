@@ -10,23 +10,23 @@
 
 #define TRANSFER_COMMAND_DEPTH_MAXIMUM 10
 
+#define SYNC_QUEUES false
+
 namespace EWE {
 
 	struct CommandWithCallback{
 		VkCommandBuffer cmdBuf;
 		std::function<void()> callback{nullptr};
+		std::function<void()> graphicsCallback{ nullptr };
 	};
 	struct CommandCallbacks{
 		std::vector<VkCommandBuffer> commands{};
-		std::vector<StagingBuffer> stagingBuffers{}; //need to be freed
 		std::vector<std::function<void()>> callbacks{};
 		std::vector<std::function<void()>> graphicsCallbacks{};
 
-		void PushBack(CommandWithCallback const& cmdCb) {
-			commands.push_back(cmdCb.cmdBuf);
-			callbacks.push_back(cmdCb.callback);
-		}
-		std::function<void()> CombineCallbacks(VkDevice vkDevice);
+		void PushBack(CommandWithCallback const& cmdCb);
+		std::function<void()> CombineCallbacks(VkDevice vkDevice, VkCommandPool transferPool);
+		bool CleanGraphicsCallbacks();
 		std::function<void()> CombineGraphicsCallbacks();
 	};
 	struct GraphicsCallbacks {
@@ -34,7 +34,7 @@ namespace EWE {
 		VkSemaphore signalSemaphore{};
 		std::vector<std::function<void()>> callbacks;
 	};
-
+#if SYNC_QUEUES
 	class SyncedCommandQueue {
 	private:
 		VkCommandBuffer commandBuffers[TRANSFER_COMMAND_DEPTH_MAXIMUM] = { 
@@ -47,6 +47,7 @@ namespace EWE {
 		uint8_t size{ 0 };
 
 	public:
+		SemaphoreData* lastSignaled{ nullptr };
 		StagingBuffer stagingBuffer{};
 
 		std::function<void()> callback{nullptr};
@@ -57,24 +58,20 @@ namespace EWE {
 		bool Finished() const;
 
 		void SetBarrier(PipelineBarrier const& pipeBarrier);
-		void GenerateMips(const bool generating);
 	};
+#endif
 
 	namespace TransferCommandManager {
 
 		bool Empty();
-		CommandCallbacks PrepareSubmit(VkSubmitInfo& submitInfo);
-		void AddCommand(VkCommandBuffer cmdBuf, std::function<void()> fnc);
-		template<typename F, typename ... Args>
-		void AddCommand(VkCommandBuffer cmdBuf, F&& f, Args&&... args) {
-			requires(std::is_invocable_v<F, Args>)
-			AddCommand(cmdBuf, std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-		}
+		CommandCallbacks PrepareSubmit();
+		void AddCommand(CommandWithCallback cmdCb);
 
-
+#if SYNC_QUEUES
 		SyncedCommandQueue* BeginCommandQueue();
-		void AddCommand(VkCommandBuffer cmdBuf);
 		void EndCommandQueue(SyncedCommandQueue* cmdQ);
+#endif
+		void AddCommand(VkCommandBuffer cmdBuf);
 		//this requires the pointer to be deleted
 	};
 }//namespace EWE

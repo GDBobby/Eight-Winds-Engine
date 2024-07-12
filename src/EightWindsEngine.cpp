@@ -254,7 +254,6 @@ namespace EWE {
 
 				vkCmdResetQueryPool(frameInfo.cmdBuf, queryPool, 0, 2);
 				vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
-
 #endif
 			}
 		}

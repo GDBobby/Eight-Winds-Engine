@@ -123,15 +123,6 @@ namespace EWE {
 		// Vertex buffer
 		VkDeviceSize bufferSize = TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4);
 
-		VkCommandBufferAllocateInfo cmdBuffAllocateInfo{};
-		cmdBuffAllocateInfo.pNext = nullptr;
-		cmdBuffAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		cmdBuffAllocateInfo.commandPool = EWEDevice::GetEWEDevice()->getTransferCommandPool();
-		cmdBuffAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		cmdBuffAllocateInfo.commandBufferCount = (uint32_t)cmdBuffers.size();
-
-		EWE_VK_ASSERT(vkAllocateCommandBuffers(EWEDevice::GetVkDevice(), &cmdBuffAllocateInfo, cmdBuffers.data()));
-
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -210,81 +201,73 @@ namespace EWE {
 
 		// Copy to image
 
-		//this next little segement is similar to beginsingletimecommands
-		VkCommandBuffer copyCmd;
-
-
-		cmdBuffAllocateInfo.commandBufferCount = 1;
-		EWE_VK_ASSERT(vkAllocateCommandBuffers(eweDevice->Device(), &cmdBuffAllocateInfo, &copyCmd));
-
-		VkCommandBufferBeginInfo cmdBufInfo{};
-		cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		//cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		EWE_VK_ASSERT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
-		//std::cout << "begin command bfufer result : " << printInt << std::endl;
-		/*
-		if ((vkBeginCommandBuffer(copyCmd, &cmdBufInfo)) != VK_SUCCESS) {
-			throw std::runtime_error("failed to begin??? command bfufer!");
-		}
-		*/
-
-		// Prepare for transfer
+		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+		VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::transfer);
 		VkImageSubresourceRange subresourceRange{};
 		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		subresourceRange.baseMipLevel = 0;
 		subresourceRange.levelCount = 1;
 		subresourceRange.baseArrayLayer = 0;
 		subresourceRange.layerCount = 1;
+		{   //initialize image
 
-		eweDevice->SetImageLayout(
-			copyCmd,
-			image,
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			subresourceRange
-		);
+			VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+			PipelineBarrier pipeBarrier{};
+			pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+			pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+			pipeBarrier.AddBarrier(imageBarrier);
+			pipeBarrier.SubmitBarrier(cmdBuf);
+		}
 
-		VkBufferImageCopy bufferCopyRegion{};
-		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		bufferCopyRegion.imageSubresource.mipLevel = 0;
-		bufferCopyRegion.imageSubresource.layerCount = 1;
-		bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
-		bufferCopyRegion.imageSubresource.layerCount = 1;
-		bufferCopyRegion.imageExtent.width = fontWidth;
-		bufferCopyRegion.imageExtent.height = fontHeight;
-		bufferCopyRegion.imageExtent.depth = 1;
+		{ //transfer data to image
+			VkBufferImageCopy bufferCopyRegion{};
+			bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			bufferCopyRegion.imageSubresource.mipLevel = 0;
+			bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+			bufferCopyRegion.imageSubresource.layerCount = 1;
+			bufferCopyRegion.imageExtent.width = fontWidth;
+			bufferCopyRegion.imageExtent.height = fontHeight;
+			bufferCopyRegion.imageExtent.depth = 1;
 
-		vkCmdCopyBufferToImage(
-			copyCmd,
-			stagingBuffer.buffer,
-			image,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			1,
-			&bufferCopyRegion
-		);
+			vkCmdCopyBufferToImage(
+				cmdBuf,
+				stagingBuffer.buffer,
+				image,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				1,
+				&bufferCopyRegion
+			);
+		}
+		{//transition image to a read state, and from transfer queue to graphics queue (in one barrier?)
+			VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+			imageBarrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetTransferIndex();
+			imageBarrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex();
 
-		// Prepare for shader read <-- this part right here is why i cant use eweDevice.copyBufferToImage
+			PipelineBarrier pipeBarrier{};
+			pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+			pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+			pipeBarrier.AddBarrier(imageBarrier);
+			pipeBarrier.dependencyFlags = 0;
+			pipeBarrier.SubmitBarrier(cmdBuf);
 
-		//im just winging it with these pipelinestageflags
-		
-		//eweDevice->SetImageLayout(
-		//	copyCmd,
-		//	image,
-		//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		//	VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		//	subresourceRange
-		//);
-		eweDevice->TransitionFromTransfer(copyCmd, EWE::Queue::graphics, image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			CommandWithCallback cmdCb{};
+			cmdCb.cmdBuf = cmdBuf;
+			cmdCb.callback = [sb = stagingBuffer] {sb.Free(EWEDevice::GetVkDevice()); };
+			cmdCb.graphicsCallback = [pipeBarrier, syncHub] {
+					VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+					pipeBarrier.SubmitBarrier(cmdBuf);
+					syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
+				};
+			syncHub->EndSingleTimeCommandTransfer(cmdCb);
+		}
 
-		SyncHub::GetSyncHubInstance()->EndSingleTimeCommandTransfer(copyCmd, ImageQueueTransitionData{ image, 1, 1, eweDevice->GetGraphicsIndex(), stagingBuffer });
-		stagingBuffer.Free(eweDevice->Device());
 
 		VkImageViewCreateInfo imageViewInfo{};
 		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		imageViewInfo.image = image;
 		imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		imageViewInfo.format = imageInfo.format;
-		imageViewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B,	VK_COMPONENT_SWIZZLE_A };
+		imageViewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 		imageViewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 		EWE_VK_ASSERT(vkCreateImageView(eweDevice->Device(), &imageViewInfo, nullptr, &view));
 

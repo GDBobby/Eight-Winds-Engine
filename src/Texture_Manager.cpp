@@ -328,7 +328,7 @@ namespace EWE {
 
         ImageInfo arrayImageInfo{};
 
-        UI_Texture::CreateUIImage(arrayImageInfo, pixelPeeks);
+        UI_Texture::CreateUIImage(arrayImageInfo, pixelPeeks, Queue::transfer);
         UI_Texture::CreateUIImageView(arrayImageInfo);
         UI_Texture::CreateUISampler(arrayImageInfo);
 

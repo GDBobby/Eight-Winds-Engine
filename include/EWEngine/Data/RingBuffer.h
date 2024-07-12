@@ -1,8 +1,10 @@
 #pragma once
 
-#include <memory>
-
 //i removed this before and im not quite sure why, but it's not the correct solution for the issue im having anyways
+/*
+#include <memory>
+#include <mutex>
+
 
 namespace EWE {
 	template <class T>
@@ -75,3 +77,4 @@ namespace EWE {
 		bool full = false;
 	};
 } //namespace EWE
+*/

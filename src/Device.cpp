@@ -1290,58 +1290,6 @@ namespace EWE {
         );
     }
 
-    void EWEDevice::SetImageLayout(
-        VkCommandBuffer cmdbuffer,
-        VkImage image,
-        VkImageLayout oldImageLayout,
-        VkImageLayout newImageLayout,
-        VkImageSubresourceRange subresourceRange)
-    {
-        // Create an image barrier object
-        VkImageMemoryBarrier imageMemoryBarrier{};
-        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageMemoryBarrier.oldLayout = oldImageLayout;
-        imageMemoryBarrier.newLayout = newImageLayout;
-        imageMemoryBarrier.image = image;
-        imageMemoryBarrier.subresourceRange = subresourceRange;
-
-
-        VkPipelineStageFlags sourceStage, destinationStage;
-
-        if ((oldImageLayout == VK_IMAGE_LAYOUT_UNDEFINED) && (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)) {
-            imageMemoryBarrier.srcAccessMask = 0;
-            imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        }
-        else if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-
-            imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            imageMemoryBarrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-            imageMemoryBarrier.srcQueueFamilyIndex = queueData.index[Queue::transfer];
-            imageMemoryBarrier.dstQueueFamilyIndex = queueData.index[Queue::graphics];
-
-            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        }
-        else {
-            printf("unsupported image layout transition \n");
-            throw std::invalid_argument("unsupported layout transition!");
-        }
-        //VkPipelineStageFlags srcStageMask{}, dstStageMask{};
-        // Put barrier inside setup command buffer
-        vkCmdPipelineBarrier(
-            cmdbuffer,
-            sourceStage,
-            destinationStage,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &imageMemoryBarrier);
-    }
-
     void EWEDevice::CopyBufferToImage(VkCommandBuffer cmdBuf, VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount) {
 
         VkBufferImageCopy region{};
@@ -1355,7 +1303,9 @@ namespace EWE {
         region.imageSubresource.layerCount = layerCount;
 
         region.imageOffset = { 0, 0, 0 };
-        region.imageExtent = { width, height, 1 };
+        region.imageExtent.width = width;
+        region.imageExtent.height = height;
+        region.imageExtent.depth = 1;
 
         vkCmdCopyBufferToImage(
             cmdBuf,

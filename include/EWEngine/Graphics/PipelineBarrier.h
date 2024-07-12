@@ -26,9 +26,18 @@ namespace EWE {
 		void AddBarrier(VkBufferMemoryBarrier const& bufferBarrier) {
 			bufferBarriers.push_back(bufferBarrier);
 		}
-		void SubmitBarrier(VkCommandBuffer cmdBuf);
+		void SubmitBarrier(VkCommandBuffer cmdBuf) const;
 
 		//the parameter object passed in is no longer usable, submitting both barriers will potentially lead to errors
 		void Merge(PipelineBarrier const& other);
 	};
+	namespace Barrier {
+		//this only changes the src/dst access mask
+		VkImageMemoryBarrier ChangeImageLayout(
+			const VkImage image, 
+			const VkImageLayout oldImageLayout, 
+			const VkImageLayout newImageLayout, 
+			VkImageSubresourceRange const& subresourceRange
+		);
+	}
 }

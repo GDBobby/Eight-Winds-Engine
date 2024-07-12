@@ -111,6 +111,11 @@ namespace EWE {
 		void InitGlobalBuffers();
 
 		FrameInfo BeginRender();
+
+		void RunGraphicsCallbacks() {
+			SyncHub::GetSyncHubInstance()->RunGraphicsCallbacks();
+		}
+
 		FrameInfo BeginRenderWithoutPass();
 //#define RENDER_OBJECT_DEBUG
 

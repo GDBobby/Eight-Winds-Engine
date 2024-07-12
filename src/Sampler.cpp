@@ -1,5 +1,4 @@
 #include "EWEngine/Graphics/Texture/Sampler.h"
-#include "EWEngine/Global_Macros.h"
 
 #include <vector>
 #include <cassert>

@@ -4,7 +4,7 @@
 
 namespace EWE {
 	namespace UI_Texture {
-		void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek);
+		void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek, Queue::Enum queue);
 
 		void CreateUIImageView(ImageInfo& uiImageInfo);
 		void CreateUISampler(ImageInfo& uiImageInfo);

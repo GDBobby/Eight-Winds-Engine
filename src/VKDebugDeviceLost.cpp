@@ -1,5 +1,6 @@
 #include "EWEngine/Graphics/VkDebugDeviceLost.h"
 
+#if DEBUGGING_DEVICE_LOST
 #include <cstdio>
 #include <cassert>
 #include <set>
@@ -325,3 +326,4 @@ namespace EWE::VKDEBUG {
 		assert(false && "end of device lost debug");
 	}
 }
+#endif

@@ -5,7 +5,7 @@ namespace EWE {
     namespace UI_Texture {
 
         //namespace internal {
-        void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek) {
+        void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek, Queue::Enum queue) {
             std::size_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
             uiImageInfo.arrayLayers = pixelPeek.size();
             VkDeviceSize imageSize = layerSize * uiImageInfo.arrayLayers;
@@ -32,46 +32,28 @@ namespace EWE {
             }
             vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer.memory);
 
-            VkImageCreateInfo imageInfo;
-            imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-            imageInfo.pNext = nullptr;
-            imageInfo.imageType = VK_IMAGE_TYPE_2D;
-            imageInfo.extent.width = pixelPeek[0].width;
-            imageInfo.extent.height = pixelPeek[0].height;
-            imageInfo.extent.depth = 1;
-            imageInfo.mipLevels = uiImageInfo.mipLevels;
-            imageInfo.arrayLayers = uiImageInfo.mipLevels;
+            VkImageCreateInfo imageCreateInfo;
+            imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            imageCreateInfo.pNext = nullptr;
+            imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+            imageCreateInfo.extent.width = pixelPeek[0].width;
+            imageCreateInfo.extent.height = pixelPeek[0].height;
+            imageCreateInfo.extent.depth = 1;
+            imageCreateInfo.mipLevels = uiImageInfo.mipLevels;
+            imageCreateInfo.arrayLayers = uiImageInfo.mipLevels;
 
-            imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-            imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-            imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-            imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-            imageInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+            imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+            imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+            imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+            imageCreateInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
             EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
-            Image::CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.imageMemory);
+            Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.imageMemory);
 
-            SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
-            eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                uiImageInfo.image,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                uiImageInfo.mipLevels, pixelPeek.size());
-            eweDevice->CopyBufferToImage(cmdBuf, stagingBuffer.buffer, uiImageInfo.image, pixelPeek[0].width, pixelPeek[0].height, uiImageInfo.arrayLayers);
-
-            eweDevice->TransitionImageLayoutWithBarrier(cmdBuf,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                uiImageInfo.image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                uiImageInfo.mipLevels, uiImageInfo.arrayLayers
-            );
-
-            ImageQueueTransitionData transitionData{uiImageInfo.GenerateTransitionData(eweDevice->GetGraphicsIndex(), stagingBuffer)};
-
-            syncHub->EndSingleTimeCommandTransfer(cmdBuf, transitionData);
+            uiImageInfo.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
         }
 
         void CreateUIImageView(ImageInfo& uiImageInfo) {

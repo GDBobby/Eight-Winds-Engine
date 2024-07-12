@@ -3,7 +3,7 @@
 #include <iterator>
 
 namespace EWE {
-	void PipelineBarrier::SubmitBarrier(VkCommandBuffer cmdBuf) {
+	void PipelineBarrier::SubmitBarrier(VkCommandBuffer cmdBuf) const {
 		vkCmdPipelineBarrier(cmdBuf,
 			srcStageMask, dstStageMask,
 			dependencyFlags,
@@ -18,4 +18,36 @@ namespace EWE {
 		std::copy(other.bufferBarriers.begin(), other.bufferBarriers.end(), std::back_inserter(bufferBarriers));
 		std::copy(other.imageBarriers.begin(), other.imageBarriers.end(), std::back_inserter(imageBarriers));
 	}
-}
+
+	namespace Barrier {
+		VkImageMemoryBarrier ChangeImageLayout(
+			const VkImage image,
+			const VkImageLayout oldImageLayout,
+			const VkImageLayout newImageLayout,
+			VkImageSubresourceRange const& subresourceRange
+		) {
+			VkImageMemoryBarrier imageMemoryBarrier{};
+			imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			imageMemoryBarrier.oldLayout = oldImageLayout;
+			imageMemoryBarrier.newLayout = newImageLayout;
+			imageMemoryBarrier.image = image;
+			imageMemoryBarrier.subresourceRange = subresourceRange;
+
+			if ((oldImageLayout == VK_IMAGE_LAYOUT_UNDEFINED) && (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)) {
+				imageMemoryBarrier.srcAccessMask = 0;
+				imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			}
+			else if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+
+				imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+			}
+			else {
+				printf("unsupported image layout transition \n");
+				throw std::invalid_argument("unsupported layout transition!");
+			}
+
+			return imageMemoryBarrier;
+		}
+	}//namespace Barrier
+} //namespace EWE

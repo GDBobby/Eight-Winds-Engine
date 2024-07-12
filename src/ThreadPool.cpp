@@ -1,6 +1,6 @@
 #include "EWEngine/Systems/ThreadPool.h"
 
-
+#define DEBUGGING_THREADS true
 
 namespace EWE {
     ThreadPool* ThreadPool::singleton{ nullptr };
@@ -32,11 +32,21 @@ namespace EWE {
                         auto task = std::move(this->tasks.front());
                         this->tasks.pop();
                         lock.unlock();
+#if DEBUGGING_THREADS
+                        printf("thread[%u] doing a task\n", std::this_thread::get_id());
+#endif
                         task();
+#if DEBUGGING_THREADS
+                        printf("thread[%u] finished task\n", std::this_thread::get_id());
+#endif
 
                         // Increment the number of tasks completed
                         std::unique_lock<std::mutex> counterLock(this->counterMutex);
                         this->numTasksCompleted++;
+
+#if DEBUGGING_THREADS
+                        printf("task completed:enqueued - %zu:%zu\n", this->numTasksCompleted, this->numTasksEnqueued);
+#endif
                         // Notify any waiting threads if all tasks have completed
                         if (this->numTasksCompleted == this->numTasksEnqueued) {
                             this->counterCondition.notify_all();
@@ -58,7 +68,7 @@ namespace EWE {
     }
 
     bool ThreadPool::WaitCondition() {
-#ifdef _DEBUG
+#if DEBUGGING_THREADS
         printf("waiting for completion of thread pool - %zu:%zu \n", singleton->numTasksCompleted, singleton->numTasksEnqueued);
 #endif
         if (singleton->numTasksCompleted == singleton->numTasksEnqueued) {
@@ -73,7 +83,7 @@ namespace EWE {
         std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
         singleton->counterCondition.wait(counterLock,
             [&] {
-#ifdef _DEBUG
+#if DEBUGGING_THREADS
                 printf("waiting for completion of thread pool - %zu:%zu \n", singleton->numTasksCompleted, singleton->numTasksEnqueued);
 #endif
                 if (singleton->numTasksCompleted == singleton->numTasksEnqueued) {

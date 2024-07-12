@@ -1,7 +1,6 @@
 #pragma once
 
-#include "EWEngine/Global_Macros.h"
-
+#include "EWEngine/Graphics/VulkanHeader.h"
 #include "EWEngine/MainWindow.h"
 #include "EWEngine/Systems/SyncHub.h"
 
@@ -120,8 +119,6 @@ namespace EWE {
         void TransitionFromTransferToGraphics(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image);
 
         //QueueTransitionContainer* PostTransitionsToGraphics(VkCommandBuffer cmdBuf, uint8_t frameIndex);
-
-        void SetImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange);
 
         void CopyBufferToImage(VkCommandBuffer cmdBuf, VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount);
 

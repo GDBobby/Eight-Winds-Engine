@@ -1,5 +1,4 @@
 #include "EWEngine/Systems/SyncHub.h"
-#include "EWEngine/Global_Macros.h"
 
 #include <future>
 #include <cassert>
@@ -7,7 +6,11 @@
 namespace EWE {
 	SyncHub* SyncHub::syncHubSingleton{ nullptr };
 
-	SyncHub::SyncHub(VkDevice device) : device{device}, syncPool{32, device} {
+	SyncHub::SyncHub(VkDevice device) : 
+		device{ device }, 
+		syncPool{ 32, device }, 
+		renderSyncData{ device } 
+	{
 #ifdef _DEBUG
 		printf("COSTRUCTING SYNCHUB\n");
 #endif
@@ -37,36 +40,16 @@ namespace EWE {
 
 		syncHubSingleton->CreateBuffers(renderCommandPool, computeCommandPool, transferCommandPool);
 
-		syncHubSingleton->SetMaxFramesInFlight();
-
 		syncHubSingleton->CreateSyncObjects();
-
-		syncHubSingleton->InitWaitMask();
-		syncHubSingleton->InitSignalMask();
 	}
 	void SyncHub::Destroy(VkCommandPool renderPool, VkCommandPool computePool, VkCommandPool transferPool) {
 #if DECONSTRUCTION_DEBUG
 		printf("beginniing synchub destroy \n");
 #endif
-		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(device, inFlightFences[i], nullptr);
-		}
-
-		if (singleTimeFenceTransfer != VK_NULL_HANDLE) {
-			vkDestroyFence(device, singleTimeFenceTransfer, nullptr);
-		}
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			if (renderBuffers[i] != VK_NULL_HANDLE) {
 				vkFreeCommandBuffers(device, renderPool, 1, &renderBuffers[i]);
-			}
-		}
-
-		for (int i = 0; i < transferBuffers.size(); i++) {
-			if (transferBuffers[i].size() > 0) {
-				vkFreeCommandBuffers(device, transferPool, static_cast<uint32_t>(transferBuffers[i].size()), transferBuffers[i].data());
 			}
 		}
 
@@ -86,10 +69,6 @@ namespace EWE {
 		EWE_VK_ASSERT(vkAllocateCommandBuffers(device, &allocInfo, renderBuffers));
 	}
 
-	void SyncHub::WaitOnTransferFence() {
-		EWE_VK_ASSERT(vkWaitForFences(device, 1, &singleTimeFenceTransfer, VK_TRUE, UINT64_MAX));
-	}
-
 	void SyncHub::CreateSyncObjects() {
 		VkSemaphoreCreateInfo semaphoreInfo = {};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -98,16 +77,7 @@ namespace EWE {
 		fenceInfo.pNext = nullptr;
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &singleTimeFenceTransfer));
 		EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &singleTimeFenceGraphics));
-		
-
-		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			EWE_VK_ASSERT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
-			EWE_VK_ASSERT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
-			EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]));
-			//printf("in flight fences handle id : %llu \n", reinterpret_cast<uint64_t>(inFlightFences[i]));
-		}
 	}
 
 	VkCommandBuffer SyncHub::BeginSingleTimeCommand(Queue::Enum queue) {
@@ -162,33 +132,36 @@ namespace EWE {
 		EWE_VK_ASSERT(vkEndCommandBuffer(cmdBuf));
 		graphicsSTCGroup.push_back(cmdBuf);
 	}
+	void SyncHub::RunGraphicsCallbacks() {
+		if (transitionManager.Empty()) {
+			return;
+		}
+		TransitionData transitionData = transitionManager.Pull();
+		transitionData.callback();
 
-	void SyncHub::SubmitGraphicsSTCGroup() {
-		EWE_VK_ASSERT(vkResetFences(device, 1, &singleTimeFenceGraphics));
+
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.pNext = nullptr;
 		submitInfo.commandBufferCount = graphicsSTCGroup.size();
 		submitInfo.pCommandBuffers = graphicsSTCGroup.data();
-		submitInfo.pWaitSemaphores = 2;
-		submitInfo.waitSemaphoreCount = 2;
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = 1;
-		//std::cout << "before transfer submit \n";
-		EWE_VK_ASSERT(vkQueueSubmit(queues[Queue::graphics], 1, &submitInfo, singleTimeFenceGraphics));
-		//std::cout << "after transfer submit \n";
 
-		EWE_VK_ASSERT(vkWaitForFences(device, 1, &singleTimeFenceGraphics, VK_TRUE, UINT64_MAX));
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &transitionData.waitSemaphore->semaphore;
+		submitInfo.signalSemaphoreCount = 0;
+		submitInfo.pSignalSemaphores = nullptr;
+		
+		FenceData& fence = syncPool.GetFence();
+		fence.waitSemaphores.push_back(transitionData.waitSemaphore);
 
-		//this should be redundant with the vkWaitForFences
-		//EWE_VK_ASSERT(vkQueueWaitIdle(graphicsQueue));
 
-		for (auto const& cmdBuf : graphicsSTCGroup) {
-			vkFreeCommandBuffers(device, commandPools[Queue::graphics], 1, &cmdBuf);
-		}
+		EWE_VK_ASSERT(vkQueueSubmit(queues[Queue::graphics], 1, &submitInfo, fence.fence));
+		fence.callback = [this, cbs = graphicsSTCGroup] {
+			vkFreeCommandBuffers(device, commandPools[Queue::graphics], static_cast<uint32_t>(cbs.size()), cbs.data());
+		};
 		graphicsSTCGroup.clear();
+		//std::cout << "before transfer subm
 	}
-
 
 	void SyncHub::EndSingleTimeCommandGraphicsSignal(VkCommandBuffer cmdBuf, VkSemaphore signalSemaphore){
 		EWE_VK_ASSERT(vkEndCommandBuffer(cmdBuf));
@@ -228,20 +201,24 @@ namespace EWE {
 	}
 
 	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf){
+		EWE_VK_ASSERT(vkEndCommandBuffer(cmdBuf));
 		TransferCommandManager::AddCommand(cmdBuf);
 
 		AttemptTransferSubmission();
 	}
-	void SyncHub::EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf, std::function<void()> func) {
-		TransferCommandManager::AddCommand(cmdBuf, func);
+	void SyncHub::EndSingleTimeCommandTransfer(CommandWithCallback cmdCb) {
+		EWE_VK_ASSERT(vkEndCommandBuffer(cmdCb.cmdBuf));
+		TransferCommandManager::AddCommand(cmdCb);
 		
 		AttemptTransferSubmission();
 	}
+#if SYNC_QUEUE
 	void SyncHub::EndSingleTimeCommandTransfer(SyncedCommandQueue* cmdQueue){
 		TransferCommandManager::EndCommandQueue(cmdQueue);
 
 		AttemptTransferSubmission();
 	}
+#endif
 	void SyncHub::AttemptTransferSubmission(){
 		if (readyForNextTransmit) {
 			readyForNextTransmit = false;
@@ -251,22 +228,58 @@ namespace EWE {
 	}
 
 	void SyncHub::SubmitTransferBuffers() {
+		int debugLoopTracker = 0;
+		auto cmdCbs = TransferCommandManager::PrepareSubmit();
+		while (cmdCbs.commands.size() > 0) {
+			printf("looping in submit transfer buffers : %d\n", debugLoopTracker++);
+			transferSubmitInfo.commandBufferCount = cmdCbs.commands.size();
+			transferSubmitInfo.pCommandBuffers = cmdCbs.commands.data();
 
-		auto cmdCbs = TransferCommandManager::PrepareSubmit(transferSubmitInfo);
-		FenceData& fenceData = syncPool.GetFenceSignal(Queue::transfer);
-		fenceData.PrepareSubmitInfo(transferSubmitInfo);
-		fenceData.callback = cmdCbs.CombineCallbacks(device);
-		transitionManager.AddTransition(cmdCbs.CombineGraphicsCallbacks(), fenceData.signalSemaphore);
+			FenceData& fenceData = syncPool.GetFence();
+			fenceData.callback = cmdCbs.CombineCallbacks(device, commandPools[Queue::transfer]);
+			std::function<void()> graphicsCallbacks = nullptr;
+
+			if (cmdCbs.CleanGraphicsCallbacks()) {
+				fenceData.signalSemaphores[Queue::graphics] = syncPool.GetSemaphore();
+				fenceData.signalSemaphores[Queue::graphics]->BeginSignaling();
+				graphicsCallbacks = cmdCbs.CombineGraphicsCallbacks();
+			}
+
+			std::vector<VkSemaphore> sigSems{};
+			for (uint8_t i = 0; i < Queue::_count; i++) {
+				if (fenceData.signalSemaphores[i] != nullptr) {
+					sigSems.push_back(fenceData.signalSemaphores[i]->semaphore);
+				}
+			}
+
+			transferSubmitInfo.pSignalSemaphores = sigSems.data();
+			transferSubmitInfo.signalSemaphoreCount = static_cast<uint32_t>(sigSems.size());
+
+			std::vector<VkSemaphore> waitSems{};
+			waitSems.reserve(fenceData.waitSemaphores.size());
+			for (auto const& sem : fenceData.waitSemaphores) {
+				waitSems.push_back(sem->semaphore);
+			}
+
+			transferSubmitInfo.pWaitSemaphores = waitSems.data();
+			transferSubmitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSems.size());
 		
-		//std::cout << "before transfer submit \n";
-		transferPoolMutex.lock();
-		EWE_VK_ASSERT(vkQueueSubmit(queues[Queue::transfer], 1, &transferSubmitInfo, fenceData.fence));
-		transferPoolMutex.unlock();
-		//std::cout << "after transfer submit \n";
+			//printf("before transfer submit\n");
+			transferPoolMutex.lock();
+			EWE_VK_ASSERT(vkQueueSubmit(queues[Queue::transfer], 1, &transferSubmitInfo, fenceData.fence));
+			transferPoolMutex.unlock();
+			//printf("after transfer submit\n");
 
-		transferPoolMutex.lock();
-		vkFreeCommandBuffers(device, commandPools[Queue::transfer], static_cast<uint32_t>(cmdCbs.commands.size()), cmdCbs.commands.data());
-		transferPoolMutex.unlock();
+			if (graphicsCallbacks != nullptr) {
+				transitionManager.Add(graphicsCallbacks, fenceData.signalSemaphores[Queue::graphics]);
+				printf("signal semaphore address : %zu\n", fenceData.signalSemaphores[Queue::graphics]);
+			}
+
+			transferPoolMutex.lock();
+			transferPoolMutex.unlock();
+
+			cmdCbs = TransferCommandManager::PrepareSubmit();
+		}
 	
 		//std::cout << "after successful submission \n";
 		readyForNextTransmit = true;
@@ -277,7 +290,7 @@ namespace EWE {
 		if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE) [[likely]] {
 			EWE_VK_ASSERT(vkWaitForFences(device, 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX));
 		}
-		imagesInFlight[*imageIndex] = inFlightFences[frameIndex];
+		imagesInFlight[*imageIndex] = renderSyncData.inFlight[frameIndex];
 
 		std::vector<VkSemaphore> waitSemaphores = renderSyncData.GetWaitData(frameIndex);
 		submitInfo.waitSemaphoreCount = waitSemaphores.size();
@@ -287,9 +300,9 @@ namespace EWE {
 		submitInfo.pSignalSemaphores = signalSemaphores.data();
 		submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
 
-		EWE_VK_ASSERT(vkResetFences(device, 1, &inFlightFences[frameIndex]));
+		EWE_VK_ASSERT(vkResetFences(device, 1, &renderSyncData.inFlight[frameIndex]));
 
-		EWE_VK_ASSERT(vkQueueSubmit(queues[Queue::graphics], 1, &submitInfo, inFlightFences[frameIndex]));
+		EWE_VK_ASSERT(vkQueueSubmit(queues[Queue::graphics], 1, &submitInfo, renderSyncData.inFlight[frameIndex]));
 
 		//std::cout << "immediately after submitting graphics \n";
 	}
@@ -301,9 +314,6 @@ namespace EWE {
 		//std::cout << "imeddiately before presenting \n";
 		return vkQueuePresentKHR(queues[Queue::present], &presentInfo);
 		//std::cout << "imediately after presenting \n";
-	}
-	void SyncHub::WaitOnGraphicsFence(const uint8_t frameIndex) {
-		EWE_VK_ASSERT(vkWaitForFences(device, 1, &inFlightFences[frameIndex], VK_TRUE, UINT64_MAX));
 	}
 
 	void SyncHub::DomDemand() {

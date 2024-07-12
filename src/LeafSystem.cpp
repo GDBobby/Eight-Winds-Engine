@@ -334,7 +334,7 @@ namespace EWE {
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 
-		VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
+		VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
 		EWEDevice::GetEWEDevice()->TransitionImageLayoutWithBarrier(cmdBuf,
 			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 			imageInfo.image,

@@ -4,7 +4,7 @@
 
 namespace EWE {
 	namespace Cube_Texture {
-		TextureDesc CreateCubeTexture(std::string texPath, Queue::Enum queue, std::string extension = ".png");
+		TextureDesc CreateCubeImage(std::string texPath, Queue::Enum queue, std::string extension = ".png");
 	};
 }
 

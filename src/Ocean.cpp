@@ -94,7 +94,7 @@ namespace EWE {
 
 			SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 			//directly to graphics because no data is being uploaded
-			VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
+			VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
 
 			VkImageMemoryBarrier imageBarriers[2];
 			imageBarriers[0] = eweDevice->TransitionImageLayout(oceanOutputImages,

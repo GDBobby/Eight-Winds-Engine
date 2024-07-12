@@ -1,13 +1,12 @@
 #pragma once
 
-#include "EWEngine/Global_Macros.h"
-
 #include "EWEngine/Graphics/VulkanHeader.h"
 
 #include <type_traits>
 #include <functional>
 #include <cassert>
 #include <thread>
+#include <mutex>
 
 
 /*
@@ -28,61 +27,22 @@ namespace EWE{
 
     //each semaphore and fence could track which queue it's being used in, but I don't think that's the best approach
 
-    struct SemaphoreData{
-        VkSemaphore semaphore{VK_NULL_HANDLE};
-        bool waiting{false};
-        bool signaling{false};
 
-        bool Idle() const{
-            return !(waiting || signaling);
-        }
-        void FinishSignaling(){
-#ifdef _DEBUG
-            assert(signaling == true && "finishing a signal that wasn't signaled");
-#endif
-            signaling = false;
-        }
-        void FinishWaiting(){
-#ifdef _DEBUG
-            assert(waiting == true && "finished waiting when not waiting");
-#endif
-            waiting = false;
-        }
-        void BeginWaiting(){
-#ifdef _DEBUG
-            assert(waiting == false && "attempting to begin wait while waiting");
-#endif
-            waiting = true;
-        }
-        void BeginSignaling(){
-#ifdef _DEBUG
-            assert(signaling == false && "attempting to signal while signaled");
-#endif
-            signaling = true;
-        }
-    };
-    struct FenceData{
-        VkFence fence{VK_NULL_HANDLE};
-        std::function<void()> callback{nullptr}; //i think this is a function pointer, if I can't set it to null, I need to make it a pointer
-        bool inUse{false};
-        SemaphoreData* waitSemaphore{nullptr};
-        SemaphoreData* signalSemaphore{nullptr};
-
-        SemaphoreData* Reset(VkDevice device);
-        void PrepareSubmitInfo(VkSubmitInfo& submitInfo);
-    };
     struct RenderSyncData {
     private:
         std::mutex waitMutex{};
         std::mutex signalMutex{};
+        VkDevice device;
+        std::vector<SemaphoreData*> previousWaits[MAX_FRAMES_IN_FLIGHT]{};
+        std::vector<SemaphoreData*> previousSignals[MAX_FRAMES_IN_FLIGHT]{};
     public:
         VkFence inFlight[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
         VkSemaphore imageAvailable[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
         VkSemaphore renderFinished[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
-        std::vector<VkSemaphore> waitSemaphores{};
-        std::vector<VkSemaphore> signalSemaphores{};
+        std::vector<SemaphoreData*> waitSemaphores{};
+        std::vector<SemaphoreData*> signalSemaphores{};
 
-        RenderSyncData(VkDevice device) {
+        RenderSyncData(VkDevice device) : device{ device } {
             VkFenceCreateInfo fenceInfo{};
             fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
             fenceInfo.pNext = nullptr;
@@ -97,30 +57,58 @@ namespace EWE{
                 EWE_VK_ASSERT(vkCreateSemaphore(device, &semInfo, nullptr, &renderFinished[i]));
             }
         }
-        void AddWaitSemaphore(VkSemaphore semaphore) {
+        ~RenderSyncData(){
+            for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                vkDestroyFence(device, inFlight[i], nullptr);
+                vkDestroySemaphore(device, imageAvailable[i], nullptr);
+                vkDestroySemaphore(device, renderFinished[i], nullptr);
+            }
+        }
+        void AddWaitSemaphore(SemaphoreData* semaphore) {
             waitMutex.lock();
+            semaphore->BeginWaiting();
             waitSemaphores.push_back(semaphore);
             waitMutex.unlock();
         }
-        void AddSignalSemaphore(VkSemaphore semaphore) {
+        void AddSignalSemaphore(SemaphoreData* semaphore) {
             signalMutex.lock();
             signalSemaphores.push_back(semaphore);
             signalMutex.unlock();
         }
         std::vector<VkSemaphore> GetWaitData(uint8_t frameIndex) {
             waitMutex.lock();
-            std::vector<VkSemaphore> ret{waitSemaphores};
+            for (auto& waitSem : previousWaits[frameIndex]) {
+                waitSem->FinishWaiting();
+            }
+            previousWaits[frameIndex].clear();
+            previousWaits[frameIndex] = waitSemaphores;
             waitSemaphores.clear();
-            waitMutex.unlock();
+
+            std::vector<VkSemaphore> ret{};
+            ret.reserve(previousWaits[frameIndex].size() + 1);
+            for (auto& waitSem : previousWaits[frameIndex]) {
+                ret.push_back(waitSem->semaphore);
+            }
             ret.push_back(imageAvailable[frameIndex]);
+            waitMutex.unlock();
             return ret;
         }
         std::vector<VkSemaphore> GetSignalData(uint8_t frameIndex) {
             signalMutex.lock();
-            std::vector<VkSemaphore> ret{ signalSemaphores };
+            for (auto& sigSem : previousSignals[frameIndex]) {
+                sigSem->FinishSignaling();
+            }
+            previousSignals[frameIndex].clear();
+            previousSignals[frameIndex] = signalSemaphores;
             signalSemaphores.clear();
+
+            std::vector<VkSemaphore> ret{};
+            ret.reserve(previousSignals[frameIndex].size() + 1);
+            for (auto& sigSem : previousSignals[frameIndex]) {
+                ret.push_back(sigSem->semaphore);
+            }
+            ret.push_back(renderFinished[frameIndex]);
             signalMutex.unlock();
-            ret.push_back(imageAvailable[frameIndex]);
             return ret;
         }
     };
@@ -131,7 +119,6 @@ namespace EWE{
 
         FenceData* fences;
         SemaphoreData* semaphores;
-        SemaphoreData* transitionSemaphores;
 
         const uint8_t size;
         VkDevice device;
@@ -157,8 +144,8 @@ namespace EWE{
         
         void CheckFences();
 
-        SemaphoreData& GetSemaphore();
-        FenceData& GetFence(Queue::Enum queue);
+        SemaphoreData* GetSemaphore();
+        FenceData& GetFence();
         FenceData& GetFenceSignal(Queue::Enum queue);
         
     };
