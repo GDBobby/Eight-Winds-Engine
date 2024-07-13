@@ -130,12 +130,17 @@ namespace EWE {
                 }
             }
         }
-        ThreadPool::EnqueueVoid([callbacks] {
-                for (auto const& cb : callbacks) {
-                    cb();
+        if (callbacks.size() == 1) {
+            ThreadPool::EnqueueVoidFunction(callbacks[0]);
+        }
+        else if (callbacks.size() > 0) {
+            ThreadPool::EnqueueVoid([callbacks] {
+                    for (auto const& cb : callbacks) {
+                        cb();
+                    }
                 }
-            }
-        );
+            );
+        }
     }
 
     SemaphoreData* SyncPool::GetSemaphore() {
@@ -151,6 +156,7 @@ namespace EWE {
         return GetSemaphore();
     }
     FenceData& SyncPool::GetFence() {
+
         //potential risk of stack overflow if recursive calls get too large
         while (true) {
             for (uint8_t i = 0; i < size; i++) {

@@ -89,20 +89,21 @@ namespace EWE {
     }
     
 
-    inline void CopyModelBuffer(StagingBuffer& stagingBuffer, VkBuffer dstBuffer, const VkDeviceSize bufferSize, const Queue::Enum queue) {
+    inline void CopyModelBuffer(StagingBuffer* stagingBuffer, VkBuffer dstBuffer, const VkDeviceSize bufferSize, const Queue::Enum queue) {
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(queue);
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer.buffer, dstBuffer, bufferSize);
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer->buffer, dstBuffer, bufferSize);
 
         if (queue == Queue::graphics) {
             syncHub->EndSingleTimeCommandGraphics(cmdBuf);
-            stagingBuffer.Free(EWEDevice::GetVkDevice());
+            stagingBuffer->Free(EWEDevice::GetVkDevice());
+            delete stagingBuffer;
         }
         else if (queue == Queue::transfer) {
             //transitioning from transfer to compute not supported currently
             CommandWithCallback cb{};
             cb.cmdBuf = cmdBuf;
-            cb.callback = [sb = stagingBuffer, vkDevice = EWEDevice::GetVkDevice()] {sb.Free(vkDevice); };
+            cb.callback = [sb = stagingBuffer, vkDevice = EWEDevice::GetVkDevice()] {sb->Free(vkDevice); delete sb; };
             syncHub->EndSingleTimeCommandTransfer(cb);
         }
     }
@@ -111,15 +112,15 @@ namespace EWE {
         VkDeviceSize bufferSize = instanceSize * instanceCount;
         this->instanceCount = instanceCount;
 
-        StagingBuffer stagingBuffer;
+        StagingBuffer* stagingBuffer = new StagingBuffer();
         EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
         uint64_t alignmentSize = EWEBuffer::GetAlignment(instanceSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, eweDevice) * instanceCount;
-        eweDevice->CreateBuffer(alignmentSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+        eweDevice->CreateBuffer(alignmentSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
         //i need to look into how this is different from StagingBuffer
         void* stagingData;
-        vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, alignmentSize, 0, &stagingData);
+        vkMapMemory(eweDevice->Device(), stagingBuffer->memory, 0, alignmentSize, 0, &stagingData);
         memcpy(stagingData, data, alignmentSize);
-        vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
+        vkUnmapMemory(eweDevice->Device(), stagingBuffer->memory);
 
 
         instanceBuffer = new EWEBuffer(
@@ -161,15 +162,15 @@ namespace EWE {
     void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data, Queue::Enum queue){
         VkDeviceSize bufferSize = vertexSize * vertexCount;
 
-        StagingBuffer stagingBuffer;
+        StagingBuffer* stagingBuffer = new StagingBuffer();
         EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
-        eweDevice->CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+        eweDevice->CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
         //i need to look into how this is different from StagingBuffer
 
         void* stagingData;
-        vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, bufferSize, 0, &stagingData);
+        vkMapMemory(eweDevice->Device(), stagingBuffer->memory, 0, bufferSize, 0, &stagingData);
         memcpy(stagingData, data, bufferSize);
-        vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
+        vkUnmapMemory(eweDevice->Device(), stagingBuffer->memory);
 
         vertexBuffer = new EWEBuffer(
             vertexSize,
@@ -185,15 +186,15 @@ namespace EWE {
         const uint32_t indexSize = sizeof(uint32_t);
         this->indexCount = indexCount;
 
-        StagingBuffer stagingBuffer;
+        StagingBuffer* stagingBuffer = new StagingBuffer();
         EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
         uint64_t bufferSize = indexSize * indexCount;
-        eweDevice->CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
+        eweDevice->CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
         //i need to look into how this is different from StagingBuffer
         void* stagingData;
-        vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, bufferSize, 0, &stagingData);
+        vkMapMemory(eweDevice->Device(), stagingBuffer->memory, 0, bufferSize, 0, &stagingData);
         memcpy(stagingData, indexData, bufferSize);
-        vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
+        vkUnmapMemory(eweDevice->Device(), stagingBuffer->memory);
 
         indexBuffer = new EWEBuffer(
             indexSize,

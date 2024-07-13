@@ -73,8 +73,6 @@ namespace EWE {
 
         static EWEModel* CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices, Queue::Enum queue);
         static EWEModel* CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue);
-        static EWEModel* CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices, Queue::Enum queue);
-        static EWEModel* CreateMesh(VkCommandBuffer cmdBuf, void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue);
 
         EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices, Queue::Enum queue);
         EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue);

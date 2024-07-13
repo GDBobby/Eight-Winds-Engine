@@ -15,10 +15,10 @@ namespace EWE {
 
             void* data;
 
-            StagingBuffer stagingBuffer{};
+            StagingBuffer* stagingBuffer = new StagingBuffer();
 
-            EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer.buffer, stagingBuffer.memory);
-            vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer.memory, 0, imageSize, 0, &data);
+            EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
+            vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             cubeImage.mipLevels = 1;
             for (int i = 0; i < 6; i++) {
@@ -26,7 +26,7 @@ namespace EWE {
                 stbi_image_free(pixelPeek[i].pixels);
                 memAddress += layerSize;
             }
-            vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer.memory);
+            vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory);
 
             VkImageCreateInfo imageCreateInfo;
             imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

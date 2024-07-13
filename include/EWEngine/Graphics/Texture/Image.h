@@ -60,13 +60,13 @@ namespace EWE {
 		}
 
 		[[nodiscard("this staging buffer needs to be handled outside of this function")]]
-		static StagingBuffer StageImage(PixelPeek& pixelPeek);
+		static StagingBuffer* StageImage(PixelPeek& pixelPeek);
 
 		[[nodiscard("this staging buffer needs to be handled outside of this function")]]
-		static StagingBuffer StageImage(std::vector<PixelPeek>& pixelPeek);
+		static StagingBuffer* StageImage(std::vector<PixelPeek>& pixelPeek);
 
 		void CreateTextureImage(Queue::Enum queue, PixelPeek& pixelPeek, bool mipmapping = true);
-		void CreateImageCommands(VkImageCreateInfo const& imageCreateInfo, StagingBuffer& stagingBuffer, Queue::Enum queue, bool mipmapping);
+		void CreateImageCommands(VkImageCreateInfo const& imageCreateInfo, StagingBuffer* stagingBuffer, Queue::Enum queue, bool mipmapping);
 
 		void CreateTextureImageView();
 

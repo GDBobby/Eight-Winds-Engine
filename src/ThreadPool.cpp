@@ -37,6 +37,7 @@ namespace EWE {
 #if DEBUGGING_THREADS
                         printf("thread[%u] doing a task\n", std::this_thread::get_id());
 #endif
+
                         task();
 #if DEBUGGING_THREADS
                         printf("thread[%u] finished task\n", std::this_thread::get_id());
@@ -99,6 +100,7 @@ namespace EWE {
         );
     }
     void ThreadPool::EnqueueVoidFunction(std::function<void()> task) {
+
         {
             std::unique_lock<std::mutex> lock(singleton->queueMutex);
             assert(!singleton->stop && "enqueue on stopped threadpool");

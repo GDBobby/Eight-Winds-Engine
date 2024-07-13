@@ -350,7 +350,7 @@ namespace EWE {
 		BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
 
 		//printf("after binding descriptor set 0 \n");
-		BindDescriptor(1, &leafTextureID);
+		//BindDescriptor(1, &leafTextureID);
 
 		BindDescriptor(2, &transformDescriptor[frameInfo.index]);
 

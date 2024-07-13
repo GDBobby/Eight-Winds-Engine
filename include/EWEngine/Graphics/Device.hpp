@@ -154,6 +154,7 @@ namespace EWE {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME, 
             VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
         };
+        
 
         struct OptionalExtension {
             const char* extension;
@@ -164,6 +165,9 @@ namespace EWE {
 #if DEBUGGING_DEVICE_LOST
             {VK_EXT_DEVICE_FAULT_EXTENSION_NAME, false},
             //{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}
+#endif
+#if DEBUG_NAMING
+            {VK_EXT_DEBUG_MARKER_EXTENSION_NAME, false},
 #endif
         };
         void CheckOptionalExtensions();

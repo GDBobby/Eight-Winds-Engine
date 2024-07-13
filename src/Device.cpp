@@ -44,6 +44,7 @@ namespace EWE {
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData) 
     {
+
         switch (messageSeverity) {
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
 				std::cout << "validation verbose: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;

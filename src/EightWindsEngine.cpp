@@ -182,6 +182,7 @@ namespace EWE {
 			
 			//printf("loading render looop : %.2f \n", loadingTime);
 
+
 			endThreadTime = std::chrono::high_resolution_clock::now();
 			renderThreadTime += std::chrono::duration<double, std::chrono::seconds::period>(endThreadTime - startThreadTime).count();
 			startThreadTime = endThreadTime;
@@ -193,14 +194,14 @@ namespace EWE {
 			if (renderThreadTime > renderTimeCheck) {
 				loadingTime += renderTimeCheck;
 				printf("rendering loading thread start??? \n");
-				syncHub->RunGraphicsCallbacks();
+				//syncHub->RunGraphicsCallbacks();
 				auto frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 					
 					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
 
-					leafSystem->Render(frameInfo);
+					//leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
 					if (eweRenderer.EndFrame()) {
@@ -212,7 +213,6 @@ namespace EWE {
 				}
 				renderThreadTime = 0.f;
 				//printf("end rendering thread \n");
-				
 			}
 			//printf("end of render thread loop \n");
 		}

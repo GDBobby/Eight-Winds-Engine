@@ -97,6 +97,7 @@ namespace EWE {
     }
     VkResult EWESwapChain::AcquireNextImage(uint32_t* imageIndex) {
        // printf("pre-wait for ANI inflightfences \n");
+
         printf("before waiting for in flight fence\n");
         EWE_VK_ASSERT(vkWaitForFences(
             EWEDevice::GetVkDevice(),

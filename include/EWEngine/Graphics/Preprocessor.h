@@ -9,3 +9,9 @@
 
 #define DEBUGGING_PIPELINES false
 #define DEBUGGING_DYNAMIC_PIPE false
+
+#ifdef _DEBUG
+#define DEBUG_NAMING true
+#else
+#define DEBUG_NAMING false
+#endif
