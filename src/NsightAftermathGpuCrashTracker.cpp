@@ -22,8 +22,8 @@
 //
 //*********************************************************
 
-#include "EWEngine/Graphics/Debug/NsightAftermathGpuCrashTracker.h"
 #if USING_NVIDIA_AFTERMATH
+#include "EWEngine/Graphics/Debug/NsightAftermathGpuCrashTracker.h"
 #include <fstream>
 #include <iomanip>
 #include <string>

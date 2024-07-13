@@ -84,12 +84,13 @@ void* ewe_alloc_internal(std::size_t element_size, std::size_t element_count, co
 	return ptr;
 }
 
-#ifdef _DEBUG
 void ewe_alloc_mem_track(void* ptr, const char* file, int line, const char* sourceFunction){
+
+#ifdef _DEBUG
 	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), file, line, sourceFunction);
 	updateMemoryLogFile();
-}
 #endif
+}
 
 void ewe_free_internal(void* ptr) {
 #if USING_MALLOC

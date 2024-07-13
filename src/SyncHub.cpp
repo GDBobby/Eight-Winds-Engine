@@ -280,7 +280,9 @@ namespace EWE {
 
 			if (graphicsCallbacks != nullptr) {
 				transitionManager.Add(graphicsCallbacks, fenceData.signalSemaphores[Queue::graphics]);
-				printf("signal semaphore address : %zu\n", fenceData.signalSemaphores[Queue::graphics]);
+#ifdef _DEBUG
+				printf("signal semaphore address : %zu\n", reinterpret_cast<std::size_t>(fenceData.signalSemaphores[Queue::graphics]));
+#endif
 			}
 
 			transferPoolMutex.lock();

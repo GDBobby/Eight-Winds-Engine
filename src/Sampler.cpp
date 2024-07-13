@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cassert>
+#include <string.h>
 
 #define EXPECTED_MAXIMUM_AMOUNT_OF_SAMPLERS 50
 

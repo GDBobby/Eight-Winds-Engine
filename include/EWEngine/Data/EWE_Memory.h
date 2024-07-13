@@ -11,10 +11,9 @@
 void* ewe_alloc_internal(std::size_t element_size, std::size_t element_count, const char* file, int line, const char* sourceFunction);
 void ewe_free_internal(void* ptr);
 
-#ifdef _DEBUG
+
 void ewe_alloc_mem_track(void* ptr, const char* file, int line, const char* sourceFunction);
 void ewe_free_mem_track(void* ptr);
-#endif
 
 
 #ifndef ewe_call_trace

@@ -21,8 +21,8 @@
 //  DEALINGS IN THE SOFTWARE.
 //
 //*********************************************************
-#include "EWEngine/Graphics/Debug/NsightAftermathShaderDatabase.h"
 #if USING_NVIDIA_AFTERMATH
+#include "EWEngine/Graphics/Debug/NsightAftermathShaderDatabase.h"
 #include <fstream>
 #include <iomanip>
 

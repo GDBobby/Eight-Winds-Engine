@@ -17,6 +17,7 @@ endif()
 
 option(EWE_EXAMPLES "Build examples" ${is_project_root})
 option(EWE_PROJECTS "Build projects" ${is_project_root})
+option(USING_NVIDIA_AFTERMATH, "Nvidia Aftermath" off)
 
 Message(STATUS "Cmake Generator : ${CMAKE_GENERATOR}")
 
@@ -101,21 +102,23 @@ set(GLSLANG_LIBS
 #if(USE_AFTERMATH)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/")
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8) #64bit, x64
-message(STATUS "including 64 bit Aftermath")
-	set(AFTERMATH_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/Aftermath/lib/x64/")
-	
-	set(AFTERMATH_LIBS
-		GFSDK_Aftermath_Lib.x64
-	)
+if(USING_NVIDIA_AFTERMATH)
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8) #64bit, x64
+	message(STATUS "including 64 bit Aftermath")
+		set(AFTERMATH_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/Aftermath/lib/x64/")
+		
+		set(AFTERMATH_LIBS
+			GFSDK_Aftermath_Lib.x64
+		)
 
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) #32bit, x86
-	message(FATAL_ERROR "Don't expect x86 to work")
-	set(AFTERMATH_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/Aftermath/lib/x86")
-	
-	set(AFTERMATH_LIBS
-		GFSDK_Aftermath_Lib.x86
-	)
+	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) #32bit, x86
+		message(FATAL_ERROR "Don't expect x86 to work")
+		set(AFTERMATH_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/Aftermath/lib/x86")
+		
+		set(AFTERMATH_LIBS
+			GFSDK_Aftermath_Lib.x86
+		)
+	endif()
 endif()
 
 
