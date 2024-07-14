@@ -2,7 +2,12 @@
 
 #include "EWEngine/Data/EngineDataTypes.h"
 #include "EWEngine/Graphics/Preprocessor.h"
+#if DEBUGGING_DEVICE_LOST
 #include "EWEngine/Graphics/VkDebugDeviceLost.h"
+#endif
+#if DEBUG_NAMING
+#include "EWEngine/Graphics/DebugNaming.h"
+#endif
 
 #include <functional>
 

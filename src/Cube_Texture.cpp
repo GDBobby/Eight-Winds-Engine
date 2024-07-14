@@ -50,6 +50,7 @@ namespace EWE {
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeImage.image, cubeImage.imageMemory);
 
             cubeImage.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
+            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), cubeImage.image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, pixelPeek.debugName.c_str());
         }
 
         void CreateCubeImageView(ImageInfo& cubeImage) {

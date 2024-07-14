@@ -437,6 +437,9 @@ namespace EWE {
         //printf("vertex count after loading simple model from file : %d \n", vertices.size());
         //printf("index count after loading simple model from file : %d \n", indices.size());
     }
+#if DEBUG_NAMING
+
+#endif
 
 
     /*

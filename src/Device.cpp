@@ -205,7 +205,18 @@ namespace EWE {
     }
 
     // class member functions
-    EWEDevice::EWEDevice(MainWindow& window) : window{ window } {
+    EWEDevice::EWEDevice(MainWindow& window) : 
+    window{ window }, 
+    optionalExtensions{
+#if DEBUGGING_DEVICE_LOST
+            {VK_EXT_DEVICE_FAULT_EXTENSION_NAME, false},
+            //{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}
+#endif
+#if DEBUG_NAMING
+            {VK_EXT_DEBUG_MARKER_EXTENSION_NAME, false},
+#endif
+    }
+    { //ewe device entrance
         //printf("device constructor \n");
         assert(eweDevice == nullptr && "EWEDevice already exists");
         eweDevice = this;
@@ -263,7 +274,9 @@ namespace EWE {
         VKDEBUG::Initialize(device_, instance, queues, optionalExtensions.at(VK_EXT_DEVICE_FAULT_EXTENSION_NAME), deviceLostDebug.NVIDIAdebug, deviceLostDebug.AMDdebug);
         deviceLostDebug.Initialize(device_);
 #endif
-
+#if DEBUG_NAMING
+        DebugNaming::Initialize(device_, optionalExtensions.at(VK_EXT_DEBUG_MARKER_EXTENSION_NAME));
+#endif
         
         /*
         createTextureImage();

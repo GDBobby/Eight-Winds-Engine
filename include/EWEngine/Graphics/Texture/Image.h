@@ -33,6 +33,10 @@ namespace EWE {
 		int height;
 		int channels;
 
+#if DEBUG_NAMING
+		const std::string debugName;
+#endif
+
 		PixelPeek() {}
 		PixelPeek(std::string const& path);
 		//dont currrently care about desired channels, but maybe one day

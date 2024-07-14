@@ -54,6 +54,7 @@ namespace EWE {
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.imageMemory);
 
             uiImageInfo.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
+            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), uiImageInfo.image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, pixelPeek[0].debugName.c_str());
         }
 
         void CreateUIImageView(ImageInfo& uiImageInfo) {

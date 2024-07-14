@@ -5,8 +5,9 @@
 
 #if DEBUG_NAMING
 namespace DebugNaming {
-	void Initialize();
-	void Deconstruct();
+	void Initialize(VkDevice device, bool extension_enabled);
+	void Deconstruct(){}
+	void SetObjectName(VkDevice device, void* object, VkDebugReportObjectTypeEXT objectType, const char *name);
 
 };
 #endif

@@ -161,15 +161,7 @@ namespace EWE {
             bool enabled{ false };
             OptionalExtension(const char* extension) : extension{ extension } {}
         };
-        std::unordered_map<std::string, bool> optionalExtensions = {
-#if DEBUGGING_DEVICE_LOST
-            {VK_EXT_DEVICE_FAULT_EXTENSION_NAME, false},
-            //{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}
-#endif
-#if DEBUG_NAMING
-            {VK_EXT_DEBUG_MARKER_EXTENSION_NAME, false},
-#endif
-        };
+        std::unordered_map<std::string, bool> optionalExtensions;
         void CheckOptionalExtensions();
 
         void CreateInstance();

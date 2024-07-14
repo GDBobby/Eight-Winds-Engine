@@ -113,6 +113,10 @@ namespace EWE {
         void CreateIndexBuffer(void const* indexData, uint32_t indexCount, Queue::Enum queue);
         void CreateIndexBuffers(const std::vector<uint32_t>& indices, Queue::Enum queue);
 
+#if DEBUG_NAMING
+        void SetDebugNames();
+#endif
+
         EWEBuffer* vertexBuffer{ nullptr };
         uint32_t vertexCount;
 

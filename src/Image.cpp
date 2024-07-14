@@ -38,7 +38,7 @@ namespace EWE {
     }
 
 
-    PixelPeek::PixelPeek(std::string const& path) {
+    PixelPeek::PixelPeek(std::string const& path) : debugName{path} {
         pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 #if _DEBUG
         assert(pixels && ((width * height) > 0) && path.c_str());
@@ -192,6 +192,7 @@ namespace EWE {
         descriptorImageInfo.sampler = sampler;
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, path.c_str());
     }
 
 
@@ -321,6 +322,7 @@ namespace EWE {
 
         //printf("before image info \n");
         Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, pixelPeek.debugName.c_str());
         //printf("before transition \n");
         
         CreateImageCommands(imageCreateInfo, stagingBuffer, queue, mipmapping);
