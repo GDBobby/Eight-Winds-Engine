@@ -31,6 +31,10 @@ namespace EWE {
         [[nodiscard]] VkBuffer GetBuffer() const { return buffer_info.buffer; } //temporarily making this non-const
         
         [[nodiscard]] void* GetMappedMemory() const { return mapped; }
+#if DEBUG_NAMING
+        void SetDeviceMemoryName(std::string const& name);
+        void SetBufferName(std::string const& name);
+#endif
 
         //uint32_t getInstanceCount() const { return instanceCount; }
         //VkDeviceSize getInstanceSize() const { return instanceSize; }

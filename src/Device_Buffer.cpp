@@ -60,8 +60,6 @@ namespace EWE {
     EWEBuffer::EWEBuffer(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
         : usageFlags{usageFlags}, memoryPropertyFlags{memoryPropertyFlags} {
 
-        //buffer_info.buffer = VK_NULL_HANDLE; //not sure if necessary??
-
         alignmentSize = GetAlignment(instanceSize);
         bufferSize = alignmentSize * instanceCount;
         EWEDevice::GetEWEDevice()->CreateBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
@@ -273,4 +271,12 @@ namespace EWE {
         return retBuffer;
     }
 
+#if DEBUG_NAMING
+    void EWEBuffer::SetDeviceMemoryName(std::string const& name) {
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), memory, VK_OBJECT_TYPE_DEVICE_MEMORY, name.c_str());
+    }
+    void EWEBuffer::SetBufferName(std::string const& name) {
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), buffer_info.buffer, VK_OBJECT_TYPE_BUFFER, name.c_str());
+    }
+#endif
 }  // namespace EWE

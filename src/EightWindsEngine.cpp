@@ -143,6 +143,7 @@ namespace EWE {
 
 			bufferMap.at(Buff_gpu)[i] = EWEBuffer::CreateAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
+
 		}
 		camera.SetBuffers(&bufferMap[Buff_ubo]);
 
@@ -166,6 +167,8 @@ namespace EWE {
 		//SyncHub::GetSyncHubInstance()->waitOnTransferFence();
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 		printf("before init leaf data on GPU\n");
+		leafSystem->InitData();
+		printf("after init leaf data\n");
 
 		leafSystem->LoadLeafModel();
 		printf("after leaf mesh\n");
@@ -201,7 +204,7 @@ namespace EWE {
 					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
 
-					leafSystem->Render(frameInfo);
+					//leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
 					if (eweRenderer.EndFrame()) {

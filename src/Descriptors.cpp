@@ -247,9 +247,9 @@ namespace EWE {
     {}
 
     EWEDescriptorWriter& EWEDescriptorWriter::writeBuffer( uint32_t binding, VkDescriptorBufferInfo* bufferInfo) {
-        assert(setLayout->bindings.count(binding) == 1 && "Layout does not contain specified binding");
+        assert(setLayout->bindings.contains(binding) && "Layout does not contain specified binding");
 
-        auto& bindingDescription = setLayout->bindings[binding];
+        auto& bindingDescription = setLayout->bindings.at(binding);
 
         assert(
             bindingDescription.descriptorCount == 1 &&

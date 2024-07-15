@@ -13,24 +13,7 @@ namespace EWE {
 #endif
 
 	{
-		leafBuffer.reserve(MAX_FRAMES_IN_FLIGHT);
-		leafBufferData.reserve(MAX_FRAMES_IN_FLIGHT);
-		transformDescriptor.reserve(MAX_FRAMES_IN_FLIGHT);
-
-
-		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			leafBuffer.emplace_back(ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))->Map();
-			leafBufferData.emplace_back(reinterpret_cast<float*>(leafBuffer[i]->GetMappedMemory()));
-			transformDescriptor.emplace_back(
-				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
-				.writeBuffer(0, leafBuffer[i]->DescriptorInfo())
-				.build()
-			);
-		}
-
 		CreatePipeline();
-
-		LeafPhysicsInitialization();
 
 		//printf("leafTextureID :%d \n", leafTextureID);
 
@@ -48,11 +31,47 @@ namespace EWE {
 		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), pipeLayout, nullptr);
 
 		for (auto& buffer : leafBuffer) {
-			buffer->~EWEBuffer();
-			ewe_free(buffer);
+			delete buffer;
+			//buffer->~EWEBuffer();
+			//ewe_free(buffer);
 		}
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstructing leaf system \n");
+#endif
+	}
+
+	void LeafSystem::InitData() {
+		leafBuffer.reserve(MAX_FRAMES_IN_FLIGHT);
+		leafBufferData.reserve(MAX_FRAMES_IN_FLIGHT);
+		transformDescriptor.reserve(MAX_FRAMES_IN_FLIGHT);
+
+
+		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			leafBuffer.push_back(new EWEBuffer(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+			leafBuffer[i]->Map();
+
+			leafBufferData.push_back(reinterpret_cast<float*>(leafBuffer[i]->GetMappedMemory()));
+		}
+#if DEBUG_NAMING
+
+		leafBuffer[0]->SetBufferName("leaf instance buffer[0]");
+		leafBuffer[1]->SetBufferName("leaf instance buffer[1]");
+		leafBuffer[0]->SetDeviceMemoryName("leaf instance memory[0]");
+		leafBuffer[1]->SetDeviceMemoryName("leaf instance memory[1]");
+#endif
+
+		LeafPhysicsInitialization();
+
+		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			transformDescriptor.emplace_back(
+				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
+				.writeBuffer(0, leafBuffer[i]->DescriptorInfo())
+				.build()
+			);
+		}
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), transformDescriptor[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf transform descriptor[0]");
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), transformDescriptor[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf transform descriptor[1]");
 #endif
 	}
 
@@ -114,8 +133,9 @@ namespace EWE {
 			//leaf.transform.translation = leaf.origin;
 			//fallSwingVarianceDistribution(randomGen);
 			leaf.transform.mat4(leafBufferData[frameIndex]);
-		}
 
+		}
+		leafBuffer[frameIndex]->Flush();
 	}
 
 	void LeafSystem::FallCalculation(float timeStep, uint8_t frameIndex) {

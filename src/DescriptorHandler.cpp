@@ -62,16 +62,16 @@ namespace EWE {
     }
 
     EWEDescriptorSetLayout* DescriptorHandler::getLDSL(LDSL_Enum whichLDSL) {
-        if (whichLDSL == LDSL_pointLight && descriptorSetLayouts.find(LDSL_pointLight) == descriptorSetLayouts.end()) {
+        if (whichLDSL == LDSL_pointLight && (!descriptorSetLayouts.contains(LDSL_pointLight))) {
             printf("returning global instead of point LDSL \n");
             return descriptorSetLayouts.at(LDSL_global);
         }
 #if _DEBUG
-        else if (descriptorSetLayouts.find(whichLDSL) == descriptorSetLayouts.end()) {
+        else if (!descriptorSetLayouts.contains(whichLDSL)) {
             printf("failed to find LDSL : %d \n", whichLDSL);
         }
 #endif
-        return (descriptorSetLayouts[whichLDSL]);
+        return descriptorSetLayouts.at(whichLDSL);
     }
 
     VkDescriptorSetLayout DescriptorHandler::getDescSetLayout(LDSL_Enum whichDescSet) {
@@ -86,8 +86,8 @@ namespace EWE {
         switch (whichDescSet) {
         case LDSL_global: {
             dsl = EWEDescriptorSetLayout::Builder()
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
                 .build();
             break;
         }
@@ -133,6 +133,10 @@ namespace EWE {
                 .writeBuffer(1, bufferMap.at(Buff_gpu)[i]->DescriptorInfo())
                 .build());
         }
+#if DEBUG_NAMING
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), descriptorSets.at(DS_global)[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "global DS[0]");
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), descriptorSets.at(DS_global)[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "global DS[1]");
+#endif
     }
     void DescriptorHandler::initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap) {
 

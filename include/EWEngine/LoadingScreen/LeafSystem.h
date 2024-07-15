@@ -56,6 +56,8 @@ namespace EWE {
 		void FallCalculation(float timeStep, uint8_t frameIndex);
 
 		////this should be a graphics queue command buffer
+		void InitData();
+
 		void LoadLeafModel();
 
 		void LoadLeafTexture();
