@@ -133,7 +133,7 @@ namespace EWE {
         uint64_t offset = alignmentOffset * alignmentSize;
         if ((offset + size) > bufferSize) {
             printf("overflow error in buffer - %zu:%zu \n", offset + size, bufferSize);
-            throw std::exception("DATA TOO LARGE FOR BUFFER");
+            assert(false && "buffer overflow");
         }
         memOffset += offset;
         memcpy(memOffset, data, size);
@@ -155,7 +155,7 @@ namespace EWE {
 #if _DEBUG
             if ((offset + size) > bufferSize) {
                 printf("overflow error in buffer - %zu:%zu \n", offset+size, bufferSize);
-                throw std::exception("DATA TOO LARGE FOR BUFFER");
+                assert(false && "buffer overflow");
             }
 #endif
 

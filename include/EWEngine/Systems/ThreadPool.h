@@ -27,7 +27,7 @@ namespace EWE {
         bool stop{ false };
 
         static bool WaitCondition();
-        explicit ThreadPool(size_t numThreads);
+        explicit ThreadPool(std::size_t numThreads);
         ~ThreadPool();
 
     public:

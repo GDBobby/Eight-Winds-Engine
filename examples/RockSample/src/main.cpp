@@ -4,6 +4,8 @@
 #include "EWESample.h"
 
 int main() {
+	printf("current path : %s\n", std::filesystem::current_path().c_str());
+
 	SettingsJSON::initializeSettings();
 
 	EWE::ThreadPool::Construct();

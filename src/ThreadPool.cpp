@@ -17,8 +17,8 @@ namespace EWE {
         delete singleton;
     }
 
-    ThreadPool::ThreadPool(size_t numThreads) {
-        for (size_t i = 0; i < numThreads; ++i) {
+    ThreadPool::ThreadPool(std::size_t numThreads) {
+        for (std::size_t i = 0; i < numThreads; ++i) {
             threads.emplace_back(
                 [this] {
                     while (true) {

@@ -19,27 +19,24 @@ namespace EWE {
 
 	namespace Pipeline_Helper_Functions {
 		std::vector<char> readFile(const std::string& filepath) {
+			
 			//#define ENGINE_DIR "..//shaders//"
 
 			std::string enginePath = SHADER_DIR + filepath;
 
 			//printf("readFile enginePath : %s \n", enginePath.c_str());
 
-			std::ifstream shaderFile;
+			std::ifstream shaderFile{};
 			shaderFile.open(enginePath, std::ios::binary);
 //#ifdef _DEBUG
 //			const std::string errorPrint = "failed to open shader : " + enginePath;
 //			assert(shaderFile.is_open() && errorPrint.c_str());
 //#endif
-			if(!shaderFile.is_open()){
-				printf("failed to open shader : %s\n", enginePath.c_str());
-				throw std::runtime_error("failed to open shader file");
-			}
+			assert(shaderFile.is_open() && "failed to open shader");
 			shaderFile.seekg(0, std::ios::end);
-			size_t fileSize = (size_t)shaderFile.tellg();
-			if(fileSize == 0){
-				throw std::runtime_error("shader file length is 0");
-			}
+			std::size_t fileSize = static_cast<std::size_t>(shaderFile.tellg());
+			assert(fileSize > 0 && "shader is empty");
+
 			shaderFile.seekg(0, std::ios::beg);
 			std::vector<char> returnVec(fileSize);
 			shaderFile.read(returnVec.data(), fileSize);
@@ -75,7 +72,7 @@ namespace EWE {
 
 			EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule));
 		}
-		void createShaderModule(const void* data, size_t dataSize, VkShaderModule* shaderModule) {
+		void createShaderModule(const void* data, std::size_t dataSize, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.codeSize = dataSize;

@@ -3,22 +3,37 @@
 #include "EWEngine/Graphics/Texture/Material_Textures.h"
 
 namespace EWE {
+#ifdef DEBUG_NAMING
+    void EweObject::AddDebugNames(std::string const& name){
+        for(auto& mesh : meshes){
+            mesh->SetDebugNames(name);
+        }
+    }
+#endif
+
     EweObject::EweObject(std::string objectPath, bool globalTextures, Queue::Enum queue) {
 
         ImportData tempData = ImportData::loadData(objectPath);
         TextureMapping textureTracker;
-        loadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
+        LoadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
 
-        addToRigidRenderingSystem(tempData, textureTracker, queue);
+        AddToRigidRenderingSystem(tempData, textureTracker, queue);
+
+#ifdef DEBUG_NAMING
+        AddDebugNames(objectPath);
+#endif
     }
     EweObject::EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, Queue::Enum queue) : mySkinID{ SkinRenderSystem::getSkinID() } {
         std::cout << "weapon object construction : objectPath - " << objectPath << std::endl;
         ImportData tempData = ImportData::loadData(objectPath);
         TextureMapping textureTracker;
-        loadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
+        LoadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
 
         //addToRigidRenderingSystem(device, tempData, textureTracker);
-        addToSkinHandler(tempData, textureTracker, ownerID, queue);
+        AddToSkinHandler(tempData, textureTracker, ownerID, queue);
+#ifdef DEBUG_NAMING
+        AddDebugNames(objectPath);
+#endif
     }
     EweObject::~EweObject() {
 
@@ -31,7 +46,7 @@ namespace EWE {
         }
         //printf("after removing textures \n");
     }
-    void EweObject::addToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker, Queue::Enum queue) {
+    void EweObject::AddToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker, Queue::Enum queue) {
 
         //Actor_Type actorType = (Actor_Type)(1 + isKatana);
         /*
@@ -62,12 +77,12 @@ namespace EWE {
             RigidRenderingSystem::AddMaterialObject(textureTracker.meshNTSimpleNames[i], &transform, meshes.back(), &drawable);
         }
 
-        size_t nameSum = tempData.meshExport.meshes.size() + tempData.meshNTExport.meshes.size() + tempData.meshSimpleExport.meshes.size() + tempData.meshNTSimpleExport.meshes.size();
+        std::size_t nameSum = tempData.meshExport.meshes.size() + tempData.meshNTExport.meshes.size() + tempData.meshSimpleExport.meshes.size() + tempData.meshNTSimpleExport.meshes.size();
 
         assert(nameSum == meshes.size() && "failed to match mesh to name");
     }
 
-    void EweObject::addToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, SkeletonID skeletonOwner, Queue::Enum queue) {
+    void EweObject::AddToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, SkeletonID skeletonOwner, Queue::Enum queue) {
         if ((tempData.meshNTSimpleExport.meshes.size() > 0) || (tempData.meshSimpleExport.meshes.size() > 0)) {
             printf("weapon can not have simple meshes \n");
             assert(false && "object can not have both simple meshes");
@@ -96,7 +111,7 @@ namespace EWE {
        
     }
 
-    void EweObject::loadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures) {
+    void EweObject::LoadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures) {
         //TEXTURES
         //this should be put in a separate function but im too lazy rn
         //printf("before loading ewe textures \n");

@@ -56,63 +56,18 @@ namespace EWE {
 			}
 		}
 
-		static SkinBufferHandler* getSkinBuffer(SkeletonID skeletonID) {
-#ifdef _DEBUG
-			if (!skinnedMainObject->buffers.contains(skeletonID)) {
-				printf("trying to get a pointer to a skin buffer that doesn't exist : %d \n", skeletonID);
-				//most likely cause is its in the instanced buffer
-				throw std::exception("trying to get a pointer to a skin buffer that doesn't exist");
-			}
-#endif
-			return &skinnedMainObject->buffers.at(skeletonID);
-		}
-		InstancedSkinBufferHandler* getInstancedSkinBuffer(SkeletonID skeletonID) {
-#ifdef _DEBUG
-			if (!instancedBuffers.contains(skeletonID)) {
-				printf("trying to get a pointer to an instanced skin buffer that doesn't exist : %d \n", skeletonID);
-				//most likely cause is its in the non-instanced buffer map
-				throw std::exception("trying to get a pointer to an instanced skin buffer that doesn't exist");
-			}
-#endif
-			return &instancedBuffers.at(skeletonID);
-		}
+		static SkinBufferHandler* getSkinBuffer(SkeletonID skeletonID);
+		InstancedSkinBufferHandler* getInstancedSkinBuffer(SkeletonID skeletonID);
 
 		std::unordered_map<SkeletonID, SkinRS::PipelineStruct> instancedData{};
 		std::unordered_map<MaterialFlags, SkinRS::PipelineStruct> boneData{};
 		//uint8_t frameIndex = 0;
 
 		//changes memory size allocated to buffers
-		void changeActorCount(SkeletonID skeletonID, uint8_t maxActorCount) {
-#if _DEBUG
-			if (buffers.find(skeletonID) == buffers.end()) {
-				printf("trying to change the max actor count for a buffer that doesn't exist \n");
-				throw std::exception("trying to change the max actor count for a buffer that doesn't exist");
-			}
-#endif
-			buffers.at(skeletonID).changeMaxActorCount(maxActorCount);
+		void changeActorCount(SkeletonID skeletonID, uint8_t maxActorCount);
 
-		}
-
-		static void setPushData(SkeletonID skeletonID, void* pushData, uint8_t pushSize) {
-			auto pushIterData = skinnedMainObject->pushConstants.find(skeletonID);
-			if (pushIterData == skinnedMainObject->pushConstants.end()) {
-				skinnedMainObject->pushConstants.emplace(skeletonID, SkinRS::PushConstantStruct{ pushData, pushSize });
-				//pushConstants[skeletonID] = { pushData, pushSize };
-			}
-			else {
-				pushIterData->second.addData(pushData, pushSize);
-			}
-		}
-		static void removePushData(SkeletonID skeletonID, void* pushRemoval) {
-			auto pushIterData = skinnedMainObject->pushConstants.find(skeletonID);
-			if (pushIterData == skinnedMainObject->pushConstants.end()) {
-				std::cout << "invalid push to remove \n";
-				throw std::runtime_error("invalid push to remove");
-			}
-			else {
-				pushIterData->second.remove(pushRemoval);
-			}
-		}
+		static void setPushData(SkeletonID skeletonID, void* pushData, uint8_t pushSize);
+		static void removePushData(SkeletonID skeletonID, void* pushRemoval);
 
 	private:
 

@@ -4,7 +4,7 @@
 
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
-#define RENDER_DEBUG false
+#include <cassert>
 
 namespace EWE {
 	SkinRenderSystem* SkinRenderSystem::skinnedMainObject = nullptr;
@@ -47,6 +47,48 @@ namespace EWE {
 		skinnedMainObject = nullptr;
 	}
 
+	SkinBufferHandler* SkinRenderSystem::getSkinBuffer(SkeletonID skeletonID) {
+#ifdef _DEBUG
+		assert(skinnedMainObject->buffers.contains(skeletonID) && "buffer does not exist");
+#endif
+		return &skinnedMainObject->buffers.at(skeletonID);
+	}
+
+	InstancedSkinBufferHandler* SkinRenderSystem::getInstancedSkinBuffer(SkeletonID skeletonID) {
+#ifdef _DEBUG
+			assert(instancedBuffers.contains(skeletonID) && "requested buffer doesn't exist");
+#endif
+			return &instancedBuffers.at(skeletonID);
+	}
+
+	void SkinRenderSystem::changeActorCount(SkeletonID skeletonID, uint8_t maxActorCount) {
+#if _DEBUG
+			assert(buffers.find(skeletonID) != buffers.end() && "trying to change the max actor count for a buffer that doesn't exist");
+#endif
+			buffers.at(skeletonID).changeMaxActorCount(maxActorCount);
+
+	}
+	void SkinRenderSystem::setPushData(SkeletonID skeletonID, void* pushData, uint8_t pushSize) {
+			auto pushIterData = skinnedMainObject->pushConstants.find(skeletonID);
+			if (pushIterData == skinnedMainObject->pushConstants.end()) {
+				skinnedMainObject->pushConstants.emplace(skeletonID, SkinRS::PushConstantStruct{ pushData, pushSize });
+				//pushConstants[skeletonID] = { pushData, pushSize };
+			}
+			else {
+				pushIterData->second.addData(pushData, pushSize);
+			}
+		}
+	void SkinRenderSystem::removePushData(SkeletonID skeletonID, void* pushRemoval) {
+		auto pushIterData = skinnedMainObject->pushConstants.find(skeletonID);
+		if (pushIterData == skinnedMainObject->pushConstants.end()) {
+			std::cout << "invalid push to remove \n";
+			throw std::runtime_error("invalid push to remove");
+		}
+		else {
+			pushIterData->second.remove(pushRemoval);
+		}
+	}
+
 	void SkinRenderSystem::renderInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex) {
 
 		MaterialPipelines* pipe;
@@ -71,10 +113,7 @@ namespace EWE {
 				if (bindedSkeletonID != skeleDataRef.first) {
 					bindedSkeletonID = skeleDataRef.first;
 #ifdef _DEBUG
-					if (instancedBuffers.find(skeleDataRef.first) == instancedBuffers.end()) {
-						std::cout << std::format("buffer at {} does not exist \n", bindedSkeletonID) << std::endl;
-						throw std::exception("skinned rs invlaid buffer");
-					}
+					assert(instancedBuffers.contains(skeleDataRef.first) && "requested buffer doesn't exist");
 #endif
 					pipe->bindDescriptor(1, instancedBuffers.at(skeleDataRef.first).getDescriptor());
 				}
@@ -124,10 +163,7 @@ namespace EWE {
 				}
 
 #ifdef _DEBUG
-				if (!buffers.contains(skeleDataRef.first)) {
-					printf("buffer at %d does not exist \n", skeleDataRef.first);
-					throw std::exception("skinned rs invlaid buffer");
-				}
+				assert(buffers.contains(skeleDataRef.first) && "buffer does not exist");
 #endif
 				pipe->bindDescriptor(1, buffers.at(skeleDataRef.first).getDescriptor());
 
@@ -227,10 +263,7 @@ namespace EWE {
 
 	void SkinRenderSystem::addSkeleton(MaterialTextureInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced) {
 #ifdef _DEBUG
-		if (skinnedMainObject == nullptr) {
-			printf("skinned main object is nullptr \n");
-			throw std::exception("skinned main object is nullptr");
-		}
+		assert(skinnedMainObject != nullptr);
 		printf("adding skeleton \n");
 #endif
 

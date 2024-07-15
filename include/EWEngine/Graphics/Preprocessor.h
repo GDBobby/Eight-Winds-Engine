@@ -20,3 +20,5 @@
 #else
 #define DEBUG_NAMING false
 #endif
+
+#define RENDER_DEBUG false

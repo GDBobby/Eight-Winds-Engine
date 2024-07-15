@@ -98,6 +98,10 @@ namespace EWE {
         uint32_t GetVertexCount() { return vertexCount; }
         uint32_t GetIndexCount() { return indexCount; }
 
+#if DEBUG_NAMING
+        void SetDebugNames(std::string const& name);
+#endif
+
         //delete needs to be called on this at destruction, or put it into a smart pointer
         //static EWEBuffer* CreateIndexBuffer(std::vector<uint32_t> const& indices);
         //static EWEBuffer* CreateIndexBuffer(VkCommandBuffer cmdBuf, std::vector<uint32_t> const& indices);
@@ -113,9 +117,6 @@ namespace EWE {
         void CreateIndexBuffer(void const* indexData, uint32_t indexCount, Queue::Enum queue);
         void CreateIndexBuffers(const std::vector<uint32_t>& indices, Queue::Enum queue);
 
-#if DEBUG_NAMING
-        void SetDebugNames();
-#endif
 
         EWEBuffer* vertexBuffer{ nullptr };
         uint32_t vertexCount;

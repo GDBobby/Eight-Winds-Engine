@@ -427,18 +427,32 @@ namespace EWE {
                     };
                 }
 
-                if (uniqueVertices.count(vertex) == 0) {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                if (!uniqueVertices.contains(vertex)) {
+                    uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
                     vertices.push_back(vertex);
                 }
-                indices.push_back(uniqueVertices[vertex]);
+                indices.push_back(uniqueVertices.at(vertex));
             }
         }
         //printf("vertex count after loading simple model from file : %d \n", vertices.size());
         //printf("index count after loading simple model from file : %d \n", indices.size());
     }
 #if DEBUG_NAMING
-
+    void EWEModel::SetDebugNames(std::string const& name){
+        std::string comboName{"vertex:"};
+        comboName += name;
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), vertexBuffer, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, comboName.c_str());
+        if(hasIndexBuffer){
+            comboName = "index:";
+            comboName += name;
+            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), indexBuffer, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, comboName.c_str());
+        }
+        if(hasInstanceBuffer){
+           comboName = "instance:";
+           comboName += name;   
+           DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), instanceBuffer, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, comboName.c_str());
+        }
+    }
 #endif
 
 

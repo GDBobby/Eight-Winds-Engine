@@ -12,6 +12,7 @@ namespace EWE {
 
 	class EweObject {
 	public:
+
         EweObject(const EweObject& other) : transform{}, ownedTextures{ other.ownedTextures } {
             printf("ewe copy construction \n");
             for (auto iter = ownedTextures.begin(); iter != ownedTextures.end(); iter++) {
@@ -50,7 +51,7 @@ namespace EWE {
 
 
         //void deTexturize();
-        uint32_t getSkeletonID() {
+        uint32_t GetSkeletonID() {
             return mySkinID;
         }
 	private:
@@ -63,9 +64,13 @@ namespace EWE {
 
         uint32_t mySkinID = 0;
 
-        void addToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker, Queue::Enum queue);
-        void addToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner, Queue::Enum queue);
+        void AddToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker, Queue::Enum queue);
+        void AddToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner, Queue::Enum queue);
 
-        void loadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);
-	};
+        void LoadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);
+	
+#ifdef DEBUG_NAMING
+        void AddDebugNames(std::string const& name);
+#endif
+    };
 }

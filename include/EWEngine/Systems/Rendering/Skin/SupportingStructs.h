@@ -21,10 +21,7 @@ namespace EWE {
 			}
 			void addData(void* data, uint8_t pushSize) {
 #ifdef _DEBUG
-				if (pushSize != size) {
-					printf("misaligned push size between skeletons of the same id \n");
-					throw std::exception("misaligned push size between skeletons of the same id");
-				}
+				assert(pushSize == size && "misaligned push size");
 #endif
 				count++;
 				this->data.emplace_back(data);

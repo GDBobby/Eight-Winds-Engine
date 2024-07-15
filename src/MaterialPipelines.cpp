@@ -169,16 +169,11 @@ namespace EWE {
 			}
 		}
 
-
 		bool hasBones = flags & MaterialF_hasBones;
 		bool instanced = flags & MaterialF_instanced; //curently creating an outside manager to deal with instanced skinned meshes
 #ifdef _DEBUG
-		if (instanced) {
-			printf("creating a material pipe with bones or instanced flag set, no longer supported \n");
-			throw std::exception("creating a material pipe with instanced flag set, which needs to be created using constructInstancedMaterial");
-		}
+		assert(!instanced && "the material pipeline does not support instancing");
 #endif
-
 		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
 		bool hasBumps = flags & MaterialF_hasBump;
 		bool hasNormal = flags & MaterialF_hasNormal;

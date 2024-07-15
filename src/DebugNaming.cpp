@@ -26,6 +26,7 @@ namespace EWE{
                 assert(enabled && "failed to enable DEBUG_MARKER extension");
             }
         }
+        void Deconstruct(){}
         void SetObjectName(VkDevice device, void* object, VkDebugReportObjectTypeEXT objectType, const char *name) {
                 // Check for a valid function pointer
                 if (enabled) {

@@ -121,7 +121,7 @@ namespace EWE {
 			return true;
 		}
 	};
-}
+} //namespace EWE
 
 template<>
 struct std::hash<EWE::TextureDSLInfo> {
