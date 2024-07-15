@@ -48,9 +48,11 @@ namespace EWE {
 
             EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeImage.image, cubeImage.imageMemory);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), cubeImage.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
+#endif
 
             cubeImage.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
-            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), cubeImage.image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, pixelPeek[0].debugName.c_str());
         }
 
         void CreateCubeImageView(ImageInfo& cubeImage) {

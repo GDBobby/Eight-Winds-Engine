@@ -201,7 +201,7 @@ namespace EWE {
 					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
 
-					//leafSystem->Render(frameInfo);
+					leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
 					if (eweRenderer.EndFrame()) {

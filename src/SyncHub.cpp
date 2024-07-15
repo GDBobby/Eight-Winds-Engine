@@ -138,6 +138,10 @@ namespace EWE {
 		if (transitionManager.Empty()) {
 			return;
 		}
+
+#if DEBUG_NAMING
+		DebugNaming::QueueBegin(queues[Queue::graphics], 1.f, 0.f, 0.f, "graphics callbacks");
+#endif
 		TransitionData transitionData = transitionManager.Pull();
 		transitionData.callback();
 
@@ -164,6 +168,9 @@ namespace EWE {
 		fence.waitSemaphores.push_back(transitionData.waitSemaphore);
 
 		EWE_VK_ASSERT(vkQueueSubmit(queues[Queue::graphics], 1, &submitInfo, fence.fence));
+#if DEBUG_NAMING
+		DebugNaming::QueueEnd(queues[Queue::graphics]);
+#endif
 		fence.callback = [this, cbs = graphicsSTCGroup] {
 			vkFreeCommandBuffers(device, commandPools[Queue::graphics], static_cast<uint32_t>(cbs.size()), cbs.data());
 		};

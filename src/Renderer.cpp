@@ -198,6 +198,10 @@ namespace EWE {
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		*/
+#if DEBUG_NAMING
+		DebugNaming::QueueBegin(EWEDevice::GetEWEDevice()->GetGraphicsQueue(), 0.75f, 0.1f, 0.f, "Begin Render Pass");
+#endif
+
 		VkImageMemoryBarrier image_memory_barrier{
 			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 			.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -268,5 +272,8 @@ namespace EWE {
 			1, // imageMemoryBarrierCount
 			&image_memory_barrier // pImageMemoryBarriers
 		);
+#if DEBUG_NAMING
+		DebugNaming::QueueEnd(EWEDevice::GetEWEDevice()->GetGraphicsQueue());
+#endif
 	}
 }

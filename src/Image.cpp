@@ -192,7 +192,9 @@ namespace EWE {
         descriptorImageInfo.sampler = sampler;
         descriptorImageInfo.imageView = imageView;
         descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, path.c_str());
+#if DEBUG_NAMING
+        //DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_OBJECT_TYPE_IMAGE, path.c_str());
+#endif
     }
 
 
@@ -214,6 +216,8 @@ namespace EWE {
         VkImageSubresourceRange subresourceRange = CreateSubresourceRange();
         {
             VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+            imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             PipelineBarrier pipeBarrier{};
             pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
             pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -226,11 +230,25 @@ namespace EWE {
 
 
             if (queue == Queue::graphics) {
-                syncHub->EndSingleTimeCommandGraphics(cmdBuf);
-                stagingBuffer->Free(EWEDevice::GetVkDevice());
-                delete stagingBuffer;
                 if (mipmapping && MIPMAP_ENABLED) {
+                    syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+                    stagingBuffer->Free(EWEDevice::GetVkDevice());
+                    delete stagingBuffer;
                     GenerateMipmaps(imageCreateInfo.format, imageCreateInfo.extent.width, imageCreateInfo.extent.height, Queue::graphics);
+                }
+                else {
+                    VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
+                    imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    PipelineBarrier pipeBarrier{};
+                    pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+                    pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+                    pipeBarrier.AddBarrier(imageBarrier);
+                    pipeBarrier.SubmitBarrier(cmdBuf);
+
+                    syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+                    stagingBuffer->Free(EWEDevice::GetVkDevice());
+                    delete stagingBuffer;
                 }
             }
             else if (queue == Queue::transfer) {
@@ -322,7 +340,9 @@ namespace EWE {
 
         //printf("before image info \n");
         Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
-        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, pixelPeek.debugName.c_str());
+#if DEBUG_NAMING
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_OBJECT_TYPE_IMAGE, pixelPeek.debugName.c_str());
+#endif
         //printf("before transition \n");
         
         CreateImageCommands(imageCreateInfo, stagingBuffer, queue, mipmapping);

@@ -212,9 +212,6 @@ namespace EWE {
             {VK_EXT_DEVICE_FAULT_EXTENSION_NAME, false},
             //{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}
 #endif
-#if DEBUG_NAMING
-            {VK_EXT_DEBUG_MARKER_EXTENSION_NAME, false},
-#endif
     }
     { //ewe device entrance
         //printf("device constructor \n");
@@ -275,7 +272,7 @@ namespace EWE {
         deviceLostDebug.Initialize(device_);
 #endif
 #if DEBUG_NAMING
-        DebugNaming::Initialize(device_, optionalExtensions.at(VK_EXT_DEBUG_MARKER_EXTENSION_NAME));
+        DebugNaming::Initialize(device_, enableValidationLayers);
 #endif
         
         /*

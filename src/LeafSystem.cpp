@@ -319,23 +319,16 @@ namespace EWE {
 		//printf("file read successfully \n");
 
 		leafModel = EWEModel::CreateMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::graphics);
+
+#if DEBUG_NAMING
+		leafModel->SetDebugNames("leafModel");
+#endif
 		//leafTextureID = Texture_Builder::CreateSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 	}
 	void LeafSystem::LoadLeafTexture() {
 		const std::string fullLeafTexturePath = "textures/leaf.jpg";
 		ImageInfo imageInfo{};
 		imageInfo.Initialize(fullLeafTexturePath, false, Queue::graphics);
-
-		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-
-		VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
-		EWEDevice::GetEWEDevice()->TransitionImageLayoutWithBarrier(cmdBuf,
-			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-			imageInfo.image,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			imageInfo.mipLevels
-		);
-		syncHub->EndSingleTimeCommandGraphics(cmdBuf);
 
 		const std::string leafTexturePath = "leaf.jpg";
 		leafTextureID = Texture_Manager::AddImageInfo(leafTexturePath, imageInfo, VK_SHADER_STAGE_FRAGMENT_BIT, false);
@@ -350,7 +343,7 @@ namespace EWE {
 		BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
 
 		//printf("after binding descriptor set 0 \n");
-		//BindDescriptor(1, &leafTextureID);
+		BindDescriptor(1, &leafTextureID);
 
 		BindDescriptor(2, &transformDescriptor[frameInfo.index]);
 

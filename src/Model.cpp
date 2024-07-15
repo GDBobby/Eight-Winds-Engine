@@ -441,16 +441,16 @@ namespace EWE {
     void EWEModel::SetDebugNames(std::string const& name){
         std::string comboName{"vertex:"};
         comboName += name;
-        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), vertexBuffer, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, comboName.c_str());
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), vertexBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
         if(hasIndexBuffer){
             comboName = "index:";
             comboName += name;
-            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), indexBuffer, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, comboName.c_str());
+            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), indexBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
         }
         if(hasInstanceBuffer){
            comboName = "instance:";
            comboName += name;   
-           DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), instanceBuffer, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, comboName.c_str());
+           DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), instanceBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
         }
     }
 #endif
