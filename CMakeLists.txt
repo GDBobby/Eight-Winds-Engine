@@ -81,6 +81,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tinyobj)
 
+FetchContent_Declare(
+	vma
+	GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+	GIT_TAG 98c4f34
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/vma"
+)
+FetchContent_MakeAvailable(vma)
+
 #glslang
 set(BUILD_SHARED_LIBS FALSE)
 set(BUILD_EXTERNAL TRUE)

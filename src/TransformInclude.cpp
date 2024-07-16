@@ -37,7 +37,6 @@ glm::mat4 TransformComponent::mat4() {
     return modelMatrix;
 }
 void TransformComponent::mat4(float* buffer) {
-
     const float c3 = glm::cos(rotation.z);
     const float s3 = glm::sin(rotation.z);
     const float c2 = glm::cos(rotation.x);
