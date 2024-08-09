@@ -24,8 +24,13 @@ namespace EWE {
 			VkDescriptorSet oceanTextures = VK_NULL_HANDLE;
 			VkImage oceanOutputImages = VK_NULL_HANDLE;
 			VkImage oceanFreqImages = VK_NULL_HANDLE;
+#if USING_VMA
+			VmaAllocation oceanOutputImageMemory = VK_NULL_HANDLE;
+			VmaAllocation oceanFreqImageMemory = VK_NULL_HANDLE;
+#else
 			VkDeviceMemory oceanOutputImageMemory = VK_NULL_HANDLE;
 			VkDeviceMemory oceanFreqImageMemory = VK_NULL_HANDLE;
+#endif
 			VkDescriptorImageInfo oceanOutputImageInfoDescriptorCompute{};
 			VkDescriptorImageInfo oceanOutputImageInfoDescriptorGraphics{};
 			VkDescriptorImageInfo oceanFreqImageInfoDescriptor{};

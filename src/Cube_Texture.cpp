@@ -14,11 +14,13 @@ namespace EWE {
             VkDeviceSize imageSize = layerSize * cubeImage.arrayLayers;
 
             void* data;
-
-            StagingBuffer* stagingBuffer = new StagingBuffer();
-
-            EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
+#if USING_VMA
+            StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
+            EWE_VK_ASSERT(vmaMapMemory(EWEDevice::GetAllocator(), cubeImage.memory, &data));
+#else
+            StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetVkDevice());
             vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
+#endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             cubeImage.mipLevels = 1;
             for (int i = 0; i < 6; i++) {
@@ -26,7 +28,12 @@ namespace EWE {
                 stbi_image_free(pixelPeek[i].pixels);
                 memAddress += layerSize;
             }
+#if USING_VMA
+            vmaUnmapMemory(EWEDevice::GetAllocator(), cubeImage.memory);
+#else
             vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory);
+
+#endif
 
             VkImageCreateInfo imageCreateInfo;
             imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -46,8 +53,7 @@ namespace EWE {
             imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
             imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-            EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
-            Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeImage.image, cubeImage.imageMemory);
+            Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeImage.image, cubeImage.memory);
 #if DEBUG_NAMING
             DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), cubeImage.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
 #endif

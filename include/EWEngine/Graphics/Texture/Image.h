@@ -1,8 +1,9 @@
 #pragma once
+#include "EWEngine/Graphics/VulkanHeader.h"
+
 #include "EWEngine/Graphics/Device.hpp"
 #include "EWEngine/Graphics/Descriptors.h"
 #include "EWEngine/Graphics/Device_Buffer.h"
-#include "EWEngine/Data/EngineDataTypes.h"
 #include "EWEngine/Data/EWE_Utils.h"
 
 #include <stb/stb_image.h>
@@ -23,7 +24,11 @@
 
 namespace EWE {
 	namespace Image {
-		void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, const VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+#if USING_VMA
+		void CreateImageWithInfo(const VkImageCreateInfo& imageCreateInfo, const VkMemoryPropertyFlags properties, VkImage& image, VmaAllocation vkAlloc);
+#else
+		void CreateImageWithInfo(const VkImageCreateInfo& imageCreateInfo, const VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+#endif
 	}
 
 
@@ -44,7 +49,11 @@ namespace EWE {
 	struct ImageInfo {
 		VkImageLayout imageLayout;
 		VkImage image;
-		VkDeviceMemory imageMemory;
+#if USING_VMA
+		VmaAllocation memory;
+#else
+		VkDeviceMemory memory;
+#endif
 		VkImageView imageView;
 		VkSampler sampler;
 		uint8_t mipLevels{ 1 };

@@ -22,3 +22,6 @@
 #endif
 
 #define RENDER_DEBUG false
+
+#define USING_VMA true
+#define DEBUGGING_MEMORY_WITH_VMA USING_VMA && true

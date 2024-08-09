@@ -18,10 +18,13 @@ namespace EWE {
 #endif
 
             void* data;
-            StagingBuffer* stagingBuffer = new StagingBuffer();
-
-            EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
+#if USING_VMA
+            StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
+            vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
+#else
+            StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetVkDevice());
             vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
+#endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             uiImageInfo.mipLevels = 1;
 
@@ -30,7 +33,11 @@ namespace EWE {
                 stbi_image_free(pixelPeek[i].pixels);
                 memAddress += layerSize;
             }
+#if USING_VMA
+            vmaUnmapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc);
+#else
             vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory);
+#endif
 
             VkImageCreateInfo imageCreateInfo;
             imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -51,7 +58,7 @@ namespace EWE {
             imageCreateInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
             EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
-            Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.imageMemory);
+            Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.memory);
 
             uiImageInfo.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
 #if DEBUG_NAMING

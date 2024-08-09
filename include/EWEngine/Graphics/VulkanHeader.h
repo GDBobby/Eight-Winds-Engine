@@ -1,7 +1,10 @@
 #pragma once
 
-#include "EWEngine/Data/EngineDataTypes.h"
 #include "EWEngine/Graphics/Preprocessor.h"
+#if USING_VMA
+#include "EWEngine/Graphics/vk_mem_alloc.h"
+#endif
+#include "EWEngine/Data/EngineDataTypes.h"
 #if DEBUGGING_DEVICE_LOST
 #include "EWEngine/Graphics/VkDebugDeviceLost.h"
 #endif
@@ -9,9 +12,12 @@
 #include "EWEngine/Graphics/DebugNaming.h"
 #endif
 
+
 #include <functional>
 
 namespace EWE{
+    uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, const VkMemoryPropertyFlags properties);
+
 	static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
 	namespace Queue {
@@ -66,6 +72,25 @@ namespace EWE{
         SemaphoreData* signalSemaphores[Queue::_count] = { nullptr, nullptr, nullptr, nullptr }; //each signal is unique per submit that could wait on it, and right now I'm expecting max 1 wait per queue
 
         std::function<void()> Reset(VkDevice device);
+    };
+
+    struct StagingBuffer {
+        VkBuffer buffer{ VK_NULL_HANDLE };
+#if USING_VMA
+        VmaAllocation vmaAlloc{};
+        StagingBuffer(VkDeviceSize size, VmaAllocator vmaAllocator);
+        StagingBuffer(VkDeviceSize size, VmaAllocator vmaAllocator, const void* data);
+        void Free(VmaAllocator vmaAllocator);
+        void Free(VmaAllocator vmaAllocator) const;
+        void Stage(VmaAllocator vmaAllocator, const void* data, uint64_t bufferSize);
+#else
+        VkDeviceMemory memory{ VK_NULL_HANDLE };
+        StagingBuffer(VkDeviceSize size, VkDevice device);
+        StagingBuffer(VkDeviceSize size, VkDevice device, const void* data);
+        void Free(VkDevice device);
+        void Free(VkDevice device) const;
+        void Stage(VkDevice device, const void* data, VkDeviceSize bufferSize);
+#endif
     };
 
 } //namespace EWE

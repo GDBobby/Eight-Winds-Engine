@@ -47,7 +47,11 @@ namespace EWE {
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+#if 0 //debugging memory with VMA
 			leafBuffer.push_back(new EWEBuffer(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+#else
+			leafBuffer.push_back(new EWEBuffer(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+#endif
 			leafBuffer[i]->Map();
 
 			leafBufferData.push_back(reinterpret_cast<float*>(leafBuffer[i]->GetMappedMemory()));

@@ -18,10 +18,24 @@
 namespace EWE {
 
     namespace Image {
-        void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, const VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
-            VkDevice vkDevice = EWEDevice::GetVkDevice();
+#if USING_VMA
+        void CreateImageWithInfo(const VkImageCreateInfo& imageCreateInfo, const VkMemoryPropertyFlags properties, VkImage& image, VmaAllocation vmaAlloc) {
+            VmaAllocationInfo vmaAllocInfo{};
 
-            EWE_VK_ASSERT(vkCreateImage(vkDevice, &imageInfo, nullptr, &image));
+            VmaAllocationCreateInfo vmaAllocCreateInfo{};
+            vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+
+#if DEBUGGING_MEMORY_WITH_VMA
+            vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT;
+#endif
+            EWE_VK_ASSERT(vmaCreateImage(EWEDevice::GetAllocator(), &imageCreateInfo, &vmaAllocCreateInfo, &image, &vmaAlloc, nullptr));
+                
+        }
+#else
+        void CreateImageWithInfo(const VkImageCreateInfo& imageCreateInfo, const VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+            VkDevice vkDevice = EWEDevice::GetVkDevice();
+            EWE_VK_ASSERT(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &image));
 
             VkMemoryRequirements memRequirements;
             vkGetImageMemoryRequirements(vkDevice, image, &memRequirements);
@@ -35,6 +49,7 @@ namespace EWE {
 
             EWE_VK_ASSERT(vkBindImageMemory(vkDevice, image, imageMemory, 0));
         }
+#endif
     }
 
 
@@ -203,12 +218,14 @@ namespace EWE {
         Sampler::RemoveSampler(sampler);
         
         vkDestroyImageView(vkDevice, imageView, nullptr);
-        
+#if USING_VMA
+        vmaDestroyImage(EWEDevice::GetAllocator(), image, memory);
+#else
         //printf("after image view destruction \n");
         vkDestroyImage(vkDevice, image, nullptr);
-        
         //printf("after image destruction \n");
         vkFreeMemory(vkDevice, imageMemory, nullptr);
+#endif
     }
     void ImageInfo::CreateImageCommands(VkImageCreateInfo const& imageCreateInfo, StagingBuffer* stagingBuffer, Queue::Enum queue, bool mipmapping) {
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
@@ -232,7 +249,11 @@ namespace EWE {
             if (queue == Queue::graphics) {
                 if (mipmapping && MIPMAP_ENABLED) {
                     syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+#if USING_VMA
+                    stagingBuffer->Free(EWEDevice::GetAllocator());
+#else
                     stagingBuffer->Free(EWEDevice::GetVkDevice());
+#endif
                     delete stagingBuffer;
                     GenerateMipmaps(imageCreateInfo.format, imageCreateInfo.extent.width, imageCreateInfo.extent.height, Queue::graphics);
                 }
@@ -247,7 +268,11 @@ namespace EWE {
                     pipeBarrier.SubmitBarrier(cmdBuf);
 
                     syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+#if USING_VMA
+                    stagingBuffer->Free(EWEDevice::GetAllocator());
+#else
                     stagingBuffer->Free(EWEDevice::GetVkDevice());
+#endif
                     delete stagingBuffer;
                 }
             }
@@ -273,7 +298,13 @@ namespace EWE {
                     pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
                     CommandWithCallback cmdCb{};
                     cmdCb.cmdBuf = cmdBuf;
-                    cmdCb.callback = [stagingBuffer, device = EWEDevice::GetVkDevice()] {stagingBuffer->Free(device); };
+                    cmdCb.callback = [stagingBuffer,
+#if USING_VMA
+                        memMgr = EWEDevice::GetAllocator()
+#else
+                        memMgr = EWEDevice::GetVkDevice()
+#endif
+                    ] {stagingBuffer->Free(memMgr); };
 
                     if (mipmapping && MIPMAP_ENABLED) {
                         imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -339,7 +370,7 @@ namespace EWE {
         imageCreateInfo.queueFamilyIndexCount = 1;
 
         //printf("before image info \n");
-        Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+        Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
 #if DEBUG_NAMING
         DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_OBJECT_TYPE_IMAGE, pixelPeek.debugName.c_str());
 #endif
@@ -353,17 +384,11 @@ namespace EWE {
         const int height = pixelPeek.height;
 
         const VkDeviceSize imageSize = width * height * 4;
-
-        StagingBuffer* stagingBuffer = new StagingBuffer();
-
-        EWEDevice* const eweDevice = EWEDevice::GetEWEDevice();
-        eweDevice->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
-        void* data;
-        vkMapMemory(eweDevice->Device(), stagingBuffer->memory, 0, imageSize, 0, &data);
-        //printf("memcpy \n");
-        memcpy(data, pixelPeek.pixels, static_cast<std::size_t>(imageSize));
-        //printf("unmapping \n");
-        vkUnmapMemory(eweDevice->Device(), stagingBuffer->memory);
+#if USING_VMA
+        StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator(), pixelPeek.pixels);
+#else
+        StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetVkDevice(), pixelPeek.pixels);
+#endif
         //printf("freeing pixels \n");
         stbi_image_free(pixelPeek.pixels);
 
@@ -376,10 +401,13 @@ namespace EWE {
         const VkDeviceSize imageSize = layerSize * pixelPeek.size();
         void* data;
 
-        StagingBuffer* stagingBuffer = new StagingBuffer();
-
-        EWEDevice::GetEWEDevice()->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
+#if USING_VMA
+        StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
+        vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
+#else
+        StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetVkDevice());
         vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
+#endif
         uint64_t memAddress = reinterpret_cast<uint64_t>(data);
 
         for (int i = 0; i < pixelPeek.size(); i++) {
@@ -387,7 +415,11 @@ namespace EWE {
             stbi_image_free(pixelPeek[i].pixels);
             memAddress += layerSize;
         }
+#if USING_VMA
+        vmaUnmapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc);
+#else
         vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory);
+#endif
 
         return stagingBuffer;
     }

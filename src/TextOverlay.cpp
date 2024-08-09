@@ -135,7 +135,7 @@ namespace EWE {
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memReqs.size;
-		allocInfo.memoryTypeIndex = EWEDevice::GetEWEDevice()->FindMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		allocInfo.memoryTypeIndex = FindMemoryType(EWEDevice::GetEWEDevice()->GetPhysicalDevice(), memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		//allocInfo.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		EWE_VK_ASSERT(vkAllocateMemory(EWEDevice::GetVkDevice(), &allocInfo, nullptr, &memory));
@@ -175,7 +175,7 @@ namespace EWE {
 		vkGetImageMemoryRequirements(EWEDevice::GetVkDevice(), image, &memRequirements);
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = EWEDevice::GetEWEDevice()->FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		allocInfo.memoryTypeIndex = FindMemoryType(EWEDevice::GetEWEDevice()->GetPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		EWE_VK_ASSERT(vkAllocateMemory(EWEDevice::GetVkDevice(), &allocInfo, nullptr, &imageMemory));
 
@@ -183,22 +183,11 @@ namespace EWE {
 
 
 		// Staging
-		StagingBuffer stagingBuffer{};
-
-		eweDevice->CreateBuffer(allocInfo.allocationSize,
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			stagingBuffer.buffer,
-			stagingBuffer.memory
-		);
-
-
-		uint8_t* data;
-		EWE_VK_ASSERT(vkMapMemory(eweDevice->Device(), stagingBuffer.memory, 0, allocInfo.allocationSize, 0, (void**)&data));
-		// Size of the font texture is WIDTH * HEIGHT * 1 byte (only one channel)
-		memcpy(data, &font24pixels[0][0], fontWidth * fontHeight);
-		vkUnmapMemory(eweDevice->Device(), stagingBuffer.memory);
-
+#if USING_VMA
+		StagingBuffer stagingBuffer{allocInfo.allocationSize, EWEDevice::GetAllocator(), &font24pixels[0][0] };
+#else
+		StagingBuffer stagingBuffer{ allocInfo.allocationSize, eweDevice->Device(), &font24pixels[0][0] };
+#endif
 		// Copy to image
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
@@ -252,7 +241,11 @@ namespace EWE {
 
 			CommandWithCallback cmdCb{};
 			cmdCb.cmdBuf = cmdBuf;
+#if USING_VMA
+			cmdCb.callback = [sb = stagingBuffer] {sb.Free(EWEDevice::GetAllocator()); };
+#else
 			cmdCb.callback = [sb = stagingBuffer] {sb.Free(EWEDevice::GetVkDevice()); };
+#endif
 			cmdCb.graphicsCallback = [pipeBarrier, syncHub] {
 					VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
 					pipeBarrier.SubmitBarrier(cmdBuf);

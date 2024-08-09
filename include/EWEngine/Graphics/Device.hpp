@@ -62,7 +62,12 @@ namespace EWE {
         static VkDevice GetVkDevice() {
             return eweDevice->Device();
         }
-
+#if USING_VMA
+        static VmaAllocator GetAllocator() {
+            return eweDevice->Allocator();
+        }
+        VmaAllocator Allocator() const { return allocator; }
+#endif
         VkFormatProperties GetVkFormatProperties(VkFormat imageFormat) {
             VkFormatProperties formatProperties;
             vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
@@ -99,13 +104,11 @@ namespace EWE {
         std::string deviceName;
 
         SwapChainSupportDetails GetSwapChainSupport() { return QuerySwapChainSupport(physicalDevice); }
-        static uint32_t FindMemoryType(uint32_t typeFilter, const VkMemoryPropertyFlags properties);
         QueueData const& GetPhysicalQueueFamilies() { return queueData; }
 
         VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
         // Buffer Helper Functions
-        void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         //void endSingleTimeCommandsSecondThread(VkCommandBuffer commandBuffer);
         //void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
@@ -143,6 +146,9 @@ namespace EWE {
         bool asyncComputeCapable = false;
 
         VkDevice device_;
+#if USING_VMA
+        VmaAllocator allocator;
+#endif
         VkSurfaceKHR surface_;
         std::array<VkQueue, 4> queues = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
 
@@ -169,6 +175,10 @@ namespace EWE {
         void CreateSurface();
         void PickPhysicalDevice();
         void CreateLogicalDevice();
+
+#if USING_VMA
+        void CreateVmaAllocator();
+#endif
 
         void CreateCommandPool();
         void CreateComputeCommandPool();

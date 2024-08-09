@@ -47,14 +47,13 @@ namespace EWE {
 
         static EWEBuffer* CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 
-        static VkDeviceSize GetAlignment(VkDeviceSize instanceSize, VkBufferUsageFlags usageFlags, EWEDevice* device);
+        static VkDeviceSize GetAlignment(VkDeviceSize instanceSize, VkBufferUsageFlags usageFlags);
     private:
         VkDeviceSize GetAlignment(VkDeviceSize instanceSize);
 
         void* mapped = nullptr;
         VkDescriptorBufferInfo buffer_info;
          
-        VkDeviceMemory memory = VK_NULL_HANDLE;
 
         VkDeviceSize bufferSize;
         //uint32_t instanceCount;
@@ -62,6 +61,12 @@ namespace EWE {
         VkBufferUsageFlags usageFlags;
         VkMemoryPropertyFlags memoryPropertyFlags;
         VkDeviceSize minOffsetAlignment = 1;
+
+#if USING_VMA
+        VmaAllocation vmaAlloc{};
+#else
+        VkDeviceMemory memory = VK_NULL_HANDLE;
+#endif
     };
 
 }  // namespace EWE

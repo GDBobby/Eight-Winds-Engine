@@ -96,14 +96,26 @@ namespace EWE {
 
         if (queue == Queue::graphics) {
             syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+#if USING_VMA
+            stagingBuffer->Free(EWEDevice::GetAllocator());
+#else
             stagingBuffer->Free(EWEDevice::GetVkDevice());
+#endif
             delete stagingBuffer;
         }
         else if (queue == Queue::transfer) {
             //transitioning from transfer to compute not supported currently
             CommandWithCallback cb{};
             cb.cmdBuf = cmdBuf;
-            cb.callback = [sb = stagingBuffer, vkDevice = EWEDevice::GetVkDevice()] {sb->Free(vkDevice); delete sb; };
+            cb.callback = [sb = stagingBuffer, 
+#if USING_VMA
+            memMgr = EWEDevice::GetAllocator()
+#else
+            memMgr = EWEDevice::GetVkDevice()
+#endif
+            ] {
+                sb->Free(memMgr); delete sb; 
+                };
             syncHub->EndSingleTimeCommandTransfer(cb);
         }
     }
@@ -112,16 +124,13 @@ namespace EWE {
         VkDeviceSize bufferSize = instanceSize * instanceCount;
         this->instanceCount = instanceCount;
 
-        StagingBuffer* stagingBuffer = new StagingBuffer();
-        EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
-        uint64_t alignmentSize = EWEBuffer::GetAlignment(instanceSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, eweDevice) * instanceCount;
-        eweDevice->CreateBuffer(alignmentSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
-        //i need to look into how this is different from StagingBuffer
-        void* stagingData;
-        vkMapMemory(eweDevice->Device(), stagingBuffer->memory, 0, alignmentSize, 0, &stagingData);
-        memcpy(stagingData, data, alignmentSize);
-        vkUnmapMemory(eweDevice->Device(), stagingBuffer->memory);
+        uint64_t alignmentSize = EWEBuffer::GetAlignment(instanceSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT) * instanceCount;
 
+#if USING_VMA
+        StagingBuffer* stagingBuffer = new StagingBuffer(alignmentSize, EWEDevice::GetAllocator(), data);
+#else
+        StagingBuffer* stagingBuffer = new StagingBuffer(alignmentSize, EWEDevice::GetVkDevice(), data);
+#endif
 
         instanceBuffer = new EWEBuffer(
             instanceSize,
@@ -162,22 +171,26 @@ namespace EWE {
     void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data, Queue::Enum queue){
         VkDeviceSize bufferSize = vertexSize * vertexCount;
 
-        StagingBuffer* stagingBuffer = new StagingBuffer();
-        EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
-        eweDevice->CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
-        //i need to look into how this is different from StagingBuffer
-
-        void* stagingData;
-        vkMapMemory(eweDevice->Device(), stagingBuffer->memory, 0, bufferSize, 0, &stagingData);
-        memcpy(stagingData, data, bufferSize);
-        vkUnmapMemory(eweDevice->Device(), stagingBuffer->memory);
-
+#if USING_VMA
+        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetAllocator(), data);
+#else
+        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetVkDevice(), data);
+#endif
+#if DEBUGGING_MEMORY_WITH_VMA
+        vertexBuffer = new EWEBuffer(
+            vertexSize,
+            vertexCount,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        );
+#else
         vertexBuffer = new EWEBuffer(
             vertexSize,
             vertexCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
+#endif
 
         CopyModelBuffer(stagingBuffer, vertexBuffer->GetBuffer(), bufferSize, queue);
     }
@@ -186,22 +199,28 @@ namespace EWE {
         const uint32_t indexSize = sizeof(uint32_t);
         this->indexCount = indexCount;
 
-        StagingBuffer* stagingBuffer = new StagingBuffer();
         EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
-        uint64_t bufferSize = indexSize * indexCount;
-        eweDevice->CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer->buffer, stagingBuffer->memory);
-        //i need to look into how this is different from StagingBuffer
-        void* stagingData;
-        vkMapMemory(eweDevice->Device(), stagingBuffer->memory, 0, bufferSize, 0, &stagingData);
-        memcpy(stagingData, indexData, bufferSize);
-        vkUnmapMemory(eweDevice->Device(), stagingBuffer->memory);
-
+        VkDeviceSize bufferSize = indexSize * indexCount;
+#if USING_VMA
+        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetAllocator(), indexData);
+#else
+        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetVkDevice(), indexData);
+#endif
+#if DEBUGGING_MEMORY_WITH_VMA
+        indexBuffer = new EWEBuffer(
+            indexSize,
+            indexCount,
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        );
+#else
         indexBuffer = new EWEBuffer(
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
+#endif
         CopyModelBuffer(stagingBuffer, indexBuffer->GetBuffer(), bufferSize, queue);
     }
 

@@ -44,36 +44,36 @@ namespace EWE {
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData) 
+        void* pUserData)
     {
 
         switch (messageSeverity) {
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-				std::cout << "validation verbose: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
-				break;
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-                std::cout << "validation info: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
-                break;
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-                std::cout << "validation warning: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
-                break;
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-                std::cout << "validation error: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
-                assert(false && "validation layer error");
-				break;
-            default:
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+            std::cout << "validation verbose: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+            std::cout << "validation info: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            std::cout << "validation warning: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            std::cout << "validation error: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
+            assert(false && "validation layer error");
+            break;
+        default:
 #ifdef _DEBUG
-                printf("validation default: %s \n", pCallbackData->pMessage);
-                assert(false && "why is this reachable");
+            printf("validation default: %s \n", pCallbackData->pMessage);
+            assert(false && "why is this reachable");
 #else
 #if defined(_MSC_VER) && !defined(__clang__) // MSVC
-    __assume(false);
+            __assume(false);
 #else // GCC, Clang
-    __builtin_unreachable();
+            __builtin_unreachable();
 #endif
 #endif
-                break;
-            
+            break;
+
         }
         //throw std::exception("validition layer \n");
         return VK_FALSE;
@@ -110,7 +110,7 @@ namespace EWE {
 
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-        
+
         queueFamilies.resize(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
         printf("queue family count : %d:%zu \n", queueFamilyCount, queueFamilies.size());
@@ -207,14 +207,14 @@ namespace EWE {
     }
 
     // class member functions
-    EWEDevice::EWEDevice(MainWindow& window) : 
-    window{ window }, 
-    optionalExtensions{
-#if DEBUGGING_DEVICE_LOST
-            {VK_EXT_DEVICE_FAULT_EXTENSION_NAME, false},
-            //{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}
-#endif
-    }
+    EWEDevice::EWEDevice(MainWindow& window) :
+        window{ window },
+        optionalExtensions{
+    #if DEBUGGING_DEVICE_LOST
+                {VK_EXT_DEVICE_FAULT_EXTENSION_NAME, false},
+                //{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}
+    #endif
+        }
     { //ewe device entrance
         //printf("device constructor \n");
         assert(eweDevice == nullptr && "EWEDevice already exists");
@@ -239,6 +239,10 @@ namespace EWE {
         //printf("after picking physical device \n");
         CreateLogicalDevice();
         //printf("after creating logical device \n");
+#if USING_VMA
+        CreateVmaAllocator();
+#endif
+
         CreateCommandPool();
         CreateComputeCommandPool();
 #if GPU_LOGGING
@@ -276,7 +280,7 @@ namespace EWE {
 #if DEBUG_NAMING
         DebugNaming::Initialize(device_, enableValidationLayers);
 #endif
-        
+
         /*
         createTextureImage();
         createTextureImageView();
@@ -299,6 +303,9 @@ namespace EWE {
         if (transferCommandPool != VK_NULL_HANDLE) {
             vkDestroyCommandPool(device_, transferCommandPool, nullptr);
         }
+#if USING_VMA
+        vmaDestroyAllocator(allocator);
+#endif
         eweDevice = nullptr;
         vkDestroyDevice(device_, nullptr);
 
@@ -377,7 +384,7 @@ namespace EWE {
         //printf("enumerate devices result : %lld \n", result);
         std::vector<VkPhysicalDevice> devices(deviceCount);
 
-                            //score     //device iter in the vector
+        //score     //device iter in the vector
         std::list<std::pair<uint32_t, uint32_t>> deviceScores{};
 
         EWE_VK_ASSERT(vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()));
@@ -407,7 +414,7 @@ namespace EWE {
 #if AMD_TARGET
             if ((deviceNameTemp.find("AMD") != deviceNameTemp.npos) && (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
                 score = UINT32_MAX;
-			}
+            }
 #endif
             //properties.limits.maxFramebufferWidth;
 
@@ -531,7 +538,7 @@ namespace EWE {
             dynamic_rendering_feature.pNext = &nvDiagCreateInfo;
         }
 #endif
-        
+
 
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -553,7 +560,7 @@ namespace EWE {
         */
 #if DEBUGGING_DEVICE_LOST
         deviceLostDebug.GetVendorDebugExtension(physicalDevice);
-        std::vector<const char*> debugDeviceExtensions{deviceExtensions};
+        std::vector<const char*> debugDeviceExtensions{ deviceExtensions };
         std::copy(deviceLostDebug.debugExtensions.begin(), deviceLostDebug.debugExtensions.end(), std::back_inserter(debugDeviceExtensions));
 
         //temp debug check
@@ -598,7 +605,7 @@ namespace EWE {
             logFile.close();
         }
 #endif
-        
+
         std::cout << "getting device queues \n";
         std::cout << "\t graphics family:queue index - " << queueData.index[Queue::graphics] << std::endl;
         std::cout << "\t present family:queue index - " << queueData.index[Queue::present] << std::endl;
@@ -610,9 +617,9 @@ namespace EWE {
         if (queueData.index[Queue::graphics] != queueData.index[Queue::present]) {
             vkGetDeviceQueue(device_, queueData.index[Queue::present], 0, &queues[Queue::present]);
         }
-        else{
+        else {
             queues[Queue::present] = queues[Queue::graphics];
-		}
+        }
 
         vkGetDeviceQueue(device_, queueData.index[Queue::compute], 0, &queues[Queue::compute]);
 
@@ -628,6 +635,20 @@ namespace EWE {
         }
 #endif
     }
+#if USING_VMA
+    void EWEDevice::CreateVmaAllocator() {
+        VmaAllocatorCreateInfo allocatorCreateInfo{};
+        allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
+        allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+        allocatorCreateInfo.physicalDevice = physicalDevice;
+        allocatorCreateInfo.device = device_;
+        allocatorCreateInfo.instance = instance;
+        allocatorCreateInfo.pVulkanFunctions = nullptr;
+        VkResult result = vmaCreateAllocator(&allocatorCreateInfo, &allocator);
+        EWE_VK_RESULT_ASSERT(result);
+    }
+#endif
+
     void EWEDevice::CreateComputeCommandPool() {
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -892,62 +913,6 @@ namespace EWE {
         }
 #endif
         throw std::runtime_error("failed to find supported format!");
-    }
-
-    uint32_t EWEDevice::FindMemoryType(uint32_t typeFilter, const VkMemoryPropertyFlags properties) {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(eweDevice->physicalDevice, &memProperties);
-
-        /*
-        printf("memory heap count : %d \n", memProperties.memoryHeapCount);
-        printf("memory type count : %d \n", memProperties.memoryTypeCount);
-
-        for (uint32_t i = 0; i < memProperties.memoryHeapCount; i++) {
-            printf("heap[%d] size : %llu \n", i, memProperties.memoryHeaps->size);
-            printf("heap flags : %d \n", memProperties.memoryHeaps->flags);
-        }
-        */
-        
-        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-            //printf("memory type[%d] heap index : %d \n", i, memProperties.memoryTypes->heapIndex);
-            if ((typeFilter & (1 << i)) &&
-                (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-                return i;
-            }
-        }
-
-#ifdef _DEBUG
-        assert(false && "find memory type unsupported");
-        return 0;
-#else
-#if defined(_MSC_VER) && !defined(__clang__) // MSVC
-        __assume(false);
-#else // GCC, Clang
-        __builtin_unreachable();
-#endif
-#endif
-    }
-
-    void EWEDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
-        VkBufferCreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = size;
-        bufferInfo.usage = usage;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        EWE_VK_ASSERT(vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer));
-
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-        EWE_VK_ASSERT(vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory));
-
-        EWE_VK_ASSERT(vkBindBufferMemory(device_, buffer, bufferMemory, 0));
     }
 
     void EWEDevice::CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {

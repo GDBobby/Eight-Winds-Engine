@@ -24,32 +24,32 @@
 
 #define SHADER_DYNAMIC_PATH "shaders/dynamic/"
 
-class ShaderBlock {
-public:
+namespace EWE {
+	class ShaderBlock {
+	public:
 
-	//static void BatchCreateFragmentShader(std::vector<MaterialFlags> flagVector);
-	static std::vector<uint32_t> getFragmentShader(MaterialFlags flags, bool hasBones);
-	static std::vector<uint32_t> getVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance = true);
-	static std::vector<uint32_t> getLoadingVertShader();
-	static std::vector<uint32_t> getLoadingFragShader();
-private:
-	struct SpirvHelper {
-		static void InitResources(TBuiltInResource& Resources);
+		//static void BatchCreateFragmentShader(std::vector<MaterialFlags> flagVector);
+		static std::vector<uint32_t> getFragmentShader(MaterialFlags flags, bool hasBones);
+		static std::vector<uint32_t> getVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance = true);
+		static std::vector<uint32_t> getLoadingVertShader();
+		static std::vector<uint32_t> getLoadingFragShader();
+	private:
+		struct SpirvHelper {
+			static void InitResources(TBuiltInResource& Resources);
 
-		static bool BuildFlaggedFrag(MaterialFlags flags, bool hasBones, std::vector<unsigned int>& spirv);
-		static bool BuildFlaggedVert(bool hasNormal, uint16_t boneCount, bool instanced, std::vector<unsigned int>& spirv, bool largeInstance); //currently, ALWAYS has bones
-		static bool LoadingVertSPV(std::vector<unsigned int>& spirv);
-		static bool LoadingFragSPV(std::vector<unsigned int>& spirv);
+			static bool BuildFlaggedFrag(MaterialFlags flags, bool hasBones, std::vector<unsigned int>& spirv);
+			static bool BuildFlaggedVert(bool hasNormal, uint16_t boneCount, bool instanced, std::vector<unsigned int>& spirv, bool largeInstance); //currently, ALWAYS has bones
+			static bool LoadingVertSPV(std::vector<unsigned int>& spirv);
+			static bool LoadingFragSPV(std::vector<unsigned int>& spirv);
+		};
+		static std::vector<const char*> buildFragmentShader(MaterialFlags flags, bool hasBones);
+
+		static std::string buildVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance);
+
+		static void addBindings(std::vector<const char*>& retVec, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones);
+
+		static void getNumberAsCString(std::vector<const char*>& retVec, uint8_t number);
+		static char* buffers;
+		static uint8_t buffersUsed;
 	};
-	static std::vector<const char*> buildFragmentShader(MaterialFlags flags, bool hasBones);
-
-	static std::string buildVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance);
-
-	static void addBindings(std::vector<const char*>& retVec, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones);
-
-	static void getNumberAsCString(std::vector<const char*>& retVec, uint8_t number);
-	static char* buffers;
-	static uint8_t buffersUsed;
-};
-
-
+} //namespace EWE
