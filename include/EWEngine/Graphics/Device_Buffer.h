@@ -28,7 +28,7 @@ namespace EWE {
         VkDescriptorBufferInfo* DescriptorInfoForIndex(int index);
         VkResult InvalidateIndex(int index);
 
-        [[nodiscard]] VkBuffer GetBuffer() const { return buffer_info.buffer; } //temporarily making this non-const
+        [[nodiscard]] VkBuffer GetBuffer() const { return buffer_info.buffer; }
         
         [[nodiscard]] void* GetMappedMemory() const { return mapped; }
 #if DEBUG_NAMING

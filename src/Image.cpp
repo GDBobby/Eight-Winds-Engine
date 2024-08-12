@@ -24,11 +24,12 @@ namespace EWE {
 
             VmaAllocationCreateInfo vmaAllocCreateInfo{};
             vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+            vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
 #if DEBUGGING_MEMORY_WITH_VMA
-            vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                VMA_ALLOCATION_CREATE_MAPPED_BIT;
+            //vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 #endif
+
             EWE_VK_ASSERT(vmaCreateImage(EWEDevice::GetAllocator(), &imageCreateInfo, &vmaAllocCreateInfo, &image, &vmaAlloc, nullptr));
                 
         }

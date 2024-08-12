@@ -47,11 +47,8 @@ namespace EWE {
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-#if 0 //debugging memory with VMA
-			leafBuffer.push_back(new EWEBuffer(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
-#else
 			leafBuffer.push_back(new EWEBuffer(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-#endif
+
 			leafBuffer[i]->Map();
 
 			leafBufferData.push_back(reinterpret_cast<float*>(leafBuffer[i]->GetMappedMemory()));
@@ -66,6 +63,7 @@ namespace EWE {
 		LeafPhysicsInitialization();
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
 			transformDescriptor.emplace_back(
 				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
 				.writeBuffer(0, leafBuffer[i]->DescriptorInfo())
@@ -138,10 +136,12 @@ namespace EWE {
 			//fallSwingVarianceDistribution(randomGen);
 
 			leaf.transform.mat4(leafBufferData[0] + (sizeof(glm::mat4) / sizeof(float) * i));
+			leaf.transform.mat4(leafBufferData[1] + (sizeof(glm::mat4) / sizeof(float) * i));
 
 			
 		}
 		leafBuffer[0]->Flush();
+		leafBuffer[1]->Flush();
 
 	}
 
@@ -150,7 +150,7 @@ namespace EWE {
 		//EllRatio = ratio of minor to major axis in ellipse
 		//rotRatio = ratio of elliptical oscillation to rotation of leaf itself
 		//printf("beginning fall calculation \n");
-		//printf("timeStep : %.5f \n", timeStep);
+		//printf("timeStep : %.5f \n", timeStep);v
 		for(uint16_t i = 0; i < LEAF_COUNT; i++){
 			auto& leaf = leafs[i];
 
@@ -332,7 +332,7 @@ namespace EWE {
 		//printf("before formatingg input file in mesh \n");
 		//printf("before synchronizing \n");
 		//binary_input_archive& fileData;
-		ImportData::TemplateMeshData<VertexNT> importMesh;
+		ImportData::TemplateMeshData<VertexNT> importMesh{};
 
 		uint32_t endianTest = 1;
 		bool endian = (*((char*)&endianTest) == static_cast<char>(1));
@@ -360,6 +360,9 @@ namespace EWE {
 
 		const std::string leafTexturePath = "leaf.jpg";
 		leafTextureID = Texture_Manager::AddImageInfo(leafTexturePath, imageInfo, VK_SHADER_STAGE_FRAGMENT_BIT, false);
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), leafTextureID, VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf texture descriptor");
+#endif
 		//printf("leaf model loaded \n");
 	}
 	void LeafSystem::Render(FrameInfo& frameInfo) {

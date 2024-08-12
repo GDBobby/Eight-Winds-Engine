@@ -80,7 +80,9 @@ namespace EWE {
 	}
 	void EightWindsEngine::FinishLoading() {
 		printf("before init descriptors \n");
+#if DRAWING_POINTS
 		DescriptorHandler::initDescriptors(bufferMap);
+#endif
 		printf("after init descriptors \n");
 		//advancedRS.updateMaterialPipelines();
 
@@ -145,7 +147,7 @@ namespace EWE {
 
 
 		}
-		camera.SetBuffers(&bufferMap[Buff_ubo]);
+		camera.SetBuffers(&bufferMap.at(Buff_ubo));
 
 		lbo.sunlightColor = { 0.8f,0.8f, 0.8f, 0.5f };
 	}
@@ -201,11 +203,13 @@ namespace EWE {
 				loadingTime += renderTimeCheck;
 				printf("rendering loading thread start??? \n");
 				//syncHub->RunGraphicsCallbacks();
+
 				auto frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 					
 					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
+					EWE_VK_ASSERT(vmaCheckCorruption(EWEDevice::GetAllocator(), UINT32_MAX));
 
 					leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
@@ -339,8 +343,8 @@ namespace EWE {
 				lbo.pointLights[i].color = glm::vec4(objectManager.pointLights[i].color, objectManager.pointLights[i].lightIntensity);
 			}
 			lbo.numLights = static_cast<uint8_t>(objectManager.pointLights.size());
-			bufferMap[Buff_gpu][frameInfo.index]->WriteToBuffer(&lbo);
-			bufferMap[Buff_gpu][frameInfo.index]->Flush();
+			bufferMap.at(Buff_gpu)[frameInfo.index]->WriteToBuffer(&lbo);
+			bufferMap.at(Buff_gpu)[frameInfo.index]->Flush();
 		}
 
 		camera.ViewTargetDirect(frameInfo.index);

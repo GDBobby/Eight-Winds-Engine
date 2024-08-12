@@ -170,6 +170,7 @@ namespace EWE {
 
     void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data, Queue::Enum queue){
         VkDeviceSize bufferSize = vertexSize * vertexCount;
+        this->vertexCount = vertexCount;
 
 #if USING_VMA
         StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetAllocator(), data);
@@ -198,6 +199,7 @@ namespace EWE {
     void EWEModel::CreateIndexBuffer(const void* indexData, uint32_t indexCount, Queue::Enum queue){
         const uint32_t indexSize = sizeof(uint32_t);
         this->indexCount = indexCount;
+        hasIndexBuffer = true;
 
         EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
         VkDeviceSize bufferSize = indexSize * indexCount;
@@ -290,6 +292,7 @@ namespace EWE {
         VkBuffer buffers[] = { vertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+
         if (hasIndexBuffer) {
             vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
@@ -407,9 +410,8 @@ namespace EWE {
                     }
                     */
                 }
-
-                if (uniqueVertices.count(vertex) == 0) {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                if (!uniqueVertices.contains(vertex)) {
+                    uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
                     vertices.push_back(vertex);
                 }
                 indices.push_back(uniqueVertices[vertex]);

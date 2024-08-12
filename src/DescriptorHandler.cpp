@@ -138,13 +138,13 @@ namespace EWE {
         DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), descriptorSets.at(DS_global)[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "global DS[1]");
 #endif
     }
+#if DRAWING_POINTS
     void DescriptorHandler::initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap) {
 
         //printf("initializing VkDescriptorSets \n");
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             //printf("init ars descriptors, loop : %d \n", i);
             //printf("after global set \n");
-#if DRAWING_POINTS
             advancedRS.pointLightDescriptorSet.push_back(VkDescriptorSet{});
             if (!
                 EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_pointLight), *advancedRS.globalPool)
@@ -154,7 +154,6 @@ namespace EWE {
                 std::cout << "PointLight SET FAILURE" << std::endl;
             }
             printf("after pointlight set \n");
-#endif
             //printf("after bone weapon set 2 \n");
             /*
             advancedRS.spotlightDescriptorSet.push_back(VkDescriptorSet{});
@@ -170,12 +169,13 @@ namespace EWE {
         }
         //printf("returning from init VkDescriptorSets \n");
     }
+#endif
     VkDescriptorSet* DescriptorHandler::getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
 #if _DEBUG
         if (!descriptorSets.contains(whichDescSet)) {
             printf("failed to find DescSet in getDescSet : %d \n", whichDescSet);
         }
 #endif
-        return &descriptorSets[whichDescSet][whichFrameIndex];
+        return &descriptorSets.at(whichDescSet)[whichFrameIndex];
     }
 }

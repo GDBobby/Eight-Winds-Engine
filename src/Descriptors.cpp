@@ -11,13 +11,13 @@ namespace EWE {
     // *************** Descriptor Set Layout Builder *********************
 
     EWEDescriptorSetLayout::Builder& EWEDescriptorSetLayout::Builder::addBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count) {
-        assert(bindings.count(binding) == 0 && "Binding already in use");
+        assert(!bindings.contains(binding) && "Binding already in use");
         VkDescriptorSetLayoutBinding layoutBinding{};
         layoutBinding.binding = binding;
         layoutBinding.descriptorType = descriptorType;
         layoutBinding.descriptorCount = count;
         layoutBinding.stageFlags = stageFlags;
-        bindings[binding] = layoutBinding;
+        bindings.emplace(binding, layoutBinding);
         return *this;
     }
 
@@ -31,6 +31,7 @@ namespace EWE {
     EWEDescriptorSetLayout::EWEDescriptorSetLayout(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings)
         : bindings{ bindings } {
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
+        setLayoutBindings.reserve(bindings.size());
         for (auto& kv : bindings) {
             setLayoutBindings.push_back(kv.second);
         }
@@ -45,6 +46,7 @@ namespace EWE {
     void EWEDescriptorSetLayout::construct(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings) {
         this->bindings = bindings;
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
+        setLayoutBindings.reserve(bindings.size());
         for (auto& kv : bindings) {
             setLayoutBindings.push_back(kv.second);
         }
@@ -245,7 +247,7 @@ namespace EWE {
     EWEDescriptorWriter& EWEDescriptorWriter::writeImage(uint32_t binding, VkDescriptorImageInfo* imageInfo) {
         assert(setLayout->bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
-        auto& bindingDescription = setLayout->bindings[binding];
+        auto& bindingDescription = setLayout->bindings.at(binding);
 
         assert(
             bindingDescription.descriptorCount == 1 &&
@@ -288,7 +290,6 @@ namespace EWE {
 
         activeDescriptors++;
         for (int i = 0; i < setLayout->bindings.size(); i++) {
-            //printf("binding[%d] : %d \n", i, setLayout.bindings.at(i).descriptorType);
             if (setLayout->bindings.at(i).descriptorCount != 1) {
                 //printf("\t count:%d\n", setLayout.bindings.at(i).descriptorCount);
             }

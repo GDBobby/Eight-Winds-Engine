@@ -57,8 +57,9 @@ namespace EWE {
         static void cleanup();
         static EWEDescriptorSetLayout* getLDSL(LDSL_Enum whichLDSL);
         static void initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
-        
+#if DRAWING_POINTS
         static void initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
+#endif
         static VkDescriptorSetLayout getDescSetLayout(LDSL_Enum whichDescSet);
         static VkDescriptorSet* getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex);
     };
