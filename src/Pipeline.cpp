@@ -541,20 +541,20 @@ namespace EWE {
 			pipelineConfig.cache = materialPipelineCache;
 			if (hasBumps) {
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
-				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = AVertex::GetAttributeDescriptions();
 
 				dynamicMaterialPipeline.emplace(flags, std::make_unique<EWEPipeline>(device, "material_bump.vert.spv", flags, pipelineConfig, false));
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
-				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = AVertex::GetAttributeDescriptions();
 				dynamicMaterialPipeline.emplace(flags, std::make_unique<EWEPipeline>(device, "material_Tangent.vert.spv", flags, pipelineConfig, false));
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertexNT>();
-				pipelineConfig.attributeDescriptions = AVertexNT::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = AVertexNT::GetAttributeDescriptions();
 				dynamicMaterialPipeline.emplace(flags, std::make_unique<EWEPipeline>(device, "material_nn.vert.spv", flags, pipelineConfig, false));
 			}
 			
@@ -614,7 +614,7 @@ namespace EWE {
 
 		//printf("boneVertex, flags:%d \n", newFlags);
 		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
-		pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
+		pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
 		glslang::InitializeProcess();
 		return std::make_unique<EWEPipeline>(device, boneCount, flags, pipelineConfig);
 		glslang::FinalizeProcess();
@@ -674,13 +674,13 @@ namespace EWE {
 		if (hasNormal) {
 			//printf("boneVertex, flags:%d \n", newFlags);
 			pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
-			pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
+			pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
 			return std::make_unique<EWEPipeline>(device, "bone_Tangent.vert.spv", flags, pipelineConfig, true);
 		}
 		else {
 			//printf("boneVertexNT, flags:%d \n", newFlags);
 			pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertexNoTangent>();
-			pipelineConfig.attributeDescriptions = boneVertexNoTangent::getAttributeDescriptions();
+			pipelineConfig.attributeDescriptions = boneVertexNoTangent::GetAttributeDescriptions();
 			return std::make_unique<EWEPipeline>(device, "bone_NT.vert.spv", flags, pipelineConfig, true);
 		}
 		glslang::FinalizeProcess();
@@ -698,8 +698,8 @@ namespace EWE {
 
 		pipelineConfig.pipelineRenderingInfo = pipeRenderInfo;
 		pipelineConfig.pipelineLayout = getPipelineLayout(PL_loading, device);
-		pipelineConfig.bindingDescriptions = LeafVertex::getBindingDescriptions();
-		pipelineConfig.attributeDescriptions = LeafVertex::getAttributeDescriptions();
+		pipelineConfig.bindingDescriptions = LeafVertex::GetBindingDescriptions();
+		pipelineConfig.attributeDescriptions = LeafVertex::GetAttributeDescriptions();
 
 		printf("before loading vert shader \n");
 		glslang::InitializeProcess();
@@ -917,7 +917,7 @@ namespace EWE {
 
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_spikyBall, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<simpleVertex>();
-				pipelineConfig.attributeDescriptions = simpleVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = simpleVertex::GetAttributeDescriptions();
 
 				vertString = "spikyball.vert.spv";
 				fragString = "spikyball.frag.spv";
@@ -926,8 +926,8 @@ namespace EWE {
 			}
 			case Pipe_grass: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_grass, eweDevice);
-				pipelineConfig.bindingDescriptions = GrassVertex::getBindingDescriptions();
-				pipelineConfig.attributeDescriptions = GrassVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = GrassVertex::GetBindingDescriptions();
+				pipelineConfig.attributeDescriptions = GrassVertex::GetAttributeDescriptions();
 
 				vertString = "grassField.vert.spv";
 				fragString = "grassField.frag.spv";
@@ -945,7 +945,7 @@ namespace EWE {
 			case Pipe_skybox: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_skybox, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<skyVertex>();
-				pipelineConfig.attributeDescriptions = skyVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = skyVertex::GetAttributeDescriptions();
 
 				vertString = "skybox.vert.spv";
 				fragString = "skybox.frag.spv";
@@ -955,7 +955,7 @@ namespace EWE {
 			case Pipe_textured: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_textured, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
 
 				vertString = "texture_shader.vert.spv";
 				fragString = "texture_shader.frag.spv";
@@ -986,7 +986,7 @@ namespace EWE {
 			case Pipe_alpha: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_textured, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				vertString = "texture_alpha.vert.spv";
 				fragString = "texture_alpha.frag.spv";
@@ -996,7 +996,7 @@ namespace EWE {
 
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_sprite, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertexNT>();
-				pipelineConfig.attributeDescriptions = AVertexNT::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = AVertexNT::GetAttributeDescriptions();
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				vertString = "sprite.vert.spv";
 				fragString = "sprite.frag.spv";
@@ -1006,7 +1006,7 @@ namespace EWE {
 			case Pipe_visualEffect: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_visualEffect, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EffectVertex>();
-				pipelineConfig.attributeDescriptions = EffectVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = EffectVertex::GetAttributeDescriptions();
 				vertString = "visualEffect.vert.spv";
 				fragString = "visualEffect.frag.spv";
 				break;
@@ -1020,7 +1020,7 @@ namespace EWE {
 				pipelineConfig.depthStencilInfo.depthWriteEnable = VK_FALSE;
 
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
 				vertString = "texture_alpha.vert.spv";
 				fragString = "texture_alpha.frag.spv";
 				break;

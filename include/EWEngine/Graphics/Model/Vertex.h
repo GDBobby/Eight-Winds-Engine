@@ -8,7 +8,7 @@
 #include <vector>
 #include <map>
 
-
+#define DEBUGGING_MODEL_LOAD false
 
 
 
@@ -32,7 +32,7 @@ namespace EWE {
         int m_BoneIDs[MAX_BONE_INFLUENCE];
         float m_Weights[MAX_BONE_INFLUENCE];
 
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
         void swapEndian();
     };
@@ -44,7 +44,7 @@ namespace EWE {
         int m_BoneIDs[MAX_BONE_INFLUENCE];
         float m_Weights[MAX_BONE_INFLUENCE];
 
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
         void swapEndian();
     };
@@ -59,7 +59,7 @@ namespace EWE {
         glm::vec2 uv{ 0.f };
         glm::vec3 tangent{ 0.f };
 
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
         void swapEndian();
     };
@@ -67,7 +67,7 @@ namespace EWE {
         glm::vec3 position{ 0.f };
         glm::vec3 normal{ 0.f };
         glm::vec2 uv{ 0.f };
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
         bool operator==(VertexNT const& other) const {
             return (position == other.position) && (normal == other.normal) && (uv == other.uv);
@@ -86,8 +86,8 @@ namespace EWE {
         glm::vec3 position{ 0.f };
         glm::vec3 color{ 0.f };
         //float uv;
-        static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
         bool operator ==(const GrassVertex& other) const {
             return position == other.position && color == other.color;
         }
@@ -105,15 +105,15 @@ namespace EWE {
     struct EffectVertex {
         glm::vec3 position{ 0.f };
         glm::vec2 uv{ 0.f };
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
         bool operator ==(const EffectVertex& other) const {
             return position == other.position && uv == other.uv;
         }
     };
     struct TileVertex {
         glm::vec2 uv{ 0.f };
-        static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
         bool operator ==(const TileVertex& other) const {
             return uv == other.uv;
         }
@@ -128,7 +128,7 @@ namespace EWE {
     //    glm::vec2 uv{ 0.f };
     //    glm::vec3 color{ 0.f };
 
-    //    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+    //    static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
     //    bool operator==(const Vertex& other) const {
     //        return position == other.position && color == other.color && normal == other.normal &&
@@ -141,7 +141,7 @@ namespace EWE {
         glm::vec2 uv{ 0.f };
         glm::vec3 color{ 0.f };
 
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
         bool operator==(const VertexColor& other) const {
             return position == other.position && color == other.color && normal == other.normal &&
@@ -160,7 +160,7 @@ namespace EWE {
         VertexGrid2D() {}
         VertexGrid2D(float x, float y) : position{ x, y } {}
 
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
     };
 
     template <typename V_Type>
@@ -188,18 +188,33 @@ namespace EWE {
 
             uint64_t size;
             Reading::UInt64FromFile(inFile, &size);
+#if DEBUGGING_MODEL_LOAD
             printf("after reading vertex count file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
+#endif
             vertices.resize(size);
+#if DEBUGGING_MODEL_LOAD
             printf("vertex size : %zu:%zu \n", sizeof(V_Type), size);
+#endif
             inFile.read(reinterpret_cast<char*>(&vertices[0]), size * sizeof(V_Type));
+#if DEBUGGING_MODEL_LOAD
             printf("after reading vertices data file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
             printf("before reading index size \n");
+#endif
             Reading::UInt64FromFile(inFile, &size);
+
+#if DEBUGGING_MODEL_LOAD
             printf("after reading index count file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
+#endif
             indices.resize(size);
+
+#if DEBUGGING_MODEL_LOAD
             printf("indices size : %zu \n", size);
+#endif
             inFile.read(reinterpret_cast<char*>(&indices[0]), size * sizeof(uint32_t));
+
+#if DEBUGGING_MODEL_LOAD
             printf("after reading indices data file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
+#endif
 
         }
         void readFromFileSwapEndian(std::ifstream& inFile) {

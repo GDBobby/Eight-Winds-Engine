@@ -178,7 +178,7 @@ namespace EWE {
 		leafSystem->LoadLeafTexture();
 		printf("after leaf texture\n");
 
-		EWE_VK_ASSERT(vmaCheckCorruption(EWEDevice::GetAllocator(), UINT32_MAX));
+		//EWE_VK_ASSERT(vmaCheckCorruption(EWEDevice::GetAllocator(), UINT32_MAX));
 
 
 		double renderThreadTime = 0.0;
@@ -201,7 +201,7 @@ namespace EWE {
 			//QPCstart = QPCend;
 			if (renderThreadTime > renderTimeCheck) {
 				loadingTime += renderTimeCheck;
-				printf("rendering loading thread start??? \n");
+				//printf("rendering loading thread start??? \n");
 				//syncHub->RunGraphicsCallbacks();
 
 				auto frameInfo = eweRenderer.BeginFrame();
@@ -209,7 +209,6 @@ namespace EWE {
 					
 					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
-					EWE_VK_ASSERT(vmaCheckCorruption(EWEDevice::GetAllocator(), UINT32_MAX));
 
 					leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);

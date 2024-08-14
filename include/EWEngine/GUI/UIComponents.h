@@ -34,7 +34,7 @@ namespace EWE {
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
 		bool Clicked(double xpos, double ypos);
 
-		void render(NineUIPushConstantData& push);
+		void render(Simple2DPushConstantData& push);
 
 	};
 	struct TypeBox { //keybinds
@@ -67,7 +67,7 @@ namespace EWE {
 
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
 
-		void render(NineUIPushConstantData& push);
+		void render(Simple2DPushConstantData& push);
 	};
 
 	struct Slider {
@@ -118,7 +118,7 @@ namespace EWE {
 		bool Clicked(double xpos, double ypos);
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
 
-		void render(NineUIPushConstantData& push);
+		void render(Simple2DPushConstantData& push);
 		void move(float xDiff, float yDiff, float screenWidth, float screenHeight);
 	};
 
@@ -148,7 +148,7 @@ namespace EWE {
 
 		int8_t Clicked(double xpos, double ypos);
 
-		void render(NineUIPushConstantData& push);
+		void render(Simple2DPushConstantData& push);
 	};
 	/*
 	struct SideList {

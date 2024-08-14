@@ -14,7 +14,7 @@ glm::mat4 TransformComponent::mat4() {
 
     modelMatrix = {
         
-        { //is this 0[1] 0[2] 0[3] or [1][0] [2][0]
+        {
             scale.x * (c1 * c3 + s1 * s2 * s3),
             scale.x * (c2 * s3),
             scale.x * (c1 * s2 * s3 - c3 * s1),
@@ -36,7 +36,7 @@ glm::mat4 TransformComponent::mat4() {
 
     return modelMatrix;
 }
-void TransformComponent::mat4(float* buffer) {
+void TransformComponent::mat4(float* buffer) const {
     const float c3 = glm::cos(rotation.z);
     const float s3 = glm::sin(rotation.z);
     const float c2 = glm::cos(rotation.x);
@@ -69,7 +69,7 @@ void TransformComponent::mat4(float* buffer) {
 
 glm::mat3 TransformComponent::normalMatrix() {
     //always call this AFTER modelMatrix
-    //fining all instances that use this funciton wit hthis comment
+    //fining all instances that use this funciton with this comment
 
     invScaleSquared[0] = 1.f / (scale.x * scale.x);
     invScaleSquared[1] = 1.f / (scale.y * scale.y);

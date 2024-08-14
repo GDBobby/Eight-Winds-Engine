@@ -20,10 +20,11 @@ namespace EWE {
 	bool ClickTextBox::Clicked(double xpos, double ypos) {
 		return UIComp::checkClickBox(clickBox, xpos, ypos);
 	}
-	void ClickTextBox::render(NineUIPushConstantData& push) {
-		push.offset.x = transform.translation.x;
-		push.offset.y = transform.translation.y;
-		push.scale = transform.scale;
+	void ClickTextBox::render(Simple2DPushConstantData& push) {
+		push.scaleOffset.z = transform.translation.x;
+		push.scaleOffset.w = transform.translation.y;
+		push.scaleOffset.x = transform.scale.x;
+		push.scaleOffset.y = transform.scale.y;
 		Dimension2::PushAndDraw(push);
 	}
 	
@@ -99,10 +100,12 @@ namespace EWE {
 		textStruct.y *= rszHeight / oldHeight;
 		UIComp::TextToTransform(transform, textStruct, clickBox, rszWidth, rszHeight);
 	}
-	void TypeBox::render(NineUIPushConstantData& push) {
-		push.offset = glm::vec4(transform.translation, 1.f, 1.f);
+	void TypeBox::render(Simple2DPushConstantData& push) {
+		push.scaleOffset.z = transform.translation.x;
+		push.scaleOffset.w = transform.translation.y;
 		//need color array
-		push.scale = transform.scale;
+		push.scaleOffset.x = transform.scale.x;
+		push.scaleOffset.y = transform.scale.y;
 		Dimension2::PushAndDraw(push);
 		//printf("drawing click text \n");
 	}
@@ -339,17 +342,19 @@ namespace EWE {
 			}
 		}
 	}
-	void ComboBox::render(NineUIPushConstantData& push) {
-		push.offset.x = activeOption.transform.translation.x;
-		push.offset.y = activeOption.transform.translation.y;
+	void ComboBox::render(Simple2DPushConstantData& push) {
+		push.scaleOffset.z = activeOption.transform.translation.x;
+		push.scaleOffset.w = activeOption.transform.translation.y;
 		//need color array
-		push.scale = activeOption.transform.scale;
+		push.scaleOffset.x = activeOption.transform.scale.x;
+		push.scaleOffset.y = activeOption.transform.scale.y;
 		Dimension2::PushAndDraw(push);
 		if (currentlyDropped) {
 			for (int j = 0; j < comboOptions.size(); j++) {
-				push.offset.x = comboOptions[j].transform.translation.x;
-				push.offset.y = comboOptions[j].transform.translation.y;
-				push.scale = comboOptions[j].transform.scale;
+				push.scaleOffset.z = comboOptions[j].transform.translation.x;
+				push.scaleOffset.w = comboOptions[j].transform.translation.y;
+				push.scaleOffset.x = comboOptions[j].transform.scale.x;
+				push.scaleOffset.y = comboOptions[j].transform.scale.y;
 				if (j == currentlySelected) {
 					push.color = glm::vec3{ .4f, .4f, 1.f };
 					Dimension2::PushAndDraw(push);
@@ -466,7 +471,7 @@ namespace EWE {
 		}
 		return -2;
 	}
-	void DropBox::render(NineUIPushConstantData& push) {
+	void DropBox::render(Simple2DPushConstantData& push) {
 		push.offset = glm::vec4(dropper.transform.translation, 1.f, 1.f);
 		//need color array
 		if (currentlyDropped) {

@@ -54,10 +54,8 @@ namespace EWE {
 			leafBufferData.push_back(reinterpret_cast<float*>(leafBuffer[i]->GetMappedMemory()));
 		}
 #if DEBUG_NAMING
-		leafBuffer[0]->SetBufferName("leaf instance buffer[0]");
-		leafBuffer[1]->SetBufferName("leaf instance buffer[1]");
-		leafBuffer[0]->SetDeviceMemoryName("leaf instance memory[0]");
-		leafBuffer[1]->SetDeviceMemoryName("leaf instance memory[1]");
+		leafBuffer[0]->SetName("leaf instance[0]");
+		leafBuffer[1]->SetName("leaf instance[1]");
 #endif
 
 		LeafPhysicsInitialization();
@@ -134,9 +132,9 @@ namespace EWE {
 
 			//leaf.transform.translation = leaf.origin;
 			//fallSwingVarianceDistribution(randomGen);
-
-			leaf.transform.mat4(leafBufferData[0] + (sizeof(glm::mat4) / sizeof(float) * i));
-			leaf.transform.mat4(leafBufferData[1] + (sizeof(glm::mat4) / sizeof(float) * i));
+			const std::size_t memOffset = (sizeof(glm::mat4) / sizeof(float) * i);
+			leaf.transform.mat4(leafBufferData[0] + memOffset);
+			leaf.transform.mat4(leafBufferData[1] + memOffset);
 
 			
 		}
@@ -389,7 +387,7 @@ namespace EWE {
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
-		pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
+		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
 		printf("before loading vert shader \n");
 		glslang::InitializeProcess();

@@ -32,8 +32,7 @@ namespace EWE {
         
         [[nodiscard]] void* GetMappedMemory() const { return mapped; }
 #if DEBUG_NAMING
-        void SetDeviceMemoryName(std::string const& name);
-        void SetBufferName(std::string const& name);
+        void SetName(std::string const& name);
 #endif
 
         //uint32_t getInstanceCount() const { return instanceCount; }

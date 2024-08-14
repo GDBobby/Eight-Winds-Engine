@@ -16,6 +16,7 @@ namespace EWE {
 
 	void MenuModule::initTextures() {
 		//these textures are deleted in EWETexture, when the program is cleaning itself up on close
+		Texture_Manager::CreateUITexture();
 
 		model2D = Basic_Model::Quad2D(Queue::transfer);
 		nineUIModel = Basic_Model::NineUIQuad(Queue::transfer);
@@ -163,6 +164,7 @@ namespace EWE {
 		}
 	}
 	void MenuModule::drawNewNine() {
+		Dimension2::BindTexture9(textureArray);
 		NineUIPushConstantData push{};
 		push.textureID = MT_NineUI;
 		if (comboBoxes.size() > 0) {

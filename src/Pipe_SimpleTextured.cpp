@@ -47,7 +47,7 @@ namespace EWE {
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
-		pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
+		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
 		std::string vertString = "texture_shader.vert.spv";
 		std::string fragString = "texture_shader.frag.spv";

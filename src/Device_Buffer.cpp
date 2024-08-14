@@ -373,15 +373,17 @@ namespace EWE {
     }
 
 #if DEBUG_NAMING
-    void EWEBuffer::SetDeviceMemoryName(std::string const& name) {
+    void EWEBuffer::SetName(std::string const& name) {
+        std::string bufferName = name;
+        bufferName += ":buffer";
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), buffer_info.buffer, VK_OBJECT_TYPE_BUFFER, bufferName.c_str());
+        std::string memoryName = name;
+        memoryName += ":memory";
 #if USING_VMA
-        vmaSetAllocationName(EWEDevice::GetAllocator(), vmaAlloc, name.c_str());
+        vmaSetAllocationName(EWEDevice::GetAllocator(), vmaAlloc, memoryName.c_str());
 #else
-        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), memory, VK_OBJECT_TYPE_DEVICE_MEMORY, name.c_str());
+        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), memory, VK_OBJECT_TYPE_DEVICE_MEMORY, memoryName.c_str());
 #endif
-    }
-    void EWEBuffer::SetBufferName(std::string const& name) {
-        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), buffer_info.buffer, VK_OBJECT_TYPE_BUFFER, name.c_str());
     }
 #endif
 }  // namespace EWE

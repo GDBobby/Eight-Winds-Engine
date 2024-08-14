@@ -78,8 +78,12 @@ namespace EWE {
 
         for (int i = 0; i < depthImages.size(); i++) {
             vkDestroyImageView(vkDevice, depthImageViews[i], nullptr);
+#if USING_VMA
+            vmaDestroyImage(EWEDevice::GetAllocator(), depthImages[i], depthImageMemorys[i]);
+#else
             vkDestroyImage(vkDevice, depthImages[i], nullptr);
             vkFreeMemory(vkDevice, depthImageMemorys[i], nullptr);
+#endif
         }
         /*
         for (auto framebuffer : swapChainFramebuffers) {
@@ -98,7 +102,7 @@ namespace EWE {
     VkResult EWESwapChain::AcquireNextImage(uint32_t* imageIndex) {
        // printf("pre-wait for ANI inflightfences \n");
 
-        printf("before waiting for in flight fence\n");
+        //printf("before waiting for in flight fence\n");
         EWE_VK_ASSERT(vkWaitForFences(
             EWEDevice::GetVkDevice(),
             1,
@@ -108,7 +112,7 @@ namespace EWE {
             std::numeric_limits<uint64_t>::max()
         ));
         //printf("after waiting for fence in ANI \n");
-        printf("before acquiring image\n");
+        //printf("before acquiring image\n");
         VkResult result = vkAcquireNextImageKHR(
             EWEDevice::GetVkDevice(),
             swapChain,
@@ -118,7 +122,7 @@ namespace EWE {
             VK_NULL_HANDLE,
             imageIndex
         );
-        printf("after acquiring image\n");
+        //printf("after acquiring image\n");
 
         return result;
     }
@@ -297,24 +301,12 @@ namespace EWE {
             imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             imageCreateInfo.flags = 0;
 
-            {
-                //getting a bug when using VMA with this, im assuming it's because the memory needs to be DEVICE_LOCAL_BIT
-                //the documentation for VMA isn't incredible, I think I'd have to do A LOT of reading to be able to figure this out, in obscure places. Karnage uses VMA with his swapchain, I'll have to look it over
-                VkDevice vkDevice = EWEDevice::GetVkDevice();
-                EWE_VK_ASSERT(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &depthImages[i]));
-
-                VkMemoryRequirements memRequirements;
-                vkGetImageMemoryRequirements(vkDevice, depthImages[i], &memRequirements);
-
-                VkMemoryAllocateInfo allocInfo{};
-                allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                allocInfo.allocationSize = memRequirements.size;
-                allocInfo.memoryTypeIndex = FindMemoryType(EWEDevice::GetEWEDevice()->GetPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-                EWE_VK_ASSERT(vkAllocateMemory(vkDevice, &allocInfo, nullptr, &depthImageMemorys[i]));
-
-                EWE_VK_ASSERT(vkBindImageMemory(vkDevice, depthImages[i], depthImageMemorys[i], 0));
-            }
+            Image::CreateImageWithInfo(
+                imageCreateInfo,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                depthImages[i],
+                depthImageMemorys[i]
+            );
 
 
             VkImageViewCreateInfo viewInfo{};

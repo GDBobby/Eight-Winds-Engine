@@ -4,7 +4,7 @@ namespace EWE {
 
 
     /*
-    std::vector<VkVertexInputAttributeDescription> bobVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> bobVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
         attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, position) });
@@ -26,7 +26,7 @@ namespace EWE {
         return attributeDescriptions;
     }
 
-    std::vector<VkVertexInputBindingDescription> GrassVertex::getBindingDescriptions() { //still here because instanced
+    std::vector<VkVertexInputBindingDescription> GrassVertex::GetBindingDescriptions() { //still here because instanced
         std::vector<VkVertexInputBindingDescription> bindingDescriptions(2);
         bindingDescriptions[0].binding = 0;
         bindingDescriptions[0].stride = sizeof(GrassVertex);
@@ -39,7 +39,7 @@ namespace EWE {
         return bindingDescriptions;
     }
 
-    std::vector<VkVertexInputAttributeDescription> GrassVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> GrassVertex::GetAttributeDescriptions() {
 
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
             { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(GrassVertex, position) },
@@ -55,7 +55,7 @@ namespace EWE {
         };
         return attributeDescriptions;
     }
-    std::vector<VkVertexInputBindingDescription> TileVertex::getBindingDescriptions() { //still here because instanced
+    std::vector<VkVertexInputBindingDescription> TileVertex::GetBindingDescriptions() { //still here because instanced
         std::vector<VkVertexInputBindingDescription> bindingDescriptions(2);
         bindingDescriptions[0].binding = 0;
         bindingDescriptions[0].stride = sizeof(TileVertex);
@@ -68,7 +68,7 @@ namespace EWE {
         return bindingDescriptions;
     }
 
-    std::vector<VkVertexInputAttributeDescription> TileVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> TileVertex::GetAttributeDescriptions() {
 
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
             //vertex
@@ -80,7 +80,7 @@ namespace EWE {
         return attributeDescriptions;
     }
 
-    std::vector<VkVertexInputAttributeDescription> EffectVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> EffectVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
         attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(EffectVertex, position) });
@@ -90,7 +90,7 @@ namespace EWE {
     }
 
 
-    std::vector<VkVertexInputAttributeDescription> VertexColor::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> VertexColor::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
         attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexColor , position) });
@@ -108,7 +108,7 @@ namespace EWE {
         return attributeDescriptions;
     }
 
-    std::vector<VkVertexInputAttributeDescription> boneVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> boneVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
         attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertex, position) });
@@ -120,7 +120,7 @@ namespace EWE {
 
         return attributeDescriptions;
     }
-    std::vector<VkVertexInputAttributeDescription> boneVertexNoTangent::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> boneVertexNoTangent::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
         attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertexNoTangent, position) });
@@ -132,7 +132,7 @@ namespace EWE {
         return attributeDescriptions;
     }
 
-    std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> Vertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
         attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position) });
@@ -142,7 +142,7 @@ namespace EWE {
 
         return attributeDescriptions;
     }
-    std::vector<VkVertexInputAttributeDescription> VertexNT::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> VertexNT::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
         attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexNT, position) });
@@ -153,18 +153,15 @@ namespace EWE {
     }
 
     std::vector<VkVertexInputAttributeDescription> VertexUI::GetAttributeDescriptions() {
-        std::vector<VkVertexInputAttributeDescription> attributeDescriptions(1);
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(VertexUI, position);
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        attributeDescriptions.emplace_back(0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexUI, position));
 
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexUI, uv) });
+        attributeDescriptions.emplace_back(1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexUI, uv) );
 
         return attributeDescriptions;
     }
 
-    std::vector<VkVertexInputAttributeDescription> VertexGrid2D::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> VertexGrid2D::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions(1);
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;

@@ -37,12 +37,16 @@ struct Simple2DPushConstantData {
 	alignas(16) glm::vec3 color{1.f}; //?idk if id stuff anything else right here
 	alignas(16) int textureID;
 };
+
+//deprecated
+/*
 struct NineUIPushConstantData {
 	alignas(16)glm::vec2 scale;
 	alignas(16)glm::vec4 offset; //xy = translation, z = borderSize
 	alignas(16)glm::vec3 color;
 	alignas(16)int textureID;
 };
+*/
 struct ModelTimePushData {
 	glm::mat4 modelMatrix{ 1.f };
 	float sinTime;

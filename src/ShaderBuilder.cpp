@@ -39,9 +39,7 @@ namespace EWE {
 	std::vector<uint32_t> ShaderBlock::getLoadingVertShader() {
 
 
-		std::string subPath = SHADER_DYNAMIC_PATH;
-
-		subPath += "loading.vert.spv";
+		std::string subPath = "shaders/loading.vert.spv";
 		printf("subPath : %s \n", subPath.c_str());
 		if (std::filesystem::exists(subPath)) {
 			printf("reading loading vertex shader from file\n");
@@ -86,8 +84,7 @@ namespace EWE {
 		return shaderCodeSpirV;
 	}
 	std::vector<uint32_t> ShaderBlock::getLoadingFragShader() {
-		std::string subPath = SHADER_DYNAMIC_PATH;
-		subPath += "loading.frag.spv";
+		std::string subPath = "shaders/loading.frag.spv";
 		printf("subPath : %s \n", subPath.c_str());
 		if (std::filesystem::exists(subPath)) {
 			printf("reading loading frag shader from file\n");

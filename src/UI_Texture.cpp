@@ -47,7 +47,7 @@ namespace EWE {
             imageCreateInfo.extent.height = pixelPeek[0].height;
             imageCreateInfo.extent.depth = 1;
             imageCreateInfo.mipLevels = uiImageInfo.mipLevels;
-            imageCreateInfo.arrayLayers = uiImageInfo.mipLevels;
+            imageCreateInfo.arrayLayers = uiImageInfo.arrayLayers;
 
             imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
             imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -55,7 +55,7 @@ namespace EWE {
             imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
             imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-            imageCreateInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+            imageCreateInfo.flags = 0;// VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
             EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.memory);

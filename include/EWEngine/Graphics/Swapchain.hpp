@@ -97,7 +97,11 @@ class EWESwapChain {
     std::vector<DynamicStructs> dynamicStructs{};
 
     std::vector<VkImage> depthImages{};
+#if USING_VMA
+    std::vector<VmaAllocation> depthImageMemorys{};
+#else
     std::vector<VkDeviceMemory> depthImageMemorys{};
+#endif
     std::vector<VkImageView> depthImageViews{};
     std::vector<VkImage> swapChainImages{};
     std::vector<VkImageView> swapChainImageViews{};

@@ -15,8 +15,9 @@ namespace EWE {
 
             void* data;
 #if USING_VMA
+
             StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
-            EWE_VK_ASSERT(vmaMapMemory(EWEDevice::GetAllocator(), cubeImage.memory, &data));
+            EWE_VK_ASSERT(vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data));
 #else
             StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetVkDevice());
             vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
@@ -29,7 +30,7 @@ namespace EWE {
                 memAddress += layerSize;
             }
 #if USING_VMA
-            vmaUnmapMemory(EWEDevice::GetAllocator(), cubeImage.memory);
+            vmaUnmapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc);
 #else
             vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory);
 

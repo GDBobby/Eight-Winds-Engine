@@ -327,7 +327,7 @@ namespace EWE {
 
 		//printf("boneVertex, flags:%d \n", newFlags);
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
-		pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
+		pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
 		glslang::InitializeProcess();
 		
 		SkinInstanceKey key(boneCount, flags);
@@ -394,33 +394,33 @@ namespace EWE {
 			if (hasNormal) {
 				//printf("boneVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
-				pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "bone_Tangent.vert.spv", flags, pipelineConfig, true)).first->second;
 
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertexNoTangent>();
-				pipelineConfig.attributeDescriptions = boneVertexNoTangent::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = boneVertexNoTangent::GetAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "bone_NT.vert.spv", flags, pipelineConfig, true)).first->second;
 			}
 		}
 		else {
 			if (hasBumps) {
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_bump.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_Tangent.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
-				pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_nn.vert.spv", flags, pipelineConfig, false)).first->second;
 			}
 		}
