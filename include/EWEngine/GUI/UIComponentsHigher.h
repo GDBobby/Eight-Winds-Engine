@@ -59,7 +59,7 @@ namespace EWE {
 			this->lastPos = lastPos;
 		}
 
-		void render(NineUIPushConstantData& push);
+		//void render(NineUIPushConstantData& push);
 		void render(Simple2DPushConstantData& push);
 
 
@@ -110,7 +110,7 @@ namespace EWE {
 
 		void render(Simple2DPushConstantData& push);
 
-		void render(NineUIPushConstantData& push);
+		//void render(NineUIPushConstantData& push);
 
 	private:
 		//UIComp::VariableType variableType;
@@ -146,6 +146,6 @@ namespace EWE {
 		}
 
 		int16_t Clicked(double xpos, double ypos);
-		void render(NineUIPushConstantData& push, uint8_t drawID);
+		void render(Simple2DPushConstantData& push, uint8_t drawID);
 	};
 }

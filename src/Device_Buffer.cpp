@@ -45,7 +45,7 @@ namespace EWE {
         }
         else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
             minOffsetAlignment = EWEDevice::GetEWEDevice()->GetProperties().limits.minUniformBufferOffsetAlignment;
-            printf("uniform buffer alignment : %zu\n", minOffsetAlignment);
+            //printf("uniform buffer alignment : %zu\n", minOffsetAlignment);
         }
         else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
             minOffsetAlignment = EWEDevice::GetEWEDevice()->GetProperties().limits.minStorageBufferOffsetAlignment;
@@ -63,7 +63,7 @@ namespace EWE {
 
         alignmentSize = GetAlignment(instanceSize);
         bufferSize = alignmentSize * instanceCount;
-        printf("buffer size : %zu\n", bufferSize);
+        //printf("buffer size : %zu\n", bufferSize);
 #if USING_VMA
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

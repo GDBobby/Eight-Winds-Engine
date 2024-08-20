@@ -9,7 +9,8 @@ namespace EWE {
 	SyncHub::SyncHub(VkDevice device) : 
 		device{ device }, 
 		syncPool{ 32, device }, 
-		renderSyncData{ device } 
+		renderSyncData{ device },
+		main_thread{ std::this_thread::get_id() }
 	{
 #ifdef _DEBUG
 		printf("COSTRUCTING SYNCHUB\n");
@@ -38,7 +39,7 @@ namespace EWE {
 
 		syncHubSingleton->transferSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		syncHubSingleton->CreateBuffers(renderCommandPool, computeCommandPool, transferCommandPool);
+		syncHubSingleton->CreateBuffers(renderCommandPool);
 
 		syncHubSingleton->CreateSyncObjects();
 	}
@@ -60,11 +61,11 @@ namespace EWE {
 #endif
 	}
 
-	void SyncHub::CreateBuffers(VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool) {
+	void SyncHub::CreateBuffers(VkCommandPool graphicsCommandPool) {
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = renderCommandPool;
+		allocInfo.commandPool = graphicsCommandPool;
 		allocInfo.commandBufferCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		EWE_VK_ASSERT(vkAllocateCommandBuffers(device, &allocInfo, renderBuffers));
 	}
@@ -81,6 +82,11 @@ namespace EWE {
 	}
 
 	VkCommandBuffer SyncHub::BeginSingleTimeCommand(Queue::Enum queue) {
+#ifdef _DEBUG
+		if (queue == Queue::graphics && std::this_thread::get_id() == main_thread) {
+			
+		}
+#endif
 
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -95,7 +101,26 @@ namespace EWE {
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo)); 
+#if DEBUG_NAMING
+		switch (queue) {
+			case Queue::graphics: {
+				DebugNaming::SetObjectName(device, commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[graphics]");
+				break;
+			}
+			case Queue::transfer: {
+				DebugNaming::SetObjectName(device, commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[transfer]");
+				break;
+			}
+			case Queue::compute: {
+				DebugNaming::SetObjectName(device, commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[compute]");
+				break;
+			}
+			default: {
+				assert(false && "invalid single time command queue");
+			}
+		}
+#endif
 		return commandBuffer;
 
 #if defined(_MSC_VER) && !defined(__clang__) // MSVC
@@ -132,8 +157,9 @@ namespace EWE {
 		EWE_VK_ASSERT(vkEndCommandBuffer(cmdBuf));
 		graphicsSTCGroup.push_back(cmdBuf);
 	}
+
 	void SyncHub::RunGraphicsCallbacks() {
-		syncPool.CheckFences();
+		syncPool.CheckFencesForCallbacks();
 
 		if (transitionManager.Empty()) {
 			return;
@@ -143,12 +169,18 @@ namespace EWE {
 		DebugNaming::QueueBegin(queues[Queue::graphics], 1.f, 0.f, 0.f, "graphics callbacks");
 #endif
 		TransitionData transitionData = transitionManager.Pull();
+
 		transitionData.callback();
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.pNext = nullptr;
 		submitInfo.commandBufferCount = graphicsSTCGroup.size();
+#ifdef _DEBUG
+		if (submitInfo.commandBufferCount <= 0) {
+			assert(false && "had graphics callbacks but don't have any command buffers");
+		}
+#endif
 		submitInfo.pCommandBuffers = graphicsSTCGroup.data();
 
 		submitInfo.waitSemaphoreCount = 1;
@@ -156,7 +188,14 @@ namespace EWE {
 		submitInfo.signalSemaphoreCount = 1;
 
 		SemaphoreData* signalSemaphore = syncPool.GetSemaphore();
+#if SEMAPHORE_TRACKING
+		static uint64_t graphicsCallbackSemaphoreCounter = 0;
+		std::string graphicsCallbackSemaphoreName{ "graphics callback" };
+		graphicsCallbackSemaphoreName += std::to_string(graphicsCallbackSemaphoreCounter++);
+		signalSemaphore->BeginSignaling(graphicsCallbackSemaphoreName.c_str());
+#else
 		signalSemaphore->BeginSignaling();
+#endif
 		submitInfo.pSignalSemaphores = &signalSemaphore->semaphore;
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
 		submitInfo.pWaitDstStageMask = waitStages;
@@ -171,7 +210,7 @@ namespace EWE {
 #if DEBUG_NAMING
 		DebugNaming::QueueEnd(queues[Queue::graphics]);
 #endif
-		fence.callback = [this, cbs = graphicsSTCGroup] {
+		fence.inlineCallbacks = [this, cbs = graphicsSTCGroup] {
 			vkFreeCommandBuffers(device, commandPools[Queue::graphics], static_cast<uint32_t>(cbs.size()), cbs.data());
 		};
 		graphicsSTCGroup.clear();
@@ -243,20 +282,32 @@ namespace EWE {
 	}
 
 	void SyncHub::SubmitTransferBuffers() {
+#ifdef _DEBUG
 		int debugLoopTracker = 0;
+#endif
 		auto cmdCbs = TransferCommandManager::PrepareSubmit();
 		while (cmdCbs.commands.size() > 0) {
+#ifdef _DEBUG
 			printf("looping in submit transfer buffers : %d\n", debugLoopTracker++);
+#endif
 			transferSubmitInfo.commandBufferCount = cmdCbs.commands.size();
 			transferSubmitInfo.pCommandBuffers = cmdCbs.commands.data();
 
 			FenceData& fenceData = syncPool.GetFence();
-			fenceData.callback = cmdCbs.CombineCallbacks(device, commandPools[Queue::transfer]);
+			fenceData.asyncCallbacks = cmdCbs.CombineCallbacks(device, commandPools[Queue::transfer]);
 			std::function<void()> graphicsCallbacks = nullptr;
 
 			if (cmdCbs.CleanGraphicsCallbacks()) {
 				fenceData.signalSemaphores[Queue::graphics] = syncPool.GetSemaphore();
+#if SEMAPHORE_TRACKING
+				static uint64_t transferSignalSemaphoreCounter = 0;
+				std::string transferSignalSemaphoreName = "transfer ";
+				transferSignalSemaphoreName += std::to_string(transferSignalSemaphoreCounter++);
+
+				fenceData.signalSemaphores[Queue::graphics]->BeginSignaling(transferSignalSemaphoreName.c_str());
+#else
 				fenceData.signalSemaphores[Queue::graphics]->BeginSignaling();
+#endif
 				graphicsCallbacks = cmdCbs.CombineGraphicsCallbacks();
 			}
 
@@ -286,6 +337,7 @@ namespace EWE {
 			//printf("after transfer submit\n");
 
 			if (graphicsCallbacks != nullptr) {
+				fenceData.signalSemaphores[Queue::graphics]->BeginWaiting();
 				transitionManager.Add(graphicsCallbacks, fenceData.signalSemaphores[Queue::graphics]);
 #ifdef _DEBUG
 				printf("signal semaphore address : %zu\n", reinterpret_cast<std::size_t>(fenceData.signalSemaphores[Queue::graphics]));

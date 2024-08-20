@@ -18,13 +18,13 @@ namespace EWE {
 		};
 
 		EWEPipeline* pipe2d;
-		EWEPipeline* pipe9;
+		//EWEPipeline* pipe9;
 		VkPipelineLayout PL_2d;
-		VkPipelineLayout PL_9;
+		//VkPipelineLayout PL_9;
 		TextureDesc bindedTexture;
 		VkPipelineCache cache;
 		EWEModel* model2D;
-		EWEModel* nineUIModel;
+		//EWEModel* nineUIModel;
 		VkCommandBuffer cmdBuffer;
 		uint8_t frameIndex;
 
@@ -33,15 +33,15 @@ namespace EWE {
 		static void Init();
 		static void Destruct();
 
-		static void BindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
+		//static void BindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
 		static void Bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
 
 		static void BindTexture2DUI(TextureDesc texture);
 		static void BindTexture2D(TextureDesc texture);
-		static void BindTexture9(TextureDesc texture);
+		//static void BindTexture9(TextureDesc texture);
 
 		static void PushAndDraw(Simple2DPushConstantData& push);
-		static void PushAndDraw(NineUIPushConstantData& push);
+		//static void PushAndDraw(NineUIPushConstantData& push);
 
 
 	};

@@ -112,11 +112,6 @@ namespace EWE {
 
 		FrameInfo BeginRender();
 
-		void RunGraphicsCallbacks() {
-			
-			SyncHub::GetSyncHubInstance()->RunGraphicsCallbacks();
-		}
-
 		FrameInfo BeginRenderWithoutPass();
 //#define RENDER_OBJECT_DEBUG
 
@@ -134,6 +129,12 @@ namespace EWE {
 
 		void EndEngineLoadScreen() {
 			printf("~~~~ ENDING LOADING SCREEN ~~~ \n");
+
+			//dependent on this not being in the graphics thread, or it'll infinitely loop
+			SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+			
+			while (syncHub->CheckFencesForUsage()) { syncHub->RunGraphicsCallbacks(); }
+
 			loadingEngine = false;
 		}
 		bool GetLoadingScreenProgress() {
@@ -144,6 +145,10 @@ namespace EWE {
 		bool finishedLoadingScreen = false;
 		bool loadingEngine = true;
 		double loadingTime = 0.f;
+
+#if BENCHMARKING_GPU
+		void QueryTimestamp(FrameInfo& frameInfo);
+#endif
 	};
 }
 

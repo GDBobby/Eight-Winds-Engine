@@ -60,17 +60,7 @@ namespace EWE {
 		uint8_t arrayLayers{1};
 		VkDescriptorImageInfo descriptorImageInfo;
 
-		VkImageSubresourceRange CreateSubresourceRange() {
-			VkImageSubresourceRange subresourceRange{};
-
-			subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			subresourceRange.baseMipLevel = 0;
-			subresourceRange.levelCount = mipLevels;
-			subresourceRange.baseArrayLayer = 0;
-			subresourceRange.layerCount = arrayLayers;
-
-			return subresourceRange;
-		}
+		VkImageSubresourceRange CreateSubresourceRange();
 
 		[[nodiscard("this staging buffer needs to be handled outside of this function")]]
 		static StagingBuffer* StageImage(PixelPeek& pixelPeek);
@@ -79,7 +69,11 @@ namespace EWE {
 		static StagingBuffer* StageImage(std::vector<PixelPeek>& pixelPeek);
 
 		void CreateTextureImage(Queue::Enum queue, PixelPeek& pixelPeek, bool mipmapping = true);
+#if IMAGE_DEBUGGING
+		void CreateImageCommands(VkImageCreateInfo const& imageCreateInfo, StagingBuffer* stagingBuffer, Queue::Enum queue, bool mipmapping, std::string imageName);
+#else
 		void CreateImageCommands(VkImageCreateInfo const& imageCreateInfo, StagingBuffer* stagingBuffer, Queue::Enum queue, bool mipmapping);
+#endif
 
 		void CreateTextureImageView();
 
@@ -108,6 +102,8 @@ namespace EWE {
 		ImageInfo() {}
 		void Destroy();
 	};
+
+
 	struct TextureDSLInfo {
 
 		uint8_t stageCounts[SUPPORTED_STAGE_COUNT] = { 0,0,0,0, 0,0,0,0, 0 };

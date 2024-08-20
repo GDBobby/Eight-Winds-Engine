@@ -78,11 +78,11 @@ namespace EWE {
 
 		void drawText() {
 			if (isActive) {
-				menuModules[currentMenuState]->drawText(textOverlay.get());
+				menuModules.at(currentMenuState)->drawText(textOverlay.get());
 			}
 		}
-		bool drawingNineUI() { return menuModules[currentMenuState]->drawingNineUI(); }
-		void drawNewNine() { menuModules[currentMenuState]->drawNewNine(); }
+		bool drawingNineUI() { return menuModules.at(currentMenuState)->drawingNineUI(); }
+		void drawNewNine() { menuModules.at(currentMenuState)->drawNewNine(); }
 
 		static void staticKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void staticMouseCallback(GLFWwindow* window, int button, int action, int mods);

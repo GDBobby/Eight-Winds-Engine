@@ -25,3 +25,7 @@
 
 #define USING_VMA true
 #define DEBUGGING_MEMORY_WITH_VMA USING_VMA && true
+
+#define SEMAPHORE_TRACKING true
+
+#define IMAGE_DEBUGGING true

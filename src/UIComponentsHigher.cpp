@@ -357,19 +357,19 @@ namespace EWE {
 		}
 
 	}
-	void VariableControl::render(NineUIPushConstantData& push) {
-		for (int k = 0; k < typeBoxes.size(); k++) {
-			if (isSelected(k)) {
-				push.color = glm::vec3{ .6f, .5f, .4f };
-			}
-			else {
-				push.color = glm::vec3{ .5f, .35f, .25f };
-			}
-			push.offset = glm::vec4(typeBoxes[k].transform.translation, 1.f, 1.f);
-			push.scale = typeBoxes[k].transform.scale;
-			Dimension2::PushAndDraw(push);
-		}
-	}
+	//void VariableControl::render(NineUIPushConstantData& push) {
+	//	for (int k = 0; k < typeBoxes.size(); k++) {
+	//		if (isSelected(k)) {
+	//			push.color = glm::vec3{ .6f, .5f, .4f };
+	//		}
+	//		else {
+	//			push.color = glm::vec3{ .5f, .35f, .25f };
+	//		}
+	//		push.offset = glm::vec4(typeBoxes[k].transform.translation, 1.f, 1.f);
+	//		push.scale = typeBoxes[k].transform.scale;
+	//		Dimension2::PushAndDraw(push);
+	//	}
+	//}
 	void VariableControl::render(Simple2DPushConstantData& push) {
 		for (int k = 0; k < buttons.size(); k++) {
 			buttons[k].first.render(push);
@@ -497,15 +497,15 @@ namespace EWE {
 			object.render(push);
 		}
 	}
-	void ControlBox::render(NineUIPushConstantData& push) {
-		for (auto& object : variableControls) {
-			object.render(push);
-		}
-		push.color = glm::vec3{ .3f, .25f, .15f };
-		push.offset = glm::vec4(transform.translation, 1.f, 1.f);
-		push.scale = transform.scale;
-		Dimension2::PushAndDraw(push);
-	}
+	//void ControlBox::render(NineUIPushConstantData& push) {
+	//	for (auto& object : variableControls) {
+	//		object.render(push);
+	//	}
+	//	push.color = glm::vec3{ .3f, .25f, .15f };
+	//	push.offset = glm::vec4(transform.translation, 1.f, 1.f);
+	//	push.scale = transform.scale;
+	//	Dimension2::PushAndDraw(push);
+	//}
 
 	// ~~~~~~~~~~~~~~~~~~~~~ MENU BAR ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -568,15 +568,16 @@ namespace EWE {
 		}
 		return -1;
 	}
-	void MenuBar::render(NineUIPushConstantData& push, uint8_t drawID) {
+	void MenuBar::render(Simple2DPushConstantData& push, uint8_t drawID) {
 		if (drawID == 0) {
 			if (dropBoxes.size() > 0) { //drawing these here instead of tumblingg these with the earlier drop boxes because i dont want to draw the dropper box
 				push.color = glm::vec3{ .5f, .35f, .25f };
 				for (int j = 0; j < dropBoxes.size(); j++) {
 					push.color = glm::vec3{ .5f, .35f, .25f };
 					if (dropBoxes[j].currentlyDropped) {
-						push.offset = glm::vec4(dropBoxes[j].dropBackground.translation, 0.5f, 1.f);
-						push.scale = dropBoxes[j].dropBackground.scale;
+						push.scaleOffset = glm::vec4(dropBoxes[j].dropBackground.scale, dropBoxes[j].dropBackground.translation);
+						//push.offset = glm::vec4(dropBoxes[j].dropBackground.translation, 0.5f, 1.f);
+						//push.scale = dropBoxes[j].dropBackground.scale;
 						Dimension2::PushAndDraw(push);
 						break; //i think only 1 can be dropped
 					}
@@ -585,8 +586,9 @@ namespace EWE {
 		}
 		else {
 			push.color = glm::vec3{ .86f, .5f, .5f };
-			push.offset = glm::vec4(transform.translation, 0.1f, 1.f);
-			push.scale = transform.scale;
+			push.scaleOffset = glm::vec4(transform.scale, transform.translation);
+			//push.offset = glm::vec4(transform.translation, 0.1f, 1.f);
+			//push.scale = transform.scale;
 			Dimension2::PushAndDraw(push);
 		}
 	}

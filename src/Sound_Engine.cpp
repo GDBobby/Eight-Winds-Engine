@@ -30,20 +30,12 @@ namespace EWE {
 		resourceManagerConfig.decodedSampleRate = 48000;// Using a consistent sample rate is useful for avoiding expensive resampling in the audio thread. This will result in resampling being performed by the loading thread(s).
 
 		result = ma_resource_manager_init(&resourceManagerConfig, &resourceManager);
-		if(result != MA_SUCCESS) {
-			printf("Failed to initialize resource manager.\n");
-			throw std::runtime_error("failed ma_resource_manager_init");
-		}
+		assert(result == MA_SUCCESS && "failed to initialize resource manager");
 		result = ma_context_init(NULL, 0, NULL, &context);
-		if (result != MA_SUCCESS) {
-			printf("Failed to initialize context.\n");
-			throw std::runtime_error("failed ma_context_init");
-		}
+		assert(result == MA_SUCCESS && "failed to initialize context");
 		result = ma_context_get_devices(&context, &pPlaybackDeviceInfos, &playbackDeviceCount, NULL, NULL);
-		if (result != MA_SUCCESS) {
-			printf("failed to get devices \n");
-			throw std::runtime_error("failed ma_context_get_devices");
-		}
+		assert(result == MA_SUCCESS && "failed to get devices");
+
 
 
 		engines.resize(playbackDeviceCount + 1);
@@ -74,7 +66,7 @@ namespace EWE {
 			ma_sound_start(&hwSound);
 		}
 
-		printf("end of soundengine constructor \n");
+		//printf("end of soundengine constructor \n");
 		//playMusic(0, false);
 	}
 	SoundEngine::~SoundEngine() {
@@ -137,12 +129,12 @@ namespace EWE {
 	}
 
 	void SoundEngine::PlayMusic(uint16_t whichSong, bool repeat) {
-		printf("starting music \n");
+		//printf("starting music \n");
 
 		currentSong = whichSong;
 		//ma_result result = ma_sound_start(&music.at(selectedEngine).at(whichSong));
 		ma_sound_set_looping(&music.at(selectedEngine).at(whichSong), repeat);
-		printf("soudn looping : %d \n", ma_sound_is_looping(&music.at(selectedEngine).at(whichSong)));
+		//printf("soudn looping : %d \n", ma_sound_is_looping(&music.at(selectedEngine).at(whichSong)));
 
 		ma_result result = ma_sound_start(&music.at(selectedEngine).at(whichSong));
 
@@ -184,7 +176,7 @@ namespace EWE {
 		decoderConfig.ppCustomBackendVTables = NULL;
 		decoderConfig.customBackendCount = 0;
 		decoderConfig.encodingFormat = ma_encoding_format_mp3;
-		printf("finna init from memory \n");
+		//printf("finna init from memory \n");
 		//ma_decoder_init();
 
 		ma_result result = ma_decoder_init_memory(hWind->getBuffer(), hWind->getSize(), NULL, &hwDecoder);
@@ -192,7 +184,7 @@ namespace EWE {
 		if (result != MA_SUCCESS) {
 			printf("decoder init from memroy failed \n");
 		}
-		printf("finna init sound from data source \n");
+		//printf("finna init sound from data source \n");
 		result = ma_sound_init_from_data_source(&engines[selectedEngine], &hwDecoder, MA_SOUND_FLAG_STREAM, NULL, &hwSound);
 
 		if (result != MA_SUCCESS) {
@@ -264,7 +256,9 @@ namespace EWE {
 				}
 				else if (SettingsJSON::settingsData.selectedDevice == deviceName) {
 					foundDesiredDevice = true;
+#ifdef _DEBUG
 					printf("starting default device, matched with settings \n");
+#endif
 					result = ma_engine_start(&engines[0]);
 					if (result != MA_SUCCESS) {
 						printf("Failed to start engine for DEFAULT \n");
@@ -307,8 +301,9 @@ namespace EWE {
 					}
 				}
 			}
-
+#ifdef _DEBUG
 			printf("device name - %d: %s\n", i, deviceNames[i].c_str());
+#endif
 		}
 		if (!foundDesiredDevice) {
 			printf("failed to find desired device in settings, starting default \n");
@@ -334,8 +329,9 @@ namespace EWE {
 				}
 			}
 		}
-
+#ifdef _DEBUG
 		printf("after init engines, selected device : %d \n", selectedEngine);
+#endif
 	}
 
 	void SoundEngine::LoadSoundMap(std::unordered_map<uint16_t, std::string>& loadSounds, SoundType soundType) {

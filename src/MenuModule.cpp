@@ -16,7 +16,7 @@ namespace EWE {
 
 	void MenuModule::initTextures() {
 		//these textures are deleted in EWETexture, when the program is cleaning itself up on close
-		Texture_Manager::CreateUITexture();
+		textureArray = Texture_Manager::CreateUITexture();
 
 		model2D = Basic_Model::Quad2D(Queue::transfer);
 		nineUIModel = Basic_Model::NineUIQuad(Queue::transfer);
@@ -164,8 +164,9 @@ namespace EWE {
 		}
 	}
 	void MenuModule::drawNewNine() {
-		Dimension2::BindTexture9(textureArray);
-		NineUIPushConstantData push{};
+
+		Dimension2::BindTexture2DUI(textureArray);
+		Simple2DPushConstantData push{};
 		push.textureID = MT_NineUI;
 		if (comboBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
@@ -182,9 +183,6 @@ namespace EWE {
 		}
 
 		if (clickText.size() > 0) {
-
-			push.offset.z = 1.f;
-			push.offset.w = 1.f;
 			push.color = glm::vec3{ .5f, .35f, .25f };
 			for (auto& object : clickText) {
 				object.render(push);

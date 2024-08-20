@@ -103,7 +103,6 @@ namespace EWE {
 		void EndSingleTimeCommandGraphicsSignal(VkCommandBuffer cmdBuf, VkSemaphore signalSemaphore);
 		void EndSingleTimeCommandGraphicsWaitAndSignal(VkCommandBuffer cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
 
-		void RunGraphicsCallbacks();
 		void EndSingleTimeCommandGraphicsGroup(VkCommandBuffer cmdBuf);
 		void SubmitGraphicsSTCGroup();
 
@@ -121,13 +120,20 @@ namespace EWE {
 			EWE_VK_ASSERT(vkWaitForFences(device, 1, &renderSyncData.inFlight[frameIndex], VK_TRUE, UINT64_MAX));
 		}
 
+		void RunGraphicsCallbacks();
+		bool CheckFencesForUsage() {
+			return syncPool.CheckFencesForUsage();
+		}
+
 	private:
 
 		void CreateSyncObjects();
 
-		void CreateBuffers(VkCommandPool commandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool);
+		void CreateBuffers(VkCommandPool graphicsCommandPool);
 
 		void SubmitTransferBuffers();
+
+		const std::thread::id main_thread;
 
 	};
 }

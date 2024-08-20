@@ -33,6 +33,61 @@ namespace EWE {
         assert(false && "find memory type unsupported");
         return UINT32_MAX;
     }
+
+#if SEMAPHORE_TRACKING
+    void SemaphoreData::FinishSignaling() {
+        assert(signaling && "finishing a signal that wasn't signaled");
+        if (!waiting) {
+            name = "null";
+        }
+        signaling = false;
+    }
+    void SemaphoreData::FinishWaiting() {
+        assert(waiting && "finished waiting when not waiting");
+        waiting = false;
+        name = "null";
+    }
+    void SemaphoreData::BeginWaiting() {
+        assert(name != "null" && "semaphore wasn't named");
+        assert(!waiting && "attempting to begin wait while waiting");
+        waiting = true;
+    }
+    void SemaphoreData::BeginSignaling(const char* name) {
+
+        assert(this->name == "null" && "name wasn't reset properly");
+        this->name = name;
+        assert(!signaling && "attempting to signal while signaled");
+        signaling = true;
+    }
+#else     
+    void SemaphoreData::FinishSignaling() {
+#ifdef _DEBUG
+        assert(signaling == true && "finishing a signal that wasn't signaled");
+#endif
+        signaling = false;
+    }
+    void SemaphoreData::FinishWaiting() {
+#ifdef _DEBUG
+        assert(waiting == true && "finished waiting when not waiting");
+#endif
+        waiting = false;
+    }
+    void SemaphoreData::BeginWaiting() {
+#ifdef _DEBUG
+        assert(waiting == false && "attempting to begin wait while waiting");
+#endif
+        waiting = true;
+    }
+    void SemaphoreData::BeginSignaling() {
+#ifdef _DEBUG
+        assert(signaling == false && "attempting to signal while signaled");
+#endif
+        signaling = true;
+    }
+#endif
+
+
+
 #if USING_VMA
     StagingBuffer::StagingBuffer(VkDeviceSize size, VmaAllocator vmaAllocator, const void* data) {
         VkBufferCreateInfo bufferCreateInfo{};
@@ -164,8 +219,12 @@ namespace EWE {
         }
 
         inUse = false;
-        std::function<void()> ret{ callback };
-        callback = nullptr;
+        if (inlineCallbacks) {
+            inlineCallbacks();
+            inlineCallbacks = nullptr;
+        }
+        std::function<void()> ret{ asyncCallbacks };
+        asyncCallbacks = nullptr;
         return ret;
     }
 }

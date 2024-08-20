@@ -200,7 +200,12 @@ namespace EWE {
 		pipelineConfig.pipelineLayout = materialPipeLayout[pipeLayoutIndex].pipeLayout;
 
 		getPipeCache(hasBones, instanced, pipelineConfig.cache);
-	
+#if DEBUG_NAMING
+		MaterialPipelines* ret = createPipe(pipeLayoutIndex, pipelineConfig, hasBones, hasNormal, hasBumps, flags);
+		std::string pipeName = "material pipeline[";
+		pipeName += std::to_string(flags) + ']';
+		ret->pipeline.SetDebugName(pipeName);
+#endif
 		return createPipe(pipeLayoutIndex, pipelineConfig, hasBones, hasNormal, hasBumps, flags);
 
 		//printf("after dynamic shader finding \n");
@@ -317,11 +322,7 @@ namespace EWE {
 		if (instanceSkinPipelineCache == VK_NULL_HANDLE) {
 			VkPipelineCacheCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-			if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &instanceSkinPipelineCache) != VK_SUCCESS) {
-				// handle error
-				printf("failed to create instance skinned material pipeline cache \n");
-				throw std::runtime_error("failed to create instanced skin material pipeline cache");
-			}
+			EWE_VK_ASSERT(vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &instanceSkinPipelineCache));
 		}
 		pipelineConfig.cache = instanceSkinPipelineCache;
 
@@ -370,14 +371,7 @@ namespace EWE {
 		VkPipelineCacheCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 
-		if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &retCache) != VK_SUCCESS) {
-			// handle error
-			printf("failed to create material pipeline cache \n");
-			throw std::runtime_error("failed to create material pipeline cache");
-		}
-		else {
-			printf("material pipe line cache creating \n");
-		}
+		EWE_VK_ASSERT(vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &retCache));
 #if PIPELINE_DERIVATIVES
 		pipelineConfig.basePipelineHandle = nullptr;
 		pipelineConfig.basePipelineIndex = -1;

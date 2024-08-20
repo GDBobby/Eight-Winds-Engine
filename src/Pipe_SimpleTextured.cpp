@@ -55,6 +55,10 @@ namespace EWE {
 		//EWEPipeline* tempPtr = new EWEPipeline(vertString, fragString, pipelineConfig);
 
 		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
+#if DEBUG_NAMING
+		pipe->SetDebugName("simple textured pipeline");
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "simple textured pipe layout");
+#endif
 		//memory leak for now, return to std::unique_ptr;
 	}
 }

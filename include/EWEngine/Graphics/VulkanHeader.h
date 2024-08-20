@@ -12,6 +12,9 @@
 #include "EWEngine/Graphics/DebugNaming.h"
 #endif
 
+#if SEMAPHORE_TRACKING
+#include <string>
+#endif
 
 #include <functional>
 
@@ -32,41 +35,23 @@ namespace EWE{
 
     struct SemaphoreData {
         VkSemaphore semaphore{ VK_NULL_HANDLE };
+        std::string name{"null"};
         bool waiting{ false };
         bool signaling{ false };
 
         bool Idle() const {
             return !(waiting || signaling);
         }
-        void FinishSignaling() {
-#ifdef _DEBUG
-            assert(signaling == true && "finishing a signal that wasn't signaled");
-#endif
-            signaling = false;
-        }
-        void FinishWaiting() {
-#ifdef _DEBUG
-            assert(waiting == true && "finished waiting when not waiting");
-#endif
-            waiting = false;
-        }
-        void BeginWaiting() {
-#ifdef _DEBUG
-            assert(waiting == false && "attempting to begin wait while waiting");
-#endif
-            waiting = true;
-        }
-        void BeginSignaling() {
-#ifdef _DEBUG
-            assert(signaling == false && "attempting to signal while signaled");
-#endif
-            signaling = true;
-        }
+        void FinishSignaling();
+        void FinishWaiting();
+        void BeginWaiting();
+        void BeginSignaling(const char* name);
     };
 
     struct FenceData {
         VkFence fence{ VK_NULL_HANDLE };
-        std::function<void()> callback{ nullptr }; //i think this is a function pointer, if I can't set it to null, I need to make it a pointer
+        std::function<void()> asyncCallbacks{ nullptr }; //i think this is a function pointer, if I can't set it to null, I need to make it a pointer
+        std::function<void()> inlineCallbacks{ nullptr };
         bool inUse{ false };
         std::vector<SemaphoreData*> waitSemaphores{}; //each wait could potentially be signaled multiple times in a single queue, and then multiple queues
         SemaphoreData* signalSemaphores[Queue::_count] = { nullptr, nullptr, nullptr, nullptr }; //each signal is unique per submit that could wait on it, and right now I'm expecting max 1 wait per queue

@@ -472,17 +472,21 @@ namespace EWE {
 		return -2;
 	}
 	void DropBox::render(Simple2DPushConstantData& push) {
-		push.offset = glm::vec4(dropper.transform.translation, 1.f, 1.f);
+		push.scaleOffset.z = dropper.transform.translation.x;
+		push.scaleOffset.w = dropper.transform.translation.y;
 		//need color array
 		if (currentlyDropped) {
 			push.color = glm::vec3{ .75f, .35f, .25f };
 		}
-		push.scale = dropper.transform.scale;
+		push.scaleOffset.x = dropper.transform.scale.x;
+		push.scaleOffset.y = dropper.transform.scale.y;
 		Dimension2::PushAndDraw(push);
 		push.color = glm::vec3{ .5f, .35f, .25f };
 		if (currentlyDropped) {
-			push.offset = glm::vec4(dropBackground.translation, 0.5f, 1.f);
-			push.scale = dropBackground.scale;
+			push.scaleOffset.z = dropBackground.translation.x;
+			push.scaleOffset.w = dropBackground.translation.y;
+			push.scaleOffset.x = dropBackground.scale.x;
+			push.scaleOffset.y = dropBackground.scale.y;
 			Dimension2::PushAndDraw(push);
 		}
 	}

@@ -38,5 +38,7 @@ namespace EWE {
 		
 		void loadGlobalObjects();
 		bool processClick();
+
+		void SwapScenes();
 	};
 }

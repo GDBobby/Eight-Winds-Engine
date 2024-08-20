@@ -202,7 +202,7 @@ namespace EWE {
 			if (renderThreadTime > renderTimeCheck) {
 				loadingTime += renderTimeCheck;
 				//printf("rendering loading thread start??? \n");
-				//syncHub->RunGraphicsCallbacks();
+				syncHub->RunGraphicsCallbacks();
 
 				auto frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
@@ -231,39 +231,9 @@ namespace EWE {
 	FrameInfo EightWindsEngine::BeginRenderWithoutPass() {
 		FrameInfo frameInfo{ eweRenderer.BeginFrame() };
 		if (frameInfo.cmdBuf) {
-			if (displayingRenderInfo) {
 #if BENCHMARKING_GPU
-				if (queryPool == VK_NULL_HANDLE) {
-					gpuTicksPerSecond = eweDevice.GetProperties().limits.timestampPeriod / 1e9f;
-
-					VkQueryPoolCreateInfo queryPoolInfo = {};
-					queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-					queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
-					queryPoolInfo.queryCount = 2; // We'll use two timestamps if we run into trouble with framebuffers use 4
-					EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool));
-				}
-				else {
-					//printf("before non-null \n");
-					//shouldnt be activated until after the command has already been submitted at least once
-					uint64_t timestampStart, timestampEnd;
-					vkGetQueryPoolResults(eweDevice.Device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-					vkGetQueryPoolResults(eweDevice.Device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-					elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond * 1000.f;
-					totalElapsedGPUMS += elapsedGPUMS;
-					averageElapsedGPUCounter++;
-					if (averageElapsedGPUCounter == 100) {
-						averageElapsedGPUCounter = 0;
-						averageElapsedGPUMS = totalElapsedGPUMS / 100.f;
-						totalElapsedGPUMS = 0.f;
-					}
-					//need to add this to the text renderer
-					//printf("elapsed GPU seconds : %.5f \n", elapsedGPUMS);
-				}
-
-				vkCmdResetQueryPool(frameInfo.cmdBuf, queryPool, 0, 2);
-				vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
+			QueryTimestamp(frameInfo);
 #endif
-			}
 		}
 		//else {
 			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain resize
@@ -278,40 +248,10 @@ namespace EWE {
 		//printf("begin render \n");
 		FrameInfo frameInfo{ eweRenderer.BeginFrame() };
 		if (frameInfo.cmdBuf) {
-			if (displayingRenderInfo) {
 #if BENCHMARKING_GPU
-				if (queryPool == VK_NULL_HANDLE) {
-					gpuTicksPerSecond = eweDevice.GetProperties().limits.timestampPeriod / 1e9f;
-
-					VkQueryPoolCreateInfo queryPoolInfo = {};
-					queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-					queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
-					queryPoolInfo.queryCount = 2; // We'll use two timestamps if we run into trouble with framebuffers use 4
-					EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool));
-				}
-				else {
-					//printf("before non-null \n");
-					//shouldnt be activated until after the command has already been submitted at least once
-					uint64_t timestampStart, timestampEnd;
-					vkGetQueryPoolResults(eweDevice.Device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-					vkGetQueryPoolResults(eweDevice.Device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-					elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond * 1000.f;
-					totalElapsedGPUMS += elapsedGPUMS;
-					averageElapsedGPUCounter++;
-					if (averageElapsedGPUCounter == 100) {
-						averageElapsedGPUCounter = 0;
-						averageElapsedGPUMS = totalElapsedGPUMS / 100.f;
-						totalElapsedGPUMS = 0.f;
-					}
-					//need to add this to the text renderer
-					//printf("elapsed GPU seconds : %.5f \n", elapsedGPUMS);
-				}
-
-				vkCmdResetQueryPool(frameInfo.cmdBuf, queryPool, 0, 2);
-				vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
-
+			QueryTimestamp(frameInfo);
 #endif
-			}
+
 			eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 			skinnedRS.setFrameIndex(frameInfo.index);
 		}
@@ -400,4 +340,40 @@ namespace EWE {
 			menuManager.windowResize(eweRenderer.GetExtent());
 		}
 	}
+#if BENCHMARKING_GPU
+	void EightWindsEngine::QueryTimestamp(FrameInfo& frameInfo) {
+
+		if (displayingRenderInfo) {
+			if (queryPool == VK_NULL_HANDLE) [[unlikely]] {
+				gpuTicksPerSecond = eweDevice.GetProperties().limits.timestampPeriod / 1e9f;
+
+				VkQueryPoolCreateInfo queryPoolInfo = {};
+				queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+				queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+				queryPoolInfo.queryCount = 2;
+				EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool));
+			}
+			else {
+				//printf("before non-null \n");
+				//shouldnt be activated until after the command has already been submitted at least once
+				uint64_t timestampStart, timestampEnd;
+				EWE_VK_ASSERT(vkGetQueryPoolResults(eweDevice.Device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT));
+				EWE_VK_ASSERT(vkGetQueryPoolResults(eweDevice.Device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT));
+				elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond * 1000.f;
+				totalElapsedGPUMS += elapsedGPUMS;
+				averageElapsedGPUCounter++;
+				if (averageElapsedGPUCounter == 100) {
+					averageElapsedGPUCounter = 0;
+					averageElapsedGPUMS = totalElapsedGPUMS / 100.f;
+					totalElapsedGPUMS = 0.f;
+				}
+				//need to add this to the text renderer
+				//printf("elapsed GPU seconds : %.5f \n", elapsedGPUMS);
+			}
+
+			vkCmdResetQueryPool(frameInfo.cmdBuf, queryPool, 0, 2);
+			vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
+		}
+	}
+#endif
 }

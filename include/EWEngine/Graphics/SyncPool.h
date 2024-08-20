@@ -75,15 +75,22 @@ namespace EWE{
         void SemaphoreFinishedSignaling(VkSemaphore semaphore){
             GetSemaphoreData(semaphore).FinishSignaling();
         }
-        void SemaphoreBeginSignaling(VkSemaphore semaphore){
+#if SEMAPHORE_TRACKING
+        void SemaphoreBeginSignaling(VkSemaphore semaphore, const char* name){
+            GetSemaphoreData(semaphore).BeginSignaling(name);
+        }
+#else
+        void SemaphoreBeginSignaling(VkSemaphore semaphore) {
             GetSemaphoreData(semaphore).BeginSignaling();
         }
+#endif
         
-        void CheckFences();
+        bool CheckFencesForUsage();
+        void CheckFencesForCallbacks();
 
         SemaphoreData* GetSemaphore();
         FenceData& GetFence();
-        FenceData& GetFenceSignal(Queue::Enum queue);
+        //FenceData& GetFenceSignal(Queue::Enum queue);
         
     };
 } //namespace EWE

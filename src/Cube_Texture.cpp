@@ -59,7 +59,11 @@ namespace EWE {
             DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), cubeImage.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
 #endif
 
+#if IMAGE_DEBUGGING
+            cubeImage.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false, pixelPeek[0].debugName);
+#else
             cubeImage.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
+#endif
         }
 
         void CreateCubeImageView(ImageInfo& cubeImage) {

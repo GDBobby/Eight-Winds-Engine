@@ -113,7 +113,16 @@ namespace EWE {
         //only way for this to not return an error is if the return type is changed to pointer and nullptr is returned if not found, or std::conditional which im not a fan of
     }
 
-    void SyncPool::CheckFences() {
+    bool SyncPool::CheckFencesForUsage() {
+        for (uint16_t i = 0; i < size; i++) {
+            if (fences[i].inUse) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void SyncPool::CheckFencesForCallbacks() {
 
         std::vector<std::function<void()>> callbacks{};
         for (uint16_t i = 0; i < size; i++) {
@@ -169,12 +178,12 @@ namespace EWE {
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
-    FenceData& SyncPool::GetFenceSignal(Queue::Enum queue) {
-        FenceData& ret = GetFence();
-        ret.signalSemaphores[queue] = GetSemaphore();
-        ret.signalSemaphores[queue]->BeginSignaling();
-        return ret;
-    }
+    //FenceData& SyncPool::GetFenceSignal(Queue::Enum queue) {
+    //    FenceData& ret = GetFence();
+    //    ret.signalSemaphores[queue] = GetSemaphore();
+    //    ret.signalSemaphores[queue]->BeginSignaling();
+    //    return ret;
+    //}
 }//namespace EWE
 
 //brb

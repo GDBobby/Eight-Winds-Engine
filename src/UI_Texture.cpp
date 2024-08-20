@@ -59,10 +59,13 @@ namespace EWE {
 
             EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.memory);
-
-            uiImageInfo.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
 #if DEBUG_NAMING
             DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), uiImageInfo.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
+#endif
+#if IMAGE_DEBUGGING
+            uiImageInfo.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false, pixelPeek[0].debugName);
+#else
+            uiImageInfo.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
 #endif
         }
 

@@ -234,6 +234,12 @@ namespace EWE {
 		EWERenderer::BindGraphicsPipeline(commandBuffer, graphicsPipeline);
 	}
 
+#if DEBUG_NAMING
+	void EWEPipeline::SetDebugName(std::string const& name) {
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), graphicsPipeline, VK_OBJECT_TYPE_PIPELINE, name.c_str());
+	}
+#endif
+
 	void EWEPipeline::createGraphicsPipeline(const PipelineConfigInfo& configInfo) {
 
 		assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no pipelineLayout provided in configInfo");

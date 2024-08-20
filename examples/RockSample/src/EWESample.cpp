@@ -30,7 +30,7 @@ namespace EWE {
 		loadGlobalObjects();
 		//currentScene = scene_ocean;
 		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine));
-		scenes.emplace(scene_ocean, std::make_unique<OceanScene>(ewEngine, skyboxInfo));
+		//scenes.emplace(scene_ocean, std::make_unique<OceanScene>(ewEngine, skyboxInfo));
 		scenes.emplace(scene_shaderGen, std::make_unique<ShaderGenerationScene>(ewEngine));
 		//scenes.emplace(scene_)
 		currentScenePtr = scenes.at(currentScene).get();
@@ -42,7 +42,6 @@ namespace EWE {
 
 		//StaticRenderSystem::destructStaticRS();
 
-		ewEngine.EndEngineLoadScreen();
 	}
 	EWESample::~EWESample() {
 		//explicitly deconstruct static objects that go into vulkan
@@ -64,6 +63,7 @@ namespace EWE {
 		do { //having a simple while() may cause a race condition
 			vkDeviceWaitIdle(ewEngine.eweDevice.Device());
 		} while (ewEngine.GetLoadingScreenProgress());
+
 		currentScenePtr->entry();
 
 		while (gameRunning) {
@@ -72,27 +72,10 @@ namespace EWE {
 			mainThreadTimeTracker += std::chrono::duration<double, std::chrono::seconds::period>(newTime - mainThreadCurrentTime).count();
 			mainThreadCurrentTime = newTime;
 
-			if (swappingScenes) {
+			if (swappingScenes) [[unlikely]] {
+				SwapScenes();
+				mainThreadTimeTracker = renderRefreshRate;
 				printf("swapping scenes beginning \n");
-
-				//loading entry?
-				vkDeviceWaitIdle(ewEngine.eweDevice.Device());
-				currentScenePtr->exit();
-				ewEngine.objectManager.ClearSceneObjects();
-				Texture_Manager::GetTextureManagerPtr()->ClearSceneTextures();
-				//loading entry?
-				if (currentScene != scene_exitting) {
-					currentScenePtr = scenes.at(currentScene).get();
-					currentScenePtr->load();
-					currentScenePtr->entry();
-					lastScene = currentScene;
-					//printf("swapping scenes end \n");
-					swappingScenes = false;
-					mainThreadTimeTracker = renderRefreshRate;
-				}
-				else {
-					gameRunning = false;
-				}
 				//stop loading screen here
 			}
 			else if (mainThreadTimeTracker >= renderRefreshRate) {
@@ -257,5 +240,25 @@ namespace EWE {
 			}
 		}
 		return wantsToChangeScene;
+	}
+	void EWESample::SwapScenes() {
+
+		//loading entry?
+		vkDeviceWaitIdle(ewEngine.eweDevice.Device());
+		currentScenePtr->exit();
+		ewEngine.objectManager.ClearSceneObjects();
+		Texture_Manager::GetTextureManagerPtr()->ClearSceneTextures();
+		//loading entry?
+		if (currentScene != scene_exitting) {
+			currentScenePtr = scenes.at(currentScene).get();
+			currentScenePtr->load();
+			currentScenePtr->entry();
+			lastScene = currentScene;
+			//printf("swapping scenes end \n");
+			swappingScenes = false;
+		}
+		else {
+			gameRunning = false;
+		}
 	}
 }

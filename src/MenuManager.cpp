@@ -4,21 +4,19 @@ namespace EWE {
 	MenuManager* MenuManager::menuManagerPtr = nullptr;
 
 	MenuManager::MenuManager(float screenWidth, float screenHeight, GLFWwindow* windowPtr, std::shared_ptr<TextOverlay> textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
-		if (menuManagerPtr != nullptr) {
-			printf("created two menu managers? \n");
-			throw std::runtime_error("created two menu managers?");
-		}
+		assert(menuManagerPtr == nullptr && "created two menu managers?");
+
 		menuManagerPtr = this;
 		currentScene = 0;
-		//menuModules[menu_controls_temp] = std::make_unique<ControlsTempMM>(screenWidth, screenHeight);
+
 		MenuModule::initTextures();
 
 		//MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
 
 		printf("passing device to menu module constructor \n");		
-		menuModules[menu_audio_settings] = std::make_unique<AudioMM>(screenWidth, screenHeight, windowPtr);
+		menuModules.try_emplace(menu_audio_settings, std::make_unique<AudioMM>(screenWidth, screenHeight, windowPtr));
 		printf("after audio \n");
-		menuModules[menu_graphics_settings] = std::make_unique<GraphicsMM>(screenWidth, screenHeight);
+		menuModules.try_emplace(menu_graphics_settings, std::make_unique<GraphicsMM>(screenWidth, screenHeight));
 		printf("after graphics \n");
 
 
@@ -41,7 +39,7 @@ namespace EWE {
 	void MenuManager::drawNewMenuObejcts() {
 		if (isActive) {
 			//printf("Drawing menu \n");
-			menuModules[currentMenuState]->drawNewObjects();//(gameState == 0));
+			menuModules.at(currentMenuState)->drawNewObjects();//(gameState == 0));
 		}
 	}
 
@@ -80,8 +78,7 @@ namespace EWE {
 			//menuManagerPtr->lastClicked = menuManagerPtr->anythingClicked(xpos, ypos);
 			//printf("last clicked pair - %d:%d \n", menuManagerPtr->lastClicked.first, menuManagerPtr->lastClicked.second);
 
-			menuManagerPtr->menuModules[menuManagerPtr->currentMenuState]->processClick(xpos, ypos);
-			//menuManagerPtr->clickReturns.emplace(menuManagerPtr->menuModules[menuManagerPtr->currentMenuState]->processClick(xpos, ypos));
+			menuManagerPtr->menuModules.at(menuManagerPtr->currentMenuState)->processClick(xpos, ypos);
 			 
 			if (MenuModule::clickReturns.size() > 0) {
 				printf("clickReturns front : %d \n", MenuModule::clickReturns.front());

@@ -29,10 +29,7 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
-		if (vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout) != VK_SUCCESS) {
-			printf("failed to create background pipe layout \n");
-			throw std::runtime_error("Failed to create pipe layout \n");
-		}
+		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout));
 	}
 	void Pipe_Skybox::CreatePipeline() {
 		CreatePipeLayout();
@@ -48,5 +45,9 @@ namespace EWE {
 		std::string fragString = "skybox.frag.spv";
 
 		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
+#if DEBUG_NAMING
+		pipe->SetDebugName("skybox pipeline");
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "skybox pipe layout");
+#endif
 	}
 }

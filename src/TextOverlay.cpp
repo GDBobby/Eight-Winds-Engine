@@ -148,28 +148,31 @@ namespace EWE {
 		*/
 
 		// Font texture
-		VkImageCreateInfo imageInfo{};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.pNext = nullptr;
-		imageInfo.imageType = VK_IMAGE_TYPE_2D;
-		imageInfo.format = VK_FORMAT_R8_UNORM;
-		imageInfo.extent.width = fontWidth;
-		imageInfo.extent.height = fontHeight;
-		imageInfo.extent.depth = 1;
-		imageInfo.mipLevels = 1;
-		imageInfo.arrayLayers = 1;
-		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imageInfo.flags = 0; //optional????
+		VkImageCreateInfo imageCreateInfo{};
+		imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageCreateInfo.pNext = nullptr;
+		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageCreateInfo.format = VK_FORMAT_R8_UNORM;
+		imageCreateInfo.extent.width = fontWidth;
+		imageCreateInfo.extent.height = fontHeight;
+		imageCreateInfo.extent.depth = 1;
+		imageCreateInfo.mipLevels = 1;
+		imageCreateInfo.arrayLayers = 1;
+		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageCreateInfo.flags = 0; //optional????
 
 		//not using this function because i need the allocInfo
 		//eweDevice.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 
 
-		EWE_VK_ASSERT(vkCreateImage(EWEDevice::GetVkDevice(), &imageInfo, nullptr, &image));
+		EWE_VK_ASSERT(vkCreateImage(EWEDevice::GetVkDevice(), &imageCreateInfo, nullptr, &image));
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_OBJECT_TYPE_IMAGE, "textoverlay image");
+#endif
 
 		VkMemoryRequirements memRequirements;
 		vkGetImageMemoryRequirements(EWEDevice::GetVkDevice(), image, &memRequirements);
@@ -228,7 +231,7 @@ namespace EWE {
 			);
 		}
 		{//transition image to a read state, and from transfer queue to graphics queue (in one barrier?)
-			VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+			VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
 			imageBarrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetTransferIndex();
 			imageBarrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex();
 
@@ -247,6 +250,7 @@ namespace EWE {
 			cmdCb.callback = [sb = stagingBuffer] {sb.Free(EWEDevice::GetVkDevice()); };
 #endif
 			cmdCb.graphicsCallback = [pipeBarrier, syncHub] {
+					printf(" ~~~~~~ submitting text overlay barrier on the graphics queue\n");
 					VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
 					pipeBarrier.SubmitBarrier(cmdBuf);
 					syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
@@ -259,7 +263,7 @@ namespace EWE {
 		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		imageViewInfo.image = image;
 		imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		imageViewInfo.format = imageInfo.format;
+		imageViewInfo.format = imageCreateInfo.format;
 		imageViewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 		imageViewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 		EWE_VK_ASSERT(vkCreateImageView(eweDevice->Device(), &imageViewInfo, nullptr, &view));
@@ -327,6 +331,9 @@ namespace EWE {
 		//std::cout << "pipelineinfo 3" << std::endl;
 
 		EWE_VK_ASSERT(vkCreatePipelineLayout(eweDevice->Device(), &pipelineLayoutInfo, nullptr, &pipelineLayout));
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), pipelineLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "textoverlay pipe layout");
+#endif
 		//std::cout << "pipeline info2??" << std::endl;
 
 		// Descriptor set
@@ -515,6 +522,9 @@ namespace EWE {
 		//std::make_unique<EWEPipeline>(eweDevice, "texture_shader.vert.spv", "texture_shader.frag.spv", pipelineConfig);
 
 		EWE_VK_ASSERT(vkCreateGraphicsPipelines(EWEDevice::GetVkDevice(), pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline));
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), pipeline, VK_OBJECT_TYPE_PIPELINE, "textoverlay pipeline");
+#endif
 		//printf("successfully created textoverlay graphics pipeline \n");
 		//printf("end of text overlay constructor \n");
 	}

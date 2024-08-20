@@ -10,37 +10,37 @@ namespace EWE {
 
 		labels.emplace_back("Screen Dimensions", 100.f * widthRescaling, 200.f * heightRescaling, TA_left, 2.f);
 		{ //screen dimensions, local scope
-			printf("before dimensions \n");
+			//printf("before dimensions \n");
 			comboBoxes.emplace_back(TextStruct{ SettingsJSON::settingsData.getDimensionsString(), 100.f * widthRescaling, 240.f * heightRescaling, TA_left, 1.5f }, screenWidth, screenHeight);
-			printf("after dimensions string \n");
+			//printf("after dimensions string \n");
 
 			std::vector<std::string> SDStrings = SettingsInfo::getScreenDimensionStringVector();
-			printf("after screendimensionvector \n");
+			//printf("after screendimensionvector \n");
 			for (int i = 0; i < SDStrings.size(); i++) {
 				comboBoxes.back().pushOption(SDStrings[i], screenWidth, screenHeight);
 				if (strcmp(SDStrings[i].c_str(), comboBoxes.back().activeOption.textStruct.string.c_str()) == 0) {
 					comboBoxes.back().currentlySelected = i;
 				}
 			}
-			printf("after combo options \n");
+			//printf("after combo options \n");
 		}
-		printf("before window mode \n");
+		//printf("before window mode \n");
 		labels.emplace_back("Window Mode", 500.f * widthRescaling, 200.f * heightRescaling, TA_left, 2.f);
 		{ //window mode, local scope
-			printf("window mode string \n");
+			//printf("window mode string \n");
 			comboBoxes.emplace_back(TextStruct{ getWindowModeString(SettingsJSON::settingsData.windowMode), 500.f * widthRescaling, 240.f * heightRescaling, TA_left, 1.5f }, screenWidth, screenHeight);
-			printf("window mode string vector \n");
+			//printf("window mode string vector \n");
 			std::vector<std::string> WTStrings = SettingsInfo::getWindowModeStringVector();
-			printf("after window mode string \n");
+			//printf("after window mode string \n");
 			for (int i = 0; i < WTStrings.size(); i++) {
 				comboBoxes.back().pushOption(WTStrings[i], screenWidth, screenHeight);
 				if (strcmp(WTStrings[i].c_str(), comboBoxes.back().activeOption.textStruct.string.c_str()) == 0) {
 					comboBoxes.back().currentlySelected = i;
 				}
 			}
-			printf("after combo options \n");
+			//printf("after combo options \n");
 		}
-		printf("before fps \n");
+		//printf("before fps \n");
 		labels.emplace_back("FPS", 800.f * widthRescaling, 200.f * heightRescaling, TA_left, 2.f);
 		{
 			comboBoxes.emplace_back(TextStruct{ std::to_string(SettingsJSON::settingsData.FPS), 800.f * widthRescaling, 240.f * heightRescaling, TA_left, 1.5f }, screenWidth, screenHeight);
@@ -66,7 +66,7 @@ namespace EWE {
 		checkBoxes.emplace_back("Resizeable ", translation, Checkbox::DO_left, screenWidth, screenHeight);
 		*/
 
-		printf("before checkboxes \n");
+		//printf("before checkboxes \n");
 
 		screenCoords = { 1000 * widthRescaling, 340 * heightRescaling };
 		UIComp::convertScreenTo2D(screenCoords, translation, screenWidth, screenHeight);
@@ -76,11 +76,11 @@ namespace EWE {
 		UIComp::convertScreenTo2D(screenCoords, translation, screenWidth, screenHeight);
 		checkBoxes.emplace_back("Render Info ", translation, Checkbox::DO_left, screenWidth, screenHeight);
 
-		printf("after checkboxes \n");
+		//printf("after checkboxes \n");
 
 		clickText.emplace_back(TextStruct{ "Discard Return", screenWidth * .3f, 700.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
 		clickText.emplace_back(TextStruct{ "Save Return", screenWidth / 2.f, 700.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-		printf("end audio constructor \n");
+		//printf("end audio constructor \n");
 
 
 		checkBoxes[0].isChecked = SettingsJSON::settingsData.pointLights;
@@ -108,7 +108,7 @@ namespace EWE {
 		}
 		if (returnValues.first == UIT_Combobox) {
 			if (selectedComboBox == 0) { //screen dimensions
-				printf("setting screen dimensions : %s \n", SettingsInfo::getScreenDimensionString((SettingsInfo::ScreenDimension_Enum)returnValues.second).c_str());
+				//printf("setting screen dimensions : %s \n", SettingsInfo::getScreenDimensionString((SettingsInfo::ScreenDimension_Enum)returnValues.second).c_str());
 				SettingsJSON::tempSettings.screenDimensions = (SettingsInfo::ScreenDimension_Enum)returnValues.second;
 			}
 			else if (selectedComboBox == 1) { //window mode
@@ -121,10 +121,10 @@ namespace EWE {
 
 		if (returnValues.first == UIT_ClickTextBox) {
 			if (returnValues.second == 0) { //discard return
-				printf("discard return \n");
+				//printf("discard return \n");
 				SettingsJSON::tempSettings = SettingsJSON::settingsData;
 
-				printf("screen Dim:winowMode - %d:%d \n", SettingsJSON::settingsData.screenDimensions, SettingsJSON::settingsData.windowMode);
+				//printf("screen Dim:winowMode - %d:%d \n", SettingsJSON::settingsData.screenDimensions, SettingsJSON::settingsData.windowMode);
 				comboBoxes[0].setSelection(SettingsJSON::settingsData.screenDimensions);
 				comboBoxes[1].setSelection(SettingsJSON::settingsData.windowMode);
 				comboBoxes[2].setSelection(SettingsJSON::settingsData.getFPSEnum());
@@ -135,7 +135,7 @@ namespace EWE {
 				//return MCR_DiscardReturn;
 			}
 			else if (returnValues.second == 1) { //save return
-				printf("save return \n");
+				//printf("save return \n");
 
 				clickReturns.push(MCR_SaveReturn);
 				//return MCR_SaveReturn;

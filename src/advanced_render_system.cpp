@@ -286,25 +286,24 @@ namespace EWE {
 			}
 			
 		}
-		bool pipe2dBinded = false;
+
 		if (menuActive) {
+			Dimension2::Bind2D(frameInfo.cmdBuf, frameInfo.index);
 			if (menuManager.drawingNineUI()) {
-				Dimension2::BindNineUI(frameInfo.cmdBuf, frameInfo.index);
 				menuManager.drawNewNine();
 			}
 			
-			pipe2dBinded = true;
-			Dimension2::Bind2D(frameInfo.cmdBuf, frameInfo.index);
 			menuManager.drawNewMenuObejcts();
-		}
 
-
-		//printf("binding textures from in game even if game isnt active \n");
-		if (uiHandler->overlay) {
-			if (!pipe2dBinded) {
-				Dimension2::Bind2D(frameInfo.cmdBuf, frameInfo.index);
+			if (uiHandler->overlay) {
+				uiHandler->overlay->drawObjects(frameInfo);
 			}
-			uiHandler->overlay->drawObjects(frameInfo);
+		}
+		else {
+			if (uiHandler->overlay) {
+				Dimension2::Bind2D(frameInfo.cmdBuf, frameInfo.index);
+				uiHandler->overlay->drawObjects(frameInfo);
+			}
 		}
 	}
 }

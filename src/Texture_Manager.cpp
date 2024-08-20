@@ -362,7 +362,7 @@ namespace EWE {
             //"roundButton.png",
         };
         std::vector<PixelPeek> pixelPeeks{};
-        pixelPeeks.reserve(6);
+        pixelPeeks.reserve(uiNames.size());
 
         for (auto const& name : uiNames) {
             std::string individualPath = "textures/UI/";

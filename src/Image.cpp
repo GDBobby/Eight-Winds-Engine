@@ -228,7 +228,11 @@ namespace EWE {
         vkFreeMemory(vkDevice, imageMemory, nullptr);
 #endif
     }
-    void ImageInfo::CreateImageCommands(VkImageCreateInfo const& imageCreateInfo, StagingBuffer* stagingBuffer, Queue::Enum queue, bool mipmapping) {
+#if IMAGE_DEBUGGING
+    void ImageInfo::CreateImageCommands(VkImageCreateInfo const& imageCreateInfo, StagingBuffer* stagingBuffer, Queue::Enum queue, bool mipmapping, std::string imageName) {
+#else
+    void ImageInfo::CreateImageCommands(VkImageCreateInfo const& imageCreateInfo, StagingBuffer * stagingBuffer, Queue::Enum queue, bool mipmapping) {
+#endif
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(queue);
         VkImageSubresourceRange subresourceRange = CreateSubresourceRange();
@@ -309,27 +313,80 @@ namespace EWE {
 
                     if (mipmapping && MIPMAP_ENABLED) {
                         imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                        pipeBarrier.AddBarrier(imageBarrier);
-                        pipeBarrier.SubmitBarrier(cmdBuf);
+                        //pipeBarrier.AddBarrier(imageBarrier);
+                        //pipeBarrier.SubmitBarrier(cmdBuf);
 
-                        cmdCb.graphicsCallback = [this, format = imageCreateInfo.format, width = imageCreateInfo.extent.width, height = imageCreateInfo.extent.height, syncHub] {
+                        //this matches the barrier in generate mips, the only difference, as far as i know, is levelCount == 1 instead of == mipLevels
+                        //i honestly dont know why that isn't producing a bug, but it has been working so i'll leave it
+                        VkImageMemoryBarrier barrier{};
+                        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                        barrier.image = image;
+                        barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetQueueIndex(Queue::transfer);
+                        barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex(); //graphics queue is the only queue that can support vkCmdBlitImage
+                        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        barrier.subresourceRange.baseArrayLayer = 0;
+                        barrier.subresourceRange.layerCount = 1;
+                        barrier.subresourceRange.levelCount = 1;
+
+                        barrier.subresourceRange.baseMipLevel = 0;
+                        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                        //printf("before cmd pipeline barrier \n");
+                        //this barrier right here needs a transfer queue partner
+                        vkCmdPipelineBarrier(cmdBuf,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                            0, nullptr,
+                            0, nullptr,
+                            1, &barrier
+                        );
+
+
+
+#if IMAGE_DEBUGGING
+                        printf("image name : %s\n", imageName.c_str());
+                        cmdCb.graphicsCallback = [this, format = imageCreateInfo.format, width = imageCreateInfo.extent.width, height = imageCreateInfo.extent.height, syncHub, imageName] {
+                            printf("image name in graphics callback : %s\n", imageName.c_str());
                             VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
                             this->GenerateMipmaps(cmdBuf, format, width, height, Queue::transfer);
                             syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
-                            };
+                        };
+#else
+                        cmdCb.graphicsCallback = [this, format = imageCreateInfo.format, width = imageCreateInfo.extent.width, height = imageCreateInfo.extent.height, syncHub] {
+
+                            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+                            this->GenerateMipmaps(cmdBuf, format, width, height, Queue::transfer);
+                            syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
+                    };
+#endif
+
+                        syncHub->EndSingleTimeCommandTransfer(cmdCb);
                     }
                     else {
                         imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                         pipeBarrier.AddBarrier(imageBarrier);
                         pipeBarrier.SubmitBarrier(cmdBuf);
-
-                        cmdCb.graphicsCallback = [syncHub, barrier = std::move(pipeBarrier)] {
-                            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::transfer);
+#if IMAGE_DEBUGGING
+                        printf("image name : %s\n", imageName.c_str());                        
+                        cmdCb.graphicsCallback = [syncHub, barrier = std::move(pipeBarrier), imageName] {
+                            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+                            printf("image name in graphics callback : %s\n", imageName.c_str());
                             barrier.SubmitBarrier(cmdBuf);
                             syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
-                            };
+                        };
+#else
+                        cmdCb.graphicsCallback = [syncHub, barrier = std::move(pipeBarrier)] {
+                            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+
+                            barrier.SubmitBarrier(cmdBuf);
+                            syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
+#endif
+
+                        syncHub->EndSingleTimeCommandTransfer(cmdCb);
+
+
                     }
-                    syncHub->EndSingleTimeCommandTransfer(cmdCb);
                 }
             }
         }
@@ -376,8 +433,11 @@ namespace EWE {
         DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_OBJECT_TYPE_IMAGE, pixelPeek.debugName.c_str());
 #endif
         //printf("before transition \n");
-        
+#if IMAGE_DEBUGGING
+        CreateImageCommands(imageCreateInfo, stagingBuffer, queue, mipmapping, pixelPeek.debugName);
+#else
         CreateImageCommands(imageCreateInfo, stagingBuffer, queue, mipmapping);
+#endif
     }
 
     StagingBuffer* ImageInfo::StageImage(PixelPeek& pixelPeek) {
@@ -662,5 +722,16 @@ namespace EWE {
             1, &barrier
         );
         syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+    }
+    VkImageSubresourceRange ImageInfo::CreateSubresourceRange() {
+        VkImageSubresourceRange subresourceRange{};
+
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresourceRange.baseMipLevel = 0;
+        subresourceRange.levelCount = mipLevels;
+        subresourceRange.baseArrayLayer = 0;
+        subresourceRange.layerCount = arrayLayers;
+
+        return subresourceRange;
     }
 }

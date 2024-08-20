@@ -5,6 +5,7 @@
 namespace EWE {
 	FloatingRock::FloatingRock() {
 		rockModel = EWEModel::CreateModelFromFile("rock1.obj", Queue::transfer);
+
 		rockTexture = Texture_Builder::CreateSimpleTexture("rock/rock_albedo.jpg", true, true, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		//RANDOM NUMBER GENERATOR
@@ -71,7 +72,7 @@ namespace EWE {
 	}
 	void FloatingRock::render(FrameInfo& frameInfo) {
 
-		 PipelineSystem::SetFrameInfo(frameInfo);
+		PipelineSystem::SetFrameInfo(frameInfo);
 		auto pipe = PipelineSystem::At(Pipe::textured);
 
 		pipe->BindPipeline();

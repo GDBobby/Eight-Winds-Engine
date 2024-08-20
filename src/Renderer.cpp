@@ -122,6 +122,9 @@ namespace EWE {
 		
 
 		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "graphics cmd buffer");
+#endif
 
 		return { commandBuffer, currentFrameIndex };
 	}

@@ -83,7 +83,6 @@ namespace EWE {
 	public:
 		VkPipelineLayout pipe_layout;
 		VkPipeline pipeline;
-		//could do some shit to prevent compute path being reused, idk
 
 		static EWE_Compute_Pipeline createPipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path);
 		static EWE_Compute_Pipeline createPipeline(VkPipelineLayout pipe_layout, std::string compute_path);
@@ -158,7 +157,9 @@ namespace EWE {
 			}
 			shaderModuleMap.clear();
 		}
-
+#if DEBUG_NAMING
+		void SetDebugName(std::string const& name);
+#endif
 
 	private:
 		//static materials
