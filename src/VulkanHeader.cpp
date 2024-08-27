@@ -99,10 +99,8 @@ namespace EWE {
         VmaAllocationInfo vmaAllocInfo{};
         VmaAllocationCreateInfo vmaAllocCreateInfo{};
         vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-#if DEBUGGING_MEMORY_WITH_VMA
         vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT;
-#endif
         EWE_VK_ASSERT(vmaCreateBuffer(vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo));
 
         Stage(vmaAllocator, data, size);
@@ -117,15 +115,18 @@ namespace EWE {
         VmaAllocationInfo vmaAllocInfo{};
         VmaAllocationCreateInfo vmaAllocCreateInfo{};
         vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-#if DEBUGGING_MEMORY_WITH_VMA
         vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT;
-#endif
         EWE_VK_ASSERT(vmaCreateBuffer(vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo));
     }
 #else
-    StagingBuffer::StagingBuffer(VkDeviceSize size, VkDevice device, const void* data) {
-        EWE_VK_ASSERT(vkCreateBuffer(device, &bufferInfo, nullptr, &buffer));
+    StagingBuffer::StagingBuffer(VkDeviceSize size, VkPhysicalDevice physicalDevice, VkDevice device, const void* data) {
+        VkBufferCreateInfo bufferCreateInfo{};
+        bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCreateInfo.size = size;
+        bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        EWE_VK_ASSERT(vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer));
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
@@ -133,7 +134,7 @@ namespace EWE {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         EWE_VK_ASSERT(vkAllocateMemory(device, &allocInfo, nullptr, &memory));
 
@@ -141,8 +142,13 @@ namespace EWE {
 
         Stage(device, data, size);
     }
-    StagingBuffer::StagingBuffer(VkDeviceSize size, VkDevice device) {
-        EWE_VK_ASSERT(vkCreateBuffer(device, &bufferInfo, nullptr, &buffer));
+    StagingBuffer::StagingBuffer(VkDeviceSize size, VkPhysicalDevice physicalDevice, VkDevice device) {
+        VkBufferCreateInfo bufferCreateInfo{};
+        bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCreateInfo.size = size;
+        bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        EWE_VK_ASSERT(vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer));
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
@@ -150,7 +156,7 @@ namespace EWE {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         EWE_VK_ASSERT(vkAllocateMemory(device, &allocInfo, nullptr, &memory));
 

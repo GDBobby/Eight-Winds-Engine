@@ -24,7 +24,9 @@ namespace EWE {
 
             VmaAllocationCreateInfo vmaAllocCreateInfo{};
             vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-            vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+            //if(imageCreateInfo.width * height > some amount){
+            vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT;
+            //}
 
 #if DEBUGGING_MEMORY_WITH_VMA
             //vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -44,7 +46,7 @@ namespace EWE {
             VkMemoryAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
-            allocInfo.memoryTypeIndex = EWEDevice::FindMemoryType(memRequirements.memoryTypeBits, properties);
+            allocInfo.memoryTypeIndex = FindMemoryType(EWEDevice::GetEWEDevice()->GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
 
             EWE_VK_ASSERT(vkAllocateMemory(vkDevice, &allocInfo, nullptr, &imageMemory));
 
@@ -225,7 +227,7 @@ namespace EWE {
         //printf("after image view destruction \n");
         vkDestroyImage(vkDevice, image, nullptr);
         //printf("after image destruction \n");
-        vkFreeMemory(vkDevice, imageMemory, nullptr);
+        vkFreeMemory(vkDevice, memory, nullptr);
 #endif
     }
 #if IMAGE_DEBUGGING
@@ -448,7 +450,7 @@ namespace EWE {
 #if USING_VMA
         StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator(), pixelPeek.pixels);
 #else
-        StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetVkDevice(), pixelPeek.pixels);
+        StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), pixelPeek.pixels);
 #endif
         //printf("freeing pixels \n");
         stbi_image_free(pixelPeek.pixels);
@@ -466,7 +468,7 @@ namespace EWE {
         StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
         vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
 #else
-        StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetVkDevice());
+        StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice());
         vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
 #endif
         uint64_t memAddress = reinterpret_cast<uint64_t>(data);

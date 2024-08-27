@@ -73,9 +73,26 @@ namespace EWE {
         VmaAllocationInfo vmaAllocInfo{};
         VmaAllocationCreateInfo vmaAllocCreateInfo{};
         vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        vmaAllocCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT;
 #if DEBUGGING_MEMORY_WITH_VMA
         vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT;
+#else
+        switch (memoryPropertyFlags) {
+        case VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT: {
+            vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+            break;
+        }
+        case VK_MEMORY_PROPERTY_HOST_CACHED_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT: {
+            vmaAllocCreateInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT;
+            break;
+        }
+        case VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT: {
+            vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+            break;
+        }
+        }
 #endif
         EWE_VK_ASSERT(vmaCreateBuffer(EWEDevice::GetAllocator(), &bufferInfo, &vmaAllocCreateInfo, &buffer_info.buffer, &vmaAlloc, nullptr));
 #else
@@ -94,11 +111,11 @@ namespace EWE {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex = FindMemoryType(EWEDevice::GetEWEDevice()->GetPhysicalDevice(), memRequirements.memoryTypeBits, memoryPropertyFlags);
 
-        EWE_VK_ASSERT(vkAllocateMemory(vkDevice, &allocInfo, nullptr, &bufferMemory));
+        EWE_VK_ASSERT(vkAllocateMemory(vkDevice, &allocInfo, nullptr, &memory));
 
-        EWE_VK_ASSERT(vkBindBufferMemory(vkDevice, buffer, bufferMemory, 0));
+        EWE_VK_ASSERT(vkBindBufferMemory(vkDevice, buffer_info.buffer, memory, 0));
 #endif
     }
 
@@ -155,11 +172,11 @@ namespace EWE {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex = FindMemoryType(EWEDevice::GetEWEDevice()->GetPhysicalDevice(), memRequirements.memoryTypeBits, memoryPropertyFlags);
 
-        EWE_VK_ASSERT(vkAllocateMemory(vkDevice, &allocInfo, nullptr, &bufferMemory));
+        EWE_VK_ASSERT(vkAllocateMemory(vkDevice, &allocInfo, nullptr, &memory));
 
-        EWE_VK_ASSERT(vkBindBufferMemory(vkDevice, buffer, bufferMemory, 0));
+        EWE_VK_ASSERT(vkBindBufferMemory(vkDevice, buffer_info.buffer, memory, 0));
 #endif
         Map();
     }
@@ -232,7 +249,9 @@ namespace EWE {
     }
 
     void EWEBuffer::WriteToBuffer(void const* data, VkDeviceSize size, VkDeviceSize offset) {
+#if _DEBUG
         assert(mapped && "Cannot copy to unmapped buffer");
+#endif
 
         if (size == VK_WHOLE_SIZE) {
             memcpy(mapped, data, bufferSize);

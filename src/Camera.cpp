@@ -7,7 +7,8 @@
 
 namespace EWE {
 	void EWECamera::SetOrthographicProjection(float left, float right, float top, float bottom, float near, float far) {
-		projection = glm::mat4{ 1.0f };
+		//projection = glm::mat4{ 1.0f };
+		projection = glm::identity<glm::mat4>();
 		projection[0][0] = 2.f / (right - left);
 		projection[1][1] = 2.f / (top - bottom);
 		projection[2][2] = 1.f / (far - near);
@@ -17,11 +18,8 @@ namespace EWE {
 	}
 
 	void EWECamera::SetPerspectiveProjection(float fovy, float aspect, float near, float far) {
-		if (!(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f)) {
-			return;
-		}
-
-		projection = glm::perspective(-fovy, aspect, near, far);
+		//inverting aspect, to make it height / width instead of width / height
+		projection = glm::perspective(fovy, aspect, near, far);
 	}
 
 	void EWECamera::SetViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up) {
@@ -29,7 +27,8 @@ namespace EWE {
 		const glm::vec3 u{ glm::cross(w, up) }; //up needs to be passed in normalized
 		const glm::vec3 v{ glm::cross(w, u) };
 
-		view = glm::mat4{ 1.f };
+		//view = glm::mat4{ 1.f };
+
 		view[0][0] = u.x;
 		view[1][0] = u.y;
 		view[2][0] = u.z;
@@ -46,6 +45,9 @@ namespace EWE {
 		view[3][1] = -glm::dot(v, position);
 		view[3][2] = -glm::dot(w, position);
 
+		ubo.projView = projection * view;
+		//ubo.projection = projection;
+		//ubo.view = view;
 		ubo.cameraPos.x = position.x;
 		ubo.cameraPos.y = position.y;
 		ubo.cameraPos.z = position.z;
@@ -64,21 +66,24 @@ namespace EWE {
 		view[0][0] = s.x;//
 		view[1][0] = s.y;
 		view[2][0] = s.z;
+
 		view[0][1] = u.x;//
 		view[1][1] = u.y;
 		view[2][1] = u.z;
+
 		view[0][2] = -f.x;//
 		view[1][2] = -f.y;
 		view[2][2] = -f.z;
+
 		view[3][0] = -dot(s, position);
 		view[3][1] = -dot(u, position);
 		view[3][2] = dot(f, position);
 
 		ubo.projView = projection * view;
+		//ubo.projection = projection;
+		//ubo.view = view;
 
-		ubo.cameraPos.x = position.x;
-		ubo.cameraPos.y = position.y;
-		ubo.cameraPos.z = position.z;
+		ubo.cameraPos = position;
 		//printf("camera pos : %.2f:%.2f:%.2f \n", ubo.cameraPos.x, ubo.cameraPos.y, ubo.cameraPos.z);
 	}
 
@@ -91,9 +96,9 @@ namespace EWE {
 		dataHasBeenUpdated--;
 		//printf("view target direct, sizeof globalubo : %zu \n", sizeof(GlobalUbo));
 
-		glm::vec3 f = glm::normalize(target - position);
-		glm::vec3 s = glm::normalize(glm::cross(f, cameraUp));
-		glm::vec3 u = glm::cross(s, f);
+		const glm::vec3 f = glm::normalize(target - position);
+		const glm::vec3 s = glm::normalize(glm::cross(f, cameraUp));
+		const glm::vec3 u = glm::cross(s, f);
 
 		float* mem = reinterpret_cast<float*>(&view);
 			//reinterpret_cast<float*>(uniformBuffers->at(currentFrame)->getMappedMemory());
@@ -115,7 +120,10 @@ namespace EWE {
 		mem[14] = dot(f, position);
 
 		ubo.cameraPos = position;
+
 		ubo.projView = projection * view;
+		//ubo.projection = projection;
+		//ubo.view = view;
 		uniformBuffers->at(currentFrame)->WriteToBuffer(&ubo);
 
 
@@ -147,8 +155,26 @@ namespace EWE {
 		view[3][1] = -glm::dot(v, position);
 		view[3][2] = -glm::dot(w, position);
 
-		ubo.cameraPos.x = position.x;
-		ubo.cameraPos.y = position.y;
-		ubo.cameraPos.z = position.z;
+		ubo.projView = projection * view;
+		//ubo.projection = projection;
+		//ubo.view = view;
+		ubo.cameraPos = position;
 	}
+	void EWECamera::BindUBO(uint8_t frameIndex) {
+		//printf("camera set ubo \n");
+		//printf("offset of camera pos : %zu\n", offsetof(GlobalUbo, GlobalUbo::cameraPos));
+		uniformBuffers->at(frameIndex)->WriteToBuffer(&ubo, sizeof(GlobalUbo));
+		uniformBuffers->at(frameIndex)->Flush();
+	}
+	void EWECamera::PrintCameraPos() {
+		printf("camera pos : %.3f:%.3f:%.3f\n", ubo.cameraPos.x, ubo.cameraPos.y, ubo.cameraPos.z);
+	}
+	void EWECamera::UpdateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp) {
+		//probably store a position, target, and camera up variable in this class, then hand out a pointer to those variables
+		//being lazy rn
+		this->position = position;
+		this->target = target;
+		this->cameraUp = cameraUp;
+		dataHasBeenUpdated = 2;
+	};
 }

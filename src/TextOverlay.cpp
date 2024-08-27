@@ -189,7 +189,7 @@ namespace EWE {
 #if USING_VMA
 		StagingBuffer stagingBuffer{allocInfo.allocationSize, EWEDevice::GetAllocator(), &font24pixels[0][0] };
 #else
-		StagingBuffer stagingBuffer{ allocInfo.allocationSize, eweDevice->Device(), &font24pixels[0][0] };
+		StagingBuffer stagingBuffer{ allocInfo.allocationSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), eweDevice->Device(), &font24pixels[0][0] };
 #endif
 		// Copy to image
 

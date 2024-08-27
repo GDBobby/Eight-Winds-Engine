@@ -81,10 +81,10 @@ namespace EWE {
 			else if (mainThreadTimeTracker >= renderRefreshRate) {
 				if (processClick()) { printf("continuing on process clikc \n"); swappingScenes = true; continue; }
 
+
 				//std::cout << "currentScene at render : " << currentScene << std::endl;
-				if (currentScenePtr->render(mainThreadTimeTracker)) {
-					//resize functions here
-				}
+				//ewEngine.camera.PrintCameraPos();
+				currentScenePtr->render(mainThreadTimeTracker);
 
 				if (mainThreadTimeTracker > ewEngine.peakRenderTime) {
 					printf("peak render time : % .5f \n", mainThreadTimeTracker);

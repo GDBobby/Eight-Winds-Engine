@@ -33,31 +33,21 @@ namespace EWE {
 		const glm::mat4& GetView() const { return view; }
 		//const glm::mat4& getInverseView() const { return inverseViewMatrix; }
 
-		void BindUBO(uint8_t frameIndex) {
-			//printf("camera set ubo \n");
-			uniformBuffers->at(frameIndex)->WriteToBuffer(&ubo);
-			uniformBuffers->at(frameIndex)->Flush();
-		}
+		void BindUBO(uint8_t frameIndex);
 
 		void SetBuffers(std::vector<EWEBuffer*>* buffers) {
+			assert(buffers->size() > 0);
 			uniformBuffers = buffers;
-			assert(uniformBuffers->size() > 0);
 		}
-		void UpdateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp = glm::vec3{0.f,1.f,0.f}) {
-			//probably store a position, target, and camera up variable in this class, then hand out a pointer to those variables
-			//being lazy rn
-			this->position = position;
-			this->target = target;
-			this->cameraUp = cameraUp;
-			dataHasBeenUpdated = 2;
-		}
+		void UpdateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp = glm::vec3{ 0.f,1.f,0.f });
+		void PrintCameraPos();
 		
 	private:
 		std::vector<EWEBuffer*>* uniformBuffers{};
 		GlobalUbo ubo{};
 
-		glm::mat4 projection;
-		glm::mat4 view;
+		glm::mat4 projection{ 0.f };
+		glm::mat4 view{ 1.f };
 
 		uint8_t dataHasBeenUpdated = 0;
 		glm::vec3 position;

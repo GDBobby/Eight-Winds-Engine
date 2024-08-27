@@ -129,7 +129,7 @@ namespace EWE {
 #if USING_VMA
         StagingBuffer* stagingBuffer = new StagingBuffer(alignmentSize, EWEDevice::GetAllocator(), data);
 #else
-        StagingBuffer* stagingBuffer = new StagingBuffer(alignmentSize, EWEDevice::GetVkDevice(), data);
+        StagingBuffer* stagingBuffer = new StagingBuffer(alignmentSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), data);
 #endif
 
         instanceBuffer = new EWEBuffer(
@@ -175,7 +175,7 @@ namespace EWE {
 #if USING_VMA
         StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetAllocator(), data);
 #else
-        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetVkDevice(), data);
+        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), data);
 #endif
 #if DEBUGGING_MEMORY_WITH_VMA
         vertexBuffer = new EWEBuffer(
@@ -206,7 +206,7 @@ namespace EWE {
 #if USING_VMA
         StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetAllocator(), indexData);
 #else
-        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetVkDevice(), indexData);
+        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), indexData);
 #endif
 #if DEBUGGING_MEMORY_WITH_VMA
         indexBuffer = new EWEBuffer(

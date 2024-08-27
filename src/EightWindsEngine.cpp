@@ -59,10 +59,10 @@ namespace EWE {
 		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = eweRenderer.getPipelineInfo();
 
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
-		camera.SetPerspectiveProjection(glm::radians(70.0f), eweRenderer.GetAspectRatio(), 0.1f, 10000.0f);
+		camera.SetPerspectiveProjection(glm::radians(70.0f), eweRenderer.GetAspectRatio(), 0.1f, 100000.0f);
 
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
-		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
+		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f });
 		InitGlobalBuffers();
 		DescriptorHandler::initGlobalDescriptors(bufferMap);
 		//printf("back to ui handler? \n");
@@ -269,6 +269,7 @@ namespace EWE {
 	void EightWindsEngine::DrawObjects(FrameInfo& frameInfo, double dt) {
 		PipelineSystem::SetFrameInfo(frameInfo);
 		Draw3DObjects(frameInfo, dt);
+
 		Draw2DObjects(frameInfo);
 		DrawText(frameInfo, dt);
 	}

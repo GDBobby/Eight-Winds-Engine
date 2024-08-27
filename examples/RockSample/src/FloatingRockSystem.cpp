@@ -52,7 +52,7 @@ namespace EWE {
 		}
 
 		TransformComponent renderTransform{};
-		renderTransform.scale = glm::vec3{.1f};
+		renderTransform.scale = glm::vec3{.5f};
 		renderModelMatrix = renderTransform.mat4();
 		renderNormalMatrix = renderTransform.normalMatrix();
 

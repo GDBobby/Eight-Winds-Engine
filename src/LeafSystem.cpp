@@ -47,7 +47,7 @@ namespace EWE {
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			leafBuffer.push_back(new EWEBuffer(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+			leafBuffer.push_back(new EWEBuffer(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 
 			leafBuffer[i]->Map();
 
@@ -86,7 +86,6 @@ namespace EWE {
 			//average velocity
 
 			//give a starting position in a box, then subtract position by an inverse amount of time
-			//could even just 
 
 
 			leaf.angF = angularFrequencyDistribution(randomGen);

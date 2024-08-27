@@ -70,8 +70,8 @@ namespace EWE{
         void Stage(VmaAllocator vmaAllocator, const void* data, uint64_t bufferSize);
 #else
         VkDeviceMemory memory{ VK_NULL_HANDLE };
-        StagingBuffer(VkDeviceSize size, VkDevice device);
-        StagingBuffer(VkDeviceSize size, VkDevice device, const void* data);
+        StagingBuffer(VkDeviceSize size, VkPhysicalDevice physicalDevice, VkDevice device);
+        StagingBuffer(VkDeviceSize size, VkPhysicalDevice physicalDevice, VkDevice device, const void* data);
         void Free(VkDevice device);
         void Free(VkDevice device) const;
         void Stage(VkDevice device, const void* data, VkDeviceSize bufferSize);

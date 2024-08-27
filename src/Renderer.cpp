@@ -138,7 +138,7 @@ namespace EWE {
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
 			mainWindow.resetWindowResizedFlag();
 			RecreateSwapChain();
-			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 10000.0f);
+			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 1000000.0f);
 			isFrameStarted = false;
 			currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 			return true;
@@ -164,7 +164,7 @@ namespace EWE {
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
 			mainWindow.resetWindowResizedFlag();
 			RecreateSwapChain();
-			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 10000.0f);
+			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 1000000.0f);
 			syncHub->WaitOnGraphicsFence(currentFrameIndex);
 			isFrameStarted = false;
 			currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -181,8 +181,10 @@ namespace EWE {
 	}
 	/**/
 	void EWERenderer::BeginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+#ifdef _DEBUG
 		assert(isFrameStarted && "Can't call beginSwapChainRenderPass if frame is not in progress!");
 		assert(commandBuffer == GetCurrentCommandBuffer() && "can't begin render pass on command buffer from different frame");
+#endif
 		/*
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

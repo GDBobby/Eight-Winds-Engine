@@ -18,7 +18,7 @@
 
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, a NVIDIA_TARGET macro would be necessary
-#define AMD_TARGET false
+#define AMD_TARGET true
 
 namespace EWE {
 
