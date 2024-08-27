@@ -113,6 +113,8 @@ namespace EWE {
 #endif
 
 		VkCommandBuffer BeginSingleTimeCommand(Queue::Enum queue);
+		VkCommandBuffer BeginSingleTimeCommandGraphics();
+		VkCommandBuffer BeginSingleTimeCommandTransfer();
 
 		void AttemptTransferSubmission();
 

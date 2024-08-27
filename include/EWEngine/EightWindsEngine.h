@@ -127,16 +127,7 @@ namespace EWE {
 
 		void FinishLoading();
 
-		void EndEngineLoadScreen() {
-			printf("~~~~ ENDING LOADING SCREEN ~~~ \n");
-
-			//dependent on this not being in the graphics thread, or it'll infinitely loop
-			SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-			
-			while (syncHub->CheckFencesForUsage()) { syncHub->RunGraphicsCallbacks(); }
-
-			loadingEngine = false;
-		}
+		void EndEngineLoadScreen();
 		bool GetLoadingScreenProgress() {
 			return (!finishedLoadingScreen) || (loadingTime < 2.0);
 		}

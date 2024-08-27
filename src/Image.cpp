@@ -284,8 +284,6 @@ namespace EWE {
                 }
             }
             else if (queue == Queue::transfer) {
-                //this doesnt want a transition, need to fix that
-                //syncHub::EndSingleTimeCommandTransfer(cmdBuf);
                 {
 
                     VkImageMemoryBarrier imageBarrier{};
@@ -305,13 +303,11 @@ namespace EWE {
                     pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
                     CommandWithCallback cmdCb{};
                     cmdCb.cmdBuf = cmdBuf;
-                    cmdCb.callback = [stagingBuffer,
 #if USING_VMA
-                        memMgr = EWEDevice::GetAllocator()
+                    cmdCb.callback = [stagingBuffer] {stagingBuffer->Free(EWEDevice::GetAllocator()); };
 #else
-                        memMgr = EWEDevice::GetVkDevice()
+                    cmdCb.callback = [stagingBuffer] {stagingBuffer->Free(EWEDevice::GetVkDevice()); };
 #endif
-                    ] {stagingBuffer->Free(memMgr); };
 
                     if (mipmapping && MIPMAP_ENABLED) {
                         imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -336,7 +332,6 @@ namespace EWE {
                         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                         barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
                         //printf("before cmd pipeline barrier \n");
-                        //this barrier right here needs a transfer queue partner
                         vkCmdPipelineBarrier(cmdBuf,
                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
                             0, nullptr,
@@ -350,16 +345,16 @@ namespace EWE {
                         printf("image name : %s\n", imageName.c_str());
                         cmdCb.graphicsCallback = [this, format = imageCreateInfo.format, width = imageCreateInfo.extent.width, height = imageCreateInfo.extent.height, syncHub, imageName] {
                             printf("image name in graphics callback : %s\n", imageName.c_str());
-                            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
-                            this->GenerateMipmaps(cmdBuf, format, width, height, Queue::transfer);
-                            syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
+                            VkCommandBuffer mmCmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+                            this->GenerateMipmaps(mmCmdBuf, format, width, height, Queue::transfer);
+                            syncHub->EndSingleTimeCommandGraphicsGroup(mmCmdBuf);
                         };
 #else
                         cmdCb.graphicsCallback = [this, format = imageCreateInfo.format, width = imageCreateInfo.extent.width, height = imageCreateInfo.extent.height, syncHub] {
 
-                            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
-                            this->GenerateMipmaps(cmdBuf, format, width, height, Queue::transfer);
-                            syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
+                            VkCommandBuffer mmCmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+                            this->GenerateMipmaps(mmCmdBuf, format, width, height, Queue::transfer);
+                            syncHub->EndSingleTimeCommandGraphicsGroup(mmCmdBuf);
                     };
 #endif
 
@@ -372,17 +367,17 @@ namespace EWE {
 #if IMAGE_DEBUGGING
                         printf("image name : %s\n", imageName.c_str());                        
                         cmdCb.graphicsCallback = [syncHub, barrier = std::move(pipeBarrier), imageName] {
-                            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+                            VkCommandBuffer tCmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
                             printf("image name in graphics callback : %s\n", imageName.c_str());
-                            barrier.SubmitBarrier(cmdBuf);
-                            syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
+                            barrier.SubmitBarrier(tCmdBuf);
+                            syncHub->EndSingleTimeCommandGraphicsGroup(tCmdBuf);
                         };
 #else
                         cmdCb.graphicsCallback = [syncHub, barrier = std::move(pipeBarrier)] {
-                            VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+                            VkCommandBuffer tCmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
 
-                            barrier.SubmitBarrier(cmdBuf);
-                            syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
+                            barrier.SubmitBarrier(tCmdBuf);
+                            syncHub->EndSingleTimeCommandGraphicsGroup(tCmdBuf);
 #endif
 
                         syncHub->EndSingleTimeCommandTransfer(cmdCb);

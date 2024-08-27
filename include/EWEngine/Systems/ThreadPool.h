@@ -65,5 +65,6 @@ namespace EWE {
         }
 
         static void WaitForCompletion();
+        static bool CheckEmpty();
     };
 }

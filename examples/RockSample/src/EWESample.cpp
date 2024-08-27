@@ -7,6 +7,7 @@
 #include <EWEngine/Graphics/Texture/Cube_Texture.h>
 
 #include "GUI/MenuEnums.h"
+#include <EWEngine/Systems/ThreadPool.h>
 
 
 #include <chrono>
@@ -24,19 +25,40 @@ namespace EWE {
 		std::unordered_map<uint16_t, std::string> effectsMap{};
 		effectsMap.emplace(0, "sounds/effects/click.mp3");
 		printf("loading effects \n");
-		soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect);
+		//ThreadPool::EnqueueVoid(soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect));
+		ThreadPool::EnqueueVoid(&SoundEngine::LoadSoundMap, soundEngine.get(), effectsMap, SoundEngine::SoundType::Effect);
+		
 
-		addModulesToMenuManager(screenWidth, screenHeight);
-		loadGlobalObjects();
+		//addModulesToMenuManager(screenWidth, screenHeight);
+		ThreadPool::EnqueueVoid(&EWESample::addModulesToMenuManager, this, screenWidth, screenHeight);
+		//loadGlobalObjects();
+		ThreadPool::EnqueueVoid(&EWESample::loadGlobalObjects, this);
+
 		//currentScene = scene_ocean;
-		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine));
+		//scenes.emplace(scene_mainmenu, new MainMenuScene(ewEngine));
 		//scenes.emplace(scene_ocean, std::make_unique<OceanScene>(ewEngine, skyboxInfo));
-		scenes.emplace(scene_shaderGen, std::make_unique<ShaderGenerationScene>(ewEngine));
+		//scenes.emplace(scene_shaderGen, new ShaderGenerationScene(ewEngine));
+		scenes.emplace(scene_mainmenu, nullptr);
+		scenes.emplace(scene_shaderGen, nullptr);
+		scenes.emplace(scene_ocean, nullptr);
+		auto sceneLoadFunc = [&]() {
+			scenes.at(scene_mainmenu) = new MainMenuScene(ewEngine);
+			LoadSceneIfMatching(scene_mainmenu);
+
+		};
+		auto sceneLoadFunc2 = [&]() {
+			scenes.at(scene_shaderGen) = new ShaderGenerationScene(ewEngine);
+			LoadSceneIfMatching(scene_shaderGen);
+		};
+		auto sceneLoadFunc3 = [&]() {
+			scenes.at(scene_ocean) = new OceanScene(ewEngine, skyboxInfo);
+			LoadSceneIfMatching(scene_ocean);
+		};
+		ThreadPool::EnqueueVoidFunction(sceneLoadFunc);
+		ThreadPool::EnqueueVoidFunction(sceneLoadFunc2);
+		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc3);
+
 		//scenes.emplace(scene_)
-		currentScenePtr = scenes.at(currentScene).get();
-
-		currentScenePtr->load();
-
 
 		//StaticRenderSystem::initStaticRS(1, 1);
 
@@ -44,9 +66,13 @@ namespace EWE {
 
 	}
 	EWESample::~EWESample() {
+		for (auto& scene : scenes) {
+			delete scene.second;
+		}
 		//explicitly deconstruct static objects that go into vulkan
 	}
 	void EWESample::mainThread() {
+
 		auto mainThreadCurrentTime = std::chrono::high_resolution_clock::now();
 		renderRefreshRate = static_cast<double>(SettingsJSON::settingsData.FPS);
 		std::chrono::high_resolution_clock::time_point newTime;
@@ -250,7 +276,7 @@ namespace EWE {
 		Texture_Manager::GetTextureManagerPtr()->ClearSceneTextures();
 		//loading entry?
 		if (currentScene != scene_exitting) {
-			currentScenePtr = scenes.at(currentScene).get();
+			currentScenePtr = scenes.at(currentScene);
 			currentScenePtr->load();
 			currentScenePtr->entry();
 			lastScene = currentScene;
@@ -259,6 +285,13 @@ namespace EWE {
 		}
 		else {
 			gameRunning = false;
+		}
+	}
+	void EWESample::LoadSceneIfMatching(Scene_Enum scene) {
+		if (scene == currentScene) {
+			currentScenePtr = scenes.at(currentScene);
+
+			currentScenePtr->load();
 		}
 	}
 }

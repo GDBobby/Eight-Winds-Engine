@@ -16,6 +16,8 @@
 #include <string>
 #endif
 
+#include <mutex>
+
 #include <functional>
 
 namespace EWE{
@@ -57,6 +59,15 @@ namespace EWE{
         SemaphoreData* signalSemaphores[Queue::_count] = { nullptr, nullptr, nullptr, nullptr }; //each signal is unique per submit that could wait on it, and right now I'm expecting max 1 wait per queue
 
         std::function<void()> Reset(VkDevice device);
+        std::function<void()> WaitReturnCallbacks(VkDevice device, uint64_t time);
+        void Lock() {
+            mut.lock();
+        }
+        void Unlock() {
+            mut.unlock();
+        }
+    private:
+        std::mutex mut{};
     };
 
     struct StagingBuffer {

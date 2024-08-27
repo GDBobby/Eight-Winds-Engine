@@ -157,7 +157,7 @@ namespace EWE {
     };
     struct VertexGrid2D {
         glm::vec2 position;
-        VertexGrid2D() {}
+        VertexGrid2D() : position{ 0.f } {}
         VertexGrid2D(float x, float y) : position{ x, y } {}
 
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();

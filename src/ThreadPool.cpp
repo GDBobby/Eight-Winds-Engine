@@ -99,8 +99,20 @@ namespace EWE {
 
         );
     }
-    void ThreadPool::EnqueueVoidFunction(std::function<void()> task) {
+    bool ThreadPool::CheckEmpty() {
+        std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
+#if DEBUGGING_THREADS
+        printf("checking thread pool empty - %zu:%zu \n", singleton->numTasksCompleted, singleton->numTasksEnqueued);
+#endif
+        if (singleton->numTasksCompleted == singleton->numTasksEnqueued) {
+            singleton->numTasksCompleted = 0;
+            singleton->numTasksEnqueued = 0;
+            return true;
+        }
+        return false;
+    }
 
+    void ThreadPool::EnqueueVoidFunction(std::function<void()> task) {
         {
             std::unique_lock<std::mutex> lock(singleton->queueMutex);
             assert(!singleton->stop && "enqueue on stopped threadpool");

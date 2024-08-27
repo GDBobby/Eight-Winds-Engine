@@ -127,15 +127,9 @@ namespace EWE {
         std::vector<std::function<void()>> callbacks{};
         for (uint16_t i = 0; i < size; i++) {
             if (fences[i].inUse) {
-                VkResult ret = vkWaitForFences(device, 1, &fences[i].fence, true, 0);
-                if (ret == VK_SUCCESS) {
-                    std::function<void()> cb = fences[i].Reset(device);
-                    if (cb != nullptr) {
-                        callbacks.push_back(cb);
-                    }
-                }
-                else if (ret != VK_TIMEOUT) {
-                    EWE_VK_ASSERT(ret);
+                std::function<void()> cb = fences[i].WaitReturnCallbacks(device, 0);
+                if (cb != nullptr) {
+                    callbacks.push_back(cb);
                 }
             }
         }
@@ -159,14 +153,11 @@ namespace EWE {
                     return &semaphores[i];
                 }
             }
-            assert(false && "no semaphore available");//if waiting for the semaphore instead of crashing is acceptable, do the following
+            assert(false && "no semaphore available, if waiting for a semaphore to become available instead of crashing is acceptable, comment this line");
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
-        return GetSemaphore();
     }
     FenceData& SyncPool::GetFence() {
-
-        //potential risk of stack overflow if recursive calls get too large
         while (true) {
             for (uint8_t i = 0; i < size; i++) {
                 if (!fences[i].inUse) {
@@ -174,7 +165,7 @@ namespace EWE {
                     return fences[i];
                 }
             }
-            assert(false && "no available fence when requested"); //if waiting for the fence instead of crashing is acceptable, do the following
+            assert(false && "no available fence when requested, if waiting for a fence to become available instead of crashing is acceptable, comment this line");
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }

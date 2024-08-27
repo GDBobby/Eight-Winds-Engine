@@ -37,6 +37,19 @@ namespace EWE {
 			printf("\t%.3f:%.3f:%.3f:%.3f\n", theMatrix[i].x, theMatrix[i].y, theMatrix[i].z, theMatrix[i].w);
 		}
 	}
+
+	void EightWindsEngine::EndEngineLoadScreen() {
+		printf("~~~~ ENDING LOADING SCREEN ~~~ \n");
+
+		//dependent on this not being in the graphics thread, or it'll infinitely loop
+		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+
+		while (syncHub->CheckFencesForUsage()) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+
+		loadingEngine = false;
+	}
+
+
 	EightWindsEngine::EightWindsEngine(std::string windowName) :
 		//first, any members not mentioned here with brackets will be initialized
 		//second, any memberss in this section will be initialized

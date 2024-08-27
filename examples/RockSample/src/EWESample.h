@@ -23,7 +23,7 @@ namespace EWE {
 
 		Scene_Enum lastScene = scene_mainmenu;
 		Scene_Enum currentScene = scene_mainmenu;
-		std::unordered_map<Scene_Enum, std::unique_ptr<Scene>> scenes;
+		std::unordered_map<Scene_Enum, Scene*> scenes;
 		Scene* currentScenePtr{ nullptr };
 		bool swappingScenes = false;
 		std::shared_ptr<SoundEngine> soundEngine;
@@ -40,5 +40,7 @@ namespace EWE {
 		bool processClick();
 
 		void SwapScenes();
+
+		void LoadSceneIfMatching(Scene_Enum scene);
 	};
 }

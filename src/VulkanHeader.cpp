@@ -233,4 +233,42 @@ namespace EWE {
         asyncCallbacks = nullptr;
         return ret;
     }
+
+    std::function<void()> FenceData::WaitReturnCallbacks(VkDevice device, uint64_t time) {
+        mut.lock();
+        VkResult ret = vkWaitForFences(device, 1, &fence, true, time);
+        if (ret == VK_SUCCESS) {
+            //this is the Reset() definition, but i need the mutex to release asap
+            EWE_VK_ASSERT(vkResetFences(device, 1, &fence));
+            mut.unlock();
+            for (auto& waitSem : waitSemaphores) {
+                waitSem->FinishWaiting();
+            }
+            waitSemaphores.clear();
+            for (uint8_t i = 0; i < Queue::_count; i++) {
+                if (signalSemaphores[i] != nullptr) {
+                    signalSemaphores[i]->FinishSignaling();
+                    signalSemaphores[i] = nullptr;
+                }
+            }
+
+            inUse = false;
+            if (inlineCallbacks) {
+                inlineCallbacks();
+                inlineCallbacks = nullptr;
+            }
+            std::function<void()> ret{ asyncCallbacks };
+            asyncCallbacks = nullptr;
+            return ret;
+        }
+        else if (ret == VK_TIMEOUT) {
+            mut.unlock();
+            return nullptr;
+        }
+        else {
+            mut.unlock();
+            EWE_VK_RESULT_ASSERT(ret);
+            return nullptr; //error silencing
+        }
+    }
 }

@@ -17,6 +17,8 @@ int main() {
 
 		eweSample = new EWE::EWESample(ewEngine);
 
+		//i think the only way to guarantee this is called after i finish loading, if i add more threads, is to add flags for each loading segment.
+		//the easiest way would be if i just counted the amount of requried threads, then required the completed thread count to equal that count before continuing
 		ewEngine.EndEngineLoadScreen();
 	};
 	EWE::ThreadPool::EnqueueVoid(loadPart2);
@@ -25,7 +27,11 @@ int main() {
 	//the loading screen won't finish until the threads are finished, but then we wait on threads. then we call the projects main loop,
 	//and the main loop waits ont he loading screen
 	ewEngine.LoadingScreen();
-	EWE::ThreadPool::WaitForCompletion();
+
+	std::this_thread::sleep_for(std::chrono::seconds(5));
+	assert(EWE::ThreadPool::CheckEmpty() && "the thread pool should be empty here");
+	//EWE::ThreadPool::WaitForCompletion();
+	
 
 	try {
 		eweSample->mainThread();

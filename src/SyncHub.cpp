@@ -34,6 +34,10 @@ namespace EWE {
 
 		syncHubSingleton->commandPools[Queue::transfer] = transferCommandPool;
 		syncHubSingleton->commandPools[Queue::graphics] = renderCommandPool;
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(device, transferCommandPool, VK_OBJECT_TYPE_COMMAND_BUFFER, "transfer command pool");
+		DebugNaming::SetObjectName(device, renderCommandPool, VK_OBJECT_TYPE_COMMAND_BUFFER, "graphics command pool");
+#endif
 
 		syncHubSingleton->bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -81,10 +85,11 @@ namespace EWE {
 		EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &singleTimeFenceGraphics));
 	}
 
-	VkCommandBuffer SyncHub::BeginSingleTimeCommand(Queue::Enum queue) {
+	VkCommandBuffer SyncHub::BeginSingleTimeCommandGraphics() {
 #ifdef _DEBUG
-		if (queue == Queue::graphics && std::this_thread::get_id() == main_thread) {
-			
+		if (std::this_thread::get_id() != main_thread) {
+
+			printf("graphics queue STC not on main thread\n");
 		}
 #endif
 
@@ -92,7 +97,7 @@ namespace EWE {
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = 1;
-		allocInfo.commandPool = commandPools[queue];
+		allocInfo.commandPool = commandPools[Queue::graphics];
 
 		VkCommandBuffer commandBuffer{ VK_NULL_HANDLE };
 		EWE_VK_ASSERT(vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer));
@@ -101,33 +106,45 @@ namespace EWE {
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo)); 
+		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 #if DEBUG_NAMING
-		switch (queue) {
-			case Queue::graphics: {
-				DebugNaming::SetObjectName(device, commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[graphics]");
-				break;
-			}
-			case Queue::transfer: {
-				DebugNaming::SetObjectName(device, commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[transfer]");
-				break;
-			}
-			case Queue::compute: {
-				DebugNaming::SetObjectName(device, commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[compute]");
-				break;
-			}
-			default: {
-				assert(false && "invalid single time command queue");
-			}
-		}
+		DebugNaming::SetObjectName(device, commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[graphics]");
 #endif
 		return commandBuffer;
+	}
+	VkCommandBuffer SyncHub::BeginSingleTimeCommandTransfer() {
 
-#if defined(_MSC_VER) && !defined(__clang__) // MSVC
-		__assume(false);
-#else // GCC, Clang
-		__builtin_unreachable();
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = 1;
+		allocInfo.commandPool = commandPools[Queue::transfer];
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		VkCommandBuffer commandBuffer{ VK_NULL_HANDLE };
+		transferPoolMutex.lock();
+		EWE_VK_ASSERT(vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer));
+		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+		transferPoolMutex.unlock();
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(device, commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[transfer]");
 #endif
+		return commandBuffer;
+	}
+
+	VkCommandBuffer SyncHub::BeginSingleTimeCommand(Queue::Enum queue) {
+		if (queue == Queue::graphics) {
+			return BeginSingleTimeCommandGraphics();
+		}
+		else if (queue == Queue::transfer) {
+			return BeginSingleTimeCommandTransfer();
+		}
+		else {
+			assert(false && "unsupported queue");
+			return VK_NULL_HANDLE;
+		}
 	}
 
 	void SyncHub::EndSingleTimeCommandGraphics(VkCommandBuffer cmdBuf) {
@@ -205,14 +222,15 @@ namespace EWE {
 		FenceData& fence = syncPool.GetFence();
 		fence.signalSemaphores[Queue::graphics] = signalSemaphore;
 		fence.waitSemaphores.push_back(transitionData.waitSemaphore);
-
+		fence.Lock();
 		EWE_VK_ASSERT(vkQueueSubmit(queues[Queue::graphics], 1, &submitInfo, fence.fence));
-#if DEBUG_NAMING
-		DebugNaming::QueueEnd(queues[Queue::graphics]);
-#endif
 		fence.inlineCallbacks = [this, cbs = graphicsSTCGroup] {
 			vkFreeCommandBuffers(device, commandPools[Queue::graphics], static_cast<uint32_t>(cbs.size()), cbs.data());
 		};
+		fence.Unlock();
+#if DEBUG_NAMING
+		DebugNaming::QueueEnd(queues[Queue::graphics]);
+#endif
 		graphicsSTCGroup.clear();
 		//std::cout << "before transfer subm
 	}
@@ -261,7 +279,9 @@ namespace EWE {
 		AttemptTransferSubmission();
 	}
 	void SyncHub::EndSingleTimeCommandTransfer(CommandWithCallback cmdCb) {
+		transferPoolMutex.lock();
 		EWE_VK_ASSERT(vkEndCommandBuffer(cmdCb.cmdBuf));
+		transferPoolMutex.unlock();
 		TransferCommandManager::AddCommand(cmdCb);
 		
 		AttemptTransferSubmission();

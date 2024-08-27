@@ -115,7 +115,7 @@ namespace EWE {
 #endif
             ] {
                 sb->Free(memMgr); delete sb; 
-                };
+            };
             syncHub->EndSingleTimeCommandTransfer(cb);
         }
     }
