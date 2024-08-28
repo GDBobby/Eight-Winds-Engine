@@ -68,7 +68,7 @@ namespace EWE {
 		else if (!std::filesystem::exists(SHADER_DYNAMIC_PATH)) {
 			printf("shader dynamic path doesn't exist : %s\n", SHADER_DYNAMIC_PATH);
 			std::filesystem::create_directory(SHADER_DYNAMIC_PATH);
-#ifdef _DEBUG
+#if EWE_DEBUG
 			printf("should've cr");//?
 #endif
 		}

@@ -25,7 +25,7 @@ namespace EWE {
 	//	VkBuffer buffer{ VK_NULL_HANDLE };
 	//	VkDeviceMemory memory{ VK_NULL_HANDLE };
 	//	void Free(VkDevice device) {
-	//#ifdef _DEBUG
+	//#if EWE_DEBUG
 	//		assert(buffer != VK_NULL_HANDLE);
 	//#endif
 	//		vkUnmapMemory(device, memory);

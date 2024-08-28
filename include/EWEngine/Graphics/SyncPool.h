@@ -86,7 +86,7 @@ namespace EWE{
 #endif
         
         bool CheckFencesForUsage();
-        void CheckFencesForCallbacks();
+        void CheckFencesForCallbacks(std::mutex& transferPoolMutex);
 
         SemaphoreData* GetSemaphore();
         FenceData& GetFence();

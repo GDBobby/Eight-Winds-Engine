@@ -48,21 +48,21 @@ namespace EWE {
 	}
 
 	SkinBufferHandler* SkinRenderSystem::getSkinBuffer(SkeletonID skeletonID) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(skinnedMainObject->buffers.contains(skeletonID) && "buffer does not exist");
 #endif
 		return &skinnedMainObject->buffers.at(skeletonID);
 	}
 
 	InstancedSkinBufferHandler* SkinRenderSystem::getInstancedSkinBuffer(SkeletonID skeletonID) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 			assert(instancedBuffers.contains(skeletonID) && "requested buffer doesn't exist");
 #endif
 			return &instancedBuffers.at(skeletonID);
 	}
 
 	void SkinRenderSystem::changeActorCount(SkeletonID skeletonID, uint8_t maxActorCount) {
-#if _DEBUG
+#if EWE_DEBUG
 			assert(buffers.find(skeletonID) != buffers.end() && "trying to change the max actor count for a buffer that doesn't exist");
 #endif
 			buffers.at(skeletonID).changeMaxActorCount(maxActorCount);
@@ -112,7 +112,7 @@ namespace EWE {
 
 				if (bindedSkeletonID != skeleDataRef.first) {
 					bindedSkeletonID = skeleDataRef.first;
-#ifdef _DEBUG
+#if EWE_DEBUG
 					assert(instancedBuffers.contains(skeleDataRef.first) && "requested buffer doesn't exist");
 #endif
 					pipe->bindDescriptor(1, instancedBuffers.at(skeleDataRef.first).getDescriptor());
@@ -147,7 +147,7 @@ namespace EWE {
 
 			for (auto& skeleDataRef : boned.second.skeletonData) {
 				if (!pushConstants.contains(skeleDataRef.first)) {
-//#ifdef _DEBUG
+//#if EWE_DEBUG
 					//std::cout << "this skeleton doesn't have push constants - skeletonID : " << skeleDataRef.first << std::endl;
 					//std::cout << "push count is 0 : " << std::endl;
 //#endif
@@ -156,13 +156,13 @@ namespace EWE {
 
 				auto& skelePush = pushConstants.at(skeleDataRef.first);
 				if (skelePush.count == 0) {
-//#ifdef _DEBUG
+//#if EWE_DEBUG
 					//std::cout << "push count is 0 : " << std::endl;
 //#endif
 					continue;
 				}
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 				assert(buffers.contains(skeleDataRef.first) && "buffer does not exist");
 #endif
 				pipe->bindDescriptor(1, buffers.at(skeleDataRef.first).getDescriptor());
@@ -262,7 +262,7 @@ namespace EWE {
 	}
 
 	void SkinRenderSystem::addSkeleton(MaterialTextureInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(skinnedMainObject != nullptr);
 		printf("adding skeleton \n");
 #endif
@@ -333,11 +333,11 @@ namespace EWE {
 			//	//texture erasure here, if i decide to do it that way
 			//}
 			if (instanced.second.skeletonData.erase(skeletonID) > 0) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 				printf("erasing an instanced skeleton : %d \n", skeletonID);
 #endif
 				if (instanced.second.skeletonData.size() == 0) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 					printf("erasing a instanced skin pipeline :%d \n", instanced.first);
 #endif
 
@@ -350,7 +350,7 @@ namespace EWE {
 					//i believe im manually erasing textures before removing a skeleton. not sure tho
 				}
 			}
-#ifdef _DEBUG
+#if EWE_DEBUG
 			else {
 				printf("attempting to remove a skeleton that does not exist \n");
 			}
@@ -365,7 +365,7 @@ namespace EWE {
 			if (boned.second.skeletonData.erase(skeletonID) > 0) {
 				printf("erasing a boned skeleton : %d \n", skeletonID);
 				if (boned.second.skeletonData.size() == 0) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 					printf("erasing a boned skin pipeline :%d \n", boned.first);
 #endif
 					skinnedMainObject->boneData.erase(boned.first);

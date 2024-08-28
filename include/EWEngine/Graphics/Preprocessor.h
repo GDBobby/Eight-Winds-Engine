@@ -1,10 +1,10 @@
 #pragma once
 
-#ifndef _DEBUG
  //on linux, _DEBUG needs to be defined explicitly
  //_DEBUG is already defined in Visual Studio while in DEBUG mode
-    #define _DEBUG true
-#endif
+ //this changes it so that on windows, _DEBUG needs to be defined explicitly
+
+#define EWE_DEBUG false
 
 #define DEBUGGING_DEVICE_LOST false
 #define USING_NVIDIA_AFTERMATH true && DEBUGGING_DEVICE_LOST
@@ -15,7 +15,7 @@
 #define DEBUGGING_PIPELINES false
 #define DEBUGGING_DYNAMIC_PIPE false
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 #define DEBUG_NAMING true
 #else
 #define DEBUG_NAMING false
@@ -28,4 +28,4 @@
 
 #define SEMAPHORE_TRACKING true
 
-#define IMAGE_DEBUGGING true
+#define IMAGE_DEBUGGING EWE_DEBUG && true

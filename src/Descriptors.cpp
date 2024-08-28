@@ -61,7 +61,7 @@ namespace EWE {
 
     EWEDescriptorSetLayout::~EWEDescriptorSetLayout() {
         vkDestroyDescriptorSetLayout(EWEDevice::GetVkDevice(), descriptorSetLayout, nullptr);
-#ifdef _DEBUG
+#if EWE_DEBUG
         printf("probably have memory leaks currently, address this ASAP \n");
         //the reason i have this print statement (feb 2024)
         //i changed the builder to return a new pointer instead of a unique pointer
@@ -198,7 +198,7 @@ namespace EWE {
 		pools.clear();
 	}
     void EWEDescriptorPool::DestructPool(DescriptorPool_ID poolID) {
-#if _DEBUG
+#if EWE_DEBUG
         printf("deconstructing pool : %d \n", poolID);
         assert(pools.contains(poolID) && "destructing pool that doesn't exist");
 #endif

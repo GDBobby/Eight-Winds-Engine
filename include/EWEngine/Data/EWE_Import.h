@@ -17,7 +17,6 @@
 namespace EWE {
     class ImportData {
     public:
-#pragma 
         struct boneEData {
             uint32_t boneID{ 69420 };
             glm::mat4 boneTransform;

@@ -5,11 +5,13 @@ namespace EWE {
 
 	MenuManager::MenuManager(float screenWidth, float screenHeight, GLFWwindow* windowPtr, std::shared_ptr<TextOverlay> textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
 		assert(menuManagerPtr == nullptr && "created two menu managers?");
+		printf("beginning menu manager construction\n");
 
 		menuManagerPtr = this;
 		currentScene = 0;
-
+		printf("before init textures\n");
 		MenuModule::initTextures();
+		printf("before init textures\n");
 
 		//MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
 
@@ -22,6 +24,7 @@ namespace EWE {
 
 		MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
 		//menuRef.clickTextCallback.push_back(&MenuManager::DiscardReturnCallback);
+		printf("end menu manager construction\n");
 
 	}
 	void MenuManager::windowResize(std::pair<uint32_t, uint32_t> windowDim) {

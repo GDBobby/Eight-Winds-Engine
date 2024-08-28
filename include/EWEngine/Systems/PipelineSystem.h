@@ -16,7 +16,7 @@ namespace EWE {
 		static std::unordered_map<PipelineID, PipelineSystem*> pipelineSystem;
 		static uint8_t frameIndex;
 		static VkCommandBuffer cmdBuf;
-#ifdef _DEBUG
+#if EWE_DEBUG
 		static PipelineID currentPipe;
 		PipelineSystem(PipelineID pipeID) : myID{pipeID} {}
 #else
@@ -52,7 +52,7 @@ namespace EWE {
 		EWEModel* bindedModel = nullptr;
 		VkShaderStageFlags pushStageFlags;
 		uint32_t pushSize;
-#ifdef _DEBUG
+#if EWE_DEBUG
 		PipelineID myID;
 #endif
 

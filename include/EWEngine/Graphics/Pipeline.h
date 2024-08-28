@@ -187,7 +187,7 @@ namespace EWE {
 		static std::map<Pipeline_Enum, EWEPipeline*> pipelines;
 		static std::map<MaterialFlags, EWEPipeline*> dynamicMaterialPipeline;
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 		static std::vector<MaterialFlags> dynamicBonePipeTracker;
 		static std::vector<std::pair<uint16_t, MaterialFlags>> dynamicInstancedPipeTracker;
 #endif

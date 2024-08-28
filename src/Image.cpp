@@ -38,7 +38,11 @@ namespace EWE {
 #else
         void CreateImageWithInfo(const VkImageCreateInfo& imageCreateInfo, const VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
             VkDevice vkDevice = EWEDevice::GetVkDevice();
-            EWE_VK_ASSERT(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &image));
+            printf("before vk create image\n");
+            VkResult ret = vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &image);
+            printf("result : %zu\n", ret);
+            //EWE_VK_ASSERT(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &image));
+            printf("after vk create image\n");
 
             VkMemoryRequirements memRequirements;
             vkGetImageMemoryRequirements(vkDevice, image, &memRequirements);
@@ -56,9 +60,13 @@ namespace EWE {
     }
 
 
-    PixelPeek::PixelPeek(std::string const& path) : debugName{path} {
+    PixelPeek::PixelPeek(std::string const& path) 
+#if DEBUG_NAMING
+        : debugName{path} 
+#endif
+    {
         pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-#if _DEBUG
+#if EWE_DEBUG
         assert(pixels && ((width * height) > 0) && path.c_str());
 #endif
     }
@@ -162,7 +170,7 @@ namespace EWE {
 			return dslIter->second;
 		}
 
-#ifdef _DEBUG
+#if EWE_DEBUG
         auto emplaceRet = descSetLayouts.try_emplace(*this, BuildDSL());
         assert(emplaceRet.second && "failed to create dynamic desc set layout");
         return emplaceRet.first->second;
@@ -378,6 +386,7 @@ namespace EWE {
 
                             barrier.SubmitBarrier(tCmdBuf);
                             syncHub->EndSingleTimeCommandGraphicsGroup(tCmdBuf);
+                        };
 #endif
 
                         syncHub->EndSingleTimeCommandTransfer(cmdCb);

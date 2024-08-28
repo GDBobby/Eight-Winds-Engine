@@ -6,7 +6,7 @@ namespace EWE {
 	std::unordered_map<PipelineID, PipelineSystem*> PipelineSystem::pipelineSystem{};
 	uint8_t PipelineSystem::frameIndex;
 	VkCommandBuffer PipelineSystem::cmdBuf;
-#ifdef _DEBUG
+#if EWE_DEBUG
 	PipelineID PipelineSystem::currentPipe;
 #endif
 
@@ -16,7 +16,7 @@ namespace EWE {
 	}
 	
 	void PipelineSystem::Emplace(PipelineID pipeID, PipelineSystem* pipeSys) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(pipelineSystem.find(pipeID) == pipelineSystem.end() && "attempting to emplace a pipe with an existing id");
 #endif
 		pipelineSystem.emplace(pipeID, pipeSys);
@@ -44,14 +44,14 @@ namespace EWE {
 		auto foundPipe = pipelineSystem.find(pipeID);
 
 		assert(foundPipe != pipelineSystem.end() && "searching invalid pipe \n");
-#ifdef _DEBUG
+#if EWE_DEBUG
 		currentPipe = pipeID;
 #endif
 		return foundPipe->second;
 	}
 	
 	void PipelineSystem::BindPipeline() {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(currentPipe == myID && "pipe id mismatch on model bind");
 #endif
 		pipe->bind(cmdBuf);
@@ -59,13 +59,13 @@ namespace EWE {
 	}
 	void PipelineSystem::BindModel(EWEModel* model) {
 		bindedModel = model;
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(currentPipe == myID && "pipe id mismatch on model bind");
 #endif
 		bindedModel->Bind(cmdBuf);
 	}
 	void PipelineSystem::BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(currentPipe == myID && "pipe id mismatch on desc bind");
 #endif
 		vkCmdBindDescriptorSets(cmdBuf,
@@ -93,14 +93,14 @@ namespace EWE {
 	void PipelineSystem::PushAndDraw(void* push) {
 		vkCmdPushConstants(cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
 		
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(bindedModel != nullptr && "attempting to draw a model while none is binded");
 		assert(currentPipe == myID && "pipe id mismatch on model draw");
 #endif
 		bindedModel->Draw(cmdBuf);
 	}
 	void PipelineSystem::DrawModel() {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(bindedModel != nullptr && "attempting to draw a model while none is binded");
 		assert(currentPipe == myID && "pipe id mismatch on model draw");
 #endif

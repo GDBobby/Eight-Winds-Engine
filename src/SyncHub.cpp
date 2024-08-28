@@ -12,12 +12,12 @@ namespace EWE {
 		renderSyncData{ device },
 		main_thread{ std::this_thread::get_id() }
 	{
-#ifdef _DEBUG
+#if EWE_DEBUG
 		printf("COSTRUCTING SYNCHUB\n");
 #endif
 	}
 	SyncHub::~SyncHub() {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		printf("DE COSTRUCTING SYNCHUB\n");
 #endif
 	}
@@ -86,7 +86,7 @@ namespace EWE {
 	}
 
 	VkCommandBuffer SyncHub::BeginSingleTimeCommandGraphics() {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		if (std::this_thread::get_id() != main_thread) {
 
 			printf("graphics queue STC not on main thread\n");
@@ -176,7 +176,7 @@ namespace EWE {
 	}
 
 	void SyncHub::RunGraphicsCallbacks() {
-		syncPool.CheckFencesForCallbacks();
+		syncPool.CheckFencesForCallbacks(transferPoolMutex);
 
 		if (transitionManager.Empty()) {
 			return;
@@ -193,7 +193,7 @@ namespace EWE {
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.pNext = nullptr;
 		submitInfo.commandBufferCount = graphicsSTCGroup.size();
-#ifdef _DEBUG
+#if EWE_DEBUG
 		if (submitInfo.commandBufferCount <= 0) {
 			assert(false && "had graphics callbacks but don't have any command buffers");
 		}
@@ -302,19 +302,19 @@ namespace EWE {
 	}
 
 	void SyncHub::SubmitTransferBuffers() {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		int debugLoopTracker = 0;
 #endif
 		auto cmdCbs = TransferCommandManager::PrepareSubmit();
 		while (cmdCbs.commands.size() > 0) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 			printf("looping in submit transfer buffers : %d\n", debugLoopTracker++);
 #endif
 			transferSubmitInfo.commandBufferCount = cmdCbs.commands.size();
 			transferSubmitInfo.pCommandBuffers = cmdCbs.commands.data();
 
 			FenceData& fenceData = syncPool.GetFence();
-			fenceData.asyncCallbacks = cmdCbs.CombineCallbacks(device, commandPools[Queue::transfer]);
+			fenceData.transferCallbacks = cmdCbs.CombineCallbacks(device, commandPools[Queue::transfer]);
 			std::function<void()> graphicsCallbacks = nullptr;
 
 			if (cmdCbs.CleanGraphicsCallbacks()) {
@@ -359,7 +359,7 @@ namespace EWE {
 			if (graphicsCallbacks != nullptr) {
 				fenceData.signalSemaphores[Queue::graphics]->BeginWaiting();
 				transitionManager.Add(graphicsCallbacks, fenceData.signalSemaphores[Queue::graphics]);
-#ifdef _DEBUG
+#if EWE_DEBUG
 				printf("signal semaphore address : %zu\n", reinterpret_cast<std::size_t>(fenceData.signalSemaphores[Queue::graphics]));
 #endif
 			}

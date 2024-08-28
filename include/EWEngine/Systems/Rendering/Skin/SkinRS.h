@@ -72,7 +72,7 @@ namespace EWE {
 	private:
 
 		void createInstancedBuffer(SkeletonID skeletonID, uint16_t boneCount) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 			if (instancedBuffers.contains(skeletonID)) {
 				return;
 				//printf("creating a buffer that already exist \n");
@@ -89,7 +89,7 @@ namespace EWE {
 				//throw std::runtime_error("creating a buffer that already exist ");
 			}
 			//buffersCreated += 2;
-#ifdef _DEBUG
+#if EWE_DEBUG
 			printf("creating bone buffer \n");
 #endif
 			buffers.emplace(skeletonID, SkinBufferHandler{ boneCount, 1});

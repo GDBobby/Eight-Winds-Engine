@@ -8,7 +8,7 @@
 
 namespace EWE {
 	void EWERenderer::BindGraphicsPipeline(VkCommandBuffer commandBuffer, VkPipeline graphicsPipeline) {
-#if _DEBUG
+#if EWE_DEBUG
 		if (instance == nullptr) {
 			std::cout << "ewe renderer was nullptr \n";
 			std::cout << "ewe renderer was nullptr \n";
@@ -91,7 +91,7 @@ namespace EWE {
 	}
 
 	FrameInfo EWERenderer::BeginFrame() {
-#if _DEBUG
+#if EWE_DEBUG
 		if (isFrameStarted) {
 			std::cout << "frame was started, finna throw an error " << std::endl;
 		}
@@ -181,7 +181,7 @@ namespace EWE {
 	}
 	/**/
 	void EWERenderer::BeginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(isFrameStarted && "Can't call beginSwapChainRenderPass if frame is not in progress!");
 		assert(commandBuffer == GetCurrentCommandBuffer() && "can't begin render pass on command buffer from different frame");
 #endif

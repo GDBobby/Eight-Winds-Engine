@@ -8,7 +8,7 @@ namespace EWE {
 		motionDistribution{ 0, 100 }, ellipseOscDistribution{ 0.75f, 1.25f }, depthVarianceDistribution{ -5.f, 5.f },
 		widthVarianceDistribution{ -80.f, 60.f }, fallSwingVarianceDistribution{ 5.f, 10.f }, initHeightVarianceDistribution{ 2.f, 40.f }, varianceDistribution{ -.5f, .5f },
 		rockDist{ 1.75f, 2.25f }
-#ifdef _DEBUG
+#if EWE_DEBUG
 		, PipelineSystem{Pipe::loading}
 #endif
 
@@ -364,7 +364,7 @@ namespace EWE {
 	}
 	void LeafSystem::Render(FrameInfo& frameInfo) {
 		SetFrameInfo(frameInfo);
-#ifdef _DEBUG
+#if EWE_DEBUG
 		currentPipe = myID;
 #endif
 		BindPipeline();

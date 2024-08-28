@@ -122,27 +122,49 @@ namespace EWE {
         return false;
     }
 
-    void SyncPool::CheckFencesForCallbacks() {
+    void SyncPool::CheckFencesForCallbacks(std::mutex& transferPoolMutex) {
 
-        std::vector<std::function<void()>> callbacks{};
+        std::vector<std::function<void()>> cmdFreeCallbacks{};
+        std::vector<std::function<void()>> otherCallbacks{};
         for (uint16_t i = 0; i < size; i++) {
             if (fences[i].inUse) {
-                std::function<void()> cb = fences[i].WaitReturnCallbacks(device, 0);
-                if (cb != nullptr) {
-                    callbacks.push_back(cb);
+                TransferCallbackReturn transferCBReturns = fences[i].WaitReturnCallbacks(device, 0);
+                if (transferCBReturns.otherCallbacks != nullptr) {
+                    otherCallbacks.push_back(transferCBReturns.otherCallbacks);
+                }
+                if (transferCBReturns.freeCommandBufferCallback != nullptr) {
+                    cmdFreeCallbacks.push_back(transferCBReturns.freeCommandBufferCallback);
                 }
             }
         }
-        if (callbacks.size() == 1) {
-            ThreadPool::EnqueueVoidFunction(callbacks[0]);
+        if (otherCallbacks.size() == 1) {
+            ThreadPool::EnqueueVoidFunction(otherCallbacks[0]);
         }
-        else if (callbacks.size() > 0) {
-            ThreadPool::EnqueueVoid([callbacks] {
-                    for (auto const& cb : callbacks) {
+        else if (otherCallbacks.size() > 1) {
+            ThreadPool::EnqueueVoid([otherCallbacks] {
+                    for (auto const& cb : otherCallbacks) {
                         cb();
                     }
                 }
             );
+        }
+        if (cmdFreeCallbacks.size() == 1) {
+            auto cmdFreeWrapper = [&transferPoolMutex, cmdFreeCallbacks] {
+                transferPoolMutex.lock();
+                cmdFreeCallbacks[0]();
+                transferPoolMutex.unlock();
+            };
+            ThreadPool::EnqueueVoidFunction(cmdFreeWrapper);
+        }
+        else if (cmdFreeCallbacks.size() > 1) {
+            auto cmdFreeWrapper = [&transferPoolMutex, cmdFreeCallbacks] {
+                transferPoolMutex.lock();
+                for (auto& cb : cmdFreeCallbacks) {
+                    cb();
+                }
+                transferPoolMutex.unlock();
+            };
+            ThreadPool::EnqueueVoidFunction(cmdFreeWrapper);
         }
     }
 

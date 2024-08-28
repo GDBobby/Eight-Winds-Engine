@@ -20,7 +20,7 @@ namespace EWE {
 				count++;
 			}
 			void addData(void* data, uint8_t pushSize) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 				assert(pushSize == size && "misaligned push size");
 #endif
 				count++;

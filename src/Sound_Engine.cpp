@@ -89,7 +89,7 @@ namespace EWE {
 
 	void SoundEngine::SwitchDevices(uint16_t deviceIterator) {
 		if ((deviceIterator < 0) || (deviceIterator > devices.size())) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 			printf("failed to switch devices - %d:%lld \n", deviceIterator, devices.size());
 #endif
 			return;
@@ -203,7 +203,7 @@ namespace EWE {
 		bool foundDesiredDevice = false;
 		deviceNames.emplace_back("default");
 		for(uint32_t i = 0; i < deviceCount; i++){
-#ifdef _DEBUG
+#if EWE_DEBUG
 			printf("device name[%d] : %s\n", i, pPlaybackDeviceInfos[i].name);
 #endif
 			deviceNames.emplace_back(pPlaybackDeviceInfos[i].name);
@@ -256,7 +256,7 @@ namespace EWE {
 				}
 				else if (SettingsJSON::settingsData.selectedDevice == deviceName) {
 					foundDesiredDevice = true;
-#ifdef _DEBUG
+#if EWE_DEBUG
 					printf("starting default device, matched with settings \n");
 #endif
 					result = ma_engine_start(&engines[0]);
@@ -301,7 +301,7 @@ namespace EWE {
 					}
 				}
 			}
-#ifdef _DEBUG
+#if EWE_DEBUG
 			printf("device name - %d: %s\n", i, deviceNames[i].c_str());
 #endif
 		}
@@ -329,7 +329,7 @@ namespace EWE {
 				}
 			}
 		}
-#ifdef _DEBUG
+#if EWE_DEBUG
 		printf("after init engines, selected device : %d \n", selectedEngine);
 #endif
 	}

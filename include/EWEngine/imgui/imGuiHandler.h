@@ -13,7 +13,7 @@
 #include <stdexcept>
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
-#ifdef _DEBUG
+#if EWE_DEBUG
 #define IMGUI_VULKAN_DEBUG_REPORT
 #endif
 

@@ -11,11 +11,22 @@
 #include <functional>
 
 namespace EWE {
+	struct LoadingThreadTracker {
+		bool soundMapThread = false;
+		bool mainSceneThread = false;
+		bool shaderGenSceneThread = false;
+		bool oceanSceneThread = false;
+		bool menuModuleThread = false;
+		bool globalObjectThread = false;
 
+		bool Finished() const {
+			return soundMapThread && mainSceneThread && shaderGenSceneThread && menuModuleThread && globalObjectThread;
+		}
+	};
 
 	class EWESample {
 	public:
-		EWESample(EightWindsEngine& ewEngine);
+		EWESample(EightWindsEngine& ewEngine, LoadingThreadTracker& loadingThreadTracker);
 		~EWESample();
 		GLFWwindow* windowPtr;
 		EightWindsEngine& ewEngine;

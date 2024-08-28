@@ -22,7 +22,7 @@ namespace EWE {
 		}
 
 		~MemoryTypeBucket() {
-#ifdef _DEBUG
+#if EWE_DEBUG
 			assert(!dataChunkTracker.any() && "improper memory bucket deconstruction");
 #endif
 			free(reservedMemory);
@@ -47,7 +47,7 @@ namespace EWE {
 		void FreeDataChunk(void* location) {
 			size_t freeLocation = (reinterpret_cast<char*>(location) - reinterpret_cast<char*>(reservedMemory)) / elementSize;
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 			assert(dataChunkTracker[freeLocation] && "freeing data from bucket that wasn't allocated");
 #endif
 

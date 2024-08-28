@@ -7,12 +7,12 @@ namespace EWE {
     std::vector<VkVertexInputAttributeDescription> bobVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(bobVertex, uv) });
-        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(bobVertex, tangent) });
-        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(bobVertex, m_BoneIDs) });
-        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(bobVertex, m_Weights) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(bobVertex, position) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(bobVertex, normal) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(bobVertex, uv) });
+        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(bobVertex, tangent) });
+        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, static_cast<uint32_t>(offsetof(bobVertex, m_BoneIDs) });
+        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(bobVertex, m_Weights) });
 
         return attributeDescriptions;
     }
@@ -21,7 +21,7 @@ namespace EWE {
     std::vector<VkVertexInputAttributeDescription> SimpleVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SimpleVertex, position) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(SimpleVertex, position)) });
 
         return attributeDescriptions;
     }
@@ -42,8 +42,8 @@ namespace EWE {
     std::vector<VkVertexInputAttributeDescription> GrassVertex::GetAttributeDescriptions() {
 
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
-            { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(GrassVertex, position) },
-            { 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(GrassVertex, color) },
+            { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(GrassVertex, position)) },
+            { 1, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(GrassVertex, color)) },
             //{ 1, 0, VK_FORMAT_R32_SFLOAT, sizeof(glm::vec3) * 3 },
 
             //instance
@@ -83,8 +83,8 @@ namespace EWE {
     std::vector<VkVertexInputAttributeDescription> EffectVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(EffectVertex, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(EffectVertex, uv) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(EffectVertex, position)) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(EffectVertex, uv)) });
 
         return attributeDescriptions;
     }
@@ -93,17 +93,17 @@ namespace EWE {
     std::vector<VkVertexInputAttributeDescription> VertexColor::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexColor , position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexColor, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexColor, uv) });
-        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexColor, color) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(VertexColor , position)) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(VertexColor, normal)) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(VertexColor, uv)) });
+        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(VertexColor, color)) });
 
         return attributeDescriptions;
     }
     std::vector<VkVertexInputAttributeDescription> SkyVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SkyVertex, position) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(SkyVertex, position)) });
 
         return attributeDescriptions;
     }
@@ -111,23 +111,23 @@ namespace EWE {
     std::vector<VkVertexInputAttributeDescription> boneVertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertex, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertex, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(boneVertex, uv) });
-        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertex, tangent) });
-        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertex, m_BoneIDs) });
-        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(boneVertex, m_Weights) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(boneVertex, position)) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(boneVertex, normal)) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(boneVertex, uv)) });
+        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(boneVertex, tangent)) });
+        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SINT, static_cast<uint32_t>(offsetof(boneVertex, m_BoneIDs)) });
+        attributeDescriptions.push_back({ 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(boneVertex, m_Weights)) });
 
         return attributeDescriptions;
     }
     std::vector<VkVertexInputAttributeDescription> boneVertexNoTangent::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertexNoTangent, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(boneVertexNoTangent, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(boneVertexNoTangent, uv) });
-        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32A32_SINT, offsetof(boneVertexNoTangent, m_BoneIDs) });
-        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(boneVertexNoTangent, m_Weights) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(boneVertexNoTangent, position)) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(boneVertexNoTangent, normal)) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(boneVertexNoTangent, uv)) });
+        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32A32_SINT, static_cast<uint32_t>(offsetof(boneVertexNoTangent, m_BoneIDs)) });
+        attributeDescriptions.push_back({ 4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(boneVertexNoTangent, m_Weights)) });
 
         return attributeDescriptions;
     }
@@ -135,28 +135,28 @@ namespace EWE {
     std::vector<VkVertexInputAttributeDescription> Vertex::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) });
-        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, tangent) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(Vertex, position)) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(Vertex, normal)) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(Vertex, uv)) });
+        attributeDescriptions.push_back({ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(Vertex, tangent)) });
 
         return attributeDescriptions;
     }
     std::vector<VkVertexInputAttributeDescription> VertexNT::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexNT, position) });
-        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexNT, normal) });
-        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexNT, uv) });
+        attributeDescriptions.push_back({ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(VertexNT, position)) });
+        attributeDescriptions.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(VertexNT, normal)) });
+        attributeDescriptions.push_back({ 2, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(VertexNT, uv)) });
 
         return attributeDescriptions;
     }
 
     std::vector<VkVertexInputAttributeDescription> VertexUI::GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
-        attributeDescriptions.emplace_back(0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexUI, position));
+        attributeDescriptions.emplace_back(0, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(VertexUI, position)));
 
-        attributeDescriptions.emplace_back(1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexUI, uv) );
+        attributeDescriptions.emplace_back(1, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(VertexUI, uv)) );
 
         return attributeDescriptions;
     }
@@ -166,7 +166,7 @@ namespace EWE {
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(VertexGrid2D, position);
+        attributeDescriptions[0].offset = static_cast<uint32_t>(offsetof(VertexGrid2D, position));
 
         return attributeDescriptions;
     }

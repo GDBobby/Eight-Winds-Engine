@@ -16,7 +16,9 @@ namespace EWE {
 
 	void MenuModule::initTextures() {
 		//these textures are deleted in EWETexture, when the program is cleaning itself up on close
+		printf("before ui texture\n");
 		textureArray = Texture_Manager::CreateUITexture();
+		printf("after ui texture\n");
 
 		model2D = Basic_Model::Quad2D(Queue::transfer);
 		nineUIModel = Basic_Model::NineUIQuad(Queue::transfer);

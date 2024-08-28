@@ -213,7 +213,7 @@ namespace EWE {
         }
 #endif
 
-#ifdef _DEBUG
+#if EWE_DEBUG
         assert(textureMappingTracker.first.size() == meshes.size() && "failed to match mesh to name");
         assert(textureMappingTracker.second.size() == meshesNT.size() && "failed to match meshNT to nameNT");
 #endif

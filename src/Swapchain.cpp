@@ -370,7 +370,7 @@ namespace EWE {
             if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR) {
                 std::cout << "Present mode: V-Sync" << std::endl;
                 std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-                logFile << "could not use present mode: mailbox, but found VSYNC support" << std::endl;
+                logFile << "Present mode: V-Sync" << std::endl;
                 logFile.close();
 
                 return availablePresentMode;

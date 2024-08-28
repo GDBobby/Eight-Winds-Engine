@@ -2,8 +2,8 @@
 
 namespace EWE {
 	MainMenuMM::MainMenuMM(float screenWidth, float screenHeight) {
-		float widthRescaling = screenWidth / DEFAULT_WIDTH;
-		float heightRescaling = screenHeight / DEFAULT_HEIGHT;
+		//float widthRescaling = screenWidth / DEFAULT_WIDTH;
+		const float heightRescaling = screenHeight / DEFAULT_HEIGHT;
 
 		//labels.emplace_back("Eight Winds", screenWidth / 2.f, 140.f, TA_center, 6.f);
 		labels.emplace_back("Eight Winds Engine", screenWidth / 2.f, 140.f * heightRescaling, TA_center, 6.f);

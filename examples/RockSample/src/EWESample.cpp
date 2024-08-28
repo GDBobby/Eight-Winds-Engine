@@ -9,11 +9,10 @@
 #include "GUI/MenuEnums.h"
 #include <EWEngine/Systems/ThreadPool.h>
 
-
 #include <chrono>
 
 namespace EWE {
-	EWESample::EWESample(EightWindsEngine& ewEngine) :
+	EWESample::EWESample(EightWindsEngine& ewEngine, LoadingThreadTracker& loadingThreadTracker) :
 		ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
 		soundEngine{SoundEngine::GetSoundEngineInstance()},
@@ -22,17 +21,35 @@ namespace EWE {
 		float screenWidth = ewEngine.uiHandler.getScreenWidth();
 		float screenHeight = ewEngine.uiHandler.getScreenHeight();
 
-		std::unordered_map<uint16_t, std::string> effectsMap{};
-		effectsMap.emplace(0, "sounds/effects/click.mp3");
 		printf("loading effects \n");
+
 		//ThreadPool::EnqueueVoid(soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect));
-		ThreadPool::EnqueueVoid(&SoundEngine::LoadSoundMap, soundEngine.get(), effectsMap, SoundEngine::SoundType::Effect);
-		
+		{
+			auto loadFunc = [&]() {
+				std::unordered_map<uint16_t, std::string> effectsMap{};
+				effectsMap.emplace(0, "sounds/effects/click.mp3");
+				soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect);
+				loadingThreadTracker.soundMapThread = true;
+			};
+			ThreadPool::EnqueueVoidFunction(loadFunc);
+		}
 
 		//addModulesToMenuManager(screenWidth, screenHeight);
-		ThreadPool::EnqueueVoid(&EWESample::addModulesToMenuManager, this, screenWidth, screenHeight);
+		{
+			auto loadFunc = [&]() {
+				addModulesToMenuManager(screenWidth, screenHeight);
+				loadingThreadTracker.menuModuleThread = true;
+			};
+			ThreadPool::EnqueueVoidFunction(loadFunc);
+		}
 		//loadGlobalObjects();
-		ThreadPool::EnqueueVoid(&EWESample::loadGlobalObjects, this);
+		{
+			auto loadFunc = [&]() {
+				loadGlobalObjects();
+				loadingThreadTracker.globalObjectThread = true;
+			};
+			ThreadPool::EnqueueVoidFunction(loadFunc);
+		}
 
 		//currentScene = scene_ocean;
 		//scenes.emplace(scene_mainmenu, new MainMenuScene(ewEngine));
@@ -44,15 +61,18 @@ namespace EWE {
 		auto sceneLoadFunc = [&]() {
 			scenes.at(scene_mainmenu) = new MainMenuScene(ewEngine);
 			LoadSceneIfMatching(scene_mainmenu);
+			loadingThreadTracker.mainSceneThread = true;
 
 		};
 		auto sceneLoadFunc2 = [&]() {
 			scenes.at(scene_shaderGen) = new ShaderGenerationScene(ewEngine);
 			LoadSceneIfMatching(scene_shaderGen);
+			loadingThreadTracker.shaderGenSceneThread = true;
 		};
 		auto sceneLoadFunc3 = [&]() {
 			scenes.at(scene_ocean) = new OceanScene(ewEngine, skyboxInfo);
 			LoadSceneIfMatching(scene_ocean);
+			loadingThreadTracker.oceanSceneThread = true;
 		};
 		ThreadPool::EnqueueVoidFunction(sceneLoadFunc);
 		ThreadPool::EnqueueVoidFunction(sceneLoadFunc2);

@@ -28,7 +28,7 @@ namespace EWE {
 
 			std::ifstream shaderFile{};
 			shaderFile.open(enginePath, std::ios::binary);
-//#ifdef _DEBUG
+//#if EWE_DEBUG
 //			const std::string errorPrint = "failed to open shader : " + enginePath;
 //			assert(shaderFile.is_open() && errorPrint.c_str());
 //#endif
@@ -424,7 +424,7 @@ namespace EWE {
 	VkShaderModule PipelineManager::loadingVertShaderModule{ VK_NULL_HANDLE };
 	VkShaderModule PipelineManager::loadingFragShaderModule{ VK_NULL_HANDLE };
 	std::unique_ptr<EWEPipeline> PipelineManager::loadingPipeline{ nullptr };
-#ifdef _DEBUG
+#if EWE_DEBUG
 	std::vector<uint8_t> PipelineManager::dynamicBonePipeTracker;
 	std::vector<std::pair<uint16_t, MaterialFlags>> PipelineManager::dynamicInstancedPipeTracker;
 #endif
@@ -480,7 +480,7 @@ namespace EWE {
 	void PipelineManager::updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 		bool hasBones = flags & 128;
 		bool instanced = flags & 64; //curently creating an outside manager to deal with instanced skinned meshes
-#ifdef _DEBUG
+#if EWE_DEBUG
 		if (hasBones || instanced) {
 			printf("creating a material pipe with bones or instanced flag set, no longer supported \n");
 			throw std::exception("creating a material pipe with bones or instanced flag set, no longer supported");
@@ -498,7 +498,7 @@ namespace EWE {
 		uint16_t pipeLayoutIndex = textureCount;
 		printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 		if (textureCount == 0) {
 			//undesirable, but not quite a bug. only passing in an albedo texture is valid
 			printf("material pipeline, flags textureCount is 0 wtf \n");
@@ -571,7 +571,7 @@ namespace EWE {
 
 	std::unique_ptr<EWEPipeline> PipelineManager::createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 		for (int i = 0; i < dynamicInstancedPipeTracker.size(); i++) {
 			if (flags == dynamicInstancedPipeTracker[i].second) {
 				if (dynamicInstancedPipeTracker[i].first == boneCount) {
@@ -628,7 +628,7 @@ namespace EWE {
 	}
 
 	std::unique_ptr<EWEPipeline> PipelineManager::createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		for (int i = 0; i < dynamicBonePipeTracker.size(); i++) {
 			if (flags == dynamicBonePipeTracker[i]) {
 				printf("double created remote bone pipeline, throwing error \n");
@@ -736,7 +736,7 @@ namespace EWE {
 			pipelineLayoutInfo.pushConstantRangeCount = 1;
 			pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 			printf("finna create pipeline layout : %d \n", ple);
 #endif
 			switch (ple) {
@@ -1056,7 +1056,7 @@ namespace EWE {
 				vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dynamicMaterialPipeLayout[i], nullptr);
 			}
 		}
-#ifdef _DEBUG
+#if EWE_DEBUG
 		for (int i = 0; i < PL_MAX_COUNT; i++) {
 			if (pipeLayouts.find((PipeLayout_Enum)i) == pipeLayouts.end()) {
 				printf("pipelayout : %d was never used! \n", i);

@@ -9,7 +9,7 @@ namespace EWE {
             std::size_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
             uiImageInfo.arrayLayers = pixelPeek.size();
             VkDeviceSize imageSize = layerSize * uiImageInfo.arrayLayers;
-#ifdef _DEBUG
+#if EWE_DEBUG
             assert(pixelPeek.size() > 1 && "creating an array without an array of images?");
             const VkDeviceSize assertionSize = pixelPeek[0].width * pixelPeek[0].height * 4;
             for (uint16_t i = 1; i < pixelPeek.size(); i++) {
@@ -18,6 +18,7 @@ namespace EWE {
 #endif
 
             void* data;
+            printf("befroe staging\n");
 #if USING_VMA
             StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
             vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
@@ -38,6 +39,7 @@ namespace EWE {
 #else
             vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory);
 #endif
+            printf("after staging\n");
 
             VkImageCreateInfo imageCreateInfo;
             imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -58,7 +60,9 @@ namespace EWE {
             imageCreateInfo.flags = 0;// VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
             EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
+            printf("before creating image\n");
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.memory);
+            printf("after creating image\n");
 #if DEBUG_NAMING
             DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), uiImageInfo.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
 #endif

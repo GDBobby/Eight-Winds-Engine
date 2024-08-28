@@ -69,7 +69,7 @@ namespace EWE {
 
         void LoadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);
 	
-#ifdef DEBUG_NAMING
+#if DEBUG_NAMING
         void AddDebugNames(std::string const& name);
 #endif
     };

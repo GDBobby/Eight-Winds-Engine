@@ -195,7 +195,7 @@ namespace EWE {
 #if USING_VMA
         return vmaMapMemory(EWEDevice::GetAllocator(), vmaAlloc, &mapped);
 #else
-#ifdef _DEBUG
+#if EWE_DEBUG
         assert(buffer_info.buffer && memory && "Called map on buffer before create");
 #endif
         return vkMapMemory(EWEDevice::GetEWEDevice()->Device(), memory, offset, size, 0, &mapped);
@@ -232,7 +232,7 @@ namespace EWE {
         assert(mapped && "Cannot copy to unmapped buffer");
 
         char* memOffset = (char*)mapped;
-#if _DEBUG
+#if EWE_DEBUG
         uint64_t offset = alignmentOffset * alignmentSize;
         if ((offset + size) > bufferSize) {
             printf("overflow error in buffer - %zu:%zu \n", offset + size, bufferSize);
@@ -249,7 +249,7 @@ namespace EWE {
     }
 
     void EWEBuffer::WriteToBuffer(void const* data, VkDeviceSize size, VkDeviceSize offset) {
-#if _DEBUG
+#if EWE_DEBUG
         assert(mapped && "Cannot copy to unmapped buffer");
 #endif
 
@@ -257,7 +257,7 @@ namespace EWE {
             memcpy(mapped, data, bufferSize);
         }
         else {
-#if _DEBUG
+#if EWE_DEBUG
             if ((offset + size) > bufferSize) {
                 printf("overflow error in buffer - %zu:%zu \n", offset+size, bufferSize);
                 assert(false && "buffer overflow");
@@ -304,7 +304,7 @@ namespace EWE {
         mappedRange.memory = memory;
         mappedRange.offset = trueOffset;
         mappedRange.size = minOffsetAlignment;
-#ifdef _DEBUG
+#if EWE_DEBUG
         printf("flushing minimal : %zu \n", minOffsetAlignment);
 #endif
         return vkFlushMappedMemoryRanges(EWEDevice::GetEWEDevice()->Device(), 1, &mappedRange);

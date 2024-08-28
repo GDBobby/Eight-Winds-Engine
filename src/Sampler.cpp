@@ -20,12 +20,12 @@ namespace EWE {
             inUseCount++;
             totalUsed++;
 
-#ifdef _DEBUG
+#if EWE_DEBUG
             printf("sampler count after add : %d \n", inUseCount);
 #endif
         }
         bool Remove() {
-#ifdef _DEBUG
+#if EWE_DEBUG
             assert(inUseCount > 0 && "removing sampler from tracker when none exist");
 #endif
             inUseCount--;
@@ -67,7 +67,7 @@ namespace EWE {
                     return duplicate.sampler;
                 }
             }
-#ifdef _DEBUG
+#if EWE_DEBUG
             assert(storedSamplers.size() < EXPECTED_MAXIMUM_AMOUNT_OF_SAMPLERS && "warning: sampler count is greater than expected maximum amount of samplers");
 #endif
             storedSamplers.emplace_back(samplerInfo);

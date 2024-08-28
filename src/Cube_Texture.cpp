@@ -121,7 +121,7 @@ namespace EWE {
             {
                 ImageTracker* foundImage = Texture_Manager::FindByPath(texPath);
                 if (foundImage != nullptr) {
-#ifdef _DEBUG
+#if EWE_DEBUG
                     assert(foundImage->usedInTexture.size() == 1 && "cube image used in multiple descriptors");
 #endif
                     return *foundImage->usedInTexture.begin();

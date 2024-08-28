@@ -14,6 +14,7 @@
 
 namespace EWE {
 
+
 	struct CommandWithCallback{
 		VkCommandBuffer cmdBuf;
 		std::function<void()> callback{nullptr};
@@ -25,7 +26,7 @@ namespace EWE {
 		std::vector<std::function<void()>> graphicsCallbacks{};
 
 		void PushBack(CommandWithCallback const& cmdCb);
-		std::function<void()> CombineCallbacks(VkDevice vkDevice, VkCommandPool transferPool);
+		TransferCallbackReturn CombineCallbacks(VkDevice vkDevice, VkCommandPool transferPool);
 		bool CleanGraphicsCallbacks();
 		std::function<void()> CombineGraphicsCallbacks();
 	};

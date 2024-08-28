@@ -3,7 +3,7 @@
 #include "EWEngine/Graphics/Texture/Material_Textures.h"
 
 namespace EWE {
-#ifdef DEBUG_NAMING
+#if DEBUG_NAMING
     void EweObject::AddDebugNames(std::string const& name){
         for(auto& mesh : meshes){
             mesh->SetDebugNames(name);
@@ -19,7 +19,7 @@ namespace EWE {
 
         AddToRigidRenderingSystem(tempData, textureTracker, queue);
 
-#ifdef DEBUG_NAMING
+#if DEBUG_NAMING
         AddDebugNames(objectPath);
 #endif
     }
@@ -31,7 +31,7 @@ namespace EWE {
 
         //addToRigidRenderingSystem(device, tempData, textureTracker);
         AddToSkinHandler(tempData, textureTracker, ownerID, queue);
-#ifdef DEBUG_NAMING
+#if DEBUG_NAMING
         AddDebugNames(objectPath);
 #endif
     }

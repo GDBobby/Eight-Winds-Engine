@@ -52,7 +52,7 @@ namespace EWE {
 	void MaterialPipelines::pushAndDraw(void* push) {
 		materialPipeLayout[pipeLayoutIndex].push(cmdBuf, push);
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 		if (bindedModel == nullptr) {
 			printf("failed model draw \n");
 			throw std::runtime_error("attempting to draw a model while none is binded");
@@ -61,7 +61,7 @@ namespace EWE {
 		bindedModel->Draw(cmdBuf);
 	}
 	void MaterialPipelines::drawModel() {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		if (bindedModel == nullptr) {
 			printf("failed model draw \n");
 			throw std::runtime_error("attempting to draw a model while none is binded");
@@ -79,7 +79,7 @@ namespace EWE {
 
 	uint8_t MaterialPipelines::frameIndex;
 	VkCommandBuffer MaterialPipelines::cmdBuf;
-#ifdef _DEBUG
+#if EWE_DEBUG
 	MaterialPipelines* MaterialPipelines::currentPipe;
 #endif
 
@@ -91,14 +91,14 @@ namespace EWE {
 	std::unordered_map<SkinInstanceKey, MaterialPipelines*> MaterialPipelines::instancedBonePipelines;
 
 	MaterialPipelines* MaterialPipelines::at(MaterialFlags flags) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		currentPipe = materialPipelines.at(flags);
 		return currentPipe;
 #endif
 		return materialPipelines.at(flags);
 	}
 	MaterialPipelines* MaterialPipelines::at(SkinInstanceKey skinInstanceKey) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 		currentPipe = instancedBonePipelines.at(skinInstanceKey);
 		return currentPipe;
 #endif
@@ -106,7 +106,7 @@ namespace EWE {
 	}
 	MaterialPipelines* MaterialPipelines::at(uint16_t boneCount, MaterialFlags flags) {
 		SkinInstanceKey key{ boneCount, flags };
-#ifdef _DEBUG
+#if EWE_DEBUG
 		currentPipe = instancedBonePipelines.at(key);
 		return currentPipe;
 #endif
@@ -171,7 +171,7 @@ namespace EWE {
 
 		bool hasBones = flags & MaterialF_hasBones;
 		bool instanced = flags & MaterialF_instanced; //curently creating an outside manager to deal with instanced skinned meshes
-#ifdef _DEBUG
+#if EWE_DEBUG
 		assert(!instanced && "the material pipeline does not support instancing");
 #endif
 		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
@@ -185,7 +185,7 @@ namespace EWE {
 		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * hasBones);
 		printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 		if (textureCount == 0) {
 			//undesirable, but not quite a bug. only passing in an albedo texture is valid
 			printf("material pipeline, flags textureCount is 0 \n");
@@ -260,7 +260,7 @@ namespace EWE {
 		std::vector<VkDescriptorSetLayout> returnLayouts{};
 
 		returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_global));
-#ifdef _DEBUG
+#if EWE_DEBUG
 		printf("getting dynamic PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
 #endif
 		if (hasBones && instanced) {

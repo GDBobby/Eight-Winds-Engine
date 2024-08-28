@@ -13,25 +13,29 @@ namespace EWE {
 		}
 	}
 
-	std::function<void()> CommandCallbacks::CombineCallbacks(VkDevice vkDevice, VkCommandPool transferPool) {
+	TransferCallbackReturn CommandCallbacks::CombineCallbacks(VkDevice vkDevice, VkCommandPool transferPool) {
 		for (uint16_t i = 0; i < callbacks.size(); i++) {
 			if (callbacks[i] == nullptr) {
 				callbacks.erase(callbacks.begin() + i);
 				i--;
 			}
 		}
-		if (callbacks.size() == 0) {
-			return nullptr;
-		}
-
-		return [cbs = std::move(callbacks), cmds = this->commands, transferPool, vkDevice] {
-
-			vkFreeCommandBuffers(vkDevice, transferPool, static_cast<uint32_t>(cmds.size()), cmds.data());
-
-			for (auto const& cb : cbs) {
-				cb();
-			}
+		TransferCallbackReturn ret{};
+		if (commands.size() > 0) {
+			 ret.freeCommandBufferCallback = [cmds = this->commands, transferPool, vkDevice] {
+				vkFreeCommandBuffers(vkDevice, transferPool, static_cast<uint32_t>(cmds.size()), cmds.data());
+			};
 		};
+
+
+		if (callbacks.size() >= 0) {
+			ret.otherCallbacks = [cbs = std::move(callbacks)] {
+				for (auto const& cb : cbs) {
+					cb();
+				}
+			};
+		}
+		return ret;
 	}
 	bool CommandCallbacks::CleanGraphicsCallbacks() {
 		for (uint16_t i = 0; i < graphicsCallbacks.size(); i++) {
@@ -168,7 +172,7 @@ namespace EWE {
 		}
 #if SYNC_QUEUE
 		void EndCommandQueue(SyncedCommandQueue* cmdQ) {
-#ifdef _DEBUG
+#if EWE_DEBUG
 			assert(cmdQ != nullptr && "failed to initialize this queue");
 #endif
 			syncQueueMutex.lock();

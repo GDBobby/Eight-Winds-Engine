@@ -44,7 +44,7 @@ namespace EWE {
 		//dependent on this not being in the graphics thread, or it'll infinitely loop
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 
-		while (syncHub->CheckFencesForUsage()) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+		while (syncHub->CheckFencesForUsage()) { printf("waiting on fences\n"); std::this_thread::sleep_for(std::chrono::nanoseconds(1)); }
 
 		loadingEngine = false;
 	}
@@ -69,6 +69,7 @@ namespace EWE {
 		skinnedRS{ },
 		textureManager{ }
 	{
+		printf("after finishing construction of engine\n");
 		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = eweRenderer.getPipelineInfo();
 
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
@@ -199,7 +200,7 @@ namespace EWE {
 		auto startThreadTime = std::chrono::high_resolution_clock::now();
 		auto endThreadTime = startThreadTime;
 		//printf("starting loading thread loop \n");
-		while (loadingEngine || (loadingTime < 2.0)) {
+		while (loadingEngine){// || (loadingTime < 2.0)) {
 			
 			//printf("loading render looop : %.2f \n", loadingTime);
 

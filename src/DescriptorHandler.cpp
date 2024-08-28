@@ -66,7 +66,7 @@ namespace EWE {
             printf("returning global instead of point LDSL \n");
             return descriptorSetLayouts.at(LDSL_global);
         }
-#if _DEBUG
+#if EWE_DEBUG
         else if (!descriptorSetLayouts.contains(whichLDSL)) {
             printf("failed to find LDSL : %d \n", whichLDSL);
         }
@@ -171,7 +171,7 @@ namespace EWE {
     }
 #endif
     VkDescriptorSet* DescriptorHandler::getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
-#if _DEBUG
+#if EWE_DEBUG
         if (!descriptorSets.contains(whichDescSet)) {
             printf("failed to find DescSet in getDescSet : %d \n", whichDescSet);
         }

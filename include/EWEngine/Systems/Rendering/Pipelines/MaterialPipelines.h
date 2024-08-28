@@ -101,7 +101,7 @@ namespace EWE{
 
 		static MaterialPipeLayoutInfo materialPipeLayout[DYNAMIC_PIPE_LAYOUT_COUNT];
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 		static std::vector<MaterialFlags> bonePipeTracker;
 		static std::vector<std::pair<uint16_t, MaterialFlags>> instancedBonePipeTracker;
 		static MaterialPipelines* currentPipe;

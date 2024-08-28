@@ -61,25 +61,25 @@ namespace EWE {
     }
 #else     
     void SemaphoreData::FinishSignaling() {
-#ifdef _DEBUG
+#if EWE_DEBUG
         assert(signaling == true && "finishing a signal that wasn't signaled");
 #endif
         signaling = false;
     }
     void SemaphoreData::FinishWaiting() {
-#ifdef _DEBUG
+#if EWE_DEBUG
         assert(waiting == true && "finished waiting when not waiting");
 #endif
         waiting = false;
     }
     void SemaphoreData::BeginWaiting() {
-#ifdef _DEBUG
+#if EWE_DEBUG
         assert(waiting == false && "attempting to begin wait while waiting");
 #endif
         waiting = true;
     }
     void SemaphoreData::BeginSignaling() {
-#ifdef _DEBUG
+#if EWE_DEBUG
         assert(signaling == false && "attempting to signal while signaled");
 #endif
         signaling = true;
@@ -211,34 +211,10 @@ namespace EWE {
 #endif
     }
 
-    std::function<void()> FenceData::Reset(VkDevice device) {
-        EWE_VK_ASSERT(vkResetFences(device, 1, &fence));
-        for (auto& waitSem : waitSemaphores) {
-            waitSem->FinishWaiting();
-        }
-        waitSemaphores.clear();
-        for (uint8_t i = 0; i < Queue::_count; i++) {
-            if (signalSemaphores[i] != nullptr) {
-                signalSemaphores[i]->FinishSignaling();
-                signalSemaphores[i] = nullptr;
-            }
-        }
-
-        inUse = false;
-        if (inlineCallbacks) {
-            inlineCallbacks();
-            inlineCallbacks = nullptr;
-        }
-        std::function<void()> ret{ asyncCallbacks };
-        asyncCallbacks = nullptr;
-        return ret;
-    }
-
-    std::function<void()> FenceData::WaitReturnCallbacks(VkDevice device, uint64_t time) {
+    TransferCallbackReturn FenceData::WaitReturnCallbacks(VkDevice device, uint64_t time) {
         mut.lock();
         VkResult ret = vkWaitForFences(device, 1, &fence, true, time);
         if (ret == VK_SUCCESS) {
-            //this is the Reset() definition, but i need the mutex to release asap
             EWE_VK_ASSERT(vkResetFences(device, 1, &fence));
             mut.unlock();
             for (auto& waitSem : waitSemaphores) {
@@ -257,18 +233,19 @@ namespace EWE {
                 inlineCallbacks();
                 inlineCallbacks = nullptr;
             }
-            std::function<void()> ret{ asyncCallbacks };
-            asyncCallbacks = nullptr;
+            TransferCallbackReturn ret{ transferCallbacks };
+            transferCallbacks.freeCommandBufferCallback = nullptr;
+            transferCallbacks.otherCallbacks = nullptr;
             return ret;
         }
         else if (ret == VK_TIMEOUT) {
             mut.unlock();
-            return nullptr;
+            return TransferCallbackReturn{};
         }
         else {
             mut.unlock();
             EWE_VK_RESULT_ASSERT(ret);
-            return nullptr; //error silencing
+            return TransferCallbackReturn{}; //error silencing
         }
     }
 }

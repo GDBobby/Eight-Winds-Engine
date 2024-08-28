@@ -249,7 +249,7 @@ namespace EWE {
 
     void Texture_Manager::ClearSceneTextures() {
         //everythign created with a mode texture needs to be destroyed. if it persist thru modes, it needs to be a global texture
-#ifdef _DEBUG
+#if EWE_DEBUG
         //DBEUUGGIG TEXUTRE BEING CLEARED INCORRECTLY
         //printf("clearing texutre 29 - %s \n", textureMap.at(29).textureData.path.c_str());
         printf("clearing scene textures \n");
@@ -262,7 +262,7 @@ namespace EWE {
 
             std::vector<ImageTracker*>& imageTrackers = textureImages.at(sceneID);
             for (auto& imageTracker : imageTrackers) {
-#ifdef _DEBUG
+#if EWE_DEBUG
                 if (imageTracker->usedInTexture.erase(sceneID) == 0) {
                     printf("descriptor is using an image that isn't used in descriptor? \n");
                     throw std::runtime_error("tracked texture doesn't exist");
@@ -327,8 +327,9 @@ namespace EWE {
     TextureDesc Texture_Manager::CreateTextureArray(std::vector<PixelPeek> const& pixelPeeks) {
 
         ImageInfo arrayImageInfo{};
-
+        printf("before ui image\n");
         UI_Texture::CreateUIImage(arrayImageInfo, pixelPeeks, Queue::transfer);
+        printf("after ui image\n");
         UI_Texture::CreateUIImageView(arrayImageInfo);
         UI_Texture::CreateUISampler(arrayImageInfo);
 
@@ -371,6 +372,7 @@ namespace EWE {
             pixelPeeks.emplace_back(individualPath);
 
         }
+        printf("before texture array\n");
         return CreateTextureArray(pixelPeeks);
     }
 
@@ -384,7 +386,7 @@ namespace EWE {
         texPath += path;
 
 
-#ifdef _DEBUG
+#if EWE_DEBUG
         if (tmPtr->imageMap.find(path) != tmPtr->imageMap.end()) {
             assert(false && "image should not be constructed outside of the texture manager if it already exist");
             return VK_NULL_HANDLE;

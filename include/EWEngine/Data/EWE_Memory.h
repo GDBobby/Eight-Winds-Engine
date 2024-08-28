@@ -38,7 +38,7 @@ static T* ConstructSingular(const char* file, int line, const char* sourceFuncti
     return new (memory) T(std::forward<Args>(args)...);
 #else
     T* ret = new T(std::forward<Args>(args)...);
-#ifdef _DEBUG
+#if EWE_DEBUG
     ewe_alloc_mem_track(reinterpret_cast<void*>(ret), file, line, sourceFunction);
 #endif
     return ret;

@@ -54,7 +54,7 @@ namespace EWE {
         EWEDevice& operator=(EWEDevice&&) = delete;
 
         static EWEDevice* GetEWEDevice() {
-#ifdef _DEBUG
+#if EWE_DEBUG
             assert(eweDevice && "device is nullptr ??");
 #endif
             return eweDevice;

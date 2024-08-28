@@ -129,7 +129,7 @@ namespace EWE {
 
 		void EndEngineLoadScreen();
 		bool GetLoadingScreenProgress() {
-			return (!finishedLoadingScreen) || (loadingTime < 2.0);
+			return (!finishedLoadingScreen);// || (loadingTime < 2.0);
 		}
 		//bool endlessPaused = false;
 	private:

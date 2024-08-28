@@ -21,6 +21,11 @@
 #include <functional>
 
 namespace EWE{
+    struct TransferCallbackReturn {
+        std::function<void()> freeCommandBufferCallback{ nullptr };
+        std::function<void()> otherCallbacks{ nullptr };
+    };
+
     uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, const VkMemoryPropertyFlags properties);
 
 	static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
@@ -52,14 +57,13 @@ namespace EWE{
 
     struct FenceData {
         VkFence fence{ VK_NULL_HANDLE };
-        std::function<void()> asyncCallbacks{ nullptr }; //i think this is a function pointer, if I can't set it to null, I need to make it a pointer
+        TransferCallbackReturn transferCallbacks{};
         std::function<void()> inlineCallbacks{ nullptr };
         bool inUse{ false };
         std::vector<SemaphoreData*> waitSemaphores{}; //each wait could potentially be signaled multiple times in a single queue, and then multiple queues
         SemaphoreData* signalSemaphores[Queue::_count] = { nullptr, nullptr, nullptr, nullptr }; //each signal is unique per submit that could wait on it, and right now I'm expecting max 1 wait per queue
 
-        std::function<void()> Reset(VkDevice device);
-        std::function<void()> WaitReturnCallbacks(VkDevice device, uint64_t time);
+        TransferCallbackReturn WaitReturnCallbacks(VkDevice device, uint64_t time);
         void Lock() {
             mut.lock();
         }

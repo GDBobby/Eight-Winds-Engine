@@ -18,7 +18,7 @@
 
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, a NVIDIA_TARGET macro would be necessary
-#define AMD_TARGET true
+#define AMD_TARGET false
 
 namespace EWE {
 
@@ -32,8 +32,8 @@ namespace EWE {
 
     EWEDevice* EWEDevice::eweDevice = nullptr;
 
-#ifdef NDEBUG
-    const bool enableValidationLayers = false;
+#if EWE_DEBUG
+    const bool enableValidationLayers = true;
 #else
     //const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const bool enableValidationLayers = true;
@@ -62,7 +62,7 @@ namespace EWE {
             assert(false && "validation layer error");
             break;
         default:
-#ifdef _DEBUG
+#if EWE_DEBUG
             printf("validation default: %s \n", pCallbackData->pMessage);
             assert(false && "why is this reachable");
 #else
@@ -418,7 +418,7 @@ namespace EWE {
 #endif
             //properties.limits.maxFramebufferWidth;
 
-            printf("Device Name:Score %s:%d \n", properties.deviceName, score);
+            printf("Device Name:Score %s:%u \n", properties.deviceName, score);
             for (auto iter = deviceScores.begin(); iter != deviceScores.end(); iter++) {
 
                 //big to little
@@ -1037,7 +1037,7 @@ namespace EWE {
             break;
         default:
             /* Value not used by callers, so not supported. */
-#ifdef _DEBUG
+#if EWE_DEBUG
             assert(false && "unsupported dst layout transition");
 #else
     #if defined(_MSC_VER) && !defined(__clang__) // MSVC
@@ -1068,7 +1068,7 @@ namespace EWE {
         imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         imageBarrier.pNext = nullptr;
         imageBarrier.image = image;
-#ifdef _DEBUG
+#if EWE_DEBUG
         assert(imageBarrier.image != VK_NULL_HANDLE && "transfering a null image?");
 #endif
         imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
@@ -1147,7 +1147,7 @@ namespace EWE {
         imageBarriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         imageBarriers[0].pNext = nullptr;
         imageBarriers[0].image = images[0];
-#ifdef _DEBUG
+#if EWE_DEBUG
         assert(imageBarriers[0].image != VK_NULL_HANDLE && "transfering a null image?");
 #endif
 
@@ -1188,7 +1188,7 @@ namespace EWE {
         for (uint8_t i = 1; i < imageCount; i++) {
             imageBarriers[i] = imageBarriers[0];
             imageBarriers[i].image = images[i];
-#ifdef _DEBUG
+#if EWE_DEBUG
             assert(imageBarriers[i].image != VK_NULL_HANDLE && "transfering a null image?");
 #endif
         }
