@@ -201,7 +201,6 @@ namespace EWE {
         this->indexCount = indexCount;
         hasIndexBuffer = true;
 
-        EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
         VkDeviceSize bufferSize = indexSize * indexCount;
 #if USING_VMA
         StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetAllocator(), indexData);

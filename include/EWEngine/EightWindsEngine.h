@@ -54,16 +54,9 @@ namespace EWE {
 
 		MainWindow mainWindow; //first
 		EWEDevice eweDevice; //second
+		EWECamera camera{};
 		EWERenderer eweRenderer; //third
 		//ComputeHandler computeHandler; //4th???
-
-		double renderFPS = 1.0 / 144.0;
-		bool pointLightsEnabled = false;
-		bool displayingRenderInfo = false;
-
-		AdvancedRenderSystem advancedRS;
-		SkinRenderSystem skinnedRS;
-		Texture_Manager textureManager;
 
 		LeafSystem* leafSystem;
 
@@ -78,7 +71,12 @@ namespace EWE {
 
 		ObjectManager objectManager;
 		UIHandler uiHandler;
+
+		AdvancedRenderSystem advancedRS;
+
+		Texture_Manager textureManager;
 		MenuManager menuManager;
+		SkinRenderSystem skinnedRS;
 
 		double timeTracker = 0.0f;
 
@@ -86,7 +84,6 @@ namespace EWE {
 
 		std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>> bufferMap;
 
-		EWECamera camera;
 		EWEGameObject viewerObject{ EWEGameObject::createGameObject() };
 		LightBufferObject lbo;
 
@@ -106,6 +103,10 @@ namespace EWE {
 		int renderFramesCounted = 0;
 		double peakRenderTime = 0.0;
 		double minRenderTime = 100.0;
+
+		double renderFPS = 1.0 / 144.0;
+		bool pointLightsEnabled = false;
+		bool displayingRenderInfo = false;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		void InitGlobalBuffers();

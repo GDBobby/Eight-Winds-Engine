@@ -70,7 +70,6 @@ namespace EWE {
 		uint32_t currentTextureCount{ 0 };
 
 		friend class Material_Texture;
-		friend class Texture_Builder;
 
 		static Texture_Manager* textureManagerPtr;
 		static ImageTracker* ConstructImageTracker(std::string const& path, bool mipmap);

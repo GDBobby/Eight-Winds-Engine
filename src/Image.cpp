@@ -40,7 +40,7 @@ namespace EWE {
             VkDevice vkDevice = EWEDevice::GetVkDevice();
             printf("before vk create image\n");
             VkResult ret = vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &image);
-            printf("result : %zu\n", ret);
+            printf("result : %d\n", ret);
             //EWE_VK_ASSERT(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &image));
             printf("after vk create image\n");
 
@@ -407,8 +407,6 @@ namespace EWE {
             mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(pixelPeek.width, pixelPeek.height))) + 1);
         }
         //printf("before creating buffer \n");
-
-        EWEDevice* const eweDevice = EWEDevice::GetEWEDevice();
 
         VkImageCreateInfo imageCreateInfo{};
         imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

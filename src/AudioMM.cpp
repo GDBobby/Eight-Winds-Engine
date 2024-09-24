@@ -27,16 +27,12 @@ namespace EWE {
 		audioPtr->sliders[audioPtr->grabbedSlider].setSliderPosition(static_cast<float>(nextVolume) / 100.f);
 	}
 
-	AudioMM::AudioMM(float screenWidth, float screenHeight, GLFWwindow* windowPtr) : soundEngine{ SoundEngine::GetSoundEngineInstance() }, screenWidth{ screenWidth }, screenHeight{ screenHeight }, windowPtr{ windowPtr } {
-		if (audioPtr == nullptr) {
-			audioPtr = this;
-		}
-		else {
-			throw std::runtime_error("audio mm can only be created once \n");
-		}
+	AudioMM::AudioMM(float screenWidth, float screenHeight, GLFWwindow* windowPtr) : soundEngine{ SoundEngine::GetSoundEngineInstance() }, windowPtr{ windowPtr }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
+		assert(audioPtr == nullptr && "audiomm can only be creatged once");
+		audioPtr = this;
 
-		float widthRescaling = screenWidth / DEFAULT_WIDTH;
-		float heightRescaling = screenHeight / DEFAULT_HEIGHT;
+		//float widthRescaling = screenWidth / DEFAULT_WIDTH;
+		const float heightRescaling = screenHeight / DEFAULT_HEIGHT;
 
 		labels.emplace_back("Audio Settings", screenWidth / 2, 40.f * heightRescaling, TA_center, 4.f);
 		labels.emplace_back("Audio Devices", screenWidth * 0.75f, 365.f * heightRescaling, TA_left, 2.f);

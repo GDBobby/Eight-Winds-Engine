@@ -64,8 +64,6 @@ namespace EWE {
 
         meshes.reserve(tempData.meshSimpleExport.meshes.size() + tempData.meshNTSimpleExport.meshes.size()); //a mesh should not have both simple and simpleNT
 
-        uint64_t vertexSize = sizeof(ImportData::meshSimpleExport);
-
         auto const& meshSimple = tempData.meshSimpleExport.meshes;
         for (int i = 0; i < tempData.meshSimpleExport.meshes.size(); i++) {
             meshes.emplace_back(EWEModel::CreateMesh(meshSimple[i].vertices.data(), meshSimple[i].vertices.size(), tempData.meshSimpleExport.vertex_size, meshSimple[i].indices, queue));

@@ -2,8 +2,8 @@
 
 namespace EWE {
 	LevelBuilderMM::LevelBuilderMM(float screenWidth, float screenHeight, GLFWwindow* windowPtr) {
-		float widthRescaling = screenWidth / DEFAULT_WIDTH;
-		float heightRescaling = screenHeight / DEFAULT_HEIGHT;
+		//float widthRescaling = screenWidth / DEFAULT_WIDTH;
+		const float heightRescaling = screenHeight / DEFAULT_HEIGHT;
 
 
 		MenuBar& backRef = menuBars.emplace_back(0.f, 0.f, screenWidth, 30.f * heightRescaling, screenWidth, screenHeight);

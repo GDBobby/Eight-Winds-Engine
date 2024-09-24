@@ -74,21 +74,21 @@ namespace EWE {
 
     // *************** Descriptor Pool Builder *********************
 
-    EWEDescriptorPool::Builder& EWEDescriptorPool::Builder::addPoolSize(VkDescriptorType descriptorType, uint32_t count) {
+    EWEDescriptorPool::Builder& EWEDescriptorPool::Builder::AddPoolSize(VkDescriptorType descriptorType, uint32_t count) {
         poolSizes.push_back({ descriptorType, count });
         return *this;
     }
 
-    EWEDescriptorPool::Builder& EWEDescriptorPool::Builder::setPoolFlags(VkDescriptorPoolCreateFlags flags) {
+    EWEDescriptorPool::Builder& EWEDescriptorPool::Builder::SetPoolFlags(VkDescriptorPoolCreateFlags flags) {
         poolFlags = flags;
         return *this;
     }
-    EWEDescriptorPool::Builder& EWEDescriptorPool::Builder::setMaxSets(uint32_t count) {
+    EWEDescriptorPool::Builder& EWEDescriptorPool::Builder::SetMaxSets(uint32_t count) {
         maxSets = count;
         return *this;
     }
 
-    std::shared_ptr<EWEDescriptorPool> EWEDescriptorPool::Builder::build() const {
+    std::shared_ptr<EWEDescriptorPool> EWEDescriptorPool::Builder::Build() const {
         return std::make_shared<EWEDescriptorPool>(maxSets, poolFlags, poolSizes);
     }
 
@@ -129,10 +129,10 @@ namespace EWE {
         vkDestroyDescriptorPool(EWEDevice::GetVkDevice(), descriptorPool, nullptr);
         printf("after destroy pool \n");
     }
-    bool EWEDescriptorPool::allocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) {
-        return pools.at(poolID).allocateDescriptor(descriptorSetLayout, descriptor);
+    bool EWEDescriptorPool::AllocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) {
+        return pools.at(poolID).AllocateDescriptor(descriptorSetLayout, descriptor);
     }
-    bool EWEDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) const {
+    bool EWEDescriptorPool::AllocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) const {
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;
@@ -144,11 +144,11 @@ namespace EWE {
         }
         return true;
     }
-    void EWEDescriptorPool::freeDescriptors(DescriptorPool_ID poolID, std::vector<VkDescriptorSet>& descriptors) {
-        pools.at(poolID).freeDescriptors(descriptors);
+    void EWEDescriptorPool::FreeDescriptors(DescriptorPool_ID poolID, std::vector<VkDescriptorSet>& descriptors) {
+        pools.at(poolID).FreeDescriptors(descriptors);
         //printf("active descriptors after removal : %d \n", activeDescriptors);
     }
-    void EWEDescriptorPool::freeDescriptors(std::vector<VkDescriptorSet>& descriptors) const {
+    void EWEDescriptorPool::FreeDescriptors(std::vector<VkDescriptorSet>& descriptors) const {
         vkFreeDescriptorSets(
             EWEDevice::GetVkDevice(),
             descriptorPool,
@@ -157,10 +157,10 @@ namespace EWE {
         activeDescriptors -= descriptors.size();
         //printf("active descriptors after removal : %d \n", activeDescriptors);
     }
-    void EWEDescriptorPool::freeDescriptor(DescriptorPool_ID poolID, VkDescriptorSet* descriptor) {
-        pools.at(poolID).freeDescriptor(descriptor);
+    void EWEDescriptorPool::FreeDescriptor(DescriptorPool_ID poolID, VkDescriptorSet* descriptor) {
+        pools.at(poolID).FreeDescriptor(descriptor);
     }
-    void EWEDescriptorPool::freeDescriptor(VkDescriptorSet* descriptor) const {
+    void EWEDescriptorPool::FreeDescriptor(VkDescriptorSet* descriptor) const {
         vkFreeDescriptorSets(
             EWEDevice::GetVkDevice(),
             descriptorPool,
@@ -169,7 +169,7 @@ namespace EWE {
         activeDescriptors--;
         //printf("active descriptors after removal : %d \n", activeDescriptors);
     }
-    void EWEDescriptorPool::resetPool() {
+    void EWEDescriptorPool::ResetPool() {
         vkResetDescriptorPool(EWEDevice::GetVkDevice(), descriptorPool, 0);
     }
     void EWEDescriptorPool::BuildGlobalPool() {
@@ -205,13 +205,13 @@ namespace EWE {
         pools.erase(poolID);
     }
 
-    bool EWEDescriptorPool::DescriptorTracker::addDescriptor(uint32_t count) {
+    bool EWEDescriptorPool::DescriptorTracker::AddDescriptor(uint32_t count) {
         current += count;
         return current >= max;
     }
 
-    void EWEDescriptorPool::addDescriptorToTrackers(VkDescriptorType descType, uint32_t count) {
-        if (trackers.at(descType).addDescriptor(count)) {
+    void EWEDescriptorPool::AddDescriptorToTrackers(VkDescriptorType descType, uint32_t count) {
+        if (trackers.at(descType).AddDescriptor(count)) {
             printf("adding too many descirptors - type:max - %d:%d \n", descType, trackers.at(descType).max);
             assert(false && "Descriptor pool exhausted");
         }
@@ -226,7 +226,7 @@ namespace EWE {
         : setLayout{ setLayout }, pool{ EWEDescriptorPool::pools.at(poolID) }
     {}
 
-    EWEDescriptorWriter& EWEDescriptorWriter::writeBuffer( uint32_t binding, VkDescriptorBufferInfo* bufferInfo) {
+    EWEDescriptorWriter& EWEDescriptorWriter::WriteBuffer( uint32_t binding, VkDescriptorBufferInfo* bufferInfo) {
         assert(setLayout->bindings.contains(binding) && "Layout does not contain specified binding");
 
         auto& bindingDescription = setLayout->bindings.at(binding);
@@ -244,7 +244,7 @@ namespace EWE {
         return *this;
     }
 
-    EWEDescriptorWriter& EWEDescriptorWriter::writeImage(uint32_t binding, VkDescriptorImageInfo* imageInfo) {
+    EWEDescriptorWriter& EWEDescriptorWriter::WriteImage(uint32_t binding, VkDescriptorImageInfo* imageInfo) {
         assert(setLayout->bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
         auto& bindingDescription = setLayout->bindings.at(binding);
@@ -264,9 +264,9 @@ namespace EWE {
         return *this;
     }
 
-    VkDescriptorSet EWEDescriptorWriter::build() {
+    VkDescriptorSet EWEDescriptorWriter::Build() {
 #if DESCRIPTOR_DEBUGGING
-        return buildPrint();
+        return BuildPrint();
 #else
 
         bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set);
@@ -284,24 +284,24 @@ namespace EWE {
         return set;
 #endif
     }
-    VkDescriptorSet EWEDescriptorWriter::buildPrint() {
+    VkDescriptorSet EWEDescriptorWriter::BuildPrint() {
         VkDescriptorSet set;
-        bool success = pool.allocateDescriptor(setLayout->GetDescriptorSetLayout(), set);
+        bool success = pool.AllocateDescriptor(setLayout->GetDescriptorSetLayout(), set);
 
         activeDescriptors++;
         for (int i = 0; i < setLayout->bindings.size(); i++) {
             if (setLayout->bindings.at(i).descriptorCount != 1) {
                 //printf("\t count:%d\n", setLayout.bindings.at(i).descriptorCount);
             }
-            pool.addDescriptorToTrackers(setLayout->bindings.at(i).descriptorType, setLayout->bindings.at(i).descriptorCount);
+            pool.AddDescriptorToTrackers(setLayout->bindings.at(i).descriptorType, setLayout->bindings.at(i).descriptorCount);
         }
         //printf("active descriptors after addition : %d \n", activeDescriptors);
         assert(success && "failed to construct descriptor set");
-        overwrite(set);
+        Overwrite(set);
         return set;
     }
 
-    void EWEDescriptorWriter::overwrite(VkDescriptorSet& set) {
+    void EWEDescriptorWriter::Overwrite(VkDescriptorSet& set) {
         for (auto& write : writes) {
             write.dstSet = set;
         }

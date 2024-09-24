@@ -48,6 +48,7 @@ namespace EWE {
 			//printf("drawing \n");
 
 			ewEngine.DrawObjects(frameInfo, dt);
+
 			rockSystem.update();
 			rockSystem.render(frameInfo);
 			//printf("after displaying render info \n");

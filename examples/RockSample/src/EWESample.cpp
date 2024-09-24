@@ -14,18 +14,17 @@
 namespace EWE {
 	EWESample::EWESample(EightWindsEngine& ewEngine, LoadingThreadTracker& loadingThreadTracker) :
 		ewEngine{ ewEngine },
+		windowPtr{ ewEngine.mainWindow.getGLFWwindow() },
 		menuManager{ ewEngine.menuManager },
-		soundEngine{SoundEngine::GetSoundEngineInstance()},
-		windowPtr{ewEngine.mainWindow.getGLFWwindow()}
+		soundEngine{SoundEngine::GetSoundEngineInstance()}
  {
 		float screenWidth = ewEngine.uiHandler.getScreenWidth();
 		float screenHeight = ewEngine.uiHandler.getScreenHeight();
 
-		printf("loading effects \n");
-
 		//ThreadPool::EnqueueVoid(soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect));
 		{
 			auto loadFunc = [&]() {
+				printf("loading sound map : %u\n", std::this_thread::get_id());
 				std::unordered_map<uint16_t, std::string> effectsMap{};
 				effectsMap.emplace(0, "sounds/effects/click.mp3");
 				soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect);
@@ -37,6 +36,7 @@ namespace EWE {
 		//addModulesToMenuManager(screenWidth, screenHeight);
 		{
 			auto loadFunc = [&]() {
+				printf("adding modules to menu manager : %u\n", std::this_thread::get_id());
 				addModulesToMenuManager(screenWidth, screenHeight);
 				loadingThreadTracker.menuModuleThread = true;
 			};
@@ -45,6 +45,7 @@ namespace EWE {
 		//loadGlobalObjects();
 		{
 			auto loadFunc = [&]() {
+				printf("loading global objects : %u\n", std::this_thread::get_id());
 				loadGlobalObjects();
 				loadingThreadTracker.globalObjectThread = true;
 			};
@@ -59,17 +60,20 @@ namespace EWE {
 		scenes.emplace(scene_shaderGen, nullptr);
 		scenes.emplace(scene_ocean, nullptr);
 		auto sceneLoadFunc = [&]() {
+			printf("loading main menu scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_mainmenu) = new MainMenuScene(ewEngine);
 			LoadSceneIfMatching(scene_mainmenu);
 			loadingThreadTracker.mainSceneThread = true;
 
 		};
 		auto sceneLoadFunc2 = [&]() {
+			printf("loading shader gen scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_shaderGen) = new ShaderGenerationScene(ewEngine);
 			LoadSceneIfMatching(scene_shaderGen);
 			loadingThreadTracker.shaderGenSceneThread = true;
 		};
 		auto sceneLoadFunc3 = [&]() {
+			printf("loading ocean scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_ocean) = new OceanScene(ewEngine, skyboxInfo);
 			LoadSceneIfMatching(scene_ocean);
 			loadingThreadTracker.oceanSceneThread = true;

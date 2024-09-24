@@ -64,8 +64,8 @@ namespace EWE {
 
 			transformDescriptor.emplace_back(
 				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
-				.writeBuffer(0, leafBuffer[i]->DescriptorInfo())
-				.build()
+				.WriteBuffer(0, leafBuffer[i]->DescriptorInfo())
+				.Build()
 			);
 		}
 #if DEBUG_NAMING

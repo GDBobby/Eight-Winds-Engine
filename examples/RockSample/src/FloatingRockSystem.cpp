@@ -11,7 +11,7 @@ namespace EWE {
 		//RANDOM NUMBER GENERATOR
 		std::random_device r;
 		std::default_random_engine randomGen(r());
-		std::uniform_int_distribution<int> speedDistribution(300, 750); //the higher this number is, the slower they'll be. 250 is 1 full rotation per second
+		std::uniform_int_distribution<int> speedDistribution(900, 2250); //the higher this number is, the slower they'll be. 250 is 1 full rotation per second
 		std::uniform_int_distribution<int> rockDistribution(5, 12); //rocks per track
 		std::uniform_int_distribution<int> trackDistribution(12, 20); //tracks per field (only 1 field)
 		unsigned int trackCount = trackDistribution(randomGen); 
@@ -23,11 +23,11 @@ namespace EWE {
 			tempTrack.radius = powf(static_cast<float>(i) + 1.f, 0.6f) + 30.f; //was + 10.f
 			tempTrack.speed = speedDistribution(randomGen);
 			//std::cout << "speed check : " << tempTrack.speed << std::endl;
-			unsigned int rockCount = rockDistribution(randomGen);
+			uint32_t rockCount = rockDistribution(randomGen);
 			//unsigned int rockCount = i;
 			//std::cout << "rock check : " << rockCount << std::endl;
 
-			unsigned int positionAmount = tempTrack.speed;
+			const uint32_t positionAmount = tempTrack.speed;
 			for (uint32_t j = 0; j < positionAmount; j++) { //precode positions or na? test both ways
 				float horizontalOffset = glm::two_pi<float>() * j / positionAmount;
 				glm::vec3 tempPosition;

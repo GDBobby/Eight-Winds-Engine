@@ -29,7 +29,6 @@ namespace EWE {
 		GLFWwindow* windowPtr;
 
 		float screenWidth, screenHeight;
-		int8_t currentGameState = 0; //0 for main menu, 1 for in game, both target and main
 
 		double mousePosX = 0;
 		double mousePosY = 0;

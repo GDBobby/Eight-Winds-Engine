@@ -33,8 +33,9 @@ namespace EWE {
 	}
 	void PipelineSystem::DestructAt(PipelineID pipeID) {
 		auto foundPipe = pipelineSystem.find(pipeID);
-
+#if EWE_DEBUG
 		assert(foundPipe != pipelineSystem.end() && "destructing invalid pipe \n");
+#endif
 
 		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), foundPipe->second->pipeLayout, nullptr);
 		foundPipe->second->~PipelineSystem();

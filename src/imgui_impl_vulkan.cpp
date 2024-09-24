@@ -1160,7 +1160,7 @@ VkDescriptorSet ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image
 
     // Create Descriptor Set:
     VkDescriptorSet descriptor_set;
-    EWE::EWEDescriptorPool::allocateDescriptor(EWE::DescriptorPool_imgui, bd->DescriptorSetLayout, descriptor_set);
+    EWE::EWEDescriptorPool::AllocateDescriptor(EWE::DescriptorPool_imgui, bd->DescriptorSetLayout, descriptor_set);
 
     // Update the Descriptor Set:
     {
@@ -1184,7 +1184,7 @@ void ImGui_ImplVulkan_RemoveTexture(VkDescriptorSet descriptor_set)
     //ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
     //ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
     //vkFreeDescriptorSets(v->Device, v->DescriptorPool, 1, &descriptor_set);
-    EWE::EWEDescriptorPool::freeDescriptor(EWE::DescriptorPool_imgui, &descriptor_set);
+    EWE::EWEDescriptorPool::FreeDescriptor(EWE::DescriptorPool_imgui, &descriptor_set);
 }
 
 void ImGui_ImplVulkan_DestroyFrameRenderBuffers(VkDevice device, ImGui_ImplVulkan_FrameRenderBuffers* buffers, const VkAllocationCallbacks* allocator)

@@ -44,8 +44,8 @@ namespace EWE {
             CreateBuffers();
         }
         InitialFrequencySpectrumGPUData::~InitialFrequencySpectrumGPUData() {
-            EWEDescriptorPool::freeDescriptor(DescriptorPool_Global, &descriptorSet[0]);
-            EWEDescriptorPool::freeDescriptor(DescriptorPool_Global, &descriptorSet[1]);
+            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet[0]);
+            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet[1]);
 
 			vkDestroyPipeline(EWEDevice::GetVkDevice(), pipeline, nullptr);
 			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), pipeLayout, nullptr);
@@ -101,10 +101,10 @@ namespace EWE {
         void InitialFrequencySpectrumGPUData::CreateDescriptorSet(VkDescriptorImageInfo* descImageInfo) {
 
             EWEDescriptorWriter descWriter{eweDSL, DescriptorPool_Global};
-            descWriter.writeImage(0, descImageInfo);
-            descWriter.writeBuffer(1, jonswapBuffer->DescriptorInfo());
-            descriptorSet[0] = descWriter.build();
-            descriptorSet[1] = descWriter.build();
+            descWriter.WriteImage(0, descImageInfo);
+            descWriter.WriteBuffer(1, jonswapBuffer->DescriptorInfo());
+            descriptorSet[0] = descWriter.Build();
+            descriptorSet[1] = descWriter.Build();
         }
         void InitialFrequencySpectrumGPUData::Compute(FrameInfo const& frameInfo) {
             vkCmdBindPipeline(frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
@@ -133,7 +133,7 @@ namespace EWE {
             CreatePipeline();
         }
         TimeDependentFrequencySpectrumGPUData::~TimeDependentFrequencySpectrumGPUData() {
-            EWEDescriptorPool::freeDescriptor(DescriptorPool_Global, &descriptorSet);
+            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet);
 
             vkDestroyPipeline(EWEDevice::GetVkDevice(), pipeline, nullptr);
             vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), pipeLayout, nullptr);
@@ -185,9 +185,9 @@ namespace EWE {
         void TimeDependentFrequencySpectrumGPUData::CreateDescriptorSet(VkDescriptorImageInfo* frequencyImage, VkDescriptorImageInfo* outputImage) {
 
             EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
-            descWriter.writeImage(0, frequencyImage);
-            descWriter.writeImage(1, outputImage);
-            descriptorSet = descWriter.build();
+            descWriter.WriteImage(0, frequencyImage);
+            descWriter.WriteImage(1, outputImage);
+            descriptorSet = descWriter.Build();
         }
         void TimeDependentFrequencySpectrumGPUData::Compute(FrameInfo const& frameInfo, float dt) {
             vkCmdBindPipeline(frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
@@ -224,8 +224,8 @@ namespace EWE {
 
         void FFTGPUData::CreateDescriptorSet(VkDescriptorImageInfo* outputImage) {
             EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
-            descWriter.writeImage(0, outputImage);
-            descriptorSet = descWriter.build();
+            descWriter.WriteImage(0, outputImage);
+            descriptorSet = descWriter.Build();
         }
 
         void FFTGPUData::CreatePipeLayout() {
@@ -319,13 +319,13 @@ namespace EWE {
             renderData[1]->Flush();
 
             EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
-            descWriter.writeBuffer(0, renderData[0]->DescriptorInfo());
-            descWriter.writeImage(1, outputImage);
-            descWriter.writeImage(2, skyboxImage);
-            descriptorSet[0] = descWriter.build();
+            descWriter.WriteBuffer(0, renderData[0]->DescriptorInfo());
+            descWriter.WriteImage(1, outputImage);
+            descWriter.WriteImage(2, skyboxImage);
+            descriptorSet[0] = descWriter.Build();
 
-            descWriter.writeBuffer(0, renderData[1]->DescriptorInfo());
-            descriptorSet[1] = descWriter.build();
+            descWriter.WriteBuffer(0, renderData[1]->DescriptorInfo());
+            descriptorSet[1] = descWriter.Build();
 
         }
         void OceanGraphicsGPUData::CreatePipeLayout() {

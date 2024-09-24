@@ -22,7 +22,7 @@ namespace EWE {
         descriptorSetLayouts.clear();
         printf("after desc set layouts \n");
         for (auto& descriptorSet : descriptorSets) {
-            EWEDescriptorPool::freeDescriptors(DescriptorPool_Global, descriptorSet.second);
+            EWEDescriptorPool::FreeDescriptors(DescriptorPool_Global, descriptorSet.second);
             //globalPool->freeDescriptors(descriptorSet.second);
         }
         printf("After freeing  descritpors \n");
@@ -129,9 +129,9 @@ namespace EWE {
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             //printf("init ars descriptors, loop : %d \n", i);
             descriptorSets.at(DS_global).emplace_back(EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_global), DescriptorPool_Global)
-                .writeBuffer(0, bufferMap.at(Buff_ubo)[i]->DescriptorInfo())
-                .writeBuffer(1, bufferMap.at(Buff_gpu)[i]->DescriptorInfo())
-                .build());
+                .WriteBuffer(0, bufferMap.at(Buff_ubo)[i]->DescriptorInfo())
+                .WriteBuffer(1, bufferMap.at(Buff_gpu)[i]->DescriptorInfo())
+                .Build());
         }
 #if DEBUG_NAMING
         DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), descriptorSets.at(DS_global)[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "global DS[0]");

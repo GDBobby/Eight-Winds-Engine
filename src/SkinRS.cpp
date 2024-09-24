@@ -31,7 +31,7 @@ namespace EWE {
 			if (!buffer.second.CheckReference()) {
 				for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 					buffer.second.setFrameIndex(i);
-					EWEDescriptorPool::freeDescriptor(DescriptorPool_Global, buffer.second.getDescriptor());
+					EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, buffer.second.getDescriptor());
 					bufferDescriptorsCleared++;
 				}
 			}
@@ -39,7 +39,7 @@ namespace EWE {
 		for (auto& instanceBuffer : instancedBuffers) {
 			for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 				instanceBuffer.second.setFrameIndex(i);
-				EWEDescriptorPool::freeDescriptor(DescriptorPool_Global, instanceBuffer.second.getDescriptor());
+				EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, instanceBuffer.second.getDescriptor());
 				instancedBuffersCleared++;
 			}
 		}

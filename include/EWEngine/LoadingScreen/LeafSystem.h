@@ -89,11 +89,11 @@ namespace EWE {
 
 		std::uniform_int_distribution<int> motionDistribution;
 
-		float gravity = -1.06566f;
-		float FrictionPerp = 5.f;
-		float leafWeight = 1.f; //grams
-		float leafDensity = 0.1f;
-		float leafKA = 4.f;
+		const float gravity = -1.06566f;
+		//float FrictionPerp = 5.f;
+		//float leafWeight = 1.f; //grams
+		//float leafDensity = 0.1f;
+		//float leafKA = 4.f;
 
 		std::vector<LeafStruct> leafs{};
 

@@ -106,9 +106,9 @@ namespace EWE {
         if (uniqueDescriptor) {
             EWEDescriptorWriter descBuilder(dslInfo.GetDescSetLayout(), DescriptorPool_Global);
             for (uint16_t i = 0; i < imageInfos.size(); i++) {
-                descBuilder.writeImage(i, imageInfos[i]->imageInfo.GetDescriptorImageInfo());
+                descBuilder.WriteImage(i, imageInfos[i]->imageInfo.GetDescriptorImageInfo());
             }
-            TextureDesc retDesc = descBuilder.build();
+            TextureDesc retDesc = descBuilder.Build();
             for (auto& imageInfo : imageInfos) {
                 imageInfo->usedInTexture.insert(retDesc);
             }
@@ -193,8 +193,8 @@ namespace EWE {
                 imageInfo = Texture_Manager::ConstructImageTracker(texPath, mipmaps);
 
                 EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(shaderStage), DescriptorPool_Global);
-                descBuilder.writeImage(0, imageInfo->imageInfo.GetDescriptorImageInfo());
-                TextureDesc retDesc = descBuilder.build();
+                descBuilder.WriteImage(0, imageInfo->imageInfo.GetDescriptorImageInfo());
+                TextureDesc retDesc = descBuilder.Build();
 
                 imageInfo->usedInTexture.insert(retDesc);
                 tmPtr->textureImages.try_emplace(retDesc, std::vector<ImageTracker*>{imageInfo});
@@ -339,8 +339,8 @@ namespace EWE {
 
         EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
 
-        descBuilder.writeImage(0, &arrayImageInfo.descriptorImageInfo);
-        TextureDesc retDesc = descBuilder.build();
+        descBuilder.WriteImage(0, &arrayImageInfo.descriptorImageInfo);
+        TextureDesc retDesc = descBuilder.Build();
 
         //cubeVector.emplace_back(EWETexture(eweDevice, texPath, tType_cube));
         //tmPtr->textureMap.emplace(tmPtr->currentTextureCount, );
@@ -397,8 +397,8 @@ namespace EWE {
         imageTracker = Texture_Manager::ConstructImageTracker(path, imageTemp);
 
         EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(shaderStage), DescriptorPool_Global);
-        descBuilder.writeImage(0, imageTracker->imageInfo.GetDescriptorImageInfo());
-        TextureDesc retDesc = descBuilder.build();
+        descBuilder.WriteImage(0, imageTracker->imageInfo.GetDescriptorImageInfo());
+        TextureDesc retDesc = descBuilder.Build();
 
         imageTracker->usedInTexture.insert(retDesc);
         tmPtr->textureImages.try_emplace(retDesc, std::vector<ImageTracker*>{imageTracker});
@@ -421,8 +421,8 @@ namespace EWE {
 
         EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT), DescriptorPool_Global);
 
-        descBuilder.writeImage(0, imageTracker->imageInfo.GetDescriptorImageInfo());
-        TextureDesc retDesc = descBuilder.build();
+        descBuilder.WriteImage(0, imageTracker->imageInfo.GetDescriptorImageInfo());
+        TextureDesc retDesc = descBuilder.Build();
 
         textureManagerPtr->textureImages.try_emplace(retDesc, std::vector<ImageTracker*>{imageTracker});
         textureManagerPtr->imageMap.emplace(texPath, imageTracker);

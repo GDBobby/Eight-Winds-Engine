@@ -141,9 +141,7 @@ namespace EWE {
         MainWindow& window;
         VkCommandPool commandPool{ VK_NULL_HANDLE };
         VkCommandPool transferCommandPool{ VK_NULL_HANDLE };
-        bool asyncTransferCapable = false;
         VkCommandPool computeCommandPool{ VK_NULL_HANDLE };
-        bool asyncComputeCapable = false;
 
         VkDevice device_;
 #if USING_VMA

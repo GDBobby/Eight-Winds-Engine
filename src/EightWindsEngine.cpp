@@ -44,7 +44,7 @@ namespace EWE {
 		//dependent on this not being in the graphics thread, or it'll infinitely loop
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 
-		while (syncHub->CheckFencesForUsage()) { printf("waiting on fences\n"); std::this_thread::sleep_for(std::chrono::nanoseconds(1)); }
+		while (syncHub->CheckFencesForUsage()) {/*printf("waiting on fences\n");*/ std::this_thread::sleep_for(std::chrono::nanoseconds(1)); }
 
 		loadingEngine = false;
 	}
@@ -56,7 +56,6 @@ namespace EWE {
 
 		mainWindow{ windowName },
 		eweDevice{ mainWindow },
-		camera{},
 		eweRenderer{ mainWindow, camera },
 		//computeHandler{},
 		objectManager{},
@@ -64,10 +63,10 @@ namespace EWE {
 
 		/*2000 is ballparked, if its not set high enough then all textures will be moved, and invalidate the data*/
 		uiHandler{ SettingsJSON::settingsData.getDimensions(), mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
+		advancedRS{ objectManager, menuManager },
+		textureManager{ },
 		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), mainWindow.getGLFWwindow(), uiHandler.getTextOverlay() },
-		advancedRS{ objectManager, menuManager},
-		skinnedRS{ },
-		textureManager{ }
+		skinnedRS{ }
 	{
 		printf("after finishing construction of engine\n");
 		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = eweRenderer.getPipelineInfo();

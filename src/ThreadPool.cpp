@@ -71,6 +71,7 @@ namespace EWE {
     }
 
     bool ThreadPool::WaitCondition() {
+        std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
 #if DEBUGGING_THREADS
         printf("waiting for completion of thread pool - %zu:%zu \n", singleton->numTasksCompleted, singleton->numTasksEnqueued);
 #endif
@@ -100,16 +101,7 @@ namespace EWE {
         );
     }
     bool ThreadPool::CheckEmpty() {
-        std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
-#if DEBUGGING_THREADS
-        printf("checking thread pool empty - %zu:%zu \n", singleton->numTasksCompleted, singleton->numTasksEnqueued);
-#endif
-        if (singleton->numTasksCompleted == singleton->numTasksEnqueued) {
-            singleton->numTasksCompleted = 0;
-            singleton->numTasksEnqueued = 0;
-            return true;
-        }
-        return false;
+        return WaitCondition();
     }
 
     void ThreadPool::EnqueueVoidFunction(std::function<void()> task) {

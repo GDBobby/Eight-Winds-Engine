@@ -87,7 +87,7 @@ namespace EWE {
         //    return;
         //}
 
-        glm::vec3 rotate{ 0 };
+        glm::vec3 rotate{ 0.f };
 
         isMoveFast = (glfwGetKey(window, keys.moveFast) == GLFW_PRESS);
         isMoveSlow = (glfwGetKey(window, keys.moveSlow) == GLFW_PRESS);
@@ -106,9 +106,9 @@ namespace EWE {
         transform.rotation.x = glm::clamp(transform.rotation.x, -glm::half_pi<float>(), glm::half_pi<float>());
         transform.rotation.y = glm::mod(transform.rotation.y, glm::two_pi<float>());
 
-        glm::vec3 forwardDir{ sin(transform.rotation.y), 0.f, cos(transform.rotation.y) };
-        glm::vec3 rightDir{ forwardDir.z, 0.f, -forwardDir.x };
-        glm::vec3 upDir{ 0.f, 1.f, 0.f };
+        const glm::vec3 forwardDir{ sin(transform.rotation.y), 0.f, cos(transform.rotation.y) };
+        const glm::vec3 rightDir{ forwardDir.z, 0.f, -forwardDir.x };
+        //glm::vec3 upDir{ 0.f, 1.f, 0.f };
 
         glm::vec3 moveDir{ 0.f };
         
