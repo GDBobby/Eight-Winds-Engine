@@ -68,9 +68,6 @@ namespace EWE {
 		else if (!std::filesystem::exists(SHADER_DYNAMIC_PATH)) {
 			printf("shader dynamic path doesn't exist : %s\n", SHADER_DYNAMIC_PATH);
 			std::filesystem::create_directory(SHADER_DYNAMIC_PATH);
-#if EWE_DEBUG
-			printf("should've cr");//?
-#endif
 		}
 		std::vector<uint32_t> shaderCodeSpirV;
 		if (SpirvHelper::LoadingVertSPV(shaderCodeSpirV)) {

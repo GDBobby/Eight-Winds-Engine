@@ -63,7 +63,7 @@ namespace EWE {
 
 	void SkinRenderSystem::changeActorCount(SkeletonID skeletonID, uint8_t maxActorCount) {
 #if EWE_DEBUG
-			assert(buffers.find(skeletonID) != buffers.end() && "trying to change the max actor count for a buffer that doesn't exist");
+			assert(buffers.contains(skeletonID) && "trying to change the max actor count for a buffer that doesn't exist");
 #endif
 			buffers.at(skeletonID).changeMaxActorCount(maxActorCount);
 
@@ -106,15 +106,16 @@ namespace EWE {
 			for (auto& skeleDataRef : instanced.second.skeletonData) {
 				//printf("instance count? - %d:%d \n", skeleDataRef.first, instancedBuffers.at(skeleDataRef.first).getInstanceCount());
 
+#if EWE_DEBUG
+				assert(instancedBuffers.contains(skeleDataRef.first) && "requested buffer doesn't exist");
+#endif
+
 				if (instancedBuffers.at(skeleDataRef.first).getInstanceCount() <= 0) {
 					continue;
 				}
 
 				if (bindedSkeletonID != skeleDataRef.first) {
 					bindedSkeletonID = skeleDataRef.first;
-#if EWE_DEBUG
-					assert(instancedBuffers.contains(skeleDataRef.first) && "requested buffer doesn't exist");
-#endif
 					pipe->bindDescriptor(1, instancedBuffers.at(skeleDataRef.first).getDescriptor());
 				}
 				for (auto& skeleTextureRef : skeleDataRef.second) {

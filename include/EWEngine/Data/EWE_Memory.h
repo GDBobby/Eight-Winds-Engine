@@ -1,5 +1,8 @@
 #pragma once
 
+#include "EWEngine/Graphics/Preprocessor.h"
+
+
 #include <new>
 #include <utility>
 #include <cassert>

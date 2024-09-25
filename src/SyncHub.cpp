@@ -16,11 +16,11 @@ namespace EWE {
 		printf("COSTRUCTING SYNCHUB\n");
 #endif
 	}
-	SyncHub::~SyncHub() {
 #if EWE_DEBUG
+	SyncHub::~SyncHub() {
 		printf("DE COSTRUCTING SYNCHUB\n");
-#endif
 	}
+#endif
 
 	void SyncHub::Initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool, uint32_t transferQueueIndex) {
 		syncHubSingleton = new SyncHub(device);
@@ -88,8 +88,8 @@ namespace EWE {
 	VkCommandBuffer SyncHub::BeginSingleTimeCommandGraphics() {
 #if EWE_DEBUG
 		if (std::this_thread::get_id() != main_thread) {
-
 			printf("graphics queue STC not on main thread\n");
+			assert(false && "graphics queue STC not on main thread");
 		}
 #endif
 
@@ -194,7 +194,7 @@ namespace EWE {
 		submitInfo.pNext = nullptr;
 		submitInfo.commandBufferCount = graphicsSTCGroup.size();
 #if EWE_DEBUG
-		if (submitInfo.commandBufferCount <= 0) {
+		if (submitInfo.commandBufferCount == 0) {
 			assert(false && "had graphics callbacks but don't have any command buffers");
 		}
 #endif

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EWEngine/Graphics/Preprocessor.h"
 #include "SettingsJson.h"
 #include "EWEngine/resources/howlingWind.h"
 

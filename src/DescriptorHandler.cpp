@@ -172,9 +172,7 @@ namespace EWE {
 #endif
     VkDescriptorSet* DescriptorHandler::getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
 #if EWE_DEBUG
-        if (!descriptorSets.contains(whichDescSet)) {
-            printf("failed to find DescSet in getDescSet : %d \n", whichDescSet);
-        }
+        assert(descriptorSets.contains(whichDescSet) && "Failed to find descset");
 #endif
         return &descriptorSets.at(whichDescSet)[whichFrameIndex];
     }

@@ -4,7 +4,7 @@
  //_DEBUG is already defined in Visual Studio while in DEBUG mode
  //this changes it so that on windows, _DEBUG needs to be defined explicitly
 
-#define EWE_DEBUG false
+#define EWE_DEBUG true
 
 #define DEBUGGING_DEVICE_LOST false
 #define USING_NVIDIA_AFTERMATH true && DEBUGGING_DEVICE_LOST

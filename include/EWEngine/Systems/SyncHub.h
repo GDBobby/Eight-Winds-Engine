@@ -69,7 +69,9 @@ namespace EWE {
 			
 		}
 		SyncHub(VkDevice device);
+#if EWE_DEBUG
 		~SyncHub();
+#endif
 
 		//only class this from EWEDevice
 		static void Initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool, uint32_t transferQueueIndex);

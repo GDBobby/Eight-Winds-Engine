@@ -105,9 +105,13 @@ namespace EWE {
 			textWidth += charData->advance * charW;
 		}
 		//printf("text struct get width : %.5f \n", textWidth);
+#if EWE_DEBUG
 		if (textWidth < 0.0f) {
+
 			printf("width less than 0, what  was the string? : %s:%.1f \n", string.c_str(), screenWidth);
+			assert(false);
 		}
+#endif
 		return textWidth;
 	}
 

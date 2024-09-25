@@ -17,7 +17,7 @@ namespace EWE {
 	
 	void PipelineSystem::Emplace(PipelineID pipeID, PipelineSystem* pipeSys) {
 #if EWE_DEBUG
-		assert(pipelineSystem.find(pipeID) == pipelineSystem.end() && "attempting to emplace a pipe with an existing id");
+		assert(!pipelineSystem.contains(pipeID) && "attempting to emplace a pipe with an existing id");
 #endif
 		pipelineSystem.emplace(pipeID, pipeSys);
 	}

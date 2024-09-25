@@ -222,7 +222,7 @@ namespace EWE {
 						printf("clicked a type box? \n");
 						variableCtrlPtr->stringSelectionIndex = variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.getSelectionIndex(xpos, variableCtrlPtr->screenWidth);
 						std::string& stringRef = variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string;
-						uint16_t indexPos = static_cast<uint16_t>(stringRef.find_first_of('|'));
+						size_t indexPos = stringRef.find_first_of('|');
 						if ((indexPos != variableCtrlPtr->stringSelectionIndex) && (indexPos != (variableCtrlPtr->stringSelectionIndex + 1))) {
 							if (indexPos != stringRef.npos) {
 								stringRef.erase(indexPos, 1);

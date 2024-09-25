@@ -232,18 +232,15 @@ namespace EWE {
         assert(mapped && "Cannot copy to unmapped buffer");
 
         char* memOffset = (char*)mapped;
+        const uint64_t offset = alignmentOffset * alignmentSize;
 #if EWE_DEBUG
-        uint64_t offset = alignmentOffset * alignmentSize;
         if ((offset + size) > bufferSize) {
             printf("overflow error in buffer - %zu:%zu \n", offset + size, bufferSize);
             assert(false && "buffer overflow");
         }
+#endif
         memOffset += offset;
         memcpy(memOffset, data, size);
-#else
-        memOffset += alignmentOffset * alignmentSize;
-        memcpy(memOffset, data, size);
-#endif
 
         
     }

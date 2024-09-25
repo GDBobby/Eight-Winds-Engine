@@ -59,7 +59,10 @@ namespace EWE {
 	}
 	void MaterialPipelines::drawModel() {
 #if EWE_DEBUG
-		assert(bindedModel != nullptr && "failed model draw");
+		if (bindedModel == nullptr) {
+			printf("failed model draw \n");
+			throw std::runtime_error("attempting to draw a model while none is binded");
+		}
 #endif
 		bindedModel->Draw(cmdBuf);
 	}
@@ -265,7 +268,8 @@ namespace EWE {
 			returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_boned));
 		}
 		else if (instanced) {
-			assert(false && "currrently not supporting instancing without bones");
+			printf("currrently not supporting instancing without bones, THROWING ERROR \n");
+			throw std::runtime_error("instanced but doesn't have bones?");
 		}
 		TextureDSLInfo dslInfo{};
 		if (hasBump) {

@@ -99,7 +99,7 @@ namespace EWE {
 #if EWE_DEBUG
         if (!foundTypes[MT_albedo]) {
             printf("did not find an albedo or diffuse texture for this MRO set : %s \n", texPath.c_str());
-            throw std::runtime_error("no albedo in dynamic material");
+            assert(false);
         }
         if (foundTypes[MT_bump]) {
             printf("found a height map \n");

@@ -263,10 +263,7 @@ namespace EWE {
             std::vector<ImageTracker*>& imageTrackers = textureImages.at(sceneID);
             for (auto& imageTracker : imageTrackers) {
 #if EWE_DEBUG
-                if (imageTracker->usedInTexture.erase(sceneID) == 0) {
-                    printf("descriptor is using an image that isn't used in descriptor? \n");
-                    throw std::runtime_error("tracked texture doesn't exist");
-                }
+                assert(imageTracker->usedInTexture.erase(sceneID) > 0 && "descriptor is using an image that isn't used in descriptor?");
 #else
                 imageTracker->usedInTexture.erase(sceneID);
 #endif
@@ -387,10 +384,7 @@ namespace EWE {
 
 
 #if EWE_DEBUG
-        if (tmPtr->imageMap.find(path) != tmPtr->imageMap.end()) {
-            assert(false && "image should not be constructed outside of the texture manager if it already exist");
-            return VK_NULL_HANDLE;
-        }
+        assert(!tmPtr->imageMap.contains(path) && "image should not be constructed outside of the texture manager if it already exist");
 #endif
 
         uniqueImage = true;

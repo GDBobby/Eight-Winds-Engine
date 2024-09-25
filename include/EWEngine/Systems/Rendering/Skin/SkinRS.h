@@ -73,25 +73,16 @@ namespace EWE {
 
 		void createInstancedBuffer(SkeletonID skeletonID, uint16_t boneCount) {
 #if EWE_DEBUG
-			if (instancedBuffers.contains(skeletonID)) {
-				return;
-				//printf("creating a buffer that already exist \n");
-				//throw std::exception("creating a buffer that already exist ");
-			}
+			assert(!instancedBuffers.contains(skeletonID));
 #endif
 			//instancedBuffersCreated += 2;
 			instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ boneCount, 2000});
 		}
 		void createBoneBuffer(SkeletonID skeletonID, uint16_t boneCount) {
-			if (buffers.contains(skeletonID)) {
-				return;
-				//printf("creating a buffer that already exist \n");
-				//throw std::runtime_error("creating a buffer that already exist ");
-			}
-			//buffersCreated += 2;
 #if EWE_DEBUG
-			printf("creating bone buffer \n");
+			assert(!buffers.contains(skeletonID));
 #endif
+			//buffersCreated += 2;
 			buffers.emplace(skeletonID, SkinBufferHandler{ boneCount, 1});
 		}
 		void createReferenceBuffer(SkeletonID skeletonID, SkeletonID referenceID) {

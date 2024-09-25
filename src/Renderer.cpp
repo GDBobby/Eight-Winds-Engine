@@ -9,12 +9,7 @@
 namespace EWE {
 	void EWERenderer::BindGraphicsPipeline(VkCommandBuffer commandBuffer, VkPipeline graphicsPipeline) {
 #if EWE_DEBUG
-		if (instance == nullptr) {
-			std::cout << "ewe renderer was nullptr \n";
-			std::cout << "ewe renderer was nullptr \n";
-			std::cout << "ewe renderer was nullptr \n";
-		}
-		assert(instance != nullptr);
+		assert(instance != nullptr && "ewe renderer was nullptr");
 #endif
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
@@ -92,11 +87,8 @@ namespace EWE {
 
 	FrameInfo EWERenderer::BeginFrame() {
 #if EWE_DEBUG
-		if (isFrameStarted) {
-			std::cout << "frame was started, finna throw an error " << std::endl;
-		}
-#endif
 		assert(!isFrameStarted && "cannot call begin frame while frame is in progress!");
+#endif
 
 		//std::cout << "begin frame 1" << std::endl;
 
