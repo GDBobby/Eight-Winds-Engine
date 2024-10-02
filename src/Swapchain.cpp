@@ -99,18 +99,18 @@ namespace EWE {
         //    vkDestroyFence(EWEDevice::GetVkDevice(), inFlightFences[i], nullptr);
         //}
     }
-    VkResult EWESwapChain::AcquireNextImage(uint32_t* imageIndex) {
+    bool EWESwapChain::AcquireNextImage(uint32_t* imageIndex) {
        // printf("pre-wait for ANI inflightfences \n");
 
         //printf("before waiting for in flight fence\n");
-        EWE_VK_ASSERT(vkWaitForFences(
+        EWE_VK(vkWaitForFences, 
             EWEDevice::GetVkDevice(),
             1,
             syncHub->GetFlightFence(currentFrame),
             //&inFlightFences[currentFrame],
             VK_TRUE,
             std::numeric_limits<uint64_t>::max()
-        ));
+        );
         //printf("after waiting for fence in ANI \n");
         //printf("before acquiring image\n");
         VkResult result = vkAcquireNextImageKHR(
@@ -123,8 +123,11 @@ namespace EWE {
             imageIndex
         );
         //printf("after acquiring image\n");
-
-        return result;
+        if (result == VK_ERROR_OUT_OF_DATE_KHR){// || result == VK_SUBOPTIMAL_KHR) {
+            return true;
+        }
+        EWE_VK_RESULT(result);
+        return false;
     }
 
     VkResult EWESwapChain::SubmitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex) {
@@ -203,17 +206,17 @@ namespace EWE {
         createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapChain;
 
         //logFile << "values initialized, vkcreateswapchain now \n";
-        EWE_VK_ASSERT(vkCreateSwapchainKHR(EWEDevice::GetVkDevice(), &createInfo, nullptr, &swapChain));
+        EWE_VK(vkCreateSwapchainKHR, EWEDevice::GetVkDevice(), &createInfo, nullptr, &swapChain);
         //logFile << "afterr vkswapchain \n";
         // we only specified a minimum number of images in the swap chain, so the implementation is
         // allowed to create a swap chain with more. That's why we'll first query the final number of
         // images with vkGetSwapchainImagesKHR, then resize the container and finally call it again to
         // retrieve the handles.
-        EWE_VK_ASSERT(vkGetSwapchainImagesKHR(EWEDevice::GetVkDevice(), swapChain, &imageCount, nullptr));
+        EWE_VK(vkGetSwapchainImagesKHR, EWEDevice::GetVkDevice(), swapChain, &imageCount, nullptr);
         assert(imageCount > 0 && "failed to get swap chain images\n");
 
         swapChainImages.resize(imageCount);
-        EWE_VK_ASSERT(vkGetSwapchainImagesKHR(EWEDevice::GetVkDevice(), swapChain, &imageCount, swapChainImages.data()));
+        EWE_VK(vkGetSwapchainImagesKHR, EWEDevice::GetVkDevice(), swapChain, &imageCount, swapChainImages.data());
         //logFile << "after vkgetswapchain images \n";
 
         swapChainImageFormat = surfaceFormat.format;
@@ -234,7 +237,7 @@ namespace EWE {
             viewInfo.subresourceRange.baseArrayLayer = 0;
             viewInfo.subresourceRange.layerCount = 1;
 
-            EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &swapChainImageViews[i]));
+            EWE_VK(vkCreateImageView, EWEDevice::GetVkDevice(), &viewInfo, nullptr, &swapChainImageViews[i]);
         }
     }
 
@@ -320,7 +323,7 @@ namespace EWE {
             viewInfo.subresourceRange.baseArrayLayer = 0;
             viewInfo.subresourceRange.layerCount = 1;
 
-            EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &depthImageViews[i]));
+            EWE_VK(vkCreateImageView, EWEDevice::GetVkDevice(), &viewInfo, nullptr, &depthImageViews[i]);
         }
     }
     /*

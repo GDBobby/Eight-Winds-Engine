@@ -44,7 +44,8 @@ class EWESwapChain {
         std::pair<uint32_t, uint32_t> GetExtent() { return { swapChainExtent.width, swapChainExtent.height }; }
         VkFormat FindDepthFormat();
 
-        VkResult AcquireNextImage(uint32_t *imageIndex);
+        //return true if recreating swap chain is necessary
+        bool AcquireNextImage(uint32_t *imageIndex);
         VkResult SubmitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex);
 
         bool CompareSwapFormats(const EWESwapChain& swapChain) const {

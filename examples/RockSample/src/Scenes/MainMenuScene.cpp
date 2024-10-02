@@ -43,7 +43,7 @@ namespace EWE {
 		//printf("render main menu scene \n");
 
 
-		auto frameInfo = ewEngine.BeginRender();
+		FrameInfo frameInfo = ewEngine.BeginRender();
 		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 			//printf("drawing \n");
 

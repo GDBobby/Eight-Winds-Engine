@@ -20,7 +20,7 @@ int main() {
 
 		//i think the only way to guarantee this is called after i finish loading, if i add more threads, is to add flags for each loading segment.
 		//the easiest way would be if i just counted the amount of requried threads, then required the completed thread count to equal that count before continuing
-		while(!loadingThreadTracker.Finished()) {
+		while(!loadingThreadTracker.Finished()) { 
 			std::this_thread::sleep_for(std::chrono::nanoseconds(1));
 		}
 		ewEngine.EndEngineLoadScreen();
@@ -32,7 +32,9 @@ int main() {
 	//and the main loop waits ont he loading screen
 	ewEngine.LoadingScreen();
 
+	printf("waiting for completion\n");
 	EWE::ThreadPool::WaitForCompletion();
+	printf("after wait completion\n");
 	float duration = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::high_resolution_clock::now() - begin).count();
 	printf("loading duration : %.5f\n", duration);
 

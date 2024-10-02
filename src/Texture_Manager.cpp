@@ -161,7 +161,6 @@ namespace EWE {
         Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
 
         ImageTracker* imageInfo;
-        bool uniqueImage = false;
 
         std::string texPath{ TEXTURE_DIR };
         texPath += path;
@@ -189,7 +188,6 @@ namespace EWE {
                 return 0;
             }
             else {
-                uniqueImage = true;
                 imageInfo = Texture_Manager::ConstructImageTracker(texPath, mipmaps);
 
                 EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(shaderStage), DescriptorPool_Global);
@@ -377,7 +375,6 @@ namespace EWE {
         Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
 
         ImageTracker* imageTracker;
-        bool uniqueImage = false;
 
         std::string texPath{ TEXTURE_DIR };
         texPath += path;
@@ -387,7 +384,6 @@ namespace EWE {
         assert(!tmPtr->imageMap.contains(path) && "image should not be constructed outside of the texture manager if it already exist");
 #endif
 
-        uniqueImage = true;
         imageTracker = Texture_Manager::ConstructImageTracker(path, imageTemp);
 
         EWEDescriptorWriter descBuilder(TextureDSLInfo::GetSimpleDSL(shaderStage), DescriptorPool_Global);

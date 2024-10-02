@@ -32,29 +32,25 @@ namespace EWE {
             //vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 #endif
 
-            EWE_VK_ASSERT(vmaCreateImage(EWEDevice::GetAllocator(), &imageCreateInfo, &vmaAllocCreateInfo, &image, &vmaAlloc, nullptr));
+            EWE_VK(vmaCreateImage, EWEDevice::GetAllocator(), &imageCreateInfo, &vmaAllocCreateInfo, &image, &vmaAlloc, nullptr);
                 
         }
 #else
         void CreateImageWithInfo(const VkImageCreateInfo& imageCreateInfo, const VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
             VkDevice vkDevice = EWEDevice::GetVkDevice();
-            printf("before vk create image\n");
-            VkResult ret = vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &image);
-            printf("result : %d\n", ret);
-            //EWE_VK_ASSERT(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &image));
-            printf("after vk create image\n");
+            EWE_VK(vkCreateImage, vkDevice, &imageCreateInfo, nullptr, &image);
 
             VkMemoryRequirements memRequirements;
-            vkGetImageMemoryRequirements(vkDevice, image, &memRequirements);
+            EWE_VK(vkGetImageMemoryRequirements, vkDevice, image, &memRequirements);
 
             VkMemoryAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
             allocInfo.memoryTypeIndex = FindMemoryType(EWEDevice::GetEWEDevice()->GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
 
-            EWE_VK_ASSERT(vkAllocateMemory(vkDevice, &allocInfo, nullptr, &imageMemory));
+            EWE_VK(vkAllocateMemory, vkDevice, &allocInfo, nullptr, &imageMemory);
 
-            EWE_VK_ASSERT(vkBindImageMemory(vkDevice, image, imageMemory, 0));
+            EWE_VK(vkBindImageMemory, vkDevice, image, imageMemory, 0);
         }
 #endif
     }
@@ -500,7 +496,7 @@ namespace EWE {
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = arrayLayers;
 
-        EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &imageView));
+        EWE_VK(vkCreateImageView, EWEDevice::GetVkDevice(), &viewInfo, nullptr, &imageView);
     }
 
     void ImageInfo::CreateTextureSampler() {

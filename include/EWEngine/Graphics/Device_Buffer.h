@@ -14,21 +14,23 @@ namespace EWE {
         EWEBuffer(const EWEBuffer&) = delete;
         EWEBuffer& operator=(const EWEBuffer&) = delete;
 
-        VkResult Map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        void Map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         void Unmap();
 
         void WriteToBufferAligned(void* data, VkDeviceSize size, uint64_t alignmentOffset);
         void WriteToBuffer(void const* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-        VkResult Flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        void Flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         VkDescriptorBufferInfo* DescriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-        VkResult Invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        void Invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
-        VkResult FlushMin(uint64_t offset);
-        VkResult FlushIndex(int index);
+        void FlushMin(uint64_t offset);
+        void FlushIndex(int index);
         VkDescriptorBufferInfo* DescriptorInfoForIndex(int index);
-        VkResult InvalidateIndex(int index);
+        void InvalidateIndex(int index);
 
         [[nodiscard]] VkBuffer GetBuffer() const { return buffer_info.buffer; }
+
+        [[nodiscard]] VkBuffer* GetBufferAddress() { return &buffer_info.buffer; }
         
         [[nodiscard]] void* GetMappedMemory() const { return mapped; }
 #if DEBUG_NAMING

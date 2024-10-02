@@ -191,7 +191,7 @@ namespace EWE {
 		leafSystem->LoadLeafTexture();
 		printf("after leaf texture\n");
 
-		//EWE_VK_ASSERT(vmaCheckCorruption(EWEDevice::GetAllocator(), UINT32_MAX));
+		//EWE_VK(vmaCheckCorruption(EWEDevice::GetAllocator(), UINT32_MAX));
 
 
 		double renderThreadTime = 0.0;
@@ -233,6 +233,7 @@ namespace EWE {
 				else {
 					//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
 				}
+				
 				renderThreadTime = 0.f;
 				//printf("end rendering thread \n");
 			}
@@ -365,14 +366,14 @@ namespace EWE {
 				queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
 				queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
 				queryPoolInfo.queryCount = 2;
-				EWE_VK_ASSERT(vkCreateQueryPool(eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool));
+				EWE_VK(vkCreateQueryPool, eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool);
 			}
 			else {
 				//printf("before non-null \n");
 				//shouldnt be activated until after the command has already been submitted at least once
 				uint64_t timestampStart, timestampEnd;
-				EWE_VK_ASSERT(vkGetQueryPoolResults(eweDevice.Device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT));
-				EWE_VK_ASSERT(vkGetQueryPoolResults(eweDevice.Device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT));
+				EWE_VK(vkGetQueryPoolResults, eweDevice.Device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
+				EWE_VK(vkGetQueryPoolResults, eweDevice.Device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
 				elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond * 1000.f;
 				totalElapsedGPUMS += elapsedGPUMS;
 				averageElapsedGPUCounter++;

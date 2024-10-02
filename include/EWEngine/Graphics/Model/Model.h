@@ -89,11 +89,15 @@ namespace EWE {
         static EWEModel* CreateGrassModelFromFile(const std::string& filePath, Queue::Enum queue);
 
         void BindAndDraw(VkCommandBuffer commandBuffer);
+        void BindAndDrawNoIndex(VkCommandBuffer commandBuffer);
         void Bind(VkCommandBuffer commandBuffer);
+        void BindNoIndex(VkCommandBuffer commandBuffer);
         void Draw(VkCommandBuffer commandBuffer);
+        void DrawNoIndex(VkCommandBuffer commandBuffer);
         void BindAndDrawInstance(VkCommandBuffer commandBuffer);
         void BindAndDrawInstanceNoIndex(VkCommandBuffer commandBuffer);
         void BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount);
+        void BindAndDrawInstanceNoBufferNoIndex(VkCommandBuffer commandBuffer, int instanceCount);
 
         uint32_t GetVertexCount() { return vertexCount; }
         uint32_t GetIndexCount() { return indexCount; }

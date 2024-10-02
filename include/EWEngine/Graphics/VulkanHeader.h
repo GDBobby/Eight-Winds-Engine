@@ -20,6 +20,10 @@
 
 #include <functional>
 
+#include <source_location>
+#include <tuple>
+#include <type_traits>
+
 namespace EWE{
     struct TransferCallbackReturn {
         std::function<void()> freeCommandBufferCallback{ nullptr };
@@ -100,51 +104,87 @@ namespace EWE{
 #if GPU_LOGGING
 #include <fstream>
 #define GPU_LOG_FILE "GPULog.log"
+#endif
 
-#ifndef EWE_VK_RESULT_ASSERT
-#if DEBUGGING_DEVICE_LOST
-#define EWE_VK_RESULT_ASSERT(result)                                                                                            \
-                    if(result == VK_ERROR_DEVICE_LOST){ EWE::VKDEBUG::OnDeviceLost();}                                                  \
-                    else if (result != VK_SUCCESS) {                                                                                    \
-                        printf("VK_ERROR : %s(%d) : %s - %d \n", __FILE__, __LINE__, __FUNCTION__, result);                             \
-                        std::ofstream logFile{};                                                                                        \
-                        logFile.open(GPU_LOG_FILE, std::ios::app);                                                                      \
-                        assert(logFile.is_open() && "Failed to open log file");                                                         \
-                        logFile << "VK_ERROR : " << __FILE__ << '(' << __LINE__ << ") : " << __FUNCTION__ << " : VkResult(" << result << ")\n";   \
-                        logFile.close();                                                                                                \
-                        assert(result == VK_SUCCESS && "VK_ERROR");                                                                     \
-	                }
+#define CALL_TRACING true
+#define WRAPPING_VULKAN_FUNCTIONS false
+
+#if CALL_TRACING
+void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation = std::source_location::current());
+//if having difficulty with template errors related to this function, define the vulkan function by itself before using this function to ensure its correct
+template<typename F, typename... Args>
+struct EWE_VK {
+    EWE_VK(F&& f, Args&&... args, const std::source_location& sourceLocation = std::source_location::current()) {
+#if WRAPPING_VULKAN_FUNCTIONS
+        //call a preliminary function
+#endif
+        if constexpr (std::is_void_v<decltype(std::forward<F>(f)(std::forward<Args>(args)...))>) {
+            std::bind(std::forward<F>(f), std::forward<Args>(args)...)();
+        }
+        else {
+            VkResult vkResult = std::bind(std::forward<F>(f), std::forward<Args>(args)...)();
+            EWE_VK_RESULT(vkResult, sourceLocation);
+
+        }
+#if WRAPPING_VULKAN_FUNCTIONS
+        //call a following function
+#endif
+    }
+};
+template<typename F, typename... Args>
+EWE_VK(F&& f, Args&&...) -> EWE_VK<F, Args...>;
+
 #else
-#define EWE_VK_RESULT_ASSERT(result)                                                                                            \
-                    if (result != VK_SUCCESS) {                                                                                         \
-                        printf("VK_ERROR : %s(%d) : %s - %d \n", __FILE__, __LINE__, __FUNCTION__, result);                             \
-                        std::ofstream logFile{};                                                                                        \
-                        logFile.open(GPU_LOG_FILE, std::ios::app);                                                                      \
-                        assert(logFile.is_open() && "Failed to open log file");                                                         \
-                        logFile << "VK_ERROR : " << __FILE__ << '(' << __LINE__ << ") : " << __FUNCTION__ << " : VkResult(" << result << ")\n";   \
-                        logFile.close();                                                                                                \
-                        assert(result == VK_SUCCESS && "VK_ERROR");                                                                     \
-	                }
-#endif
-#endif
-
-#ifndef EWE_VK_ASSERT
-#define EWE_VK_ASSERT(vkFunc)       \
-        {VkResult result = (vkFunc);    \
-        EWE_VK_RESULT_ASSERT(result)}
-#endif
+//if having difficulty with template errors related to this function, define the vulkan function by itself before using this function to ensure its correct
+void EWE_VK_RESULT(VkResult vkResult) {
+#if DEBUGGING_DEVICE_LOST                                                                                        
+    if (vkResult == VK_ERROR_DEVICE_LOST) { EWE::VKDEBUG::OnDeviceLost(); }
+    else
 #else
-#ifndef EWE_VK_RESULT_ASSERT
-#define EWE_VK_RESULT_ASSERT(result)                                                        \
-        if (result != VK_SUCCESS) {                                                             \
-            printf("VK_ERROR : %s(%d) : %s - %l\n", __FILE__, __LINE__, __FUNCTION__, result);  \
-            assert(result == VK_SUCCESS && "VK_ERROR");                                         \
-	    }
+    if (vkResult != VK_SUCCESS) {
+        printf("VK_ERROR : %d \n", vkResult);
+        std::ofstream logFile{};
+        logFile.open(GPU_LOG_FILE, std::ios::app);
+        assert(logFile.is_open() && "Failed to open log file");
+        logFile << "VK_ERROR : VkResult(" << vkResult << ")\n";
+        logFile.close();
+        assert(vkResult == VK_SUCCESS && "VK_ERROR");
+    }
 #endif
+}
 
-#ifndef EWE_VK_ASSERT
-#define EWE_VK_ASSERT(vkFunc)       \
-    {VkResult result = (vkFunc);        \
-        EWE_VK_RESULT_ASSERT(result)}
+template<typename F, typename... Args>
+void EWE_VK(F&& f, Args&&... args) {
+#if WRAPPING_VULKAN_FUNCTIONS
+    //call a preliminary function
 #endif
+    if constexpr (std::is_same_v<std::invoke_result<F(Args...)>, void>) {
+        std::forward<F>(f)(std::forward<Args>(args)...);
+        //f(args);
+    }
+    else {
+        //VkResult vkResult = std::forward<F>(f)(std::forward<Args>(args)...);
+        VkResult vkResult = f(args);
+
+        if (vkResult != VK_SUCCESS) {
+#if DEBUGGING_DEVICE_LOST                                                                                        
+            if (vkResult == VK_ERROR_DEVICE_LOST) { EWE::VKDEBUG::OnDeviceLost(); }
+            else
+#else
+            if (vkResult != VK_SUCCESS) {
+                printf("VK_ERROR : %d \n", vkResult);
+                std::ofstream logFile{};
+                logFile.open(GPU_LOG_FILE, std::ios::app);
+                assert(logFile.is_open() && "Failed to open log file");
+                logFile << "VK_ERROR : VkResult(" << vkResult << ")\n";
+                logFile.close();
+                assert(vkResult == VK_SUCCESS && "VK_ERROR");
+            }
+#endif
+        }
+    }
+#if WRAPPING_VULKAN_FUNCTIONS
+    //call a following function
+#endif
+    }
 #endif

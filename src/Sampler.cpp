@@ -39,7 +39,7 @@ namespace EWE {
         SamplerTracker tracker{};
 
         SamplerDuplicateTracker(VkSamplerCreateInfo const& samplerInfo) : samplerInfo(samplerInfo) {
-            EWE_VK_ASSERT(vkCreateSampler(device, &samplerInfo, nullptr, &sampler));
+            EWE_VK(vkCreateSampler, device, &samplerInfo, nullptr, &sampler);
         }
     };
 
@@ -60,7 +60,6 @@ namespace EWE {
     namespace Sampler {
         VkSampler GetSampler(VkSamplerCreateInfo const& samplerInfo) {
 #if SAMPLER_DUPLICATION_TRACKING
-            SamplerDuplicateTracker* foundDuplicate = nullptr;
             for (auto& duplicate : storedSamplers) {
                 if (BitwiseEqualOperator(duplicate.samplerInfo, samplerInfo)) {
                     duplicate.tracker.Add();
@@ -74,7 +73,7 @@ namespace EWE {
             return storedSamplers.back().sampler;
 #else
             VkSampler sampler;
-            EWE_VK_ASSERT(vkCreateSampler(EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &sampler));
+            EWE_VK(vkCreateSampler, EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &sampler);
             return sampler;
 #endif
         }
@@ -90,7 +89,7 @@ namespace EWE {
             }
             assert(false && "removing a sampler that does not exist");
 #else
-            vkDestroySampler(EWEDevice::GetVkDevice(), sampler, nullptr);
+            EWE_VK(vkDestroySampler, EWEDevice::GetVkDevice(), sampler, nullptr);
 #endif
         }
         void Initialize(VkDevice vkDevice) {
@@ -107,9 +106,9 @@ namespace EWE {
             //if the sampler was not destroyed, it'll be fun tracing the source
             for (auto const& sampler : storedSamplers) {
 #if SAMPLER_DUPLICATION_TRACKING
-                vkDestroySampler(device, sampler.sampler, nullptr);
+                EWE_VK(vkDestroySampler, device, sampler.sampler, nullptr);
 #else
-                vkDestroySampler(device, sampler, nullptr);
+                EWE_VK(vkDestroySampler, device, sampler, nullptr);
 #endif
             }
         }

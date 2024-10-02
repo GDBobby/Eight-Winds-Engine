@@ -87,7 +87,7 @@ namespace EWE {
             viewInfo.subresourceRange.layerCount = uiImageInfo.arrayLayers;
             viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 
-            EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &uiImageInfo.imageView));
+            EWE_VK(vkCreateImageView, EWEDevice::GetVkDevice(), &viewInfo, nullptr, &uiImageInfo.imageView);
         }
 
         void CreateUISampler(ImageInfo& uiImageInfo) {

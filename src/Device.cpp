@@ -17,8 +17,9 @@
 #define ENGINE_DIR "../"
 
 //my NVIDIA card is chosen before my AMD card.
-//on a machine with an AMD card chosen before the NVIDIA card, a NVIDIA_TARGET macro would be necessary
-#define AMD_TARGET false
+//on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
+#define AMD_TARGET true
+#define NVIDIA_TARGET false && !AMD_TARGET
 
 namespace EWE {
 
@@ -79,7 +80,7 @@ namespace EWE {
         return VK_FALSE;
     }
 
-    VkResult CreateDebugUtilsMessengerEXT(
+    void CreateDebugUtilsMessengerEXT(
         VkInstance instance,
         const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
         const VkAllocationCallbacks* pAllocator,
@@ -89,10 +90,10 @@ namespace EWE {
             "vkCreateDebugUtilsMessengerEXT"
         ));
         if (func != nullptr) {
-            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+            EWE_VK(func, instance, pCreateInfo, pAllocator, pDebugMessenger);
         }
         else {
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
+            EWE_VK_RESULT(VK_ERROR_EXTENSION_NOT_PRESENT);
         }
     }
 
@@ -372,7 +373,7 @@ namespace EWE {
             createInfo.pNext = nullptr;
         }
 
-        EWE_VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &instance));
+        EWE_VK(vkCreateInstance, &createInfo, nullptr, &instance);
 
         HasGflwRequiredInstanceExtensions();
     }
@@ -387,7 +388,7 @@ namespace EWE {
         //score     //device iter in the vector
         std::list<std::pair<uint32_t, uint32_t>> deviceScores{};
 
-        EWE_VK_ASSERT(vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()));
+        EWE_VK(vkEnumeratePhysicalDevices, instance, &deviceCount, devices.data());
         std::cout << "Device count: " << deviceCount << std::endl;
 
         //printf("enumerate devices2 result : %u \n", deviceCount);
@@ -412,6 +413,7 @@ namespace EWE {
             score += properties.limits.maxImageDimension2D;
             std::string deviceNameTemp = properties.deviceName;
 #if AMD_TARGET
+            printf("found an amd card\n");
             if ((deviceNameTemp.find("AMD") != deviceNameTemp.npos) && (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
                 score = UINT32_MAX;
             }
@@ -596,7 +598,7 @@ namespace EWE {
             logFile.close();
         }
 #endif
-        EWE_VK_ASSERT(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device_));
+        EWE_VK(vkCreateDevice, physicalDevice, &createInfo, nullptr, &device_);
 #if GPU_LOGGING
         {
             //printf("opening file? \n");
@@ -657,7 +659,7 @@ namespace EWE {
         //sascha doesnt use TRANSIENT_BIT
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &computeCommandPool));
+        EWE_VK(vkCreateCommandPool, device_, &poolInfo, nullptr, &computeCommandPool);
     }
 
     void EWEDevice::CreateCommandPool() {
@@ -666,7 +668,7 @@ namespace EWE {
         poolInfo.queueFamilyIndex = queueData.index[Queue::graphics];
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool));
+        EWE_VK(vkCreateCommandPool, device_, &poolInfo, nullptr, &commandPool);
     }
     void EWEDevice::CreateTransferCommandPool() {
 
@@ -682,7 +684,7 @@ namespace EWE {
         }
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        EWE_VK_ASSERT(vkCreateCommandPool(device_, &poolInfo, nullptr, &transferCommandPool));
+        EWE_VK(vkCreateCommandPool, device_, &poolInfo, nullptr, &transferCommandPool);
     }
 
     void EWEDevice::CreateSurface() { window.createWindowSurface(instance, &surface_, GPU_LOGGING); }
@@ -700,7 +702,7 @@ namespace EWE {
         }
 
         VkPhysicalDeviceFeatures supportedFeatures;
-        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+        EWE_VK(vkGetPhysicalDeviceFeatures, device, &supportedFeatures);
 
         return queueData.isComplete() && extensionsSupported && swapChainAdequate &&
             supportedFeatures.samplerAnisotropy;
@@ -723,10 +725,7 @@ namespace EWE {
         if (!enableValidationLayers) return;
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         PopulateDebugMessengerCreateInfo(createInfo);
-        if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-
-            throw std::runtime_error("failed to set up debug messenger!");
-        }
+        CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger);
     }
 
     bool EWEDevice::CheckValidationLayerSupport() {
@@ -810,14 +809,15 @@ namespace EWE {
 
     bool EWEDevice::CheckDeviceExtensionSupport(VkPhysicalDevice device) {
         uint32_t extensionCount;
-        EWE_VK_ASSERT(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr));
+        EWE_VK(vkEnumerateDeviceExtensionProperties, device, nullptr, &extensionCount, nullptr);
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        EWE_VK_ASSERT(vkEnumerateDeviceExtensionProperties(
+        EWE_VK(vkEnumerateDeviceExtensionProperties,
             device,
             nullptr,
             &extensionCount,
-            availableExtensions.data()));
+            availableExtensions.data()
+        );
 
         std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -844,14 +844,14 @@ namespace EWE {
         }
         uint32_t extensionCount;
 
-        EWE_VK_ASSERT(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr));
+        EWE_VK(vkEnumerateDeviceExtensionProperties, physicalDevice, nullptr, &extensionCount, nullptr);
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        EWE_VK_ASSERT(vkEnumerateDeviceExtensionProperties(
+        EWE_VK(vkEnumerateDeviceExtensionProperties,
             physicalDevice,
             nullptr,
             &extensionCount,
-            availableExtensions.data())
+            availableExtensions.data()
         );
 
         for (auto& extension : availableExtensions) {
@@ -873,22 +873,22 @@ namespace EWE {
 
     SwapChainSupportDetails EWEDevice::QuerySwapChainSupport(VkPhysicalDevice device) {
         SwapChainSupportDetails details;
-        EWE_VK_ASSERT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_, &details.capabilities));
+        EWE_VK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, device, surface_, &details.capabilities);
 
         uint32_t formatCount;
-        EWE_VK_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount, nullptr));
+        EWE_VK(vkGetPhysicalDeviceSurfaceFormatsKHR, device, surface_, &formatCount, nullptr);
 
         if (formatCount != 0) {
             details.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount, details.formats.data());
+            EWE_VK(vkGetPhysicalDeviceSurfaceFormatsKHR, device, surface_, &formatCount, details.formats.data());
         }
 
         uint32_t presentModeCount;
-        EWE_VK_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, nullptr));
+        EWE_VK(vkGetPhysicalDeviceSurfacePresentModesKHR, device, surface_, &presentModeCount, nullptr);
 
         if (presentModeCount != 0) {
             details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, details.presentModes.data());
+            EWE_VK(vkGetPhysicalDeviceSurfacePresentModesKHR, device, surface_, &presentModeCount, details.presentModes.data());
         }
         return details;
     }
@@ -897,7 +897,7 @@ namespace EWE {
         const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
         for (VkFormat format : candidates) {
             VkFormatProperties props;
-            vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+            EWE_VK(vkGetPhysicalDeviceFormatProperties, physicalDevice, format, &props);
 
             if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
                 return format;
@@ -912,7 +912,8 @@ namespace EWE {
             file << "failed to find supported format \n";
         }
 #endif
-        throw std::runtime_error("failed to find supported format!");
+        assert(false && "failed to find supported format");
+        return VkFormat{}; //error silencing
     }
 
     void EWEDevice::CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
@@ -921,7 +922,7 @@ namespace EWE {
         copyRegion.srcOffset = 0;  // Optional
         copyRegion.dstOffset = 0;  // Optional
         copyRegion.size = size;
-        vkCmdCopyBuffer(cmdBuf, srcBuffer, dstBuffer, 1, &copyRegion);
+        EWE_VK(vkCmdCopyBuffer, cmdBuf, srcBuffer, dstBuffer, 1, &copyRegion);
     }
 
     //need to find the usage and have it create the single time command
@@ -1052,7 +1053,7 @@ namespace EWE {
     }
     void EWEDevice::TransitionImageLayoutWithBarrier(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount){
         VkImageMemoryBarrier imageBarrier{TransitionImageLayout(image, srcLayout, dstLayout, mipLevels, layerCount)};
-        vkCmdPipelineBarrier(cmdBuf,
+        EWE_VK(vkCmdPipelineBarrier, cmdBuf,
             srcStageMask, dstStageMask,
             0,
             0, nullptr,
@@ -1091,7 +1092,7 @@ namespace EWE {
             imageBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
             imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
 
-            vkCmdPipelineBarrier(
+            EWE_VK(vkCmdPipelineBarrier,
                 cmdBuf,
                 srcStage, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, // pipeline stage
                 0, //dependency flags
@@ -1110,7 +1111,7 @@ namespace EWE {
             imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
             imageBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
             imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for transfer read operation
-            vkCmdPipelineBarrier(
+            EWE_VK(vkCmdPipelineBarrier,
                 cmdBuf,
                 srcStage, dstStage, // pipeline stage
                 0, //dependency flags
@@ -1127,7 +1128,7 @@ namespace EWE {
             imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
             imageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
             imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for transfer read operation
-            vkCmdPipelineBarrier(
+            EWE_VK(vkCmdPipelineBarrier,
                 cmdBuf,
                 srcStage, dstStage, // pipeline stage
                 0, //dependency flags
@@ -1193,7 +1194,7 @@ namespace EWE {
 #endif
         }
 
-        vkCmdPipelineBarrier(
+        EWE_VK(vkCmdPipelineBarrier,
             cmdBuf,
             srcStage,  // pipeline stage
             dstStage, 
@@ -1227,7 +1228,7 @@ namespace EWE {
 
         imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // Access mask for compute shader writes
         imageBarrier.dstAccessMask = 0; // Access mask for transfer read operation
-        vkCmdPipelineBarrier(
+        EWE_VK(vkCmdPipelineBarrier,
             cmdBuf,
             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, // pipeline stage
             0, //dependency flags
@@ -1258,7 +1259,7 @@ namespace EWE {
 
         imageBarrier.srcAccessMask = 0; // Access mask for compute shader writes
         imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
-        vkCmdPipelineBarrier(
+        EWE_VK(vkCmdPipelineBarrier,
             cmdBuf,
             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // pipeline stage
             0, //dependency flags
@@ -1285,7 +1286,7 @@ namespace EWE {
         region.imageExtent.height = height;
         region.imageExtent.depth = 1;
 
-        vkCmdCopyBufferToImage(
+        EWE_VK(vkCmdCopyBufferToImage,
             cmdBuf,
             buffer,
             image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -1295,7 +1296,7 @@ namespace EWE {
 
     VkDeviceSize EWEDevice::GetMemoryRemaining() {
         VkPhysicalDeviceMemoryProperties memoryProperties;
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+        EWE_VK(vkGetPhysicalDeviceMemoryProperties, physicalDevice, &memoryProperties);
 
         uint32_t memoryHeapCount = memoryProperties.memoryHeapCount;
         VkDeviceSize deviceMemoryRemaining = 0;

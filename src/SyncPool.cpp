@@ -13,16 +13,16 @@ namespace EWE {
         semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         semInfo.pNext = nullptr;
         for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &inFlight[i]));
-            EWE_VK_ASSERT(vkCreateSemaphore(device, &semInfo, nullptr, &imageAvailable[i]));
-            EWE_VK_ASSERT(vkCreateSemaphore(device, &semInfo, nullptr, &renderFinished[i]));
+            EWE_VK(vkCreateFence, device, &fenceInfo, nullptr, &inFlight[i]);
+            EWE_VK(vkCreateSemaphore, device, &semInfo, nullptr, &imageAvailable[i]);
+            EWE_VK(vkCreateSemaphore, device, &semInfo, nullptr, &renderFinished[i]);
         }
     }
     RenderSyncData::~RenderSyncData() {
         for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            vkDestroyFence(device, inFlight[i], nullptr);
-            vkDestroySemaphore(device, imageAvailable[i], nullptr);
-            vkDestroySemaphore(device, renderFinished[i], nullptr);
+            EWE_VK(vkDestroyFence, device, inFlight[i], nullptr);
+            EWE_VK(vkDestroySemaphore, device, imageAvailable[i], nullptr);
+            EWE_VK(vkDestroySemaphore, device, renderFinished[i], nullptr);
         }
     }
     void RenderSyncData::AddWaitSemaphore(SemaphoreData* semaphore) {
@@ -87,7 +87,7 @@ namespace EWE {
         fenceInfo.pNext = nullptr;
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         for (uint8_t i = 0; i < size; i++) {
-            EWE_VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &fences[i].fence));
+            EWE_VK(vkCreateFence, device, &fenceInfo, nullptr, &fences[i].fence);
         }
 
         VkSemaphoreCreateInfo semInfo{};
@@ -95,7 +95,7 @@ namespace EWE {
         semInfo.pNext = nullptr;
         semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         for (uint8_t i = 0; i < size * 2; i++) {
-            EWE_VK_ASSERT(vkCreateSemaphore(device, &semInfo, nullptr, &semaphores[i].semaphore));
+            EWE_VK(vkCreateSemaphore, device, &semInfo, nullptr, &semaphores[i].semaphore);
         }
     }
     SyncPool::~SyncPool() {
@@ -141,12 +141,12 @@ namespace EWE {
             ThreadPool::EnqueueVoidFunction(otherCallbacks[0]);
         }
         else if (otherCallbacks.size() > 1) {
-            ThreadPool::EnqueueVoid([otherCallbacks] {
-                    for (auto const& cb : otherCallbacks) {
-                        cb();
-                    }
+            auto cbFunc = [otherCallbacks] {
+                for (auto const& cb : otherCallbacks) {
+                    cb();
                 }
-            );
+            };
+            ThreadPool::EnqueueVoid(cbFunc);
         }
         if (cmdFreeCallbacks.size() == 1) {
             auto cmdFreeWrapper = [&transferPoolMutex, cmdFreeCallbacks] {

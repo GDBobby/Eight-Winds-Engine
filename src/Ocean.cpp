@@ -112,7 +112,7 @@ namespace EWE {
             	0, nullptr,
             	2, imageBarriers
 			);
-			VkImage imagesTransfer[2] = {oceanOutputImages, oceanFreqImages};
+
 			//directly to graphics because no data is being uploaded
 			syncHub->EndSingleTimeCommandGraphics(cmdBuf);
 
@@ -146,11 +146,11 @@ namespace EWE {
 			view.subresourceRange.baseArrayLayer = 0;
 			view.subresourceRange.layerCount = cascade_count * 3;
 			view.image = oceanOutputImages;
-			EWE_VK_ASSERT(vkCreateImageView(eweDevice->Device(), &view, nullptr, &oceanOutputImageInfoDescriptorCompute.imageView));
+			EWE_VK(vkCreateImageView, eweDevice->Device(), &view, nullptr, &oceanOutputImageInfoDescriptorCompute.imageView);
 			oceanOutputImageInfoDescriptorGraphics.imageView = oceanOutputImageInfoDescriptorCompute.imageView;
 			view.image = oceanFreqImages;
 			view.subresourceRange.layerCount = cascade_count;
-			EWE_VK_ASSERT(vkCreateImageView(eweDevice->Device(), &view, nullptr, &oceanFreqImageInfoDescriptor.imageView));
+			EWE_VK(vkCreateImageView, eweDevice->Device(), &view, nullptr, &oceanFreqImageInfoDescriptor.imageView);
 
 
 			// Initialize a descriptor for later use

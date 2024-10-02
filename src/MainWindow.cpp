@@ -23,26 +23,25 @@ namespace EWE {
 	}
 
 	MainWindow::~MainWindow() {
-		printf("main window deconstruction beg \n");
 		glfwDestroyWindow(window);
 		glfwTerminate();
-		printf("main window deconstruction end \n");
-
 	}
 	void MainWindow::initWindow() {
 		glfwInit();
 
 		int count;
 		GLFWmonitor** monitors = glfwGetMonitors(&count);
+#if EWE_DEBUG
 		printf("monitor count : %d \n", count);
-		for (int i = 0; i < count; i++) {
-			std::string monName = glfwGetMonitorName(monitors[i]);
+#endif
+		//for (int i = 0; i < count; i++) {
+		//	std::string monName = glfwGetMonitorName(monitors[i]);
 
-			const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
-			
+		//	const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
+		//	
 
-			//printf("monitor name:size - %s:(%.3f:%.3f) \n", monName.c_str(), mode->width, mode->height);
-		}
+		//	printf("monitor name:size - %s:(%.3f:%.3f) \n", monName.c_str(), mode->width, mode->height);
+		//}
 
 		if (screenDimensions == SettingsInfo::SD_size) {
 			const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -104,7 +103,7 @@ namespace EWE {
 		//glfwSetWindowSize(window, width, height);
 
 
-		EWE_VK_ASSERT(glfwCreateWindowSurface(instance, window, nullptr, surface));
+		EWE_VK(glfwCreateWindowSurface, instance, window, nullptr, surface);
 	}
 
 	void MainWindow::frameBufferResizeCallback(GLFWwindow* window, int width, int height) {

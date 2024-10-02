@@ -5,7 +5,21 @@
 #include "EWEngine/Graphics/vk_mem_alloc.h"
 #endif
 
-
+void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation) {
+#if DEBUGGING_DEVICE_LOST                                                                                        
+    if (vkResult == VK_ERROR_DEVICE_LOST) { EWE::VKDEBUG::OnDeviceLost(); }
+    else
+#endif
+    if (vkResult != VK_SUCCESS) {
+        printf("VK_ERROR : %s(%d) : %s - %d \n", sourceLocation.file_name(), sourceLocation.line(), sourceLocation.function_name(), vkResult);
+        std::ofstream logFile{};
+        logFile.open(GPU_LOG_FILE, std::ios::app);
+        assert(logFile.is_open() && "Failed to open log file");
+        logFile << "VK_ERROR : " << sourceLocation.file_name() << '(' << sourceLocation.line() << ") : " << sourceLocation.function_name() << " : VkResult(" << vkResult << ")\n";
+        logFile.close();
+        assert(vkResult == VK_SUCCESS && "VK_ERROR");
+    }
+}
 
 namespace EWE {
     uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, const VkMemoryPropertyFlags properties) {
@@ -101,7 +115,7 @@ namespace EWE {
         vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
         vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        EWE_VK_ASSERT(vmaCreateBuffer(vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo));
+        EWE_VK(vmaCreateBuffer, vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo);
 
         Stage(vmaAllocator, data, size);
     }
@@ -117,7 +131,7 @@ namespace EWE {
         vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
         vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        EWE_VK_ASSERT(vmaCreateBuffer(vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo));
+        EWE_VK(vmaCreateBuffer, vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo);
     }
 #else
     StagingBuffer::StagingBuffer(VkDeviceSize size, VkPhysicalDevice physicalDevice, VkDevice device, const void* data) {
@@ -126,19 +140,19 @@ namespace EWE {
         bufferCreateInfo.size = size;
         bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        EWE_VK_ASSERT(vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer));
+        EWE_VK(vkCreateBuffer, device, &bufferCreateInfo, nullptr, &buffer);
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+        EWE_VK(vkGetBufferMemoryRequirements, device, buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        EWE_VK_ASSERT(vkAllocateMemory(device, &allocInfo, nullptr, &memory));
+        EWE_VK(vkAllocateMemory, device, &allocInfo, nullptr, &memory);
 
-        EWE_VK_ASSERT(vkBindBufferMemory(device, buffer, memory, 0));
+        EWE_VK(vkBindBufferMemory, device, buffer, memory, 0);
 
         Stage(device, data, size);
     }
@@ -148,19 +162,19 @@ namespace EWE {
         bufferCreateInfo.size = size;
         bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        EWE_VK_ASSERT(vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer));
+        EWE_VK(vkCreateBuffer, device, &bufferCreateInfo, nullptr, &buffer);
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+        EWE_VK(vkGetBufferMemoryRequirements, device, buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        EWE_VK_ASSERT(vkAllocateMemory(device, &allocInfo, nullptr, &memory));
+        EWE_VK(vkAllocateMemory, device, &allocInfo, nullptr, &memory);
 
-        EWE_VK_ASSERT(vkBindBufferMemory(device, buffer, memory, 0));
+        EWE_VK(vkBindBufferMemory, device, buffer, memory, 0);
     }
 #endif
 
@@ -169,14 +183,14 @@ namespace EWE {
         if (buffer == VK_NULL_HANDLE) {
             return;
         }
-        vmaDestroyBuffer(vmaAllocator, buffer, vmaAlloc);
+        EWE_VK(vmaDestroyBuffer, vmaAllocator, buffer, vmaAlloc);
 #else
     void StagingBuffer::Free(VkDevice device) {
         if (buffer == VK_NULL_HANDLE) {
             return;
         }
-        vkDestroyBuffer(device, buffer, nullptr);
-        vkFreeMemory(device, memory, nullptr);
+        EWE_VK(vkDestroyBuffer, device, buffer, nullptr);
+        EWE_VK(vkFreeMemory, device, memory, nullptr);
 #endif
     }
 
@@ -185,29 +199,29 @@ namespace EWE {
         if (buffer == VK_NULL_HANDLE) {
             return;
         }
-        vmaDestroyBuffer(vmaAllocator, buffer, vmaAlloc);
+        EWE_VK(vmaDestroyBuffer, vmaAllocator, buffer, vmaAlloc);
 #else
     void StagingBuffer::Free(VkDevice device) const {
         if (buffer == VK_NULL_HANDLE) {
             return;
         }
-        vkDestroyBuffer(device, buffer, nullptr);
-        vkFreeMemory(device, memory, nullptr);
+        EWE_VK(vkDestroyBuffer, device, buffer, nullptr);
+        EWE_VK(vkFreeMemory, device, memory, nullptr);
 #endif
     }
 #if USING_VMA
     void StagingBuffer::Stage(VmaAllocator vmaAllocator, const void* data, uint64_t bufferSize) {
         void* stagingData;
 
-        vmaMapMemory(vmaAllocator, vmaAlloc, &stagingData);
+        EWE_VK(vmaMapMemory, vmaAllocator, vmaAlloc, &stagingData);
         memcpy(stagingData, data, bufferSize);
-        vmaUnmapMemory(vmaAllocator, vmaAlloc);
+        EWE_VK(vmaUnmapMemory, vmaAllocator, vmaAlloc);
 #else
     void StagingBuffer::Stage(VkDevice device, const void* data, uint64_t bufferSize) {
         void* stagingData;
-        vkMapMemory(device, memory, 0, bufferSize, 0, &stagingData);
+        EWE_VK(vkMapMemory, device, memory, 0, bufferSize, 0, &stagingData);
         memcpy(stagingData, data, bufferSize);
-        vkUnmapMemory(device, memory);
+        EWE_VK(vkUnmapMemory, device, memory);
 #endif
     }
 
@@ -215,7 +229,7 @@ namespace EWE {
         mut.lock();
         VkResult ret = vkWaitForFences(device, 1, &fence, true, time);
         if (ret == VK_SUCCESS) {
-            EWE_VK_ASSERT(vkResetFences(device, 1, &fence));
+            EWE_VK(vkResetFences, device, 1, &fence);
             mut.unlock();
             for (auto& waitSem : waitSemaphores) {
                 waitSem->FinishWaiting();
@@ -244,8 +258,8 @@ namespace EWE {
         }
         else {
             mut.unlock();
-            EWE_VK_RESULT_ASSERT(ret);
-            return TransferCallbackReturn{}; //error silencing
+            EWE_VK_RESULT(ret);
+            return TransferCallbackReturn{}; //error silencing, the above line should throw an error
         }
     }
 }

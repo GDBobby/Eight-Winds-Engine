@@ -36,7 +36,7 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
-		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout));
+		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}
 
 	void Pipe_SimpleTextured::CreatePipeline() {

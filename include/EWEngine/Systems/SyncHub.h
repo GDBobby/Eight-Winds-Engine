@@ -106,7 +106,7 @@ namespace EWE {
 		void EndSingleTimeCommandGraphicsWaitAndSignal(VkCommandBuffer cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
 
 		void EndSingleTimeCommandGraphicsGroup(VkCommandBuffer cmdBuf);
-		void SubmitGraphicsSTCGroup();
+		//void SubmitGraphicsSTCGroup();
 
 		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf);
 		void EndSingleTimeCommandTransfer(CommandWithCallback cmdCb);
@@ -121,7 +121,7 @@ namespace EWE {
 		void AttemptTransferSubmission();
 
 		void WaitOnGraphicsFence(const uint8_t frameIndex) {
-			EWE_VK_ASSERT(vkWaitForFences(device, 1, &renderSyncData.inFlight[frameIndex], VK_TRUE, UINT64_MAX));
+			EWE_VK(vkWaitForFences, device, 1, &renderSyncData.inFlight[frameIndex], VK_TRUE, UINT64_MAX);
 		}
 
 		void RunGraphicsCallbacks();

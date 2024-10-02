@@ -24,7 +24,7 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &tempDSL;
 
-		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_2d));
+		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_2d);
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 		EWEPipeline::enableAlphaBlending(pipelineConfig);
@@ -34,7 +34,7 @@ namespace EWE {
 
 		VkPipelineCacheCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-		EWE_VK_ASSERT(vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &cache));
+		EWE_VK(vkCreatePipelineCache, EWEDevice::GetVkDevice(), &createInfo, nullptr, &cache);
 
 		pipelineConfig.cache = cache;
 
@@ -50,7 +50,7 @@ namespace EWE {
 
 		/*
 		pushConstantRange.size = sizeof(NineUIPushConstantData);
-		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_9));
+		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_9);
 		pipelineConfig.pipelineLayout = PL_9;
 
 		vertString = "NineUI.vert.spv";
@@ -70,9 +70,9 @@ namespace EWE {
 
 	}
 	void Dimension2::Destruct() {
-		vkDestroyPipelineCache(EWEDevice::GetVkDevice(), dimension2Ptr->cache, nullptr);
+		EWE_VK(vkDestroyPipelineCache, EWEDevice::GetVkDevice(), dimension2Ptr->cache, nullptr);
 
-		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_2d, nullptr);
+		EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), dimension2Ptr->PL_2d, nullptr);
 		//vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_9, nullptr);
 		delete dimension2Ptr->model2D;
 		//delete dimension2Ptr->nineUIModel;
@@ -109,7 +109,7 @@ namespace EWE {
 
 	void Dimension2::BindTexture2DUI(TextureDesc texture) {
 		if (texture != dimension2Ptr->bindedTexture) {
-			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
+			EWE_VK(vkCmdBindDescriptorSets, dimension2Ptr->cmdBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
@@ -121,7 +121,7 @@ namespace EWE {
 	}
 	void Dimension2::BindTexture2D(TextureDesc texture) {
 		if (texture != dimension2Ptr->bindedTexture) {
-			vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
+			EWE_VK(vkCmdBindDescriptorSets, dimension2Ptr->cmdBuffer,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
@@ -148,7 +148,7 @@ namespace EWE {
 		//possibly do a check here, to ensure the pipeline and descriptors are properly binded
 		//thats really just a feature to check bad programming, dont rely on the programmer being bad. (easy enough to debug)
 
-		vkCmdPushConstants(dimension2Ptr->cmdBuffer, dimension2Ptr->PL_2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+		EWE_VK(vkCmdPushConstants, dimension2Ptr->cmdBuffer, dimension2Ptr->PL_2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
 		dimension2Ptr->model2D->Draw(dimension2Ptr->cmdBuffer);
 	}
 	//void Dimension2::PushAndDraw(NineUIPushConstantData& push) {

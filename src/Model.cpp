@@ -232,41 +232,47 @@ namespace EWE {
 
 
     void EWEModel::Draw(VkCommandBuffer commandBuffer) {
-        if (hasIndexBuffer) {
-            //printf("Drawing indexed : %d \n", indexCount);
-            vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
-            //an error here could be due to textures or other descriptors
-        }
-        else {
-            //printf("Drawing not indexed, vertexCount : %d \n", vertexCount);
-            vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
-        }
+#if EWE_DEBUG
+        assert(hasIndexBuffer);
+#endif
+        vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+    }
+    void EWEModel::DrawNoIndex(VkCommandBuffer commandBuffer) {
+        vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
     }
 
     void EWEModel::Bind(VkCommandBuffer commandBuffer) {
-        // do a second buffer, and switch to it when changign the object
-        //count a couple of frames then remove the old buffer
-        VkBuffer buffers[] = { vertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+#if EWE_DEBUG
+        assert(hasIndexBuffer);
+#endif
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+    }
 
-        if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        }
+    void EWEModel::BindNoIndex(VkCommandBuffer commandBuffer) {
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer->GetBufferAddress(), offsets);
     }
 
     void EWEModel::BindAndDraw(VkCommandBuffer commandBuffer) {
-        VkBuffer buffers[] = { vertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-        if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
-        }
-        else {
-            vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
-        }
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+
+#if EWE_DEBUG
+        assert(hasIndexBuffer);
+#endif
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+        
     }
+    void EWEModel::BindAndDrawNoIndex(VkCommandBuffer commandBuffer) {
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+        vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
+    }
+
+
     void EWEModel::BindAndDrawInstance(VkCommandBuffer commandBuffer) {
         VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer()};
         VkDeviceSize offsets[] = { 0 };
@@ -288,17 +294,21 @@ namespace EWE {
 
 
     void EWEModel::BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount) {
-        VkBuffer buffers[] = { vertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer->GetBufferAddress(), offsets);
 
-        if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
-        }
-        else {
-            vkCmdDraw(commandBuffer, vertexCount, instanceCount, 0, 0);
-        }
+#if EWE_DEBUG
+        assert(hasIndexBuffer);
+#endif
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
+    }
+    void EWEModel::BindAndDrawInstanceNoBufferNoIndex(VkCommandBuffer commandBuffer, int instanceCount) {
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+
+        vkCmdDraw(commandBuffer, vertexCount, instanceCount, 0, 0);
+        
     }
 
     void EWEModel::Builder::LoadModel(const std::string& filepath) {
@@ -310,7 +320,8 @@ namespace EWE {
         std::string enginePath = ENGINE_DIR + filepath;
         if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, enginePath.c_str())) {
             printf("warning : %s - err :%s \n", warn.c_str(), err.c_str());
-            throw std::runtime_error(warn + err);
+            std::string errString = warn + err;
+            assert(false && errString.c_str());
         }
 
         vertices.clear();

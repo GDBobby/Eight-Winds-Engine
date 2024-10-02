@@ -91,29 +91,22 @@ namespace EWE {
 #endif
 
 		//std::cout << "begin frame 1" << std::endl;
-
-		auto result = eweSwapChain->AcquireNextImage(&currentImageIndex);
-		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		if (eweSwapChain->AcquireNextImage(&currentImageIndex)) {
 			std::cout << "out of date KHR " << std::endl;
 			RecreateSwapChain();
 			return { VK_NULL_HANDLE, currentFrameIndex };
 		}
-		//std::cout << "begin frame 2" << std::endl;
-
-		if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-			EWE_VK_RESULT_ASSERT(result);
-		}
 		//std::cout << "begin frame 3" << std::endl;
 
 		isFrameStarted = true;
-		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
+		VkCommandBuffer commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
 		//std::cout << "begin frame 4" << std::endl;
 		
 
-		EWE_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+		EWE_VK(vkBeginCommandBuffer, commandBuffer, &beginInfo);
 #if DEBUG_NAMING
 		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), commandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, "graphics cmd buffer");
 #endif
@@ -124,7 +117,7 @@ namespace EWE {
 		//printf("end frame :: isFrameStarted : %d \n", isFrameStarted);
 		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
 
-		EWE_VK_ASSERT(vkEndCommandBuffer(commandBuffer));
+		EWE_VK(vkEndCommandBuffer, commandBuffer);
 		//printf("after end command buffer \n");
 		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&commandBuffer, &currentImageIndex);
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
@@ -135,10 +128,7 @@ namespace EWE {
 			currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 			return true;
 		}
-		else if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to present swap chain image: " << vkResult << std::endl;
-			assert(false && "failed to present swap chain image");
-		}
+		EWE_VK_RESULT(vkResult);
 		//printf("after submitting command buffer \n");
 
 		isFrameStarted = false;
@@ -150,7 +140,7 @@ namespace EWE {
 	bool EWERenderer::EndFrameAndWaitForFence() {
 		auto commandBuffer = syncHub->GetRenderBuffer(currentFrameIndex);
 
-		EWE_VK_ASSERT(vkEndCommandBuffer(commandBuffer));
+		EWE_VK(vkEndCommandBuffer, commandBuffer);
 		//printf("after end command buffer \n");
 		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&commandBuffer, &currentImageIndex);
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
@@ -162,7 +152,7 @@ namespace EWE {
 			currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 			return true;
 		}
-		EWE_VK_RESULT_ASSERT(vkResult);
+		EWE_VK_RESULT(vkResult);
 		//printf("after submitting command buffer \n");
 		syncHub->WaitOnGraphicsFence(currentFrameIndex);
 
@@ -217,7 +207,7 @@ namespace EWE {
 		image_memory_barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetPresentIndex();
 		image_memory_barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex();
 
-		vkCmdPipelineBarrier(
+		EWE_VK(vkCmdPipelineBarrier,
 			commandBuffer,
 			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  // srcStageMask
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // dstStageMask
@@ -235,7 +225,7 @@ namespace EWE {
 		//vkCmdEndRenderPass(commandBuffer);
 
 		//std::cout << "before vkCmdEndRendering : " << std::endl;
-		vkCmdEndRendering(commandBuffer);
+		EWE_VK(vkCmdEndRendering, commandBuffer);
 		//std::cout << "after vkCmdEndRendering : " << std::endl;
 		//vkCmdEndRenderingKHR
 
@@ -257,7 +247,7 @@ namespace EWE {
 		image_memory_barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetPresentIndex();
 		//printf("end frame :: get currentCommandBuffer \n");
 
-		vkCmdPipelineBarrier(
+		EWE_VK(vkCmdPipelineBarrier,
 			commandBuffer,
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,  // srcStageMask
 			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // dstStageMask

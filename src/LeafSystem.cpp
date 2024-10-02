@@ -416,6 +416,6 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
 		pipelineLayoutInfo.pSetLayouts = setLayouts.data();
 
-		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout));
+		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}
 }

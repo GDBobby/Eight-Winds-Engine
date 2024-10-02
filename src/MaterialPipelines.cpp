@@ -151,7 +151,7 @@ namespace EWE {
 			pipeLayoutInfo.pushSize = pushConstantRange.size;
 			pipeLayoutInfo.pushStageFlags = pushConstantRange.stageFlags;
 
-			EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout));
+			EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout);
 		}
 	}
 
@@ -309,13 +309,14 @@ namespace EWE {
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 		pipelineConfig.pipelineLayout = materialPipeLayout[pipeLayoutIndex].pipeLayout;
 
-
+#if EWE_DEBUG
 		printf("initiating remote instanced pipeline : %d \n", flags);
+#endif
 
 		if (instanceSkinPipelineCache == VK_NULL_HANDLE) {
 			VkPipelineCacheCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-			EWE_VK_ASSERT(vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &instanceSkinPipelineCache));
+			EWE_VK(vkCreatePipelineCache, EWEDevice::GetVkDevice(), &createInfo, nullptr, &instanceSkinPipelineCache);
 		}
 		pipelineConfig.cache = instanceSkinPipelineCache;
 
@@ -364,7 +365,7 @@ namespace EWE {
 		VkPipelineCacheCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 
-		EWE_VK_ASSERT(vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &retCache));
+		EWE_VK(vkCreatePipelineCache, EWEDevice::GetVkDevice(), &createInfo, nullptr, &retCache);
 #if PIPELINE_DERIVATIVES
 		pipelineConfig.basePipelineHandle = nullptr;
 		pipelineConfig.basePipelineIndex = -1;

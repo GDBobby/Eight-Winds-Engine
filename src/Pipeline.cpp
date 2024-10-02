@@ -51,7 +51,7 @@ namespace EWE {
 			//printf("template data size : %d \n", data.size());
 			createInfo.pCode = (const uint32_t*)data.data();
 
-			EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule));
+			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
 		void createShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
@@ -60,7 +60,7 @@ namespace EWE {
 			//printf("uint32_t data size : %d \n", data.size());
 			createInfo.pCode = data.data();
 
-			EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule));
+			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
 		template <typename T>
 		void createShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule) {
@@ -70,14 +70,14 @@ namespace EWE {
 			//printf("template data size : %d \n", data.size());
 			createInfo.pCode = (const uint32_t*)data.data();
 
-			EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule));
+			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
 		void createShaderModule(const void* data, std::size_t dataSize, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.codeSize = dataSize;
 			//printf("uint32_t data size : %d \n", data.size());
-			EWE_VK_ASSERT(vkCreateShaderModule(EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule));
+			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
 	}
 
@@ -89,7 +89,7 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(computeDSL.size());
 		pipelineLayoutInfo.pSetLayouts = computeDSL.data();
 
-		EWE_VK_ASSERT(vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &ret.pipe_layout));
+		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &ret.pipe_layout);
 		
 
 		VkComputePipelineCreateInfo pipelineInfo{};
@@ -105,7 +105,7 @@ namespace EWE {
 		computeShaderStageInfo.module = ret.shader;
 		computeShaderStageInfo.pName = "main";
 		pipelineInfo.stage = computeShaderStageInfo;
-		EWE_VK_ASSERT(vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline));
+		EWE_VK(vkCreateComputePipelines, EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
 		return ret;
 	}
 	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(VkPipelineLayout pipe_layout, std::string compute_path) {
@@ -122,7 +122,7 @@ namespace EWE {
 		computeShaderStageInfo.module = ret.shader;
 		computeShaderStageInfo.pName = "computeMain";
 		pipelineInfo.stage = computeShaderStageInfo;
-		EWE_VK_ASSERT(vkCreateComputePipelines(EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline));
+		EWE_VK(vkCreateComputePipelines, EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
 		return ret;
 	}
 
@@ -299,7 +299,7 @@ namespace EWE {
 		}
 		pipelineInfo.flags = configInfo.flags;
 #endif
-		EWE_VK_ASSERT(vkCreateGraphicsPipelines(EWEDevice::GetVkDevice(), configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline));
+		EWE_VK(vkCreateGraphicsPipelines, EWEDevice::GetVkDevice(), configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline);
 	}
 
 	void EWEPipeline::enable2DConfig(PipelineConfigInfo& configInfo) {

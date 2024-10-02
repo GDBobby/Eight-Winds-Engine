@@ -17,10 +17,10 @@ namespace EWE {
 #if USING_VMA
 
             StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
-            EWE_VK_ASSERT(vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data));
+            EWE_VK(vmaMapMemory, EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
 #else
             StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice());
-            vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
+            EWE_VK(vkMapMemory, EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
 #endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             cubeImage.mipLevels = 1;
@@ -30,9 +30,9 @@ namespace EWE {
                 memAddress += layerSize;
             }
 #if USING_VMA
-            vmaUnmapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc);
+            EWE_VK(vmaUnmapMemory, EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc);
 #else
-            vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory);
+            EWE_VK(vkUnmapMemory, EWEDevice::GetVkDevice(), stagingBuffer->memory);
 
 #endif
 
@@ -80,7 +80,7 @@ namespace EWE {
             viewInfo.subresourceRange.layerCount = cubeImage.arrayLayers;
             viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 
-            EWE_VK_ASSERT(vkCreateImageView(EWEDevice::GetVkDevice(), &viewInfo, nullptr, &cubeImage.imageView));
+            EWE_VK(vkCreateImageView, EWEDevice::GetVkDevice(), &viewInfo, nullptr, &cubeImage.imageView);
         }
 
         void CreateCubeSampler(ImageInfo& cubeImage) {

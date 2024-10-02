@@ -133,11 +133,7 @@ namespace EWE {
 	}
 
 	void AdvancedRenderSystem::renderSkybox(FrameInfo& frameInfo) {
-		if (!objectManager.skybox.first) {
-			printf("skybox model null ptr? \n");
-			throw std::runtime_error("skybox nullptr");
-			return;
-		}
+		assert(objectManager.skybox.first != nullptr);
 #if DEBUGGING_PIPELINES
 		printf("drawing skybox \n");
 #endif
@@ -153,14 +149,12 @@ namespace EWE {
 	}
 
 	inline void AdvancedRenderSystem::renderTexturedGameObjects(FrameInfo& frameInfo) {
-		bool texturePipeBinded = false;
 		if ((objectManager.texturedGameObjects.size() > 0)) {
 			auto pipe = PipelineSystem::At(Pipe::textured);
 #if DEBUGGING_PIPELINES
 			printf("Drawing texutered game objects \n");
 #endif
 			//texturedPipeline->bind(frameInfo.frameInfo.cmdBuf);
-			texturePipeBinded = true;
 			pipe->BindPipeline();
 			pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
 

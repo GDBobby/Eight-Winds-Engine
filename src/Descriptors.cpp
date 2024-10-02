@@ -41,7 +41,7 @@ namespace EWE {
         descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
         descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
 
-        EWE_VK_ASSERT(vkCreateDescriptorSetLayout(EWEDevice::GetVkDevice(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout));
+        EWE_VK(vkCreateDescriptorSetLayout, EWEDevice::GetVkDevice(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
     }
     void EWEDescriptorSetLayout::construct(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings) {
         this->bindings = bindings;
@@ -56,7 +56,7 @@ namespace EWE {
         descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
         descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
 
-        EWE_VK_ASSERT(vkCreateDescriptorSetLayout(EWEDevice::GetVkDevice(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout));
+        EWE_VK(vkCreateDescriptorSetLayout, EWEDevice::GetVkDevice(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
     }
 
     EWEDescriptorSetLayout::~EWEDescriptorSetLayout() {
@@ -109,14 +109,14 @@ namespace EWE {
             trackers.emplace(poolSize.type, DescriptorTracker(poolSize.descriptorCount));
         }
 
-        EWE_VK_ASSERT(vkCreateDescriptorPool(EWEDevice::GetVkDevice(), &descriptorPoolInfo, nullptr, &descriptorPool));
+        EWE_VK(vkCreateDescriptorPool, EWEDevice::GetVkDevice(), &descriptorPoolInfo, nullptr, &descriptorPool);
     }
     EWEDescriptorPool::EWEDescriptorPool(VkDescriptorPoolCreateInfo& pool_info) {
         for (int i = 0; i < pool_info.poolSizeCount; i++) {
             trackers.emplace(pool_info.pPoolSizes[i].type, DescriptorTracker(pool_info.pPoolSizes[i].descriptorCount));
         }
 
-        EWE_VK_ASSERT(vkCreateDescriptorPool(EWEDevice::GetVkDevice(), &pool_info, nullptr, &descriptorPool));
+        EWE_VK(vkCreateDescriptorPool, EWEDevice::GetVkDevice(), &pool_info, nullptr, &descriptorPool);
     }
 
     EWEDescriptorPool::~EWEDescriptorPool() {
@@ -126,7 +126,7 @@ namespace EWE {
 
 		}
 
-        vkDestroyDescriptorPool(EWEDevice::GetVkDevice(), descriptorPool, nullptr);
+        EWE_VK(vkDestroyDescriptorPool, EWEDevice::GetVkDevice(), descriptorPool, nullptr);
         printf("after destroy pool \n");
     }
     bool EWEDescriptorPool::AllocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) {
@@ -139,17 +139,14 @@ namespace EWE {
         allocInfo.pSetLayouts = &descriptorSetLayout;
         allocInfo.descriptorSetCount = 1;
 
-        if (vkAllocateDescriptorSets(EWEDevice::GetVkDevice(), &allocInfo, &descriptor) != VK_SUCCESS) {
-            return false;
-        }
-        return true;
+        return vkAllocateDescriptorSets(EWEDevice::GetVkDevice(), &allocInfo, &descriptor) == VK_SUCCESS;
     }
     void EWEDescriptorPool::FreeDescriptors(DescriptorPool_ID poolID, std::vector<VkDescriptorSet>& descriptors) {
         pools.at(poolID).FreeDescriptors(descriptors);
         //printf("active descriptors after removal : %d \n", activeDescriptors);
     }
     void EWEDescriptorPool::FreeDescriptors(std::vector<VkDescriptorSet>& descriptors) const {
-        vkFreeDescriptorSets(
+        EWE_VK(vkFreeDescriptorSets,
             EWEDevice::GetVkDevice(),
             descriptorPool,
             static_cast<uint32_t>(descriptors.size()),
@@ -161,7 +158,7 @@ namespace EWE {
         pools.at(poolID).FreeDescriptor(descriptor);
     }
     void EWEDescriptorPool::FreeDescriptor(VkDescriptorSet* descriptor) const {
-        vkFreeDescriptorSets(
+        EWE_VK(vkFreeDescriptorSets,
             EWEDevice::GetVkDevice(),
             descriptorPool,
             1,
@@ -170,7 +167,7 @@ namespace EWE {
         //printf("active descriptors after removal : %d \n", activeDescriptors);
     }
     void EWEDescriptorPool::ResetPool() {
-        vkResetDescriptorPool(EWEDevice::GetVkDevice(), descriptorPool, 0);
+        EWE_VK(vkResetDescriptorPool, EWEDevice::GetVkDevice(), descriptorPool, 0);
     }
     void EWEDescriptorPool::BuildGlobalPool() {
         uint32_t maxSets = 1000;
@@ -227,11 +224,15 @@ namespace EWE {
     {}
 
     EWEDescriptorWriter& EWEDescriptorWriter::WriteBuffer( uint32_t binding, VkDescriptorBufferInfo* bufferInfo) {
+#if EWE_DEBUG
         assert(setLayout->bindings.contains(binding) && "Layout does not contain specified binding");
+#endif
 
         auto& bindingDescription = setLayout->bindings.at(binding);
 
+#if EWE_DEBUG
         assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
+#endif
 
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -305,6 +306,6 @@ namespace EWE {
         for (auto& write : writes) {
             write.dstSet = set;
         }
-        vkUpdateDescriptorSets(EWEDevice::GetVkDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+        EWE_VK(vkUpdateDescriptorSets, EWEDevice::GetVkDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
     }
 }  // namespace EWE

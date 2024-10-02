@@ -63,10 +63,7 @@ namespace EWE {
 	void FloatingRock::update() {
 		for (auto& rock : rockField) {
 			for (int j = 0; j < rock.currentPosition.size(); j++) {
-				rock.currentPosition[j]++;
-				if (rock.currentPosition[j] >= rock.trackPositions.size()) {
-					rock.currentPosition[j] = 0;
-				}
+				rock.currentPosition[j] = (rock.currentPosition[j] + 1) % rock.trackPositions.size();
 			}
 		}
 	}

@@ -72,7 +72,7 @@ namespace EWE {
 		void drawNewMenuObejcts();
 		//void drawMenuObjects(FrameInfo& frameInfo, bool menuActive);
 
-		bool getMenuActive() {
+		bool getMenuActive() const {
 			return isActive;
 		}
 
