@@ -7,7 +7,7 @@ namespace EWE {
 	void OverlayBase::drawText() {
 		if (isActive) {
 			for (int i = 0; i < textStructs.size(); i++) {
-				TextOverlay::staticAddText(textStructs[i]);
+				TextOverlay::StaticAddText(textStructs[i]);
 			}
 		}
 	}

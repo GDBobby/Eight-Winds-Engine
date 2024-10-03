@@ -21,8 +21,8 @@
 #include <functional>
 
 #include <source_location>
-#include <tuple>
 #include <type_traits>
+#include <concepts>
 
 namespace EWE{
     struct TransferCallbackReturn {
@@ -46,7 +46,10 @@ namespace EWE{
 
     struct SemaphoreData {
         VkSemaphore semaphore{ VK_NULL_HANDLE };
+#if SEMAPHORE_TRACKING
         std::string name{"null"};
+        VkDevice device;
+#endif
         bool waiting{ false };
         bool signaling{ false };
 
@@ -111,6 +114,7 @@ namespace EWE{
 
 #if CALL_TRACING
 void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation = std::source_location::current());
+
 //if having difficulty with template errors related to this function, define the vulkan function by itself before using this function to ensure its correct
 template<typename F, typename... Args>
 struct EWE_VK {
@@ -119,10 +123,11 @@ struct EWE_VK {
         //call a preliminary function
 #endif
         if constexpr (std::is_void_v<decltype(std::forward<F>(f)(std::forward<Args>(args)...))>) {
-            std::bind(std::forward<F>(f), std::forward<Args>(args)...)();
+            //std::bind(std::forward<F>(f), std::forward<Args>(args)...)(); //std bind is constexpr, might be worth using
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         }
         else {
-            VkResult vkResult = std::bind(std::forward<F>(f), std::forward<Args>(args)...)();
+            VkResult vkResult = std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
             EWE_VK_RESULT(vkResult, sourceLocation);
 
         }
@@ -159,12 +164,12 @@ void EWE_VK(F&& f, Args&&... args) {
     //call a preliminary function
 #endif
     if constexpr (std::is_same_v<std::invoke_result<F(Args...)>, void>) {
-        std::forward<F>(f)(std::forward<Args>(args)...);
+        std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         //f(args);
     }
     else {
         //VkResult vkResult = std::forward<F>(f)(std::forward<Args>(args)...);
-        VkResult vkResult = f(args);
+        VkResult vkResult = std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
 
         if (vkResult != VK_SUCCESS) {
 #if DEBUGGING_DEVICE_LOST                                                                                        

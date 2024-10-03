@@ -18,8 +18,8 @@
 
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
-#define AMD_TARGET true
-#define NVIDIA_TARGET false && !AMD_TARGET
+#define AMD_TARGET false
+#define NVIDIA_TARGET false && !AMD_TARGET //not currently setup to correctly 
 
 namespace EWE {
 
@@ -103,17 +103,17 @@ namespace EWE {
         const VkAllocationCallbacks* pAllocator) {
         auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
         if (func != nullptr) {
-            func(instance, debugMessenger, pAllocator);
+            EWE_VK(func, instance, debugMessenger, pAllocator);
         }
     }
 
     void QueueData::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface_) {
 
         uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+        EWE_VK(vkGetPhysicalDeviceQueueFamilyProperties, device, &queueFamilyCount, nullptr);
 
         queueFamilies.resize(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+        EWE_VK(vkGetPhysicalDeviceQueueFamilyProperties, device, &queueFamilyCount, queueFamilies.data());
         printf("queue family count : %d:%zu \n", queueFamilyCount, queueFamilies.size());
 
         //i want a designated graphics/present queue, or throw an error
@@ -133,7 +133,7 @@ namespace EWE {
         int currentIndex = 0;
         for (const auto& queueFamily : queueFamilies) {
             VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, currentIndex, surface_, &presentSupport);
+            EWE_VK(vkGetPhysicalDeviceSurfaceSupportKHR, device, currentIndex, surface_, &presentSupport);
             bool graphicsSupport = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
             bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
             if ((presentSupport && graphicsSupport && computeSupport) == true) {
@@ -297,25 +297,25 @@ namespace EWE {
 #endif
 
 
-        vkDestroyCommandPool(device_, commandPool, nullptr);
+        EWE_VK(vkDestroyCommandPool, device_, commandPool, nullptr);
         if (computeCommandPool != VK_NULL_HANDLE) {
-            vkDestroyCommandPool(device_, computeCommandPool, nullptr);
+            EWE_VK(vkDestroyCommandPool, device_, computeCommandPool, nullptr);
         }
         if (transferCommandPool != VK_NULL_HANDLE) {
-            vkDestroyCommandPool(device_, transferCommandPool, nullptr);
+            EWE_VK(vkDestroyCommandPool, device_, transferCommandPool, nullptr);
         }
 #if USING_VMA
         vmaDestroyAllocator(allocator);
 #endif
         eweDevice = nullptr;
-        vkDestroyDevice(device_, nullptr);
+        EWE_VK(vkDestroyDevice, device_, nullptr);
 
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
 
-        vkDestroySurfaceKHR(instance, surface_, nullptr);
-        vkDestroyInstance(instance, nullptr);
+        EWE_VK(vkDestroySurfaceKHR, instance, surface_, nullptr);
+        EWE_VK(vkDestroyInstance, instance, nullptr);
 
 #if DECONSTRUCTION_DEBUG
         printf("end EWEdevice deconstruction \n");
@@ -406,7 +406,7 @@ namespace EWE {
 
         for (uint32_t i = 0; i < deviceCount; i++) {
 
-            vkGetPhysicalDeviceProperties(devices[i], &properties);
+            EWE_VK(vkGetPhysicalDeviceProperties, devices[i], &properties);
 
             uint32_t score = 0;
             score += (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) * 1000;
@@ -464,7 +464,7 @@ namespace EWE {
         CheckOptionalExtensions();
 
         //printf("before get physical device properties \n");
-        vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+        EWE_VK(vkGetPhysicalDeviceProperties, physicalDevice, &properties);
         std::cout << "Physical Device: " << properties.deviceName << std::endl;
         deviceName = properties.deviceName;
         std::cout << "max ubo, storage : " << properties.limits.maxUniformBufferRange << ":" << properties.limits.maxStorageBufferRange << std::endl;
@@ -614,18 +614,18 @@ namespace EWE {
         std::cout << "\t compute family:queue index - " << queueData.index[Queue::compute] << std::endl;
         std::cout << "\t transfer family:queue index - " << queueData.index[Queue::transfer] << std::endl;
         //printf("before graphics queue \n");
-        vkGetDeviceQueue(device_, queueData.index[Queue::graphics], 0, &queues[Queue::graphics]);
+        EWE_VK(vkGetDeviceQueue, device_, queueData.index[Queue::graphics], 0, &queues[Queue::graphics]);
         //printf("after graphics queue \n");
         if (queueData.index[Queue::graphics] != queueData.index[Queue::present]) {
-            vkGetDeviceQueue(device_, queueData.index[Queue::present], 0, &queues[Queue::present]);
+            EWE_VK(vkGetDeviceQueue, device_, queueData.index[Queue::present], 0, &queues[Queue::present]);
         }
         else {
             queues[Queue::present] = queues[Queue::graphics];
         }
 
-        vkGetDeviceQueue(device_, queueData.index[Queue::compute], 0, &queues[Queue::compute]);
+        EWE_VK(vkGetDeviceQueue, device_, queueData.index[Queue::compute], 0, &queues[Queue::compute]);
 
-        vkGetDeviceQueue(device_, queueData.index[Queue::transfer], 0, &queues[Queue::transfer]);
+        EWE_VK(vkGetDeviceQueue, device_, queueData.index[Queue::transfer], 0, &queues[Queue::transfer]);
         printf("after transfer qeuue \n");
 
 #if GPU_LOGGING
@@ -730,10 +730,10 @@ namespace EWE {
 
     bool EWEDevice::CheckValidationLayerSupport() {
         uint32_t layerCount;
-        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        EWE_VK(vkEnumerateInstanceLayerProperties, &layerCount, nullptr);
 
         std::vector<VkLayerProperties> availableLayers(layerCount);
-        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+        EWE_VK(vkEnumerateInstanceLayerProperties, &layerCount, availableLayers.data());
 
         for (const char* layerName : validationLayers) {
             bool layerFound = false;
@@ -781,9 +781,9 @@ namespace EWE {
 
     void EWEDevice::HasGflwRequiredInstanceExtensions() {
         uint32_t extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+        EWE_VK(vkEnumerateInstanceExtensionProperties, nullptr, &extensionCount, nullptr);
         std::vector<VkExtensionProperties> extensions(extensionCount);
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+        EWE_VK(vkEnumerateInstanceExtensionProperties, nullptr, &extensionCount, extensions.data());
 
         //std::cout << "available extensions:" << std::endl;
         std::unordered_set<std::string> available;

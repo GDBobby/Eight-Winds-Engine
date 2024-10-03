@@ -26,6 +26,6 @@
 #define USING_VMA false
 #define DEBUGGING_MEMORY_WITH_VMA USING_VMA && false
 
-#define SEMAPHORE_TRACKING true
+#define SEMAPHORE_TRACKING true && DEBUG_NAMING
 
 #define IMAGE_DEBUGGING EWE_DEBUG && true

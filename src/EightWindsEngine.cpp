@@ -217,6 +217,7 @@ namespace EWE {
 				//printf("rendering loading thread start??? \n");
 				syncHub->RunGraphicsCallbacks();
 
+				/* debugging
 				auto frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 					
@@ -233,6 +234,7 @@ namespace EWE {
 				else {
 					//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
 				}
+				*/
 				
 				renderThreadTime = 0.f;
 				//printf("end rendering thread \n");
@@ -317,7 +319,7 @@ namespace EWE {
 	}
 
 	void EightWindsEngine::DrawText(FrameInfo& frameInfo, double dt) {
-		uiHandler.beginTextRender();
+		uiHandler.beginTextRender(frameInfo.index);
 #if BENCHMARKING
 		if (displayingRenderInfo) {
 			uiHandler.Benchmarking(dt, peakRenderTime, averageRenderTime, highestRenderTime, averageLogicTime, BENCHMARKING_GPU, elapsedGPUMS, averageElapsedGPUMS);
@@ -329,7 +331,7 @@ namespace EWE {
 #endif
 		uiHandler.drawOverlayText(frameInfo.cmdBuf, displayingRenderInfo);
 		menuManager.drawText();
-		uiHandler.endTextRender(frameInfo.cmdBuf);
+		uiHandler.endTextRender(frameInfo);
 	}
 
 	void EightWindsEngine::EndRender(FrameInfo const& frameInfo) {
@@ -360,7 +362,7 @@ namespace EWE {
 
 		if (displayingRenderInfo) {
 			if (queryPool == VK_NULL_HANDLE) [[unlikely]] {
-				gpuTicksPerSecond = eweDevice.GetProperties().limits.timestampPeriod / 1e9f;
+				gpuTicksPerSecond = eweDevice.GetProperties().limits.timestampPeriod / 1e5f; //normally 1e9f but im changing so that i dont need to multiply by 1000 later
 
 				VkQueryPoolCreateInfo queryPoolInfo = {};
 				queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
@@ -374,7 +376,7 @@ namespace EWE {
 				uint64_t timestampStart, timestampEnd;
 				EWE_VK(vkGetQueryPoolResults, eweDevice.Device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
 				EWE_VK(vkGetQueryPoolResults, eweDevice.Device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-				elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond * 1000.f;
+				elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond;
 				totalElapsedGPUMS += elapsedGPUMS;
 				averageElapsedGPUCounter++;
 				if (averageElapsedGPUCounter == 100) {

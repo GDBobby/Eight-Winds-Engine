@@ -167,7 +167,7 @@ namespace EWE {
 		//this should be redundant with the vkWaitForFences
 		//EWE_VK(vkQueueWaitIdle(graphicsQueue));
 
-		vkFreeCommandBuffers(device, commandPools[Queue::graphics], 1, &cmdBuf);
+		EWE_VK(vkFreeCommandBuffers, device, commandPools[Queue::graphics], 1, &cmdBuf);
 	}
 
 	void SyncHub::EndSingleTimeCommandGraphicsGroup(VkCommandBuffer cmdBuf) {
@@ -202,7 +202,6 @@ namespace EWE {
 
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = &transitionData.waitSemaphore->semaphore;
-		submitInfo.signalSemaphoreCount = 1;
 
 		SemaphoreData* signalSemaphore = syncPool.GetSemaphore();
 #if SEMAPHORE_TRACKING
@@ -213,17 +212,28 @@ namespace EWE {
 #else
 		signalSemaphore->BeginSignaling();
 #endif
+		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = &signalSemaphore->semaphore;
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
 		submitInfo.pWaitDstStageMask = waitStages;
-
-		renderSyncData.AddWaitSemaphore(signalSemaphore);
 		
 		FenceData& fence = syncPool.GetFence();
 		fence.signalSemaphores[Queue::graphics] = signalSemaphore;
 		fence.waitSemaphores.push_back(transitionData.waitSemaphore);
 		fence.Lock();
 		EWE_VK(vkQueueSubmit, queues[Queue::graphics], 1, &submitInfo, fence.fence);
+
+
+		/*
+		* this is bad, but currently I'm just going to use VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT regardless
+		* ideally, i could take the data from the object being uploaded
+		** for example, if an image is only used in the fragment stage i could use VK_PIPELINE_STAGE_FRAGMENT_BIT,
+		** or for a vertex/index/instancing buffer I could use VK_PIPELINE_STAGE_VERTEX_BIT,
+		** or for a barrier I could use VK_PIPELINE_STAGE_TRANSFER_BIT
+		* but I believe this would require a major overhaul (for the major overhaul I haven't even gotten working yet)
+		*/
+		renderSyncData.AddWaitSemaphore(signalSemaphore, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+
 		fence.inlineCallbacks = [this, cbs = graphicsSTCGroup] {
 			vkFreeCommandBuffers(device, commandPools[Queue::graphics], static_cast<uint32_t>(cbs.size()), cbs.data());
 		};
@@ -381,9 +391,7 @@ namespace EWE {
 		}
 		imagesInFlight[*imageIndex] = renderSyncData.inFlight[frameIndex];
 
-		std::vector<VkSemaphore> waitSemaphores = renderSyncData.GetWaitData(frameIndex);
-		submitInfo.waitSemaphoreCount = waitSemaphores.size();
-		submitInfo.pWaitSemaphores = waitSemaphores.data();
+		renderSyncData.SetWaitData(frameIndex, submitInfo);
 
 		std::vector<VkSemaphore> signalSemaphores = renderSyncData.GetSignalData(frameIndex);
 		submitInfo.pSignalSemaphores = signalSemaphores.data();
@@ -399,7 +407,7 @@ namespace EWE {
 	VkResult SyncHub::PresentKHR(VkPresentInfoKHR& presentInfo, uint8_t currentFrame) {
 
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = &renderSyncData.renderFinished[currentFrame];
+		presentInfo.pWaitSemaphores = &renderSyncData.renderFinishedSemaphore[currentFrame];
 		//std::cout << "imeddiately before presenting \n";
 		return vkQueuePresentKHR(queues[Queue::present], &presentInfo);
 		//std::cout << "imediately after presenting \n";

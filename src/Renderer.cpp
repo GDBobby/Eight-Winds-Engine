@@ -24,6 +24,7 @@ namespace EWE {
 	EWERenderer::EWERenderer(MainWindow& window, EWECamera& camera) : camera{ camera }, mainWindow{ window }, syncHub{ SyncHub::GetSyncHubInstance() } {
 		instance = this;
 		//printf("EWE renderer constructor \n");
+		EWEDescriptorPool::BuildGlobalPool();
 #if GPU_LOGGING
 		{
 			std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };

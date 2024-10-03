@@ -20,11 +20,11 @@ namespace EWE {
 		friend class EWEDevice;
 
 		static SyncHub* syncHubSingleton;
+		VkDevice device;
 
 		SyncPool syncPool;
 		TransitionManager transitionManager;
 		
-		VkDevice device;
 		VkQueue queues[Queue::_count];
 		uint32_t transferQueueIndex;
 
@@ -88,7 +88,7 @@ namespace EWE {
 			return &renderSyncData.inFlight[frameIndex];
 		}
 		VkSemaphore GetImageAvailableSemaphore(uint8_t frameIndex) {
-			return renderSyncData.imageAvailable[frameIndex];
+			return renderSyncData.imageAvailableSemaphore[frameIndex];
 		}
 
 		void SubmitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex);

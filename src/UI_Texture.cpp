@@ -18,13 +18,12 @@ namespace EWE {
 #endif
 
             void* data;
-            printf("befroe staging\n");
 #if USING_VMA
             StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
             vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
 #else
             StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice());
-            vkMapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
+            EWE_VK(vkMapMemory, EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
 #endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             uiImageInfo.mipLevels = 1;
@@ -37,9 +36,8 @@ namespace EWE {
 #if USING_VMA
             vmaUnmapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc);
 #else
-            vkUnmapMemory(EWEDevice::GetVkDevice(), stagingBuffer->memory);
+            EWE_VK(vkUnmapMemory, EWEDevice::GetVkDevice(), stagingBuffer->memory);
 #endif
-            printf("after staging\n");
 
             VkImageCreateInfo imageCreateInfo;
             imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

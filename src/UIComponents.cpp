@@ -409,7 +409,7 @@ namespace EWE {
 			dropOptions[i].x = dropper.textStruct.x;
 			dropOptions[i].y = dropper.textStruct.y + 13.f + (i + 1) * (26.f * scale) * screenHeight / DEFAULT_HEIGHT;
 
-			float tempWidth = dropOptions[i].getWidth(screenWidth);
+			float tempWidth = dropOptions[i].GetWidth(screenWidth);
 			if (tempWidth > biggestWidth) { biggestWidth = tempWidth; }
 
 			clickBoxes[i].y = static_cast<int>(dropOptions[i].y);

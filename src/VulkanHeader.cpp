@@ -24,7 +24,7 @@ void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation
 namespace EWE {
     uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, const VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+        EWE_VK(vkGetPhysicalDeviceMemoryProperties, physicalDevice, &memProperties);
 
         /*
         printf("memory heap count : %d \n", memProperties.memoryHeapCount);
@@ -53,6 +53,7 @@ namespace EWE {
         assert(signaling && "finishing a signal that wasn't signaled");
         if (!waiting) {
             name = "null";
+            DebugNaming::SetObjectName(device, semaphore, VK_OBJECT_TYPE_SEMAPHORE, name.c_str());
         }
         signaling = false;
     }
@@ -60,6 +61,7 @@ namespace EWE {
         assert(waiting && "finished waiting when not waiting");
         waiting = false;
         name = "null";
+        DebugNaming::SetObjectName(device, semaphore, VK_OBJECT_TYPE_SEMAPHORE, name.c_str());
     }
     void SemaphoreData::BeginWaiting() {
         assert(name != "null" && "semaphore wasn't named");
@@ -70,6 +72,7 @@ namespace EWE {
 
         assert(this->name == "null" && "name wasn't reset properly");
         this->name = name;
+        DebugNaming::SetObjectName(device, semaphore, VK_OBJECT_TYPE_SEMAPHORE, name);
         assert(!signaling && "attempting to signal while signaled");
         signaling = true;
     }

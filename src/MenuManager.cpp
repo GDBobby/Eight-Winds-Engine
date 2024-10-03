@@ -31,7 +31,7 @@ namespace EWE {
 		menuManagerPtr->windowWasResized = true;
 		float rszWidth = static_cast<float>(windowDim.first);
 		float rszHeight = static_cast<float>(windowDim.second);
-		menuManagerPtr->textOverlay->windowResize(rszWidth, rszHeight);
+		menuManagerPtr->textOverlay->WindowResize(rszWidth, rszHeight);
 
 		for (auto iter = menuManagerPtr->menuModules.begin(); iter != menuManagerPtr->menuModules.end(); iter++) {
 			iter->second->resizeWindow(rszWidth, menuManagerPtr->screenWidth, rszHeight, menuManagerPtr->screenHeight);

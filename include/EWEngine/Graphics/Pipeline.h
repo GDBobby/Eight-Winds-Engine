@@ -23,6 +23,7 @@ namespace EWE {
 		enum Pipeline_Enum : PipelineID {
 			pointLight,
 			textured,
+			instance_textured,
 			alpha,
 			//material,
 			twod,

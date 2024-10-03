@@ -213,7 +213,9 @@ namespace EWE {
             assert(false && "Descriptor pool exhausted");
         }
     }
-
+    VkDescriptorPool EWEDescriptorPool::GetPool(DescriptorPool_ID poolID) {
+        return pools.at(poolID).descriptorPool;
+    }
 
     // *************** Descriptor Writer *********************
 

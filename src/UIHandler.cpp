@@ -41,14 +41,14 @@ namespace EWE {
 
 #if BENCHMARKING
 	void UIHandler::Benchmarking(double time, double peakTime, double averageTime, double highTime, double avgLogic, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU) {
-		textOverlay->addDefaultText(time, peakTime, averageTime, highTime);
+		textOverlay->AddDefaultText(time, peakTime, averageTime, highTime);
 		if (avgLogic > 0.0f) {
 			std::stringstream ss;
 			ss.str("");
 			ss << std::fixed << std::setprecision(4);
 			ss << "average Logic Time: " << avgLogic;
 			TextStruct passer{ ss.str(), 0.f, screenHeight - (100.f * textOverlay->scale), TA_left, 1.f };
-			textOverlay->addText(passer);
+			textOverlay->AddText(passer);
 			//addText(TextStruct{ ss.str(), 0.f, frameBufferHeight - (100.f * scale), TA_left, 1.f });
 		}
 		if (benchmarkingGPU) {
@@ -57,7 +57,7 @@ namespace EWE {
 			ss << std::fixed << std::setprecision(4);
 			ss << "last GPU Time: " << elapsedGPUMS;
 			TextStruct passer{ ss.str(), 0.f, screenHeight - (120.f * textOverlay->scale), TA_left, 1.f };
-			textOverlay->addText(passer);
+			textOverlay->AddText(passer);
 			//addText(TextStruct{ ss.str(), 0.f, frameBufferHeight - (100.f * scale), TA_left, 1.f });
 
 			if (averageGPU > 0.f) {
@@ -66,7 +66,7 @@ namespace EWE {
 				ss << std::fixed << std::setprecision(4);
 				ss << "average GPU Time: " << averageGPU;
 				TextStruct passer{ ss.str(), 0.f, screenHeight - (140.f * textOverlay->scale), TA_left, 1.f };
-				textOverlay->addText(passer);
+				textOverlay->AddText(passer);
 			}
 		}
 	}

@@ -45,12 +45,11 @@ namespace EWE{
 		void Benchmarking(double time, double peakTime, double averageTime, double highTime, double avgLogic, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU);
 		void drawOverlayText(VkCommandBuffer commandBuffer, bool displayingRenderInfo);
 
-		void beginTextRender() {
-			textOverlay->beginTextUpdate();
+		void beginTextRender(uint8_t frameIndex) {
+			textOverlay->BeginTextUpdate(frameIndex);
 		}
-		void endTextRender(VkCommandBuffer cmdBuf) {
-			textOverlay->endTextUpdate();
-			textOverlay->draw(cmdBuf);
+		void endTextRender(FrameInfo frameInfo) {
+			textOverlay->EndTextUpdate(frameInfo);
 		}
 
 		unsigned int* activeTargets = 0;

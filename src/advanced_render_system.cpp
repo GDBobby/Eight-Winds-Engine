@@ -29,7 +29,6 @@ namespace EWE {
 
 	AdvancedRenderSystem::AdvancedRenderSystem(ObjectManager& objectManager, MenuManager& menuManager) : objectManager{ objectManager }, menuManager{ menuManager } {
 		printf("ARS constructor \n");
-		EWEDescriptorPool::BuildGlobalPool();
 
 		model2D = Basic_Model::Quad2D(Queue::transfer);
 		printf("after ARS constructor finished \n");
@@ -203,7 +202,7 @@ namespace EWE {
 		PipelineManager::pipelines[Pipe::pointLight]->bind(frameInfo.frameInfo.cmdBuf);
 
 		if (pointLightDescriptorSet[frameInfo.frameInfo.index] != VK_NULL_HANDLE) {
-			vkCmdBindDescriptorSets(
+			EWE_VK(vkCmdBindDescriptorSets,
 				frameInfo.frameInfo.cmdBuf,
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				PipelineManager::pipeLayouts[PL_pointLight],
@@ -223,8 +222,8 @@ namespace EWE {
 			push.color = glm::vec4(objectManager.pointLights[i].color, objectManager.pointLights[i].lightIntensity);
 			push.radius = objectManager.pointLights[i].transform.scale.x;
 
-			vkCmdPushConstants(frameInfo.frameInfo.cmdBuf, PipelineManager::pipeLayouts[PL_pointLight], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PointLightPushConstants), &push);
-			vkCmdDraw(frameInfo.frameInfo.cmdBuf, 6, 1, 0, 0);
+			EWE_VK(vkCmdPushConstants, frameInfo.frameInfo.cmdBuf, PipelineManager::pipeLayouts[PL_pointLight], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PointLightPushConstants), &push);
+			EWE_VK(vkCmdDraw, frameInfo.frameInfo.cmdBuf, 6, 1, 0, 0);
 		}
 		/*
 		push.position = glm::vec4(objectManager.sunPoint.transform.translation, 1.f);

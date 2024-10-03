@@ -254,49 +254,49 @@ namespace EWE {
 
 	void MenuModule::drawText(TextOverlay* textOverlay) {
 		for (int i = 0; i < comboBoxes.size(); i++) {
-			textOverlay->addText(comboBoxes[i].activeOption.textStruct);
+			textOverlay->AddText(comboBoxes[i].activeOption.textStruct);
 			if (comboBoxes[i].currentlyDropped) {
 				for (int j = 0; j < comboBoxes[i].comboOptions.size(); j++) {
-					textOverlay->addText(comboBoxes[i].comboOptions[j].textStruct);
+					textOverlay->AddText(comboBoxes[i].comboOptions[j].textStruct);
 				}
 			}
 		}
 		for (int i = 0; i < dropBoxes.size(); i++) {
-			textOverlay->addText(dropBoxes[i].dropper.textStruct);
+			textOverlay->AddText(dropBoxes[i].dropper.textStruct);
 			if (dropBoxes[i].currentlyDropped) {
 				for (int j = 0; j < dropBoxes[i].dropOptions.size(); j++) {
-					textOverlay->addText(dropBoxes[i].dropOptions[j]);
+					textOverlay->AddText(dropBoxes[i].dropOptions[j]);
 				}
 			}
 		}
 		for (int i = 0; i < checkBoxes.size(); i++) {
-			textOverlay->addText(checkBoxes[i].label);
+			textOverlay->AddText(checkBoxes[i].label);
 		}
 		for (int i = 0; i < labels.size(); i++) {
-			textOverlay->addText(labels[i]);
+			textOverlay->AddText(labels[i]);
 		}
 		for (int i = 0; i < clickText.size(); i++) {
-			textOverlay->addText(clickText[i].textStruct);
+			textOverlay->AddText(clickText[i].textStruct);
 		}
 		for (int i = 0; i < typeBoxes.size(); i++) {
-			textOverlay->addText(typeBoxes[i].textStruct);
+			textOverlay->AddText(typeBoxes[i].textStruct);
 		}
 		for (int i = 0; i < controlBoxes.size(); i++) {
-			textOverlay->addText(controlBoxes[i].label);
+			textOverlay->AddText(controlBoxes[i].label);
 			for (int j = 0; j < controlBoxes[i].variableControls.size(); j++) {
 				for (int k = 0; k < controlBoxes[i].variableControls[j].typeBoxes.size(); k++) {
-					textOverlay->addText(controlBoxes[i].variableControls[j].typeBoxes[k].textStruct);
+					textOverlay->AddText(controlBoxes[i].variableControls[j].typeBoxes[k].textStruct);
 				}
-				textOverlay->addText(controlBoxes[i].variableControls[j].dataLabel);
+				textOverlay->AddText(controlBoxes[i].variableControls[j].dataLabel);
 			}
 		}
 		//printf("drawing menu bar text \n");
 		for (int i = 0; i < menuBars.size(); i++) {
 			for (int j = 0; j < menuBars[i].dropBoxes.size(); j++) {
-				textOverlay->addText(menuBars[i].dropBoxes[j].dropper.textStruct);
+				textOverlay->AddText(menuBars[i].dropBoxes[j].dropper.textStruct);
 				if (menuBars[i].dropBoxes[j].currentlyDropped) {
 					for (int k = 0; k < menuBars[i].dropBoxes[j].dropOptions.size(); k++) {
-						textOverlay->addText(menuBars[i].dropBoxes[j].dropOptions[k]);
+						textOverlay->AddText(menuBars[i].dropBoxes[j].dropOptions[k]);
 					}
 				}
 			}

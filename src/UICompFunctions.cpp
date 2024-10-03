@@ -19,7 +19,7 @@ namespace EWE {
 
 		void TextToTransform(Transform2dComponent& transform, TextStruct& textStruct, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
 			//std::cout << "bounds of tempPRinter : " << tempPrinter.x << ":" << tempPrinter.y << ":" << tempPrinter.z << ":" << tempPrinter.w << std::endl;
-			transform.scale.x = textStruct.getWidth(screenWidth) * screenWidth / DEFAULT_WIDTH;
+			transform.scale.x = textStruct.GetWidth(screenWidth) * screenWidth / DEFAULT_WIDTH;
 			if (transform.scale.x < 0.0f) {
 				printf("text struct width returned less than 0, string : %s \n", textStruct.string.c_str());
 				printf("\t x, y, screenW, screenH %.1f, %.1f, %.1f, %.1f \n", textStruct.x, textStruct.y, screenWidth, screenHeight);

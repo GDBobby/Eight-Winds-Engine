@@ -27,26 +27,37 @@ namespace EWE{
 
     //each semaphore and fence could track which queue it's being used in, but I don't think that's the best approach
 
+    struct WaitData {
+        std::vector<SemaphoreData*> semaphores{};
+        std::vector<VkPipelineStageFlags> waitDstMask{};
+
+        //for submission, the lifetime needs to be controlled here
+        //theres probably a better way to control lifetime but i cant think of it right now
+        //main concern is repeatedly reallocating memory, which this might avoid depending on how the vector is handled behind the scenes
+        //an alternative solution is using an array, with a max size of say 16, and using a counter to keep track of the active count, rather than vectors
+        std::vector<VkSemaphore> semaphoreData{}; 
+    };
+
 
     struct RenderSyncData {
     private:
         std::mutex waitMutex{};
         std::mutex signalMutex{};
         VkDevice device;
-        std::vector<SemaphoreData*> previousWaits[MAX_FRAMES_IN_FLIGHT]{};
+        WaitData previousWait[MAX_FRAMES_IN_FLIGHT]{};
         std::vector<SemaphoreData*> previousSignals[MAX_FRAMES_IN_FLIGHT]{};
     public:
         VkFence inFlight[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
-        VkSemaphore imageAvailable[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
-        VkSemaphore renderFinished[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
-        std::vector<SemaphoreData*> waitSemaphores{};
+        VkSemaphore imageAvailableSemaphore[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+        VkSemaphore renderFinishedSemaphore[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+        WaitData waitData{};
         std::vector<SemaphoreData*> signalSemaphores{};
 
         RenderSyncData(VkDevice device);
         ~RenderSyncData();
-        void AddWaitSemaphore(SemaphoreData* semaphore);
+        void AddWaitSemaphore(SemaphoreData* semaphore, VkPipelineStageFlags waitDstStageMask);
         void AddSignalSemaphore(SemaphoreData* semaphore);
-        std::vector<VkSemaphore> GetWaitData(uint8_t frameIndex);
+        void SetWaitData(uint8_t frameIndex, VkSubmitInfo& submitInfo);
         std::vector<VkSemaphore> GetSignalData(uint8_t frameIndex);
     };
 
@@ -54,11 +65,11 @@ namespace EWE{
     //this is explicitly for VkFence, Semaphore, and Event (i don't know yet if event will fit here)
     class SyncPool{
 
-        FenceData* fences;
-        SemaphoreData* semaphores;
-
         const uint8_t size;
         VkDevice device;
+
+        FenceData* fences;
+        SemaphoreData* semaphores;
 
     public:
         SyncPool(uint8_t size, VkDevice device);

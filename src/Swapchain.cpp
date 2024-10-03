@@ -67,22 +67,22 @@ namespace EWE {
         //logFile.close();
         VkDevice const& vkDevice = EWEDevice::GetVkDevice();
         for (auto imageView : swapChainImageViews) {
-            vkDestroyImageView(vkDevice, imageView, nullptr);
+            EWE_VK(vkDestroyImageView, vkDevice, imageView, nullptr);
         }
         swapChainImageViews.clear();
 
         if (swapChain != nullptr) {
-            vkDestroySwapchainKHR(vkDevice, swapChain, nullptr);
+            EWE_VK(vkDestroySwapchainKHR, vkDevice, swapChain, nullptr);
             swapChain = nullptr;
         }
 
         for (int i = 0; i < depthImages.size(); i++) {
-            vkDestroyImageView(vkDevice, depthImageViews[i], nullptr);
+            EWE_VK(vkDestroyImageView, vkDevice, depthImageViews[i], nullptr);
 #if USING_VMA
             vmaDestroyImage(EWEDevice::GetAllocator(), depthImages[i], depthImageMemorys[i]);
 #else
-            vkDestroyImage(vkDevice, depthImages[i], nullptr);
-            vkFreeMemory(vkDevice, depthImageMemorys[i], nullptr);
+            EWE_VK(vkDestroyImage, vkDevice, depthImages[i], nullptr);
+            EWE_VK(vkFreeMemory, vkDevice, depthImageMemorys[i], nullptr);
 #endif
         }
         /*
@@ -134,8 +134,6 @@ namespace EWE {
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = buffers;
 

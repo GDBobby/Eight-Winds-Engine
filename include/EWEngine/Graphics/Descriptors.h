@@ -91,6 +91,9 @@ namespace EWE {
         static void DestructPool(DescriptorPool_ID poolID);
         static void AddPool(DescriptorPool_ID poolID, VkDescriptorPoolCreateInfo& pool_info);
 
+        //only using it to create a descriptor set in textoverlay right now
+        static VkDescriptorPool GetPool(DescriptorPool_ID poolID);
+
     private:
         struct DescriptorTracker {
             uint32_t current = 0;
