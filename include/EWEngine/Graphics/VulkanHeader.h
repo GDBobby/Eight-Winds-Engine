@@ -20,7 +20,6 @@
 
 #include <functional>
 
-#include <source_location>
 #include <type_traits>
 #include <concepts>
 
@@ -109,7 +108,6 @@ namespace EWE{
 #define GPU_LOG_FILE "GPULog.log"
 #endif
 
-#define CALL_TRACING true
 #define WRAPPING_VULKAN_FUNCTIONS false
 
 #if CALL_TRACING

@@ -3,15 +3,15 @@
 #include "EWEngine/Graphics/PushConstants.h"
 
 namespace EWE {
-    void MaterialRenderInfo::render(uint8_t frameIndex) {
+    void MaterialRenderInfo::Render(uint8_t frameIndex) {
         if (!materialMap.size()) {
             return;
         }
-        pipe->bindPipeline();
-        pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
+        pipe->BindPipeline();
+        pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
         for (auto iterTexID = materialMap.begin(); iterTexID != materialMap.end(); iterTexID++) {
 
-            pipe->bindTextureDescriptor(1, iterTexID->first);
+            pipe->BindTextureDescriptor(1, iterTexID->first);
 
             for (auto& renderInfo : iterTexID->second) {
                 if (!renderInfo.drawable) {
@@ -20,8 +20,8 @@ namespace EWE {
 
                 SimplePushConstantData push{ renderInfo.ownerTransform->mat4(), renderInfo.ownerTransform->normalMatrix() };
 
-                pipe->bindModel(renderInfo.meshPtr);
-                pipe->pushAndDraw(&push);
+                pipe->BindModel(renderInfo.meshPtr);
+                pipe->PushAndDraw(&push);
             }
         }
     }
@@ -39,10 +39,9 @@ namespace EWE {
         }
 
         void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
-            if (renderInfo.meshPtr == nullptr) {
-                printf("NULLTPR MESH EXCEPTION \n");
-                throw std::runtime_error("nullptr mesh");
-            }
+#if EWE_DEBUG
+            assert(renderInfo.meshPtr != nullptr);
+#endif
             if (!materialMap->contains(materialInfo.materialFlags)) {
                 auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
                 empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
@@ -52,11 +51,9 @@ namespace EWE {
             }
         }
         void AddMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
-            assert(modelPtr != nullptr && "nullptr mesh in AddMaterialObject");
-            if (modelPtr == nullptr) {
-                printf("NULLTPR MESH EXCEPTION \n");
-                throw std::runtime_error("nullptr mesh");
-            }
+#if EWE_DEBUG
+            assert(modelPtr != nullptr);
+#endif
 
             if (!materialMap->contains(materialInfo.materialFlags)) {
                 auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
@@ -70,11 +67,9 @@ namespace EWE {
             for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
                 for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
                     if (iterTexID->first == copyID) {
-                        if (iterTexID->second.size() == 0 || iterTexID->second[0].meshPtr == nullptr) {
-                            printf("NULLTPR MESH EXCEPTION or SIZE IS 0 \n");
-                            throw std::runtime_error("nullptr mesh or size is 0");
-                        }
-
+#if EWE_DEBUG
+                        assert(iterTexID->second.size() == 0 || iterTexID->second[0].meshPtr == nullptr);
+#endif
                         iterTexID->second.push_back(iterTexID->second[0]);
                         iterTexID->second.back().ownerTransform = ownerTransform;
                         iterTexID->second.back().meshPtr = iterTexID->second[0].meshPtr;
@@ -123,7 +118,7 @@ namespace EWE {
 
         void Render(FrameInfo const& frameInfo) {
             //ill replace this shit eventually
-            MaterialPipelines::setFrameInfo(frameInfo);
+            MaterialPipelines::SetFrameInfo(frameInfo);
 
             RenderMemberMethod(frameInfo);
         }
@@ -142,7 +137,7 @@ namespace EWE {
                 uint8_t flags = iter->first;
                 assert(((flags & 128) == 0) && "should not have bones here");
 #endif
-                iter->second.render(frameInfo.index);
+                iter->second.Render(frameInfo.index);
 
 
 #if DEBUGGING_DYNAMIC_PIPE

@@ -8,8 +8,8 @@ namespace EWE {
 			menuManager{ ewEngine.menuManager }, 
 			soundEngine{ SoundEngine::GetSoundEngineInstance() },
 			rockSystem{}
-	{
-	}
+	{}
+
 	MainMenuScene::~MainMenuScene() {
 		printf("deconstructing main menu \n");
 	}
@@ -17,7 +17,7 @@ namespace EWE {
 
 	void MainMenuScene::load() {
 		menuManager.giveMenuFocus();
-		PipelineSystem::Emplace(Pipe::textured, ConstructSingular<Pipe_SimpleTextured>(ewe_call_trace));
+		PipelineSystem::Emplace(Pipe::textured, Construct<Pipe_SimpleTextured>({}));
 	}
 	void MainMenuScene::entry() {
 		soundEngine->StopMusic();

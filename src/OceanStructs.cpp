@@ -308,12 +308,12 @@ namespace EWE {
         void OceanGraphicsGPUData::CreateDescriptorSet(VkDescriptorImageInfo* outputImage, VkDescriptorImageInfo* skyboxImage) {
             //creating the buffer here as well
             //OceanRenderParameters
-            renderData[0] = ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(OceanRenderParameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+            renderData[0] = Construct<EWEBuffer>({ sizeof(OceanRenderParameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
             renderData[0]->Map();
             renderData[0]->WriteToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
             renderData[0]->Flush();
 
-            renderData[1] = ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(OceanRenderParameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+            renderData[1] = Construct<EWEBuffer>({ sizeof(OceanRenderParameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
             renderData[1]->Map();
             renderData[1]->WriteToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
             renderData[1]->Flush();

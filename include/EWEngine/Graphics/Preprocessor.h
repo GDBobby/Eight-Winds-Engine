@@ -4,6 +4,11 @@
  //_DEBUG is already defined in Visual Studio while in DEBUG mode
  //this changes it so that on windows, _DEBUG needs to be defined explicitly
 
+#define CALL_TRACING true
+#if CALL_TRACING
+#include <source_location>
+#endif
+
 #define EWE_DEBUG true
 
 #define DEBUGGING_DEVICE_LOST false

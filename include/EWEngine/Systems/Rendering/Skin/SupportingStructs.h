@@ -46,14 +46,14 @@ namespace EWE {
 
 			PipelineStruct(uint16_t boneCount, MaterialFlags materialFlags) :
 				//pipeline{ PipelineManager::createInstancedRemote(textureFlags, boneCount, pipeRenderInfo, device) }, 
-				pipeline{ MaterialPipelines::getInstancedSkinMaterialPipe(boneCount, materialFlags) },
+				pipeline{ MaterialPipelines::GetInstancedSkinMaterialPipe(boneCount, materialFlags) },
 				skeletonData{}
 				//instanced
 			{}
 
 			PipelineStruct(MaterialFlags materialFlags) :
 				//pipeline{ PipelineManager::createBoneRemote(textureFlags, pipeRenderInfo, device) }, 
-				pipeline{ MaterialPipelines::getMaterialPipe(materialFlags) },
+				pipeline{ MaterialPipelines::GetMaterialPipe(materialFlags) },
 				skeletonData{}
 				//non instanced
 			{

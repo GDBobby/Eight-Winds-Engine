@@ -139,7 +139,7 @@ namespace EWE {
     SkeletonBase::SkeletonBase(std::string importPath, std::string texturePath, Queue::Enum queue, bool instanced) {
         printf("skeleton : improting data : %s \n", importPath.c_str());
 
-        mySkeletonID = SkinRenderSystem::getSkinID();
+        mySkeletonID = SkinRenderSystem::GetSkinID();
 
         uint32_t endianTest = 1;
         bool endian = (*((char*)&endianTest) == 1);
@@ -219,10 +219,10 @@ namespace EWE {
 #endif
 
         for (int i = 0; i < meshes.size(); i++) {
-            SkinRenderSystem::addSkeleton(textureMappingTracker.first[i], boneCount, meshes[i], mySkeletonID, instanced);
+            SkinRenderSystem::AddSkeleton(textureMappingTracker.first[i], boneCount, meshes[i], mySkeletonID, instanced);
         }
         for (int i = 0; i < meshesNT.size(); i++) {
-            SkinRenderSystem::addSkeleton(textureMappingTracker.second[i], boneCount, meshesNT[i], mySkeletonID, instanced);
+            SkinRenderSystem::AddSkeleton(textureMappingTracker.second[i], boneCount, meshesNT[i], mySkeletonID, instanced);
         }
 
         // printf("mesh sizes - %d:%d \n", meshes.size(), meshesNT.size());

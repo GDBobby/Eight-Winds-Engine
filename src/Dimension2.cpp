@@ -41,7 +41,7 @@ namespace EWE {
 		std::string vertString = "UI.vert.spv";
 		std::string fragString = "UI.frag.spv";
 		printf("before constructing with ui shaders\n");
-		pipe2d = ConstructSingular<EWEPipeline>(ewe_call_trace, vertString, fragString, pipelineConfig);
+		pipe2d = Construct<EWEPipeline>({ vertString, fragString, pipelineConfig });
 		printf("after constructing with UI shaders\n");
 #if DEBUG_NAMING
 		pipe2d->SetDebugName("UI 2d pipeline");
@@ -65,7 +65,7 @@ namespace EWE {
 	void Dimension2::Init() {
 		assert(dimension2Ptr == nullptr && "initing dimension2 twice?");
 		dimension2Ptr = new Dimension2();
-		ewe_alloc_mem_track(dimension2Ptr, ewe_call_trace);
+		ewe_alloc_mem_track(dimension2Ptr);
 		//dimension2Ptr = ConstructSingular<Dimension2>(ewe_call_trace);
 
 	}

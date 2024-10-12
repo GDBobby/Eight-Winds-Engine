@@ -32,8 +32,11 @@ namespace EWE {
     struct MaterialRenderInfo {
         MaterialPipelines* pipe;
         std::unordered_map<TextureDesc, std::vector<MaterialObjectInfo>> materialMap{};
-        MaterialRenderInfo(MaterialFlags flags) : pipe{MaterialPipelines::getMaterialPipe(flags)} {}
-        void render(uint8_t frameIndex);
+        MaterialRenderInfo(MaterialFlags flags) : pipe{MaterialPipelines::GetMaterialPipe(flags)} {}
+        void Render(uint8_t frameIndex);
+    };
+    struct MaterialRenderInfoInstanced {
+        MaterialPipelines* pipe;
     };
 
     //singleton

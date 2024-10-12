@@ -3,33 +3,33 @@
 #include <cstdio>
 
 glm::mat4 TransformComponent::mat4() {
-    const float c3 = glm::cos(rotation.z);
-    const float s3 = glm::sin(rotation.z);
-    const float c2 = glm::cos(rotation.x);
-    const float s2 = glm::sin(rotation.x);
-    const float c1 = glm::cos(rotation.y);
-    const float s1 = glm::sin(rotation.y);
+    const float cz = glm::cos(rotation.z);
+    const float sz = glm::sin(rotation.z);
+    const float cx = glm::cos(rotation.x);
+    const float sx = glm::sin(rotation.x);
+    const float cy = glm::cos(rotation.y);
+    const float sy = glm::sin(rotation.y);
 
 
 
     modelMatrix = {
         
         {
-            scale.x * (c1 * c3 + s1 * s2 * s3),
-            scale.x * (c2 * s3),
-            scale.x * (c1 * s2 * s3 - c3 * s1),
+            scale.x * (cy * cz + sy * sx * sz),
+            scale.x * (cx * sz),
+            scale.x * (cy * sx * sz - cz * sy),
             0.0f,
         },
         {
-            scale.y * (c3 * s1 * s2 - c1 * s3),
-            scale.y * (c2 * c3),
-            scale.y * (c1 * c3 * s2 + s1 * s3),
+            scale.y * (cz * sy * sx - cy * sz),
+            scale.y * (cx * cz),
+            scale.y * (cy * cz * sx + sy * sz),
             0.0f,
         },
         {
-            scale.z * (c2 * s1),
-            scale.z * (-s2),
-            scale.z * (c1 * c2),
+            scale.z * (cx * sy),
+            scale.z * (-sx),
+            scale.z * (cy * cx),
             0.0f,
         },
         {translation.x, translation.y, translation.z, 1.0f} };

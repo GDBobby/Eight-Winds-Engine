@@ -10,7 +10,7 @@ namespace EWE {
 	{
 		transform.rotation.x = 0.001f;
 		transform.rotation.y = 0.001f;
-		ocean = ConstructSingular<Ocean::Ocean>(ewe_call_trace, skyboxImage);
+		ocean = Construct<Ocean::Ocean>({ skyboxImage });
 	}
 	OceanScene::~OceanScene() {
 		printf("deconstructing main menu \n");
@@ -52,7 +52,7 @@ namespace EWE {
 
 
 			ewEngine.eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
-			ewEngine.skinnedRS.setFrameIndex(frameInfo.index);
+			ewEngine.skinnedRS.SetFrameIndex(frameInfo.index);
 
 			//main controls
 

@@ -49,7 +49,7 @@ namespace EWE {
 
 		void Ocean::CreateBuffers() {
 		
-			frequencyBuffer = ConstructSingular<EWEBuffer>(ewe_call_trace, cascade_count * OCEAN_WAVE_COUNT * OCEAN_WAVE_COUNT * sizeof(float) * 4, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT); //this allows the GPU to make all the decisions, and doesn't allow CPU access, which we don't need
+			frequencyBuffer = Construct<EWEBuffer>({ cascade_count * OCEAN_WAVE_COUNT * OCEAN_WAVE_COUNT * sizeof(float) * 4, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
 			
 		}
 

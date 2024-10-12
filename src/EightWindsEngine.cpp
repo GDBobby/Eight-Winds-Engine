@@ -82,9 +82,10 @@ namespace EWE {
 		advancedRS.takeUIHandlerPtr(&uiHandler);
 		//advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
-		leafSystem = ConstructSingular<LeafSystem>(ewe_call_trace);
+		leafSystem = Construct<LeafSystem>({});
 		Dimension2::Init();
-		PipelineSystem::Emplace(Pipe::skybox, reinterpret_cast<PipelineSystem*>(ConstructSingular<Pipe_Skybox>(ewe_call_trace)));
+
+		PipelineSystem::Emplace(Pipe::skybox, reinterpret_cast<PipelineSystem*>(Construct<Pipe_Skybox>({})));
 
 		displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
 		RigidRenderingSystem::Initialize();
@@ -119,7 +120,7 @@ namespace EWE {
 
 
 		RigidRenderingSystem::Destruct();
-		MaterialPipelines::cleanupStaticVariables();
+		MaterialPipelines::CleanupStaticVariables();
 
 		for (auto& dsl : TextureDSLInfo::descSetLayouts) {
 			dsl.second->~EWEDescriptorSetLayout();
@@ -153,7 +154,7 @@ namespace EWE {
 
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			//allocate buffer memory
-			bufferMap.at(Buff_ubo)[i] = ConstructSingular<EWEBuffer>(ewe_call_trace, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+			bufferMap.at(Buff_ubo)[i] = Construct<EWEBuffer>({ sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
 			bufferMap.at(Buff_ubo)[i]->Map();
 
 			bufferMap.at(Buff_gpu)[i] = EWEBuffer::CreateAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -269,7 +270,7 @@ namespace EWE {
 #endif
 
 			eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
-			skinnedRS.setFrameIndex(frameInfo.index);
+			skinnedRS.SetFrameIndex(frameInfo.index);
 		}
 		else {
 			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain resize
@@ -311,7 +312,7 @@ namespace EWE {
 #if RENDER_DEBUG
 		std::cout << "before skin render \n";
 #endif
-		skinnedRS.render(frameInfo);
+		skinnedRS.Render(frameInfo);
 #if RENDER_DEBUG
 		std::cout << "end draw3dObjects \n";
 #endif

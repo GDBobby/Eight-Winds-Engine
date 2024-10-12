@@ -15,30 +15,7 @@ bool notFirstMalloc = false;
 #include <cstring>
 
 #if EWE_DEBUG
-struct MallocTracker {
-	char file[256];
-	int line;
-	char sourceFunction[256];
-	MallocTracker(const char* f, int l, const char* sourceFunction) : line(l)
-	
-	{
-		uint64_t eof = 0;
-
-		while (f[eof] != '\0' && eof < 256) {
-			eof++;
-		}
-		eof++;
-		std::memcpy(file, f, eof);
-
-		eof = 0;
-		while (sourceFunction[eof] != '\0' && eof < 256) {
-			eof++;
-		}
-		eof++;
-		std::memcpy(this->sourceFunction, sourceFunction, eof);
-	}
-};
-std::unordered_map<uint64_t, MallocTracker> mallocMap{};
+std::unordered_map<uint64_t, std::source_location> mallocMap{};
 
 void updateMemoryLogFile() {
 	std::ofstream memoryLogFile{};
@@ -56,11 +33,11 @@ void updateMemoryLogFile() {
 		for (auto& memPiece : mallocMap) {
 			temp.clear();
 			temp = "\nfile:{line} - ";
-			temp += memPiece.second.file;
+			temp += memPiece.second.file_name();
 			temp += ":{";
-			temp += std::to_string(memPiece.second.line);
+			temp += std::to_string(memPiece.second.line());
 			temp += "}\n\t";
-			temp += memPiece.second.sourceFunction;
+			temp += memPiece.second.function_name();
 			temp += '\n';
 			memoryLogCopy.push_back(temp);
 		}
@@ -76,23 +53,23 @@ void updateMemoryLogFile() {
 #endif
 
 
-void* ewe_alloc_internal(std::size_t element_size, std::size_t element_count, const char* file, int line, const char* sourceFunction) {
+void* ewe_alloc(std::size_t element_size, std::size_t element_count, std::source_location srcLoc) {
 	void* ptr = malloc(element_count * element_size);
 #if EWE_DEBUG
-	ewe_alloc_mem_track(ptr, file, line, sourceFunction);
+	ewe_alloc_mem_track(ptr, srcLoc);
 #endif
 	return ptr;
 }
 
-void ewe_alloc_mem_track(void* ptr, const char* file, int line, const char* sourceFunction){
+void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc){
 
 #if EWE_DEBUG
-	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), file, line, sourceFunction);
+	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), srcLoc);
 	updateMemoryLogFile();
 #endif
 }
 
-void ewe_free_internal(void* ptr) {
+void ewe_free(void* ptr) {
 #if USING_MALLOC
 	free(ptr);
 #endif

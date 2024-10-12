@@ -11,43 +11,56 @@
 #define USING_MALLOC false
 
 
-void* ewe_alloc_internal(std::size_t element_size, std::size_t element_count, const char* file, int line, const char* sourceFunction);
-void ewe_free_internal(void* ptr);
+void* ewe_alloc(std::size_t element_size, std::size_t element_count, std::source_location srcLoc = std::source_location::current());
+void ewe_free(void* ptr);
 
 
-void ewe_alloc_mem_track(void* ptr, const char* file, int line, const char* sourceFunction);
+void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc = std::source_location::current());
 void ewe_free_mem_track(void* ptr);
 
-
-#ifndef ewe_call_trace
-#define ewe_call_trace __FILE__, __LINE__, __FUNCTION__
-#endif
-//i think function will give a call stack
-#ifndef ewe_alloc
-//user is in charge of construction
-    #define ewe_alloc(size, count) ewe_alloc_internal(size, count, ewe_call_trace)
-#endif
-
-#ifndef ewe_free
-//user is in charge of deconstruction
-#define ewe_free(ptr) ewe_free_internal(ptr)
-#endif
-
-template<typename T, typename... Args>
-static T* ConstructSingular(const char* file, int line, const char* sourceFunction, Args&&... args) {
+//template<typename T, typename... Args>
+//void ConstructSingular(Args&&... args) {
+//#if USING_MALLOC
+//    void* memory = ewe_alloc_internal(sizeof(T), 1, file, line, sourceFunction);
+//    assert(memory && "memory is nullptr");
+//    return new (memory) T(std::forward<Args>(args)...);
+//#else
+//    T* ret = new T(std::forward<Args>(args)...);
+//#if EWE_DEBUG
+//    ewe_alloc_mem_track(reinterpret_cast<void*>(ret), file, line, sourceFunction);
+//#endif
+//    return ret;
+//#endif
+//}
+template<typename T>
+struct ConstructHelper {
+    T* ptr;
+    template <typename ... Args>
+    ConstructHelper(Args&&... args) : 
 #if USING_MALLOC
-    void* memory = ewe_alloc_internal(sizeof(T), 1, file, line, sourceFunction);
-    assert(memory && "memory is nullptr");
-    return new (memory) T(std::forward<Args>(args)...);
 #else
-    T* ret = new T(std::forward<Args>(args)...);
-#if EWE_DEBUG
-    ewe_alloc_mem_track(reinterpret_cast<void*>(ret), file, line, sourceFunction);
+        ptr{new T(std::forward<Args>(args)...)} 
 #endif
-    return ret;
+    {
+#if USING_MALLOC
+        void* memory = ewe_alloc_internal(sizeof(T), 1, srcLoc);
+        assert(memory);
+        ptr = new (memory) T(std::forward<Args>(args)...);
 #endif
-    //return memory;
+    }
+};
+
+template<typename T>
+T* Construct(ConstructHelper<T> construct
+#if CALL_TRACING
+    , std::source_location srcLoc = std::source_location::current()){
+    ewe_alloc_mem_track(reinterpret_cast<void*>(construct.ptr), srcLoc);
+#else
+  ) {
+#endif
+    return construct.ptr;
 }
+
 
 /*
 template<typename T, typename... Args>

@@ -57,8 +57,6 @@ namespace EWE {
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &musicGroup);
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &voiceGroup);
 
-		bool foundMatchingDevice = false;
-
 		LoadHowlingWind();
 		initVolume();
 		if ((volumes[(uint8_t)SoundVolume::master] > 0.f) && (volumes[(uint8_t)SoundVolume::music] > 0.f)) {

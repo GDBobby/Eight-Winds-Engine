@@ -20,16 +20,16 @@ namespace EWE {
 	MaterialPipelines::~MaterialPipelines() {
 	}
 
-	void MaterialPipelines::bindPipeline() {
+	void MaterialPipelines::BindPipeline() {
 		pipeline.bind(cmdBuf);
 		bindedTexture = TEXTURE_UNBINDED_DESC;
 		bindedModel = nullptr;
 	}
-	void MaterialPipelines::bindModel(EWEModel* model) {
+	void MaterialPipelines::BindModel(EWEModel* model) {
 		bindedModel = model;
 		bindedModel->Bind(cmdBuf);
 	}
-	void MaterialPipelines::bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
+	void MaterialPipelines::BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
 		vkCmdBindDescriptorSets(cmdBuf,
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			materialPipeLayout[pipeLayoutIndex].pipeLayout,
@@ -39,31 +39,31 @@ namespace EWE {
 		);
 	}
 
-	void MaterialPipelines::bindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
+	void MaterialPipelines::BindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
 		if (bindedTexture != texID) {
-			bindDescriptor(descSlot, &texID);
+			BindDescriptor(descSlot, &texID);
 			bindedTexture = texID;
 		}
 	}
-	void MaterialPipelines::push(void* push) {
-		materialPipeLayout[pipeLayoutIndex].push(cmdBuf, push);
+	void MaterialPipelines::Push(void* push) {
+		materialPipeLayout[pipeLayoutIndex].Push(cmdBuf, push);
 	}
 
-	void MaterialPipelines::pushAndDraw(void* push) {
-		materialPipeLayout[pipeLayoutIndex].push(cmdBuf, push);
+	void MaterialPipelines::PushAndDraw(void* push) {
+		materialPipeLayout[pipeLayoutIndex].Push(cmdBuf, push);
 
 #if EWE_DEBUG
 		assert(bindedModel != nullptr && "failed model draw");
 #endif
 		bindedModel->Draw(cmdBuf);
 	}
-	void MaterialPipelines::drawModel() {
+	void MaterialPipelines::DrawModel() {
 #if EWE_DEBUG
 		assert(bindedModel != nullptr && "failed model draw");
 #endif
 		bindedModel->Draw(cmdBuf);
 	}
-	void MaterialPipelines::drawInstanced(EWEModel* model) {
+	void MaterialPipelines::DrawInstanced(EWEModel* model) {
 		model->BindAndDrawInstance(cmdBuf);
 	}
 
@@ -84,21 +84,21 @@ namespace EWE {
 	std::unordered_map<MaterialFlags, MaterialPipelines*> MaterialPipelines::materialPipelines;
 	std::unordered_map<SkinInstanceKey, MaterialPipelines*> MaterialPipelines::instancedBonePipelines;
 
-	MaterialPipelines* MaterialPipelines::at(MaterialFlags flags) {
+	MaterialPipelines* MaterialPipelines::At(MaterialFlags flags) {
 #if EWE_DEBUG
 		currentPipe = materialPipelines.at(flags);
 		return currentPipe;
 #endif
 		return materialPipelines.at(flags);
 	}
-	MaterialPipelines* MaterialPipelines::at(SkinInstanceKey skinInstanceKey) {
+	MaterialPipelines* MaterialPipelines::At(SkinInstanceKey skinInstanceKey) {
 #if EWE_DEBUG
 		currentPipe = instancedBonePipelines.at(skinInstanceKey);
 		return currentPipe;
 #endif
 		return instancedBonePipelines.at(skinInstanceKey);
 	}
-	MaterialPipelines* MaterialPipelines::at(uint16_t boneCount, MaterialFlags flags) {
+	MaterialPipelines* MaterialPipelines::At(uint16_t boneCount, MaterialFlags flags) {
 		SkinInstanceKey key{ boneCount, flags };
 #if EWE_DEBUG
 		currentPipe = instancedBonePipelines.at(key);
@@ -107,12 +107,12 @@ namespace EWE {
 		return instancedBonePipelines.at(key);
 	}
 
-	void MaterialPipelines::setFrameInfo(FrameInfo const& frameInfo) {
+	void MaterialPipelines::SetFrameInfo(FrameInfo const& frameInfo) {
 		cmdBuf = frameInfo.cmdBuf;
 		frameIndex = frameInfo.index;
 	}
 
-	void MaterialPipelines::initMaterialPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
+	void MaterialPipelines::InitMaterialPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
 		//layouts
 		//textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))
 		if (materialPipeLayout[dynamicPipeLayoutIndex].pipeLayout == VK_NULL_HANDLE) {
@@ -141,7 +141,7 @@ namespace EWE {
 				pipelineLayoutInfo.pushConstantRangeCount = 1;
 			}
 
-			std::vector<VkDescriptorSetLayout> tempDSL{ getPipeDSL(textureCount, hasBones, instanced, hasBump) };
+			std::vector<VkDescriptorSetLayout> tempDSL{ GetPipeDSL(textureCount, hasBones, instanced, hasBump) };
 			pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 			pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
@@ -155,9 +155,9 @@ namespace EWE {
 		}
 	}
 
-	MaterialPipelines* MaterialPipelines::getMaterialPipe(MaterialFlags flags) {
+	MaterialPipelines* MaterialPipelines::GetMaterialPipe(MaterialFlags flags) {
 		{
-			auto foundPipe = materialPipelines.find(flags);
+			const auto foundPipe = materialPipelines.find(flags);
 			if (foundPipe != materialPipelines.end()) {
 				return foundPipe->second;
 			}
@@ -186,32 +186,32 @@ namespace EWE {
 		}
 #endif
 
-		initMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, hasBumps);
+		InitMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, hasBumps);
 
 		//printf("creating pipeline, dynamicShaderFinding, (key value:%d)-(bones:%d)-(normal:%d)-(rough:%d)-(metal:%d)-(ao:%d) \n", newFlags, hasBones, hasNormal, hasRough, hasMetal, hasAO );
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
 		pipelineConfig.pipelineLayout = materialPipeLayout[pipeLayoutIndex].pipeLayout;
 
-		getPipeCache(hasBones, instanced, pipelineConfig.cache);
+		GetPipeCache(hasBones, instanced, pipelineConfig.cache);
 #if DEBUG_NAMING
-		MaterialPipelines* ret = createPipe(pipeLayoutIndex, pipelineConfig, hasBones, hasNormal, hasBumps, flags);
+		MaterialPipelines* ret = CreatePipe(pipeLayoutIndex, pipelineConfig, hasBones, hasNormal, hasBumps, flags);
 		std::string pipeName = "material pipeline[";
 		pipeName += std::to_string(flags) + ']';
 		ret->pipeline.SetDebugName(pipeName);
 #endif
-		return createPipe(pipeLayoutIndex, pipelineConfig, hasBones, hasNormal, hasBumps, flags);
+		return CreatePipe(pipeLayoutIndex, pipelineConfig, hasBones, hasNormal, hasBumps, flags);
 
 		//printf("after dynamic shader finding \n");
 	}
 
-	void MaterialPipelines::initStaticVariables() {
+	void MaterialPipelines::InitStaticVariables() {
 		for (int i = 0; i < DYNAMIC_PIPE_LAYOUT_COUNT; i++) {
 			materialPipeLayout[i].pipeLayout = VK_NULL_HANDLE;
 		}
 	}
 
-	void MaterialPipelines::cleanupStaticVariables() {
+	void MaterialPipelines::CleanupStaticVariables() {
 
 #if DECONSTRUCTION_DEBUG
 		printf("begin deconstructing material pipelines \n");
@@ -248,7 +248,7 @@ namespace EWE {
 #endif
 	}
 
-	std::vector<VkDescriptorSetLayout> MaterialPipelines::getPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
+	std::vector<VkDescriptorSetLayout> MaterialPipelines::GetPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
 		//printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
 
 		std::vector<VkDescriptorSetLayout> returnLayouts{};
@@ -279,7 +279,7 @@ namespace EWE {
 		return returnLayouts;
 	}
 
-	MaterialPipelines* MaterialPipelines::getInstancedSkinMaterialPipe(uint16_t boneCount, MaterialFlags flags) {
+	MaterialPipelines* MaterialPipelines::GetInstancedSkinMaterialPipe(uint16_t boneCount, MaterialFlags flags) {
 
 		SkinInstanceKey skinInstanceKey{ boneCount, flags };
 		if(instancedBonePipelines.contains(skinInstanceKey)){
@@ -302,7 +302,7 @@ namespace EWE {
 		}
 
 		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * 3);
-		initMaterialPipeLayout(pipeLayoutIndex, textureCount, true, true, hasBumps);
+		InitMaterialPipeLayout(pipeLayoutIndex, textureCount, true, true, hasBumps);
 
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
@@ -327,13 +327,13 @@ namespace EWE {
 		
 		SkinInstanceKey key(boneCount, flags);
 
-		auto ret = instancedBonePipelines.try_emplace(key, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, boneCount, flags, pipelineConfig)).first->second;
+		auto ret = instancedBonePipelines.try_emplace(key, Construct<MaterialPipelines>({ pipeLayoutIndex, boneCount, flags, pipelineConfig })).first->second;
 
 		glslang::FinalizeProcess();
 		return ret;
 	}
 
-	void MaterialPipelines::getPipeCache(bool hasBones, bool instanced, VkPipelineCache& outCache) {
+	void MaterialPipelines::GetPipeCache(bool hasBones, bool instanced, VkPipelineCache& outCache) {
 
 		VkPipelineCache retCache;
 		if (instanced) {
@@ -377,39 +377,39 @@ namespace EWE {
 		return;
 	}
 
-	MaterialPipelines* MaterialPipelines::createPipe(uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags) {
+	MaterialPipelines* MaterialPipelines::CreatePipe(uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags) {
 		if (hasBones) {
 			if (hasNormal) {
 				//printf("boneVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
 				pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "bone_Tangent.vert.spv", flags, pipelineConfig, true)).first->second;
+				return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "bone_Tangent.vert.spv", flags, pipelineConfig, true })).first->second;
 
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertexNoTangent>();
 				pipelineConfig.attributeDescriptions = boneVertexNoTangent::GetAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "bone_NT.vert.spv", flags, pipelineConfig, true)).first->second;
+				return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "bone_NT.vert.spv", flags, pipelineConfig, true })).first->second;
 			}
 		}
 		else {
 			if (hasBumps) {
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_bump.vert.spv", flags, pipelineConfig, false)).first->second;
+				return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_bump.vert.spv", flags, pipelineConfig, false })).first->second;
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_Tangent.vert.spv", flags, pipelineConfig, false)).first->second;
+				return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_Tangent.vert.spv", flags, pipelineConfig, false })).first->second;
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 				pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, ConstructSingular<MaterialPipelines>(ewe_call_trace, pipeLayoutIndex, "material_nn.vert.spv", flags, pipelineConfig, false)).first->second;
+				return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_nn.vert.spv", flags, pipelineConfig, false })).first->second;
 			}
 		}
 	}

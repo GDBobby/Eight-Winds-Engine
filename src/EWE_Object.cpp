@@ -23,7 +23,7 @@ namespace EWE {
         AddDebugNames(objectPath);
 #endif
     }
-    EweObject::EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, Queue::Enum queue) : mySkinID{ SkinRenderSystem::getSkinID() } {
+    EweObject::EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, Queue::Enum queue) : mySkinID{ SkinRenderSystem::GetSkinID() } {
         std::cout << "weapon object construction : objectPath - " << objectPath << std::endl;
         ImportData tempData = ImportData::loadData(objectPath);
         TextureMapping textureTracker;
@@ -91,7 +91,7 @@ namespace EWE {
             auto const& mesh = tempData.meshExport.meshes;
             for (uint16_t i = 0; i < tempData.meshExport.meshes.size(); i++) {
                 meshes.push_back(EWEModel::CreateMesh(mesh[i].vertices.data(), mesh[i].vertices.size(), tempData.meshExport.vertex_size, mesh[i].indices, queue));
-                SkinRenderSystem::addWeapon(textureTracker.meshNames[i], meshes[i], mySkinID, skeletonOwner);
+                SkinRenderSystem::AddWeapon(textureTracker.meshNames[i], meshes[i], mySkinID, skeletonOwner);
             }
         }
         else if (tempData.meshNTExport.meshes.size() > 0) {
@@ -100,7 +100,7 @@ namespace EWE {
             
             for (uint16_t i = 0; i < tempData.meshNTExport.meshes.size(); i++) {
                 meshes.push_back(EWEModel::CreateMesh(meshNT[i].vertices.data(), meshNT[i].vertices.size(), tempData.meshNTExport.vertex_size, tempData.meshNTExport.meshes[i].indices, queue));
-                SkinRenderSystem::addWeapon(textureTracker.meshNTNames[i], meshes[i], mySkinID, skeletonOwner);
+                SkinRenderSystem::AddWeapon(textureTracker.meshNTNames[i], meshes[i], mySkinID, skeletonOwner);
             }
         }
         else {

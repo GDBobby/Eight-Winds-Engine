@@ -22,29 +22,13 @@ namespace EWE {
     }
 
     EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::build() const {
-        EWEDescriptorSetLayout* ret = ConstructSingular<EWEDescriptorSetLayout>(ewe_call_trace, bindings);
-        return ret;
+        return Construct<EWEDescriptorSetLayout>({ bindings });
     }
 
     // *************** Descriptor Set Layout *********************
 
     EWEDescriptorSetLayout::EWEDescriptorSetLayout(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings)
         : bindings{ bindings } {
-        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
-        setLayoutBindings.reserve(bindings.size());
-        for (auto& kv : bindings) {
-            setLayoutBindings.push_back(kv.second);
-        }
-
-        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
-        descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
-        descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
-
-        EWE_VK(vkCreateDescriptorSetLayout, EWEDevice::GetVkDevice(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
-    }
-    void EWEDescriptorSetLayout::construct(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings) {
-        this->bindings = bindings;
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
         setLayoutBindings.reserve(bindings.size());
         for (auto& kv : bindings) {

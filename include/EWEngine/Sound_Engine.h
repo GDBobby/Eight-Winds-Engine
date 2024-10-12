@@ -117,8 +117,6 @@ namespace EWE {
 
 		ma_device_info* pPlaybackDeviceInfos; 
 		ma_uint32 playbackDeviceCount{ 0 };
-		uint32_t availableDevice{ 0 };
-		uint32_t chosenDevice{ 0 };
 		//std::vector<ma_sound>sounds{};
 		//ma_sound* selectedSound{ nullptr };
 		void LoadHowlingWind();
