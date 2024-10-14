@@ -16,3 +16,5 @@ C:\Programming\slang-2024.1.5-win64\bin\windows-x64\release\slangc.exe Initializ
 C:\Programming\slang-2024.1.5-win64\bin\windows-x64\release\slangc.exe ocean.vert.slang -profile glsl_460 -target spirv -o ../ocean.vert.spv -O3 -emit-spirv-directly -entry vertexMain
 
 C:\Programming\slang-2024.1.5-win64\bin\windows-x64\release\slangc.exe ocean.frag.slang -profile glsl_460 -target spirv -o ../ocean.frag.spv -O3 -emit-spirv-directly -entry fragmentMain
+
+C:\Programming\slang-2024.1.5-win64\bin\windows-x64\release\slangc.exe RockTrack.comp.slang -profile glsl_460 -target spirv -o ../RockTrack.comp.spv -O3 -emit-spirv-directly -entry computeMain

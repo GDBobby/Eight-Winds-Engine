@@ -4,11 +4,11 @@
 
 namespace EWE {
     void MaterialRenderInfo::Render(uint8_t frameIndex) {
-        if (!materialMap.size()) {
+        if (materialMap.size() == 0) {
             return;
         }
         pipe->BindPipeline();
-        pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
+        pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameIndex));
         for (auto iterTexID = materialMap.begin(); iterTexID != materialMap.end(); iterTexID++) {
 
             pipe->BindTextureDescriptor(1, iterTexID->first);
@@ -25,31 +25,73 @@ namespace EWE {
             }
         }
     }
+    void InstancedMaterialRenderInfo::Render(uint8_t frameIndex) {
+        if (instancedInfo.size() == 0) { return; }
+        pipe->BindPipeline();
+        pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameIndex));
+        for (auto const& instanceInfo : instancedInfo) {
+            pipe->BindTextureDescriptor(1, instanceInfo.texture);
+            const uint32_t instanceCount = instanceInfo.buffer.GetCurrentEntityCount();
+            if (instanceCount == 0) {
+                continue;
+            }
+            
+            pipe->DrawInstanced(instanceInfo.meshPtr, instanceCount);
+        }
+    }
 
     namespace RigidRenderingSystem {
-        std::unordered_map<MaterialFlags, MaterialRenderInfo>* materialMap;
+        std::unordered_map<MaterialFlags, MaterialRenderInfo>* materialMap{ nullptr };
+        std::unordered_map<MaterialFlags, InstancedMaterialRenderInfo>* instancedMaterialMap{ nullptr };
 
 
         void Initialize() {
-            materialMap = new std::unordered_map<MaterialFlags, MaterialRenderInfo>();
+            materialMap = Construct<std::unordered_map<MaterialFlags, MaterialRenderInfo>>({});
         }
         void Destruct() {
             materialMap->clear();
             delete materialMap;
+            Deconstruct(materialMap);
         }
-
-        void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
-#if EWE_DEBUG
-            assert(renderInfo.meshPtr != nullptr);
-#endif
-            if (!materialMap->contains(materialInfo.materialFlags)) {
-                auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
-                empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
+        void AddInstancedMaterialObject(MaterialTextureInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms) {
+            assert(modelPtr != nullptr);
+            auto findRet = instancedMaterialMap->find(materialInfo.materialFlags);
+            if (findRet == instancedMaterialMap->end()) {
+                auto empRet = instancedMaterialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
+                empRet.first->second.instancedInfo.emplace_back(materialInfo.texture, modelPtr, entityCount, computedTransforms);
             }
             else {
-                materialMap->at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).push_back(renderInfo);
+#if EWE_DEBUG
+                //texture shouldn't be used in two separate models. unless it's like a ubertexture or texturearray i guess
+                //if this becomes an issue, I'll need an unordered map of textures paired with vectors of the rest of the InstancedMaterialRenderInfo struct
+                for (auto const& instance : findRet->second.instancedInfo) {
+                    assert(instance.texture != materialInfo.texture && "duplicating textures");
+                }
+#endif
+                findRet->second.instancedInfo.emplace_back(materialInfo.texture, modelPtr, entityCount, computedTransforms);
             }
         }
+
+void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
+#if EWE_DEBUG
+    assert(renderInfo.meshPtr != nullptr);
+#endif
+    auto findRet = materialMap->find(materialInfo.materialFlags);
+    if (findRet == materialMap->end()) {
+        auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
+        empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
+    }
+    else {
+        auto textureFindRet = findRet->second.materialMap.find(materialInfo.texture);
+        if (textureFindRet == findRet->second.materialMap.end()) {
+            findRet->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
+        }
+        else {
+            textureFindRet->second.push_back(renderInfo);
+        }
+                
+    }
+}
         void AddMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
 #if EWE_DEBUG
             assert(modelPtr != nullptr);
@@ -116,23 +158,33 @@ namespace EWE {
             return returnVector;
         }
 
-        void Render(FrameInfo const& frameInfo) {
-            //ill replace this shit eventually
-            MaterialPipelines::SetFrameInfo(frameInfo);
+        void RenderInstancedMemberMethod(FrameInfo const& frameInfo) {
+            for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
 
-            RenderMemberMethod(frameInfo);
-        }
-        void RenderMemberMethod(FrameInfo const& frameInfo) {
-
-            for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
-
-#if DEBUGGING_DYNAMIC_PIPE || DEBUGGING_PIPELINES
+#if DEBUGGING_MATERIAL_PIPE || DEBUGGING_PIPELINES
                 printf("checking validity of map iter? \n");
                 printf("iter->first:second - %d:%d \n", iter->first, iter->second.size());
                 uint8_t flags = iter->first;
                 printf("Drawing dynamic materials : %d \n", flags);
                 assert(((flags & 128) == 0) && "should not have bones here");
-#elif _DEBUG
+#elif EWE_DEBUG
+
+                uint8_t flags = iter->first;
+                assert(((flags & 128) == 0) && "should not have bones here");
+#endif
+            }
+        }
+        void RenderMemberMethod(FrameInfo const& frameInfo) {
+
+            for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
+
+#if DEBUGGING_MATERIAL_PIPE || DEBUGGING_PIPELINES
+                printf("checking validity of map iter? \n");
+                printf("iter->first:second - %d:%d \n", iter->first, iter->second.size());
+                uint8_t flags = iter->first;
+                printf("Drawing dynamic materials : %d \n", flags);
+                assert(((flags & 128) == 0) && "should not have bones here");
+#elif EWE_DEBUG
 
                 uint8_t flags = iter->first;
                 assert(((flags & 128) == 0) && "should not have bones here");
@@ -140,13 +192,21 @@ namespace EWE {
                 iter->second.Render(frameInfo.index);
 
 
-#if DEBUGGING_DYNAMIC_PIPE
+#if DEBUGGING_MATERIAL_PIPE
                 printf("finished drawing dynamic material flag : %d \n", flags);
 #endif
             }
-#if DEBUGGING_PIPELINES || DEBUGGING_DYNAMIC_PIPE
+#if DEBUGGING_PIPELINES || DEBUGGING_MATERIAL_PIPE
             printf("finished dynamic render \n");
 #endif
+        }
+
+        void Render(FrameInfo const& frameInfo) {
+            //ill replace this shit eventually
+            MaterialPipelines::SetFrameInfo(frameInfo);
+
+            RenderMemberMethod(frameInfo);
+            RenderInstancedMemberMethod(frameInfo);
         }
     }//namespace RigidRenderingSystem
 } //namespace EWE

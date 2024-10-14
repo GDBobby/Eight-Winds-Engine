@@ -10,7 +10,7 @@ namespace EWE {
 
     // *************** Descriptor Set Layout Builder *********************
 
-    EWEDescriptorSetLayout::Builder& EWEDescriptorSetLayout::Builder::addBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count) {
+    EWEDescriptorSetLayout::Builder& EWEDescriptorSetLayout::Builder::AddBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count) {
         assert(!bindings.contains(binding) && "Binding already in use");
         VkDescriptorSetLayoutBinding layoutBinding{};
         layoutBinding.binding = binding;
@@ -21,7 +21,7 @@ namespace EWE {
         return *this;
     }
 
-    EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::build() const {
+    EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::Build() const {
         return Construct<EWEDescriptorSetLayout>({ bindings });
     }
 

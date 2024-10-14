@@ -10,19 +10,38 @@ namespace EWE {
 	SkinBufferHandler::SkinBufferHandler(uint8_t maxActorCount, std::vector<InnerBufferStruct>* innerPtr) : boneBlockSize{0}, maxActorCount{ maxActorCount } {
 		gpuReference = innerPtr;
 	}
-	void SkinBufferHandler::writeData(void* finalBoneMatrices) {
+	void SkinBufferHandler::WriteData(void* finalBoneMatrices) {
 		gpuData[frameIndex].bone->WriteToBuffer(finalBoneMatrices, boneBlockSize, boneMemOffset);
 		boneMemOffset += boneBlockSize;
 
 	}
-	void SkinBufferHandler::changeMaxActorCount(uint8_t actorCount) {
+	void SkinBufferHandler::ChangeMaxActorCount(uint8_t actorCount) {
 		if (maxActorCount == actorCount) {
 			return;
 		}
 		maxActorCount = actorCount;
 		for (int i = 0; i < gpuData.size(); i++) {
-			gpuData[i].changeActorCount(maxActorCount, boneBlockSize);
+			gpuData[i].ChangeActorCount(maxActorCount, boneBlockSize);
 		}
+	}
+	void SkinBufferHandler::Flush() {
+		gpuData[frameIndex].Flush();
+		boneMemOffset = 0;
+	}
+	void SkinBufferHandler::SetFrameIndex(uint8_t frameIndex) {
+		this->frameIndex = frameIndex;
+
+	}
+	VkDescriptorSet* SkinBufferHandler::GetDescriptor() {
+		if (gpuReference == nullptr) {
+			return &gpuData[frameIndex].descriptor;
+		}
+		else {
+			return &gpuReference->at(frameIndex).descriptor;
+		}
+	}
+	std::vector<SkinBufferHandler::InnerBufferStruct>* SkinBufferHandler::GetInnerPtr() {
+		return &gpuData;
 	}
 	SkinBufferHandler::InnerBufferStruct::InnerBufferStruct(uint8_t maxActorCount, uint32_t boneBlockSize) :
 		currentActorCount{maxActorCount}
@@ -31,28 +50,32 @@ namespace EWE {
 		bone->Map();
 
 
-		buildDescriptor();
+		BuildDescriptor();
 	}
-	void SkinBufferHandler::InnerBufferStruct::changeActorCount(uint8_t maxActorCount, uint32_t boneBlockSize) {
+	void SkinBufferHandler::InnerBufferStruct::ChangeActorCount(uint8_t maxActorCount, uint32_t boneBlockSize) {
 		if (maxActorCount == currentActorCount) {
 			return;
 		}
 		currentActorCount = maxActorCount;
-		if (maxActorCount > 5) {
-			printf("currently not supporting non-instanced actor counts greater than 5 \n");
-			throw std::runtime_error("currently not supporting non-instanced actor counts greater than 5");
-		}
+		assert(maxActorCount <= 5 && "currently not supporting non-instanced actor counts greater than 5");
 
 		bone->Reconstruct(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptor);
 
-		buildDescriptor();
+		BuildDescriptor();
 	}
-	void SkinBufferHandler::InnerBufferStruct::buildDescriptor() {
+	void SkinBufferHandler::InnerBufferStruct::BuildDescriptor() {
 		//printf("building skin buffer \n");
-		descriptor = EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
+		descriptor = EWEDescriptorWriter(DescriptorHandler::GetLDSL(LDSL_boned), DescriptorPool_Global)
 			.WriteBuffer(0, bone->DescriptorInfo())
 			.Build();
+	}
+	void SkinBufferHandler::InnerBufferStruct::Flush() {
+		if (updated) {
+			bone->Flush();
+			bone->Unmap();
+			updated = false;
+		}
 	}
 
 
@@ -64,7 +87,7 @@ namespace EWE {
 			gpuData.emplace_back(maxActorCount, boneBlockSize);
 		}
 	}
-	void InstancedSkinBufferHandler::writeData(glm::mat4* modelMatrix, void* finalBoneMatrices) {
+	void InstancedSkinBufferHandler::WriteData(glm::mat4* modelMatrix, void* finalBoneMatrices) {
 
 		gpuData[frameIndex].model->WriteToBuffer(modelMatrix, sizeof(glm::mat4), modelMemOffset);
 		gpuData[frameIndex].bone->WriteToBuffer(finalBoneMatrices, boneBlockSize, boneMemOffset);
@@ -73,27 +96,24 @@ namespace EWE {
 		currentInstanceCount++;
 
 	}
-	void InstancedSkinBufferHandler::changeMaxActorCount(uint16_t actorCount) {
+	void InstancedSkinBufferHandler::ChangeMaxActorCount(uint16_t actorCount) {
 		if (maxActorCount == actorCount) {
 			return;
 		}
 		maxActorCount = actorCount;
 		for (int i = 0; i < gpuData.size(); i++) {
-			gpuData[i].changeActorCount(maxActorCount, boneBlockSize);
+			gpuData[i].ChangeActorCount(maxActorCount, boneBlockSize);
 		}
 	}
 
-	void InstancedSkinBufferHandler::flush() {
+	void InstancedSkinBufferHandler::Flush() {
 		//printf("flushing \n");
-		gpuData[frameIndex].flush();
+		gpuData[frameIndex].Flush();
 		modelMemOffset = 0;
 		boneMemOffset = 0;
 	}
 
 	InstancedSkinBufferHandler::InnerBufferStruct::InnerBufferStruct(uint16_t maxActorCount, uint32_t boneBlockSize) {
-
-		//id like to experiment with malloc here, to reduce the amount of mem allocations from 2 to 1.
-		//minimal gain, and i still have bigger fish to fry
 
 		model = Construct<EWEBuffer>({ sizeof(glm::mat4) * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
 
@@ -103,29 +123,29 @@ namespace EWE {
 		bone->Map();
 
 
-		buildDescriptor(maxActorCount);
+		BuildDescriptor(maxActorCount);
 	}
 
-	void InstancedSkinBufferHandler::InnerBufferStruct::changeActorCount(uint16_t maxActorCount, uint32_t boneBlockSize) {
+	void InstancedSkinBufferHandler::InnerBufferStruct::ChangeActorCount(uint16_t maxActorCount, uint32_t boneBlockSize) {
 		model->Reconstruct(sizeof(glm::mat4) * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		bone->Reconstruct(boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptor);
 
-		buildDescriptor(maxActorCount);
+		BuildDescriptor(maxActorCount);
 	}
-	void InstancedSkinBufferHandler::InnerBufferStruct::buildDescriptor(uint16_t maxActorCount) {
+	void InstancedSkinBufferHandler::InnerBufferStruct::BuildDescriptor(uint16_t maxActorCount) {
 		//if (maxActorCount > 1000) {
 		printf("building instanced skin buffer \n");
-		descriptor = EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_largeInstance), DescriptorPool_Global)
+		descriptor = EWEDescriptorWriter(DescriptorHandler::GetLDSL(LDSL_largeInstance), DescriptorPool_Global)
 			.WriteBuffer(0, model->DescriptorInfo())
 			.WriteBuffer(1, bone->DescriptorInfo())
 			//.writeBuffer(1, &buffers[i][2]->descriptorInfo())
 			.Build();
 	}
 
-	void InstancedSkinBufferHandler::InnerBufferStruct::flush() {
+	void InstancedSkinBufferHandler::InnerBufferStruct::Flush() {
 		if (updated) {
 			model->Flush();
 			bone->Flush();

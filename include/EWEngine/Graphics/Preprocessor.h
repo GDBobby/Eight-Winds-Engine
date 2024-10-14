@@ -18,7 +18,7 @@
 #define DECONSTRUCTION_DEBUG true
 
 #define DEBUGGING_PIPELINES false
-#define DEBUGGING_DYNAMIC_PIPE false
+#define DEBUGGING_MATERIAL_PIPE false
 
 #if EWE_DEBUG
 #define DEBUG_NAMING true

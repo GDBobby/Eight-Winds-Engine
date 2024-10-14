@@ -26,14 +26,13 @@ namespace EWE {
 		FloatingRock(FloatingRock&&) = default;
 		FloatingRock& operator=(FloatingRock&&) = default;
 
-		void update();
+		void Dispatch(float dt, FrameInfo const& frameInfo);
 
 		void render(FrameInfo& frameInfo);
 	private:
+
 		EWEModel* rockModel;
 		TextureDesc rockTexture{ TEXTURE_UNBINDED_DESC };
-		glm::mat4 renderModelMatrix{};
-		glm::mat3 renderNormalMatrix{};
 
 		struct RockTrack {
 			std::vector<uint32_t> currentPosition{};
@@ -51,5 +50,23 @@ namespace EWE {
 			//sin 0 = 0
 		};
 		std::vector<RockTrack> rockField;
+
+		//compute data
+		VkPipeline compPipeline{ VK_NULL_HANDLE };
+		VkPipelineLayout compPipeLayout{ VK_NULL_HANDLE };
+		VkDescriptorSet compDescriptorSet[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+		VkShaderModule compShaderModule{ VK_NULL_HANDLE };
+		struct RockCompPushData {
+			int whichIndex;
+			float secondsSinceBeginning{0.f};
+		};
+		RockCompPushData compPushData{};
+		EWEDescriptorSetLayout* compDSL{ nullptr };
+
+		EWEBuffer* rockBuffer{ nullptr };
+		EWEBuffer* trackBuffer{ nullptr };
+		EWEBuffer* transformBuffer[2] = { nullptr, nullptr };
+
+		void InitComputeData();
 	};
 }

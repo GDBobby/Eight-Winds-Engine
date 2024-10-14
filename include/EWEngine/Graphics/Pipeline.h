@@ -70,14 +70,14 @@ namespace EWE {
 	//typedef uint8_t MaterialFlags; this in engine/data/enginedatatypes.h
 
 	namespace Pipeline_Helper_Functions {
-		void createShaderModule(std::string const& file_path, VkShaderModule* shaderModule);
+		void CreateShaderModule(std::string const& file_path, VkShaderModule* shaderModule);
 		std::vector<char> readFile(const std::string& filepath);
 
-		void createShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule);
-		void createShaderModule(const char* data, std::size_t dataSize, VkShaderModule* shaderModule);
+		void CreateShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule);
+		void CreateShaderModule(const char* data, std::size_t dataSize, VkShaderModule* shaderModule);
 
 		template <typename T>
-		void createShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule);
+		void CreateShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule);
 	}
 
 	class EWE_Compute_Pipeline {
@@ -85,10 +85,10 @@ namespace EWE {
 		VkPipelineLayout pipe_layout;
 		VkPipeline pipeline;
 
-		static EWE_Compute_Pipeline createPipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path);
-		static EWE_Compute_Pipeline createPipeline(VkPipelineLayout pipe_layout, std::string compute_path);
-		void bind(VkCommandBuffer cmdBuf) {
-			vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+		static EWE_Compute_Pipeline CreatePipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path);
+		static EWE_Compute_Pipeline CreatePipeline(VkPipelineLayout pipe_layout, std::string compute_path);
+		void Bind(VkCommandBuffer cmdBuf) {
+			EWE_VK(vkCmdBindPipeline, cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 		}
 	private:
 		VkShaderModule shader;
@@ -146,15 +146,15 @@ namespace EWE {
 		EWEPipeline(EWEPipeline const&) = delete;
 		EWEPipeline& operator=(EWEPipeline const&) = delete;
 
-		void bind(VkCommandBuffer commandBuffer);
-		static void defaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
-		static void enable2DConfig(PipelineConfigInfo& configInfo);
-		static void enableAlphaBlending(PipelineConfigInfo& configInfo);
+		void Bind(VkCommandBuffer commandBuffer);
+		static void DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
+		static void Enable2DConfig(PipelineConfigInfo& configInfo);
+		static void EnableAlphaBlending(PipelineConfigInfo& configInfo);
 
-		static void cleanShaderModules() {
+		static void CleanShaderModules() {
 			VkDevice const& vkDevice = EWEDevice::GetVkDevice();
 			for (auto iter = shaderModuleMap.begin(); iter != shaderModuleMap.end(); iter++) {
-				vkDestroyShaderModule(vkDevice, iter->second, nullptr);
+				EWE_VK(vkDestroyShaderModule, vkDevice, iter->second, nullptr);
 			}
 			shaderModuleMap.clear();
 		}
@@ -170,7 +170,7 @@ namespace EWE {
 		VkShaderModule vertShaderModule;
 		VkShaderModule fragShaderModule;
 
-		void createGraphicsPipeline(PipelineConfigInfo const& configInfo);
+		void CreateGraphicsPipeline(PipelineConfigInfo const& configInfo);
 
 	};
 

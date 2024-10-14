@@ -17,12 +17,12 @@ namespace EWE {
         public:
             Builder() {}
 
-            Builder& addBinding(
+            Builder& AddBinding(
                 uint32_t binding,
                 VkDescriptorType descriptorType,
                 VkShaderStageFlags stageFlags,
                 uint32_t count = 1);
-            EWEDescriptorSetLayout* build() const;
+            EWEDescriptorSetLayout* Build() const;
 
         private:
             std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};

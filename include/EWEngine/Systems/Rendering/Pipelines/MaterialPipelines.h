@@ -61,6 +61,7 @@ namespace EWE{
 		void PushAndDraw(void* push);
 		void DrawModel();
 		void DrawInstanced(EWEModel* model);
+		void DrawInstanced(EWEModel* model, uint32_t instanceCount);
 
 	protected:
 		uint16_t pipeLayoutIndex;

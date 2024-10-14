@@ -13,15 +13,15 @@ namespace EWE {
 			tdfsGPUData.pushData.CopyFromIFS(ifsGPUData.pushData);
 		}
 		Ocean::~Ocean() {
-			vkDestroySampler(EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.sampler, nullptr);
-			vkDestroyImageView(EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.imageView, nullptr);
+			EWE_VK(vkDestroySampler, EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.sampler, nullptr);
+			EWE_VK(vkDestroyImageView, EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.imageView, nullptr);
 			//vkDestroySampler(EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.sampler, nullptr); //this is a copy
 			//vkDestroyImageView(EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.imageView, nullptr); //this is a copy
-			vkDestroyImage(EWEDevice::GetVkDevice(), oceanOutputImages, nullptr);
+			EWE_VK(vkDestroyImage, EWEDevice::GetVkDevice(), oceanOutputImages, nullptr);
 
-			vkDestroySampler(EWEDevice::GetVkDevice(), oceanFreqImageInfoDescriptor.sampler, nullptr);
-			vkDestroyImage(EWEDevice::GetVkDevice(), oceanFreqImages, nullptr);
-			vkDestroyImageView(EWEDevice::GetVkDevice(), oceanFreqImageInfoDescriptor.imageView, nullptr);
+			EWE_VK(vkDestroySampler, EWEDevice::GetVkDevice(), oceanFreqImageInfoDescriptor.sampler, nullptr);
+			EWE_VK(vkDestroyImage, EWEDevice::GetVkDevice(), oceanFreqImages, nullptr);
+			EWE_VK(vkDestroyImageView, EWEDevice::GetVkDevice(), oceanFreqImageInfoDescriptor.imageView, nullptr);
 		}
 
 
@@ -60,7 +60,7 @@ namespace EWE {
 
 			VkFormatProperties formatProperties;
 			// Get device properties for the requested texture format
-			vkGetPhysicalDeviceFormatProperties(eweDevice->GetPhysicalDevice(), format, &formatProperties);
+			EWE_VK(vkGetPhysicalDeviceFormatProperties, eweDevice->GetPhysicalDevice(), format, &formatProperties);
 			// Check if requested image format supports image storage operations required for storing pixel from the compute shader
 			assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
 
@@ -105,7 +105,7 @@ namespace EWE {
 				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
 				1, cascade_count
 			);
-			vkCmdPipelineBarrier(cmdBuf,
+			EWE_VK(vkCmdPipelineBarrier, cmdBuf,
             	VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
             	0,
             	0, nullptr,
@@ -131,7 +131,7 @@ namespace EWE {
 			samplerInfo.minLod = 0.0f;
 			samplerInfo.maxLod = 1.0f;
 			samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-			vkCreateSampler(eweDevice->Device(), &samplerInfo, nullptr, &oceanOutputImageInfoDescriptorCompute.sampler);
+			EWE_VK(vkCreateSampler, eweDevice->Device(), &samplerInfo, nullptr, &oceanOutputImageInfoDescriptorCompute.sampler);
 			oceanOutputImageInfoDescriptorGraphics.sampler = oceanOutputImageInfoDescriptorCompute.sampler;
 
 			// Create image view

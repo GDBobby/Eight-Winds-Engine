@@ -66,26 +66,26 @@ namespace EWE {
 
 
     EWEModel* EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices, Queue::Enum queue) {
-        return new EWEModel(verticesData, vertexCount, sizeOfVertex, indices, queue);
+        return Construct<EWEModel>({ verticesData, vertexCount, sizeOfVertex, indices, queue });
     }
     EWEModel* EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue) {
-        return new EWEModel(verticesData, vertexCount, sizeOfVertex, queue);
+        return Construct<EWEModel>({ verticesData, vertexCount, sizeOfVertex, queue });
     }
 
     EWEModel* EWEModel::CreateModelFromFile(const std::string& filepath, Queue::Enum queue) {
         Builder builder{};
         builder.LoadModel(filepath);
-        return new EWEModel(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue });
     }
     EWEModel* EWEModel::CreateSimpleModelFromFile(const std::string& filePath, Queue::Enum queue) {
         SimpleBuilder builder{};
         builder.LoadModel(filePath);
-        return new EWEModel(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue);
+        return Construct<EWEModel>({ (builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue });
     }
     EWEModel* EWEModel::CreateGrassModelFromFile(const std::string& filePath, Queue::Enum queue) {
         GrassBuilder builder{};
         builder.LoadModel(filePath);
-        return new EWEModel(builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue });
     }
     
 
@@ -101,7 +101,7 @@ namespace EWE {
 #else
             stagingBuffer->Free(EWEDevice::GetVkDevice());
 #endif
-            delete stagingBuffer;
+            Deconstruct(stagingBuffer);
         }
         else if (queue == Queue::transfer) {
             //transitioning from transfer to compute not supported currently
@@ -114,7 +114,7 @@ namespace EWE {
             memMgr = EWEDevice::GetVkDevice()
 #endif
             ] {
-                sb->Free(memMgr); delete sb; 
+                sb->Free(memMgr); Deconstruct(sb); 
             };
             syncHub->EndSingleTimeCommandTransfer(cb);
         }
@@ -127,17 +127,17 @@ namespace EWE {
         uint64_t alignmentSize = EWEBuffer::GetAlignment(instanceSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT) * instanceCount;
 
 #if USING_VMA
-        StagingBuffer* stagingBuffer = new StagingBuffer(alignmentSize, EWEDevice::GetAllocator(), data);
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, EWEDevice::GetAllocator(), data });
 #else
-        StagingBuffer* stagingBuffer = new StagingBuffer(alignmentSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), data);
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), data });
 #endif
 
-        instanceBuffer = new EWEBuffer(
+        instanceBuffer = Construct<EWEBuffer>({
             instanceSize,
             instanceCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-        );
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT 
+        });
         
         CopyModelBuffer(stagingBuffer, instanceBuffer->GetBuffer(), bufferSize, queue);
     }
@@ -173,9 +173,9 @@ namespace EWE {
         this->vertexCount = vertexCount;
 
 #if USING_VMA
-        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetAllocator(), data);
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetAllocator(), data });
 #else
-        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), data);
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), data });
 #endif
 #if DEBUGGING_MEMORY_WITH_VMA
         vertexBuffer = new EWEBuffer(
@@ -203,24 +203,24 @@ namespace EWE {
 
         VkDeviceSize bufferSize = indexSize * indexCount;
 #if USING_VMA
-        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetAllocator(), indexData);
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetAllocator(), indexData });
 #else
-        StagingBuffer* stagingBuffer = new StagingBuffer(bufferSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), indexData);
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), indexData });
 #endif
 #if DEBUGGING_MEMORY_WITH_VMA
-        indexBuffer = new EWEBuffer(
+        indexBuffer = Construct<EWEBuffer>({
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-        );
+        });
 #else
-        indexBuffer = new EWEBuffer(
+        indexBuffer = Construct<EWEBuffer>({
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-        );
+        });
 #endif
         CopyModelBuffer(stagingBuffer, indexBuffer->GetBuffer(), bufferSize, queue);
     }
@@ -272,13 +272,17 @@ namespace EWE {
         vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
     }
 
-
+    void EWEModel::BindAndDrawInstance(VkCommandBuffer cmdBuf, uint32_t instanceCount) {
+        VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer() };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(cmdBuf, 0, 2, buffers, offsets);
+        vkCmdBindIndexBuffer(cmdBuf, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(cmdBuf, indexCount, instanceCount, 0, 0, 0);
+    }
     void EWEModel::BindAndDrawInstance(VkCommandBuffer commandBuffer) {
         VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer()};
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets);
-        //vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets); //test this with grass later
-        //if no index buffer, indexing wont work
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
     }
@@ -286,8 +290,6 @@ namespace EWE {
         VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(cmdBuf, 0, 2, buffers, offsets);
-        //vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets); //test this with grass later
-        //if no index buffer, indexing wont work
         //vkCmdBindIndexBuffer(cmdBuf, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdDraw(cmdBuf, vertexCount, instanceCount, 0, 0);
     }

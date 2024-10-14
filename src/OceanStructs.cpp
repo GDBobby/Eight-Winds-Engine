@@ -47,21 +47,20 @@ namespace EWE {
             EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet[0]);
             EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet[1]);
 
-			vkDestroyPipeline(EWEDevice::GetVkDevice(), pipeline, nullptr);
-			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), pipeLayout, nullptr);
-			vkDestroyShaderModule(EWEDevice::GetVkDevice(), shaderModule, nullptr);
+			EWE_VK(vkDestroyPipeline, EWEDevice::GetVkDevice(), pipeline, nullptr);
+			EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), pipeLayout, nullptr);
+			EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), shaderModule, nullptr);
 
-            jonswapBuffer->~EWEBuffer();
-			ewe_free(jonswapBuffer);
+            Deconstruct(jonswapBuffer);
 
-            eweDSL->~EWEDescriptorSetLayout();
-            ewe_free(eweDSL);
+            Deconstruct(eweDSL);
 		}
 
         void InitialFrequencySpectrumGPUData::CreatePipeLayout() {
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 
             pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.pNext = nullptr;
             VkPushConstantRange pushConstantRange{};
             pushConstantRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
             pushConstantRange.offset = 0;
@@ -71,9 +70,9 @@ namespace EWE {
             pipelineLayoutInfo.pushConstantRangeCount = 1;
 
             EWEDescriptorSetLayout::Builder dslBuilder{};
-            dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-            dslBuilder.addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-            eweDSL = dslBuilder.build();
+            dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            dslBuilder.AddBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            eweDSL = dslBuilder.Build();
 
             VkDescriptorSetLayout dsLayout = eweDSL->GetDescriptorSetLayout();
 
@@ -85,8 +84,9 @@ namespace EWE {
         void InitialFrequencySpectrumGPUData::CreatePipeline() {
             VkComputePipelineCreateInfo pipelineInfo{};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+            pipelineInfo.pNext = nullptr;
             pipelineInfo.layout = pipeLayout;
-            Pipeline_Helper_Functions::createShaderModule("InitialFrequencySpectrum.comp.spv", &shaderModule);
+            Pipeline_Helper_Functions::CreateShaderModule("InitialFrequencySpectrum.comp.spv", &shaderModule);
             VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
             computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -148,6 +148,7 @@ namespace EWE {
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 
             pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.pNext = nullptr;
             VkPushConstantRange pushConstantRange{};
             pushConstantRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
             pushConstantRange.offset = 0;
@@ -157,9 +158,9 @@ namespace EWE {
             pipelineLayoutInfo.pushConstantRangeCount = 1;
 
             EWEDescriptorSetLayout::Builder dslBuilder{};
-            dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-            dslBuilder.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-            eweDSL = dslBuilder.build();
+            dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            dslBuilder.AddBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            eweDSL = dslBuilder.Build();
 
             VkDescriptorSetLayout dsLayout = eweDSL->GetDescriptorSetLayout();
 
@@ -172,8 +173,9 @@ namespace EWE {
 
             VkComputePipelineCreateInfo pipelineInfo{};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+            pipelineInfo.pNext = nullptr;
             pipelineInfo.layout = pipeLayout;
-            Pipeline_Helper_Functions::createShaderModule("TimeDependentSpectrum.comp.spv", &shaderModule);
+            Pipeline_Helper_Functions::CreateShaderModule("TimeDependentSpectrum.comp.spv", &shaderModule);
             VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
             computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -241,8 +243,8 @@ namespace EWE {
             pipelineLayoutInfo.pushConstantRangeCount = 1;
 
             EWEDescriptorSetLayout::Builder dslBuilder{};
-            dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-            eweDSL = dslBuilder.build();
+            dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            eweDSL = dslBuilder.Build();
 
             VkDescriptorSetLayout dsLayout = eweDSL->GetDescriptorSetLayout();
 
@@ -255,8 +257,9 @@ namespace EWE {
 
             VkComputePipelineCreateInfo pipelineInfo{};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+            pipelineInfo.pNext = nullptr;
             pipelineInfo.layout = pipeLayout;
-            Pipeline_Helper_Functions::createShaderModule("OceanFFT.comp.spv", &shaderModule);
+            Pipeline_Helper_Functions::CreateShaderModule("OceanFFT.comp.spv", &shaderModule);
             VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
             computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -298,10 +301,8 @@ namespace EWE {
             CreateModel();
         }
         OceanGraphicsGPUData::~OceanGraphicsGPUData() {
-            renderData[0]->~EWEBuffer();
-            ewe_free(renderData[0]);
-            renderData[1]->~EWEBuffer();
-            ewe_free(renderData[1]);
+            Deconstruct(renderData[0]);
+            Deconstruct(renderData[1]);
             delete oceanModel;
         }
 
@@ -336,13 +337,13 @@ namespace EWE {
             pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
             std::vector<VkDescriptorSetLayout> tempDSL;
-            tempDSL.push_back(DescriptorHandler::getDescSetLayout(LDSL_global));
+            tempDSL.push_back(DescriptorHandler::GetDescSetLayout(LDSL_global));
 
             EWEDescriptorSetLayout::Builder dslBuilder{};
-            dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
-            dslBuilder.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
-            dslBuilder.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
-            eweDSL = dslBuilder.build();
+            dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
+            dslBuilder.AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
+            dslBuilder.AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
+            eweDSL = dslBuilder.Build();
 
             tempDSL.push_back(eweDSL->GetDescriptorSetLayout());	
             
@@ -352,7 +353,7 @@ namespace EWE {
         }
         void OceanGraphicsGPUData::CreatePipeline(){
             EWEPipeline::PipelineConfigInfo pipelineConfig{};
-            EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
+            EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
 
             pipelineConfig.pipelineLayout = pipeLayout;
             pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<SimpleVertex>();
@@ -417,11 +418,11 @@ namespace EWE {
         }
 
         void OceanGraphicsGPUData::Render(FrameInfo const& frameInfo) {
-            pipe->bind(frameInfo.cmdBuf);
+            pipe->Bind(frameInfo.cmdBuf);
 
             EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout,
                 0, 1,
-                DescriptorHandler::getDescSet(DS_global, frameInfo.index),
+                DescriptorHandler::GetDescSet(DS_global, frameInfo.index),
                 0, nullptr
             );
             EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout,

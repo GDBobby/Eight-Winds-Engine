@@ -20,6 +20,7 @@ namespace EWE {
 	typedef uint16_t Compute_TextureID;
 	typedef uint32_t SkeletonID;
 	typedef uint32_t PipelineID;
+	typedef uint64_t ModelID;
 
 	//struct MappedStagingBuffer {
 	//	VkBuffer buffer{ VK_NULL_HANDLE };

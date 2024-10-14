@@ -43,7 +43,7 @@ namespace EWE {
 			shaderFile.close();
 			return returnVec;
 		}
-		void createShaderModule(std::string const& file_path, VkShaderModule* shaderModule) {
+		void CreateShaderModule(std::string const& file_path, VkShaderModule* shaderModule) {
 			auto data = readFile(file_path);
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -53,7 +53,7 @@ namespace EWE {
 
 			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
-		void createShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule) {
+		void CreateShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.codeSize = data.size() * 4;
@@ -63,7 +63,7 @@ namespace EWE {
 			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
 		template <typename T>
-		void createShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule) {
+		void CreateShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.codeSize = data.size() * sizeof(T);
@@ -72,7 +72,7 @@ namespace EWE {
 
 			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
-		void createShaderModule(const void* data, std::size_t dataSize, VkShaderModule* shaderModule) {
+		void CreateShaderModule(const void* data, std::size_t dataSize, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.codeSize = dataSize;
@@ -82,7 +82,7 @@ namespace EWE {
 	}
 
 	// ~~~~~~~ COMPUTE PIPELINE ~~~~~~~~~~~~~~~
-	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path) {
+	EWE_Compute_Pipeline EWE_Compute_Pipeline::CreatePipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path) {
 		EWE_Compute_Pipeline ret;
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -98,7 +98,7 @@ namespace EWE {
 
 		std::string computePath = "compute/";
 		computePath += compute_path;
-		Pipeline_Helper_Functions::createShaderModule(computePath, &ret.shader);
+		Pipeline_Helper_Functions::CreateShaderModule(computePath, &ret.shader);
 		VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
 		computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -108,14 +108,14 @@ namespace EWE {
 		EWE_VK(vkCreateComputePipelines, EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
 		return ret;
 	}
-	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(VkPipelineLayout pipe_layout, std::string compute_path) {
+	EWE_Compute_Pipeline EWE_Compute_Pipeline::CreatePipeline(VkPipelineLayout pipe_layout, std::string compute_path) {
 		EWE_Compute_Pipeline ret;
 		ret.pipe_layout = pipe_layout;
 
 		VkComputePipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 		pipelineInfo.layout = ret.pipe_layout;
-		Pipeline_Helper_Functions::createShaderModule(compute_path, &ret.shader);
+		Pipeline_Helper_Functions::CreateShaderModule(compute_path, &ret.shader);
 		VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
 		computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -136,7 +136,7 @@ namespace EWE {
 		const auto vertFind = shaderModuleMap.find(vertFilepath);
 		if (vertFind == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilepath);
-			Pipeline_Helper_Functions::createShaderModule(vertCode, &vertShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
 
 			shaderModuleMap.try_emplace(vertFilepath, vertShaderModule);
 		}
@@ -147,16 +147,16 @@ namespace EWE {
 		const auto fragFind = shaderModuleMap.find(fragFilepath);
 		if (fragFind == shaderModuleMap.end()) {
 			auto fragCode = Pipeline_Helper_Functions::readFile(fragFilepath);
-			Pipeline_Helper_Functions::createShaderModule(fragCode, &fragShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
 			shaderModuleMap.try_emplace(fragFilepath, fragShaderModule);
 		}
 		else {
 			fragShaderModule = fragFind->second;
 		}
-		createGraphicsPipeline(configInfo);
+		CreateGraphicsPipeline(configInfo);
 	}
 	EWEPipeline::EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo) : vertShaderModule{ vertShaderModu }, fragShaderModule{ fragShaderModu } {
-		createGraphicsPipeline(configInfo);
+		CreateGraphicsPipeline(configInfo);
 	}
 
 	EWEPipeline::EWEPipeline(uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo) {
@@ -173,7 +173,7 @@ namespace EWE {
 		if (vertFind == shaderModuleMap.end()) {
 			printf("creating vertex shader - %d:%d \n", boneCount, flags);
 			//auto vertCode = readFile(vertPath);
-			Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getVertexShader(hasNormal, boneCount, true), &vertShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::getVertexShader(hasNormal, boneCount, true), &vertShaderModule);
 			shaderModuleMap.try_emplace(vertPath, vertShaderModule);
 		}
 		else {
@@ -184,7 +184,7 @@ namespace EWE {
 		const auto fragFind = shaderModuleMap.find(fragPath);
 		if (fragFind == shaderModuleMap.end()) {
 			printf("creating fragment shader : %d \n", flags);
-			Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getFragmentShader(flags, true), &fragShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::getFragmentShader(flags, true), &fragShaderModule);
 			//fragPath = ENGINE_DIR + fragPath; //wtf
 			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 		}
@@ -192,7 +192,7 @@ namespace EWE {
 			fragShaderModule = fragFind->second;
 		}
 
-		createGraphicsPipeline(configInfo);
+		CreateGraphicsPipeline(configInfo);
 	}
 
 	EWEPipeline::EWEPipeline(std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones) {
@@ -200,7 +200,7 @@ namespace EWE {
 		const auto vertModuleIter = shaderModuleMap.find(vertFilePath);
 		if (vertModuleIter == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilePath);
-			Pipeline_Helper_Functions::createShaderModule(vertCode, &vertShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
 			shaderModuleMap.try_emplace(vertFilePath, vertShaderModule);
 		}
 		else {
@@ -215,7 +215,7 @@ namespace EWE {
 
 		const auto fragModuleIter = shaderModuleMap.find(fragPath);
 		if (fragModuleIter == shaderModuleMap.end()) {
-			Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getFragmentShader(flags, hasBones), &fragShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::getFragmentShader(flags, hasBones), &fragShaderModule);
 			fragPath = SHADER_DIR + fragPath;
 			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 		}
@@ -223,14 +223,14 @@ namespace EWE {
 			fragShaderModule = fragModuleIter->second;
 		}
 
-		createGraphicsPipeline(configInfo);
+		CreateGraphicsPipeline(configInfo);
 	}
 
 	EWEPipeline::~EWEPipeline() {
 		vkDestroyPipeline(EWEDevice::GetVkDevice(), graphicsPipeline, nullptr);
 	}
 
-	void EWEPipeline::bind(VkCommandBuffer commandBuffer) {
+	void EWEPipeline::Bind(VkCommandBuffer commandBuffer) {
 		EWERenderer::BindGraphicsPipeline(commandBuffer, graphicsPipeline);
 	}
 
@@ -240,7 +240,7 @@ namespace EWE {
 	}
 #endif
 
-	void EWEPipeline::createGraphicsPipeline(const PipelineConfigInfo& configInfo) {
+	void EWEPipeline::CreateGraphicsPipeline(const PipelineConfigInfo& configInfo) {
 
 		assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no pipelineLayout provided in configInfo");
 		//assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no renderPass provided in configInfo");
@@ -302,11 +302,11 @@ namespace EWE {
 		EWE_VK(vkCreateGraphicsPipelines, EWEDevice::GetVkDevice(), configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline);
 	}
 
-	void EWEPipeline::enable2DConfig(PipelineConfigInfo& configInfo) {
+	void EWEPipeline::Enable2DConfig(PipelineConfigInfo& configInfo) {
 		configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 	}
 
-	void EWEPipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo) {
+	void EWEPipeline::DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo) {
 
 		configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -396,7 +396,7 @@ namespace EWE {
 		*/
 	}
 
-	void EWEPipeline::enableAlphaBlending(PipelineConfigInfo& configInfo) {
+	void EWEPipeline::EnableAlphaBlending(PipelineConfigInfo& configInfo) {
 		configInfo.colorBlendAttachment.blendEnable = VK_TRUE;
 
 		configInfo.colorBlendAttachment.colorWriteMask =

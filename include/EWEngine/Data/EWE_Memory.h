@@ -61,6 +61,17 @@ T* Construct(ConstructHelper<T> construct
     return construct.ptr;
 }
 
+template<typename T>
+void Deconstruct(T* object) {
+#if USING_MALLOC
+    object->~T();
+    free(object);
+#else
+    delete object;
+#endif
+    ewe_free_mem_track();
+}
+
 
 /*
 template<typename T, typename... Args>

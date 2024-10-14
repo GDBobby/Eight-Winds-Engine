@@ -54,13 +54,13 @@ namespace EWE {
         //static std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> pipeDescSetLayouts;
 
     public:
-        static void cleanup();
-        static EWEDescriptorSetLayout* getLDSL(LDSL_Enum whichLDSL);
-        static void initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
+        static void Cleanup();
+        static EWEDescriptorSetLayout* GetLDSL(LDSL_Enum whichLDSL);
+        static void InitGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
 #if DRAWING_POINTS
-        static void initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
+        static void InitDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
 #endif
-        static VkDescriptorSetLayout getDescSetLayout(LDSL_Enum whichDescSet);
-        static VkDescriptorSet* getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex);
+        static VkDescriptorSetLayout GetDescSetLayout(LDSL_Enum whichDescSet);
+        static VkDescriptorSet* GetDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex);
     };
 }

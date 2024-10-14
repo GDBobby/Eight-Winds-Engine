@@ -95,6 +95,7 @@ namespace EWE {
         void Draw(VkCommandBuffer commandBuffer);
         void DrawNoIndex(VkCommandBuffer commandBuffer);
         void BindAndDrawInstance(VkCommandBuffer commandBuffer);
+        void BindAndDrawInstance(VkCommandBuffer cmdBuf, uint32_t instanceCount);
         void BindAndDrawInstanceNoIndex(VkCommandBuffer commandBuffer);
         void BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount);
         void BindAndDrawInstanceNoBufferNoIndex(VkCommandBuffer commandBuffer, int instanceCount);

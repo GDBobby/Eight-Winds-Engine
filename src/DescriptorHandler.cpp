@@ -13,7 +13,7 @@ namespace EWE {
 
     //std::vector<VkDescriptorSetLayout> DescriptorHandler::dynamicMaterialPipeDescSetLayouts[DYNAMIC_PIPE_LAYOUT_COUNT];
 
-    void DescriptorHandler::cleanup() {
+    void DescriptorHandler::Cleanup() {
         printf("before descriptor handler cleanup \n");
         for (auto& dsl : descriptorSetLayouts) {
             dsl.second->~EWEDescriptorSetLayout();
@@ -61,7 +61,7 @@ namespace EWE {
         printf("after descriptor handler cleanup \n");
     }
 
-    EWEDescriptorSetLayout* DescriptorHandler::getLDSL(LDSL_Enum whichLDSL) {
+    EWEDescriptorSetLayout* DescriptorHandler::GetLDSL(LDSL_Enum whichLDSL) {
         if (whichLDSL == LDSL_pointLight && (!descriptorSetLayouts.contains(LDSL_pointLight))) {
             printf("returning global instead of point LDSL \n");
             return descriptorSetLayouts.at(LDSL_global);
@@ -74,7 +74,7 @@ namespace EWE {
         return descriptorSetLayouts.at(whichLDSL);
     }
 
-    VkDescriptorSetLayout DescriptorHandler::getDescSetLayout(LDSL_Enum whichDescSet) {
+    VkDescriptorSetLayout DescriptorHandler::GetDescSetLayout(LDSL_Enum whichDescSet) {
         {
             auto foundDSL = descriptorSetLayouts.find(whichDescSet);
             if (foundDSL != descriptorSetLayouts.end()) {
@@ -86,30 +86,30 @@ namespace EWE {
         switch (whichDescSet) {
         case LDSL_global: {
             dsl = EWEDescriptorSetLayout::Builder()
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
-                .build();
+                .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+                .AddBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+                .Build();
             break;
         }
         case LDSL_boned: {
             //printf("CREATING LDSL_boned \n");
             dsl = EWEDescriptorSetLayout::Builder()
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .build();
+                .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .Build();
             break;
         }
         case LDSL_smallInstance: { //supports bone+instancing
             dsl = EWEDescriptorSetLayout::Builder()
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .build();
+                .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .AddBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .Build();
             break;
         }
         case LDSL_largeInstance: { //supports bone+instancing
             dsl = EWEDescriptorSetLayout::Builder()
-                .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .build();
+                .AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .AddBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .Build();
             break;
         }
         default: {
@@ -121,14 +121,14 @@ namespace EWE {
         return descriptorSetLayouts.emplace(whichDescSet, dsl).first->second->GetDescriptorSetLayout();
     }
 
-    void DescriptorHandler::initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap) {
+    void DescriptorHandler::InitGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap) {
         printf("init global descriptors \n");
-        DescriptorHandler::getDescSetLayout(LDSL_global);
-        DescriptorHandler::getDescSetLayout(LDSL_boned);
+        DescriptorHandler::GetDescSetLayout(LDSL_global);
+        DescriptorHandler::GetDescSetLayout(LDSL_boned);
         descriptorSets.emplace(DS_global, std::vector<VkDescriptorSet>{});
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             //printf("init ars descriptors, loop : %d \n", i);
-            descriptorSets.at(DS_global).emplace_back(EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_global), DescriptorPool_Global)
+            descriptorSets.at(DS_global).emplace_back(EWEDescriptorWriter(DescriptorHandler::GetLDSL(LDSL_global), DescriptorPool_Global)
                 .WriteBuffer(0, bufferMap.at(Buff_ubo)[i]->DescriptorInfo())
                 .WriteBuffer(1, bufferMap.at(Buff_gpu)[i]->DescriptorInfo())
                 .Build());
@@ -149,7 +149,7 @@ namespace EWE {
             if (!
                 EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_pointLight), *advancedRS.globalPool)
                 .writeBuffer(0, &uboBuffers[i]->descriptorInfo())
-                .build(advancedRS.pointLightDescriptorSet.back())
+                .Build(advancedRS.pointLightDescriptorSet.back())
                 ) {
                 std::cout << "PointLight SET FAILURE" << std::endl;
             }
@@ -161,7 +161,7 @@ namespace EWE {
                 EWEDescriptorWriter(*advancedRS.globalSetLayout, *advancedRS.globalPool)
                 .writeBuffer(0, &bufferInfo)
                 .writeBuffer(1, &sboBufferInfo)
-                .build(advancedRS.spotlightDescriptorSet.back())
+                .Build(advancedRS.spotlightDescriptorSet.back())
                 ) {
                 std::cout << "spotLIGHT SET FAILURE" << std::endl;
             }
@@ -170,7 +170,7 @@ namespace EWE {
         //printf("returning from init VkDescriptorSets \n");
     }
 #endif
-    VkDescriptorSet* DescriptorHandler::getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
+    VkDescriptorSet* DescriptorHandler::GetDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
 #if EWE_DEBUG
         assert(descriptorSets.contains(whichDescSet) && "Failed to find descset");
 #endif

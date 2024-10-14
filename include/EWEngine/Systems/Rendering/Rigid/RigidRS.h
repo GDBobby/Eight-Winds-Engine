@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EWEngine/Systems/Rendering/Rigid/RigidBufferHandler.h"
 #include "EWEngine/Graphics/Model/Model.h"  
 #include "EWEngine/Data/EngineDataTypes.h"
 
@@ -35,8 +36,22 @@ namespace EWE {
         MaterialRenderInfo(MaterialFlags flags) : pipe{MaterialPipelines::GetMaterialPipe(flags)} {}
         void Render(uint8_t frameIndex);
     };
-    struct MaterialRenderInfoInstanced {
+
+    struct InstancedMaterialObjectInfo {
+        TextureDesc texture;
+        EWEModel* meshPtr;
+        RigidInstancedBufferHandler buffer;
+        InstancedMaterialObjectInfo(TextureDesc texture, EWEModel* meshPtr, uint32_t entityCount, bool computedTransforms) : 
+            texture{ texture },
+            meshPtr{ meshPtr }, 
+            buffer{ entityCount, computedTransforms } 
+        {}
+    };
+    struct InstancedMaterialRenderInfo {
         MaterialPipelines* pipe;
+        std::vector<InstancedMaterialObjectInfo> instancedInfo{};
+        InstancedMaterialRenderInfo(MaterialFlags flags) : pipe{ MaterialPipelines::GetMaterialPipe(flags | Material::Flags::Instanced) } {}
+        void Render(uint8_t frameIndex);
     };
 
     //singleton
@@ -51,6 +66,7 @@ namespace EWE {
         //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& cleanAndGetMaterialMap();
         void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo);
         void AddMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
+        void AddInstancedMaterialObject(MaterialTextureInfo materialInfo, EWEModel* modelPtr, uint64_t entityCount, bool computedTransforms);
 
         void AddMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr);
 
@@ -59,6 +75,5 @@ namespace EWE {
         std::vector<TextureDesc> CheckAndClearTextures();
 
         void Render(FrameInfo const& frameInfo);
-        void RenderMemberMethod(FrameInfo const& frameInfo);
     };
 }

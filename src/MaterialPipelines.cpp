@@ -66,6 +66,9 @@ namespace EWE {
 	void MaterialPipelines::DrawInstanced(EWEModel* model) {
 		model->BindAndDrawInstance(cmdBuf);
 	}
+	void MaterialPipelines::DrawInstanced(EWEModel* model, uint32_t instanceCount) {
+		model->BindAndDrawInstance(cmdBuf, instanceCount);
+	}
 
 
 

@@ -49,10 +49,10 @@ namespace EWE {
 		//put this pointer in to actor classes, matching the skeleton id, only use writedata
 		void SetFrameIndex(uint8_t frameIndex) {
 			for (auto& buffer : buffers) {
-				buffer.second.setFrameIndex(frameIndex);
+				buffer.second.SetFrameIndex(frameIndex);
 			}
 			for (auto& instanceBuffer : instancedBuffers) {
-				instanceBuffer.second.setFrameIndex(frameIndex);
+				instanceBuffer.second.SetFrameIndex(frameIndex);
 			}
 		}
 
@@ -91,7 +91,7 @@ namespace EWE {
 				//printf("creating a buffer that already exist \n");
 				//throw std::runtime_error("creating a buffer that already exist ");
 			}
-			buffers.emplace(skeletonID, SkinBufferHandler{ 1, buffers.at(referenceID).getInnerPtr() });
+			buffers.emplace(skeletonID, SkinBufferHandler{ 1, buffers.at(referenceID).GetInnerPtr() });
 		}
 
 		SkinRS::PipelineStruct& CreateInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, MaterialFlags textureFlags) {
