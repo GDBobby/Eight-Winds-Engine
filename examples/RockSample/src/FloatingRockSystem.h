@@ -66,7 +66,8 @@ namespace EWE {
 		EWEBuffer* rockBuffer{ nullptr };
 		EWEBuffer* trackBuffer{ nullptr };
 
-		VkBufferMemoryBarrier bufferBarrier[MAX_FRAMES_IN_FLIGHT];
+		VkBufferMemoryBarrier bufferBarrier[MAX_FRAMES_IN_FLIGHT * 2];
+		bool previouslySubmitted = false;
 
 		void InitComputeData();
 	};

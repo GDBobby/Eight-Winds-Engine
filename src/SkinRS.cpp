@@ -21,10 +21,11 @@ namespace EWE {
 	
 	}
 	SkinRenderSystem::~SkinRenderSystem() {
+#if DECONSTRUCTION_DEBUG
 		printf("before clearing pipes \n");
-		MaterialPipelines::CleanupStaticVariables();
 
 		printf("before clearing skin buffer descriptors");// , amount created - % d: % d \n", buffersCreated, instancedBuffersCreated);
+#endif
 		uint16_t bufferDescriptorsCleared = 0;
 		uint16_t instancedBuffersCleared = 0;
 		for (auto& buffer : buffers) {
@@ -43,7 +44,9 @@ namespace EWE {
 				instancedBuffersCleared++;
 			}
 		}
+#if DECONSTRUCTION_DEBUG
 		printf("after clearing buffer descriptors - count - %d:%d  \n", bufferDescriptorsCleared, instancedBuffersCleared);
+#endif
 		skinnedMainObject = nullptr;
 	}
 

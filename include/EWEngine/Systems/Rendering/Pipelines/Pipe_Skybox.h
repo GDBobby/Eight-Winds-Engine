@@ -9,8 +9,8 @@ namespace EWE {
 		~Pipe_Skybox() override {}
 
 	protected:
-		void CreatePipeLayout();
-		void CreatePipeline();
+		void CreatePipeLayout() final;
+		void CreatePipeline() final;
 	};
 }
 

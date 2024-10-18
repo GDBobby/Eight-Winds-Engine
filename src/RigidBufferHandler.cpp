@@ -31,33 +31,11 @@ namespace EWE {
 			descWriter.WriteBuffer(0, transformBuffer[1]->DescriptorInfo());
 			descriptorSet[1] = descWriter.Build();
 		}
-
-
-		if (computedTransforms) {
-
-			bufferBarrier = new VkBufferMemoryBarrier[2];
-			//these buffer barriers go from vertex to compute
-			bufferBarrier[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-			bufferBarrier[0].pNext = nullptr;
-			bufferBarrier[0].buffer = transformBuffer[0]->GetBuffer();
-			bufferBarrier[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-			bufferBarrier[0].dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-			bufferBarrier[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			bufferBarrier[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			bufferBarrier[0].offset = 0;
-			bufferBarrier[0].size = VK_WHOLE_SIZE;
-
-			bufferBarrier[1] = bufferBarrier[0];
-			bufferBarrier[1].buffer = transformBuffer[1]->GetBuffer();
-		}
 	}
 
 	RigidInstancedBufferHandler::~RigidInstancedBufferHandler() {
 		Deconstruct(transformBuffer[0]);
 		Deconstruct(transformBuffer[1]);
-		if (computedTransforms) {
-			delete[] bufferBarrier;
-		}
 	}
 
 	void RigidInstancedBufferHandler::WritePartialData(glm::mat4* transform, std::size_t offset) {

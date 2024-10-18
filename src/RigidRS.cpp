@@ -37,9 +37,6 @@ namespace EWE {
             if (instanceCount == 0) {
                 continue;
             }
-            if (instanceInfo.buffer.GetComputing()) {
-                pipe->DrawInstanced(instanceInfo.meshPtr, instanceCount, instanceInfo.buffer.GetBarrier(frameIndex));
-            }
             else{
                 pipe->DrawInstanced(instanceInfo.meshPtr, instanceCount);
             }

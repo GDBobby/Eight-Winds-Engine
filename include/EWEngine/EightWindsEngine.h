@@ -65,7 +65,7 @@ namespace EWE {
 
 
 #if BENCHMARKING_GPU
-		VkQueryPool queryPool = VK_NULL_HANDLE;
+		VkQueryPool queryPool{ VK_NULL_HANDLE };
 		float gpuTicksPerSecond = 0;
 #endif
 

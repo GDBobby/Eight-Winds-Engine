@@ -38,30 +38,7 @@ int main() {
 	float duration = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::high_resolution_clock::now() - begin).count();
 	printf("loading duration : %.5f\n", duration);
 
-	try {
-		eweSample->mainThread();
-	
-	}
-	catch (const std::exception& e) {
-		std::ofstream file;
-		file.open("errorLog.log");
-		if (file.is_open()) {
-			file << e.what() << "\n";
-			file.close();
-		}
-		else {
-			printf("try catch error \n \n");
-			printf("string error : %s", e.what());
-			printf("\n \n");
-
-			//just blasting it on all channels lol
-			std::cerr << e.what() << '\n';
-		}
-#if EWE_DEBUG
-		system("pause");
-#endif
-		return EXIT_FAILURE;
-	}
+	eweSample->mainThread();
 	Deconstruct(eweSample);
 #if EWE_DEBUG
 	system("pause");

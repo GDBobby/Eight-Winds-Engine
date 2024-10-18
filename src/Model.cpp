@@ -272,9 +272,8 @@ namespace EWE {
     }
 
     void EWEModel::BindAndDrawInstance(VkCommandBuffer cmdBuf, uint32_t instanceCount) {
-        VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(cmdBuf, 0, 2, buffers, offsets);
+        vkCmdBindVertexBuffers(cmdBuf, 0, 1, vertexBuffer->GetBufferAddress(), offsets);
         vkCmdBindIndexBuffer(cmdBuf, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(cmdBuf, indexCount, instanceCount, 0, 0, 0);
     }

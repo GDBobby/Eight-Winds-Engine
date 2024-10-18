@@ -368,6 +368,9 @@ namespace EWE {
 
 				VkQueryPoolCreateInfo queryPoolInfo = {};
 				queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+				queryPoolInfo.pNext = nullptr;
+				queryPoolInfo.flags = 0;
+				queryPoolInfo.pipelineStatistics = 0; //this could be useful https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueryPipelineStatisticFlagBits.html
 				queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
 				queryPoolInfo.queryCount = 2;
 				EWE_VK(vkCreateQueryPool, eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool);

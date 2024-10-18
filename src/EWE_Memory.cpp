@@ -17,7 +17,7 @@ bool notFirstMalloc = false;
 #if EWE_DEBUG
 std::unordered_map<uint64_t, std::source_location> mallocMap{};
 
-void updateMemoryLogFile() {
+void UpdateMemoryLogFile() {
 	std::ofstream memoryLogFile{};
 	if (mallocMap.size() == 0) {
 		memoryLogFile.open(memoryLogPath, std::ofstream::out | std::ofstream::trunc);
@@ -65,7 +65,7 @@ void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc){
 
 #if EWE_DEBUG
 	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), srcLoc);
-	updateMemoryLogFile();
+	UpdateMemoryLogFile();
 #endif
 }
 
@@ -84,6 +84,6 @@ void ewe_free_mem_track(void* ptr){
 	assert((found != mallocMap.end()) && "freeing memory that wasn't allocated");
 	mallocMap.erase(found);
 
-	updateMemoryLogFile();
+	UpdateMemoryLogFile();
 }
 #endif

@@ -156,7 +156,7 @@ namespace EWE {
 		InitComputeData();
 	}
 	FloatingRock::~FloatingRock() {
-		delete rockModel;
+		Deconstruct(rockModel);
 		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &compDescriptorSet[0]);
 		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &compDescriptorSet[1]);
 
@@ -165,6 +165,18 @@ namespace EWE {
 		EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), compShaderModule, nullptr);
 	}
 	void FloatingRock::Dispatch(float dt, FrameInfo const& frameInfo) {
+		if (previouslySubmitted) {
+			EWE_VK(vkCmdPipelineBarrier, frameInfo.cmdBuf,
+				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+				0,
+				0, nullptr,
+				1, &bufferBarrier[frameInfo.index + MAX_FRAMES_IN_FLIGHT],
+				0, nullptr
+			);
+		}
+		else {
+			previouslySubmitted = true;
+		}
 		EWE_VK(vkCmdBindPipeline, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, compPipeline);
 
 		EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf,
@@ -206,6 +218,15 @@ namespace EWE {
 		bufferBarrier[1] = bufferBarrier[0];
 		bufferBarrier[1].buffer = transformBuffers[1]->GetBuffer();
 
+		bufferBarrier[2] = bufferBarrier[0];
+
+		bufferBarrier[2].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		bufferBarrier[2].dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+
+		bufferBarrier[3] = bufferBarrier[1];
+		bufferBarrier[2].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		bufferBarrier[2].dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+
 
 		//descriptor set
 		EWEDescriptorSetLayout::Builder dslBuilder{};
@@ -244,9 +265,7 @@ namespace EWE {
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 
-		VkDescriptorSetLayout tempVkDSL{
-			tempDSL->GetDescriptorSetLayout()
-		};
+		VkDescriptorSetLayout tempVkDSL = tempDSL->GetDescriptorSetLayout();
 
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &tempVkDSL;

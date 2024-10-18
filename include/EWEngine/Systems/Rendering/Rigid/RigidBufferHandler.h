@@ -33,9 +33,6 @@ namespace EWE {
 		bool GetComputing() const {
 			return computedTransforms;
 		}
-		VkBufferMemoryBarrier* GetBarrier(uint8_t frameIndex) const {
-			return &bufferBarrier[frameIndex];
-		}
 
 	private:
 		EWEBuffer* transformBuffer[MAX_FRAMES_IN_FLIGHT] = { nullptr, nullptr };
@@ -46,7 +43,6 @@ namespace EWE {
 		uint32_t currentEntityCount;
 		uint8_t frameIndex; 
 		bool computedTransforms;
-		VkBufferMemoryBarrier* bufferBarrier; //move this back into RigidRS, it can't be called in the render pass
 		VkDescriptorSet descriptorSet[2];
 	};
 }//namespace EWE
