@@ -28,15 +28,21 @@ namespace EWE {
     void InstancedMaterialRenderInfo::Render(uint8_t frameIndex) {
         if (instancedInfo.size() == 0) { return; }
         pipe->BindPipeline();
+
         pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameIndex));
         for (auto const& instanceInfo : instancedInfo) {
-            pipe->BindTextureDescriptor(1, instanceInfo.texture);
+            pipe->BindDescriptor(1, instanceInfo.buffer.GetDescriptor(frameIndex));
+            pipe->BindTextureDescriptor(2, instanceInfo.texture);
             const uint32_t instanceCount = instanceInfo.buffer.GetCurrentEntityCount();
             if (instanceCount == 0) {
                 continue;
             }
-            
-            pipe->DrawInstanced(instanceInfo.meshPtr, instanceCount);
+            if (instanceInfo.buffer.GetComputing()) {
+                pipe->DrawInstanced(instanceInfo.meshPtr, instanceCount, instanceInfo.buffer.GetBarrier(frameIndex));
+            }
+            else{
+                pipe->DrawInstanced(instanceInfo.meshPtr, instanceCount);
+            }
         }
     }
 
@@ -47,17 +53,19 @@ namespace EWE {
 
         void Initialize() {
             materialMap = Construct<std::unordered_map<MaterialFlags, MaterialRenderInfo>>({});
+            instancedMaterialMap = Construct< std::unordered_map<MaterialFlags, InstancedMaterialRenderInfo>>({});
         }
         void Destruct() {
             materialMap->clear();
-            delete materialMap;
+            instancedMaterialMap->clear();
             Deconstruct(materialMap);
+            Deconstruct(instancedMaterialMap);
         }
         void AddInstancedMaterialObject(MaterialTextureInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms) {
             assert(modelPtr != nullptr);
             auto findRet = instancedMaterialMap->find(materialInfo.materialFlags);
             if (findRet == instancedMaterialMap->end()) {
-                auto empRet = instancedMaterialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
+                auto empRet = instancedMaterialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, entityCount);
                 empRet.first->second.instancedInfo.emplace_back(materialInfo.texture, modelPtr, entityCount, computedTransforms);
             }
             else {
@@ -72,40 +80,33 @@ namespace EWE {
             }
         }
 
-void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
-#if EWE_DEBUG
-    assert(renderInfo.meshPtr != nullptr);
-#endif
-    auto findRet = materialMap->find(materialInfo.materialFlags);
-    if (findRet == materialMap->end()) {
-        auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
-        empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
-    }
-    else {
-        auto textureFindRet = findRet->second.materialMap.find(materialInfo.texture);
-        if (textureFindRet == findRet->second.materialMap.end()) {
-            findRet->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
-        }
-        else {
-            textureFindRet->second.push_back(renderInfo);
-        }
-                
-    }
-}
-        void AddMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
-#if EWE_DEBUG
-            assert(modelPtr != nullptr);
-#endif
-
-            if (!materialMap->contains(materialInfo.materialFlags)) {
+        void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
+        #if EWE_DEBUG
+            assert(renderInfo.meshPtr != nullptr);
+        #endif
+            auto findRet = materialMap->find(materialInfo.materialFlags);
+            if (findRet == materialMap->end()) {
                 auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
-                empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{MaterialObjectInfo{ ownerTransform, modelPtr, drawable }});
+                empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
             }
             else {
-                materialMap->at(materialInfo.materialFlags).materialMap.at(materialInfo.texture).emplace_back(ownerTransform, modelPtr, drawable);
+                auto textureFindRet = findRet->second.materialMap.find(materialInfo.texture);
+                if (textureFindRet == findRet->second.materialMap.end()) {
+                    findRet->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
+                }
+                else {
+                    textureFindRet->second.push_back(renderInfo);
+                }
+                
             }
         }
+        void AddMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
+            MaterialObjectInfo paramPass{ ownerTransform, modelPtr, drawable };
+            AddMaterialObject(materialInfo, paramPass);
+        }
         void AddMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr) {
+            //this should probably 
+
             for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
                 for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
                     if (iterTexID->first == copyID) {
@@ -120,6 +121,11 @@ void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& ren
                     }
                 }
             }
+#if EWE_DEBUG
+            assert(false && "failed to find matching texture");
+#else
+            //unreachable
+#endif
         }
         void RemoveByTransform(TextureDesc textureID, TransformComponent* ownerTransform) {
             for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
@@ -135,7 +141,32 @@ void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& ren
                 }
 
             }
+#if EWE_DEBUG
+            assert(false && "failed to find matching texture");
+#else
+            //unreachable
+#endif
         }
+        void RemoveInstancedMaterialObject(EWEModel* meshPtr) {
+            for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
+                for (auto instancedIter = iter->second.instancedInfo.begin(); instancedIter != iter->second.instancedInfo.end(); instancedIter++) {
+                    if (meshPtr == instancedIter->meshPtr) {
+                        iter->second.instancedInfo.erase(instancedIter);
+                        if (iter->second.instancedInfo.size() == 0) {
+                            instancedMaterialMap->erase(iter);
+                        }
+                        return;
+                    }
+                }
+            }
+#if EWE_DEBUG
+            assert(false && "failed to find mesh");
+#else
+            //unreachable
+#endif
+        }
+
+
         std::vector<TextureDesc> CheckAndClearTextures() {
             std::vector<TextureDesc> returnVector;
             for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
@@ -155,7 +186,25 @@ void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& ren
                 //    iter++;
                 //}
             }
+#if EWE_DEBUG
+            if (returnVector.size() == 0) {
+                printf("WARNING : failed to remove textures\n");
+            }
+#endif
             return returnVector;
+        }
+        void RemoveInstancedObject(EWEModel* modelPtr){
+            for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
+                for (auto instanceIter = iter->second.instancedInfo.begin(); instanceIter != iter->second.instancedInfo.end(); instanceIter++) {
+                    if (modelPtr == instanceIter->meshPtr) {
+                        iter->second.instancedInfo.erase(instanceIter);
+                        if (iter->second.instancedInfo.size() == 0) {
+                            printf("WARNING: I'm not sure how i want to handle this yet\n");
+                            instancedMaterialMap->erase(iter);
+                        }
+                    }
+                }
+            }
         }
 
         void RenderInstancedMemberMethod(FrameInfo const& frameInfo) {
@@ -172,6 +221,7 @@ void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& ren
                 uint8_t flags = iter->first;
                 assert(((flags & 128) == 0) && "should not have bones here");
 #endif
+                iter->second.Render(frameInfo.index);
             }
         }
         void RenderMemberMethod(FrameInfo const& frameInfo) {
@@ -207,6 +257,74 @@ void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& ren
 
             RenderMemberMethod(frameInfo);
             RenderInstancedMemberMethod(frameInfo);
+        }
+
+        const EWEBuffer* GetTransformBuffer(EWEModel* meshPtr, uint8_t frameIndex) {
+            for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
+                for (auto const& instanced : iter->second.instancedInfo) {
+                    if (meshPtr == instanced.meshPtr) {
+                        return instanced.buffer.GetBuffer(frameIndex);
+                    }
+                }
+            }
+#if EWE_DEBUG
+            assert(false && "failed to find buffer");
+#else
+            //unreachable
+#endif
+        }
+        const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr, uint8_t frameIndex) {
+#if EWE_DEBUG
+            assert(instancedMaterialMap->contains(materialFlags));
+#endif
+            auto& ref = instancedMaterialMap->at(materialFlags);
+            for (auto const& instanced : ref.instancedInfo) {
+                if (meshPtr == instanced.meshPtr) {
+                    return instanced.buffer.GetBuffer(frameIndex);
+                }
+            }
+#if EWE_DEBUG
+            assert(false && "failed to find buffer");
+#else
+            //unreachable
+#endif
+        }
+
+        std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr) {
+            for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
+                for (auto const& instanced : iter->second.instancedInfo) {
+                    if (meshPtr == instanced.meshPtr) {
+                        return {
+                            instanced.buffer.GetBuffer(0),
+                            instanced.buffer.GetBuffer(1)
+                        };
+                    }
+                }
+            }
+#if EWE_DEBUG
+            assert(false && "failed to find buffer");
+#else
+            //unreachable
+#endif
+        }
+        std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr) {
+#if EWE_DEBUG
+            assert(instancedMaterialMap->contains(materialFlags));
+#endif
+            auto& ref = instancedMaterialMap->at(materialFlags);
+            for (auto const& instanced : ref.instancedInfo) {
+                if (meshPtr == instanced.meshPtr) {
+                    return {
+                        instanced.buffer.GetBuffer(0),
+                        instanced.buffer.GetBuffer(1)
+                    };
+                }
+            }
+#if EWE_DEBUG
+            assert(false && "failed to find buffer");
+#else
+            //unreachable
+#endif
         }
     }//namespace RigidRenderingSystem
 } //namespace EWE

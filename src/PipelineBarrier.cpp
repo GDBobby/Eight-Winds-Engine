@@ -3,7 +3,7 @@
 #include <iterator>
 
 namespace EWE {
-	void PipelineBarrier::SubmitBarrier(VkCommandBuffer cmdBuf) const {
+	void PipelineBarrier::Submit(VkCommandBuffer cmdBuf) const {
 		vkCmdPipelineBarrier(cmdBuf,
 			srcStageMask, dstStageMask,
 			dependencyFlags,
@@ -43,8 +43,7 @@ namespace EWE {
 				imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 			}
 			else {
-				printf("unsupported image layout transition \n");
-				throw std::invalid_argument("unsupported layout transition!");
+				assert(false && "unsupported layout transition");
 			}
 
 			return imageMemoryBarrier;

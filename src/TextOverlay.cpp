@@ -189,11 +189,13 @@ namespace EWE {
 		{   //initialize image
 
 			VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
-			PipelineBarrier pipeBarrier{};
-			pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-			pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-			pipeBarrier.AddBarrier(imageBarrier);
-			pipeBarrier.SubmitBarrier(cmdBuf);
+			vkCmdPipelineBarrier(cmdBuf,
+				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+				0,
+				0, nullptr,
+				0, nullptr,
+				1, &imageBarrier
+			);
 		}
 
 		{ //transfer data to image
@@ -225,7 +227,7 @@ namespace EWE {
 			pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 			pipeBarrier.AddBarrier(imageBarrier);
 			pipeBarrier.dependencyFlags = 0;
-			pipeBarrier.SubmitBarrier(cmdBuf);
+			pipeBarrier.Submit(cmdBuf);
 
 			CommandWithCallback cmdCb{};
 			cmdCb.cmdBuf = cmdBuf;
@@ -239,7 +241,7 @@ namespace EWE {
 					printf(" ~~~~~~ submitting text overlay barrier on the graphics queue\n");
 #endif
 					VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
-					pipeBarrier.SubmitBarrier(cmdBuf);
+					pipeBarrier.Submit(cmdBuf);
 					syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
 				};
 			syncHub->EndSingleTimeCommandTransfer(cmdCb);
@@ -643,7 +645,6 @@ namespace EWE {
 
 			EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet[frameInfo.index], 0, nullptr);
 
-			VkDeviceSize offsets = 0;
 			//EWE_VK(vkCmdBindVertexBuffers, commandBuffer, 0, 1, &vertexBuffer, &offsets);
 			//EWE_VK(vkCmdBindVertexBuffers, commandBuffer, 1, 1, &vertexBuffer, &offsets);
 			EWE_VK(vkCmdDraw, frameInfo.cmdBuf, 4, numLetters, 0, 0);

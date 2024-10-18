@@ -22,11 +22,11 @@ namespace EWE {
 #else
 		PipelineSystem() {}
 #endif
-		~PipelineSystem() {}
 		virtual void CreatePipeLayout() = 0;
 		virtual void CreatePipeline() = 0;
 
 	public:
+		virtual ~PipelineSystem() {}
 		static void SetFrameInfo(FrameInfo const& frameInfo);
 		static PipelineSystem* At(PipelineID pipeID);
 		static void Emplace(PipelineID pipeID, PipelineSystem* pipeSys);

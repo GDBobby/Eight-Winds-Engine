@@ -244,7 +244,6 @@ namespace EWE {
                     signalSemaphores[i] = nullptr;
                 }
             }
-
             inUse = false;
             if (inlineCallbacks) {
                 inlineCallbacks();

@@ -40,9 +40,6 @@ namespace EWE {
 			return &gpuReference->at(frameIndex).descriptor;
 		}
 	}
-	std::vector<SkinBufferHandler::InnerBufferStruct>* SkinBufferHandler::GetInnerPtr() {
-		return &gpuData;
-	}
 	SkinBufferHandler::InnerBufferStruct::InnerBufferStruct(uint8_t maxActorCount, uint32_t boneBlockSize) :
 		currentActorCount{maxActorCount}
 	{

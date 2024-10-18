@@ -37,3 +37,5 @@ external/
 compile.bat
 *.dll
 *.json
+*.TMP
+examples/RockSample/shaders/materials/debugging/compileDebugger.bat

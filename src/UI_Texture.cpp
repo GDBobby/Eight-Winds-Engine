@@ -8,7 +8,7 @@ namespace EWE {
         void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek, Queue::Enum queue) {
             std::size_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
             uiImageInfo.arrayLayers = pixelPeek.size();
-            VkDeviceSize imageSize = layerSize * uiImageInfo.arrayLayers;
+            const VkDeviceSize imageSize = layerSize * uiImageInfo.arrayLayers;
 #if EWE_DEBUG
             assert(pixelPeek.size() > 1 && "creating an array without an array of images?");
             const VkDeviceSize assertionSize = pixelPeek[0].width * pixelPeek[0].height * 4;
@@ -22,7 +22,7 @@ namespace EWE {
             StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
             vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
 #else
-            StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice());
+            StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice() });
             EWE_VK(vkMapMemory, EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
 #endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
@@ -57,10 +57,13 @@ namespace EWE {
             imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
             imageCreateInfo.flags = 0;// VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
-            EWEDevice* const& eweDevice = EWEDevice::GetEWEDevice();
+#if EWE_DEBUG
             printf("before creating image\n");
+#endif
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.memory);
+#if EWE_DEBUG
             printf("after creating image\n");
+#endif
 #if DEBUG_NAMING
             DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), uiImageInfo.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
 #endif
@@ -75,6 +78,7 @@ namespace EWE {
 
             VkImageViewCreateInfo viewInfo{};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            viewInfo.pNext = nullptr;
             viewInfo.image = uiImageInfo.image;
             viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
             viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
@@ -92,6 +96,7 @@ namespace EWE {
 
             VkSamplerCreateInfo samplerInfo{};
             samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            samplerInfo.pNext = nullptr;
 
             //if(tType == tType_2d){
             samplerInfo.magFilter = VK_FILTER_NEAREST;

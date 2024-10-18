@@ -1,6 +1,7 @@
 #version 460
 static const float M_2_PI = 6.283185307179586476925286766559;
 static const float M_PI = 3.1415926535897932384626433832795;
+static const uint MAX_TRACK_COUNT = 32;
 
 struct RockData {
     uint32_t trackID;
@@ -53,9 +54,15 @@ struct Transform {
     }
 };
 
-Buffer<RockData> rockInput;
-Buffer<TrackData> trackInput;
-RWBuffer<mat4> rockOutput;
+layout(set = 0, binding = 0) uniform RockBuffer {
+    RockData rockInput[1024];
+};
+layout(set = 0, binding = 1) uniform TrackBuffer {
+    TrackData trackInput[MAX_TRACK_COUNT];
+};
+layout(set = 0, binding = 2) buffer OutputBuffer {
+    mat4 rockOutput[];
+};
 
 layout(push_constant) uniform Push {
     float secondsSinceBeginning;

@@ -77,7 +77,7 @@ namespace EWE {
 		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
 		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f });
 		InitGlobalBuffers();
-		DescriptorHandler::initGlobalDescriptors(bufferMap);
+		DescriptorHandler::InitGlobalDescriptors(bufferMap);
 		//printf("back to ui handler? \n");
 		advancedRS.takeUIHandlerPtr(&uiHandler);
 		//advancedRS.updateLoadingPipeline();
@@ -116,7 +116,7 @@ namespace EWE {
 #endif
 		printf("after deconstructig level manager \n");
 		vkDestroyQueryPool(eweDevice.Device(), queryPool, nullptr);
-		DescriptorHandler::cleanup();
+		DescriptorHandler::Cleanup();
 
 
 		RigidRenderingSystem::Destruct();
@@ -313,6 +313,7 @@ namespace EWE {
 		std::cout << "before skin render \n";
 #endif
 		skinnedRS.Render(frameInfo);
+		RigidRenderingSystem::Render(frameInfo);
 #if RENDER_DEBUG
 		std::cout << "end draw3dObjects \n";
 #endif

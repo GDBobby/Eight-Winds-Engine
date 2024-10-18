@@ -110,8 +110,7 @@ namespace EWE {
             break;
         }
         default: {
-            printf("unsupported texture shader stage flag \n");
-            throw std::runtime_error("invalid shader stage flag for textures");
+            assert(false && "invalid shader stage flag for textures");
             break;
         }
         }
@@ -124,26 +123,26 @@ namespace EWE {
         for (uint8_t j = 0; j < 6; j++) {
             
             for (uint8_t i = 0; i < stageCounts[j]; i++) {
-                dslBuilder.addBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlags);
+                dslBuilder.AddBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlags);
                 currentBinding++;
             }
             stageFlags <<= 1;
         }
         for (uint8_t i = 0; i < stageCounts[6]; i++) {
-            dslBuilder.addBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS);
+            dslBuilder.AddBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS);
             currentBinding++;
         }
 
         for (uint8_t i = 0; i < stageCounts[7]; i++) {
-            dslBuilder.addBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL);
+            dslBuilder.AddBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL);
             currentBinding++;
         }
 
         for (uint8_t i = 0; i < stageCounts[8]; i++) {
-            dslBuilder.addBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+            dslBuilder.AddBinding(currentBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
             currentBinding++;
         }
-        return dslBuilder.build();
+        return dslBuilder.Build();
     }
 
     EWEDescriptorSetLayout* TextureDSLInfo::GetSimpleDSL(VkShaderStageFlags stageFlag) {
@@ -156,8 +155,8 @@ namespace EWE {
         }
         
         EWEDescriptorSetLayout::Builder dslBuilder{};
-        dslBuilder.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlag);
-        return descSetLayouts.emplace(dslInfo, dslBuilder.build()).first->second;
+        dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlag);
+        return descSetLayouts.emplace(dslInfo, dslBuilder.Build()).first->second;
     }
 
     EWEDescriptorSetLayout* TextureDSLInfo::GetDescSetLayout() {
@@ -246,11 +245,13 @@ namespace EWE {
             VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
             imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            PipelineBarrier pipeBarrier{};
-            pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-            pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-            pipeBarrier.AddBarrier(imageBarrier);
-            pipeBarrier.SubmitBarrier(cmdBuf);
+            vkCmdPipelineBarrier(cmdBuf,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &imageBarrier
+            );
         }
         //printf("before copy buffer to image \n");
         {
@@ -272,11 +273,13 @@ namespace EWE {
                     VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
                     imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    PipelineBarrier pipeBarrier{};
-                    pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-                    pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-                    pipeBarrier.AddBarrier(imageBarrier);
-                    pipeBarrier.SubmitBarrier(cmdBuf);
+                    vkCmdPipelineBarrier(cmdBuf,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &imageBarrier
+                    );
 
                     syncHub->EndSingleTimeCommandGraphics(cmdBuf);
 #if USING_VMA
@@ -367,13 +370,13 @@ namespace EWE {
                     else {
                         imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                         pipeBarrier.AddBarrier(imageBarrier);
-                        pipeBarrier.SubmitBarrier(cmdBuf);
+                        pipeBarrier.Submit(cmdBuf);
 #if IMAGE_DEBUGGING
                         printf("image name : %s\n", imageName.c_str());                        
                         cmdCb.graphicsCallback = [syncHub, barrier = std::move(pipeBarrier), imageName] {
                             VkCommandBuffer tCmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
                             printf("image name in graphics callback : %s\n", imageName.c_str());
-                            barrier.SubmitBarrier(tCmdBuf);
+                            barrier.Submit(tCmdBuf);
                             syncHub->EndSingleTimeCommandGraphicsGroup(tCmdBuf);
                         };
 #else

@@ -28,8 +28,8 @@ namespace EWE {
 	public:
 		EWESample(EightWindsEngine& ewEngine, LoadingThreadTracker& loadingThreadTracker);
 		~EWESample();
-		GLFWwindow* windowPtr;
 		EightWindsEngine& ewEngine;
+		GLFWwindow* windowPtr;
 		MenuManager& menuManager;
 
 		Scene_Enum lastScene = scene_mainmenu;

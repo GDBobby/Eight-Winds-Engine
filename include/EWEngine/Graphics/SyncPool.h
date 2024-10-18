@@ -71,6 +71,9 @@ namespace EWE{
         FenceData* fences;
         SemaphoreData* semaphores;
 
+        std::mutex fenceMut{};
+        std::mutex semMut{};
+
     public:
         SyncPool(uint8_t size, VkDevice device);
 
@@ -98,8 +101,12 @@ namespace EWE{
         
         bool CheckFencesForUsage();
         void CheckFencesForCallbacks(std::mutex& transferPoolMutex);
-
-        SemaphoreData* GetSemaphore();
+#if SEMAPHORE_TRACKING
+        SemaphoreData* GetSemaphoreForSignaling(const char* signalName);
+#else
+        SemaphoreData* GetSemaphoreForSignaling();
+#endif
+        //this locks the fence as well
         FenceData& GetFence();
         //FenceData& GetFenceSignal(Queue::Enum queue);
         

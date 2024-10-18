@@ -63,7 +63,7 @@ namespace EWE {
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
 			transformDescriptor.emplace_back(
-				EWEDescriptorWriter(DescriptorHandler::getLDSL(LDSL_boned), DescriptorPool_Global)
+				EWEDescriptorWriter(DescriptorHandler::GetLDSL(LDSL_boned), DescriptorPool_Global)
 				.WriteBuffer(0, leafBuffer[i]->DescriptorInfo())
 				.Build()
 			);
@@ -368,7 +368,7 @@ namespace EWE {
 		currentPipe = myID;
 #endif
 		BindPipeline();
-		BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+		BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameInfo.index));
 
 		//printf("after binding descriptor set 0 \n");
 		BindDescriptor(1, &leafTextureID);
@@ -382,20 +382,20 @@ namespace EWE {
 
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
-		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
+		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
 		printf("before loading vert shader \n");
-		glslang::InitializeProcess();
-		Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getLoadingVertShader(), &vertexShaderModule);
+		ShaderBlock::InitializeGlslang();
+		Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetLoadingVertShader(), &vertexShaderModule);
 
 		printf("before loading frag shader \n");
-		Pipeline_Helper_Functions::createShaderModule(ShaderBlock::getLoadingFragShader(), &fragmentShaderModule);
+		Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetLoadingFragShader(), &fragmentShaderModule);
 		printf("after loading creation shaders \n");
-		glslang::FinalizeProcess();
+		ShaderBlock::FinalizeGlslang();
 
 		pipe = std::make_unique<EWEPipeline>(vertexShaderModule, fragmentShaderModule, pipelineConfig);
 		printf("after creating leaf pipeline\n");
@@ -408,9 +408,9 @@ namespace EWE {
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
 		std::vector<VkDescriptorSetLayout> setLayouts = {
-			DescriptorHandler::getDescSetLayout(LDSL_global),
+			DescriptorHandler::GetDescSetLayout(LDSL_global),
 			TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->GetDescriptorSetLayout(),
-			DescriptorHandler::getDescSetLayout(LDSL_boned)
+			DescriptorHandler::GetDescSetLayout(LDSL_boned)
 		};
 
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());

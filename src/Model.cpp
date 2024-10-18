@@ -80,7 +80,7 @@ namespace EWE {
     EWEModel* EWEModel::CreateSimpleModelFromFile(const std::string& filePath, Queue::Enum queue) {
         SimpleBuilder builder{};
         builder.LoadModel(filePath);
-        return Construct<EWEModel>({ (builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue });
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue });
     }
     EWEModel* EWEModel::CreateGrassModelFromFile(const std::string& filePath, Queue::Enum queue) {
         GrassBuilder builder{};
@@ -88,7 +88,6 @@ namespace EWE {
         return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue });
     }
     
-
     inline void CopyModelBuffer(StagingBuffer* stagingBuffer, VkBuffer dstBuffer, const VkDeviceSize bufferSize, const Queue::Enum queue) {
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(queue);

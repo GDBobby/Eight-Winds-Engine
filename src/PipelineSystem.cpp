@@ -37,8 +37,8 @@ namespace EWE {
 		assert(foundPipe != pipelineSystem.end() && "destructing invalid pipe \n");
 #endif
 
-		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), foundPipe->second->pipeLayout, nullptr);
-		foundPipe->second->~PipelineSystem();
+		EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), foundPipe->second->pipeLayout, nullptr);
+		Deconstruct(foundPipe->second);
 	}
 
 	PipelineSystem* PipelineSystem::At(PipelineID pipeID) {
@@ -55,7 +55,7 @@ namespace EWE {
 #if EWE_DEBUG
 		assert(currentPipe == myID && "pipe id mismatch on model bind");
 #endif
-		pipe->bind(cmdBuf);
+		pipe->Bind(cmdBuf);
 		bindedTexture = TEXTURE_UNBINDED_DESC;
 	}
 	void PipelineSystem::BindModel(EWEModel* model) {

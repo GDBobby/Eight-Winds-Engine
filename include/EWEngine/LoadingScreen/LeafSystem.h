@@ -50,7 +50,7 @@ namespace EWE {
 		//helix -> ellRatio~1  rotRatio~1
 		//spiral -> elLRatio~0 rotRatio~4
 		LeafSystem();
-		~LeafSystem();
+		~LeafSystem() override;
 
 		void LeafPhysicsInitialization();
 		void FallCalculation(float timeStep, uint8_t frameIndex);
@@ -76,18 +76,18 @@ namespace EWE {
 		std::mt19937 randomGen;
 		std::uniform_real_distribution<float> ellipseRatioDistribution;
 		std::uniform_real_distribution<float> rotRatioDistribution;
-		std::uniform_real_distribution<float> initTimeDistribution;
-		std::uniform_real_distribution<float> angularFrequencyDistribution;
+		std::uniform_int_distribution<int> motionDistribution;
 		std::uniform_real_distribution<float> ellipseOscDistribution;
-		std::uniform_real_distribution<float> widthVarianceDistribution;
+		std::uniform_real_distribution<float> angularFrequencyDistribution;
+		std::uniform_real_distribution<float> initTimeDistribution;
 		std::uniform_real_distribution<float> depthVarianceDistribution;
+		std::uniform_real_distribution<float> widthVarianceDistribution;
 		std::uniform_real_distribution<float> fallSwingVarianceDistribution;
 		std::uniform_real_distribution<float> initHeightVarianceDistribution;
 		std::uniform_real_distribution<float> varianceDistribution;
 		std::uniform_real_distribution<float> rockDist;
 
 
-		std::uniform_int_distribution<int> motionDistribution;
 
 		const float gravity = -1.06566f;
 		//float FrictionPerp = 5.f;

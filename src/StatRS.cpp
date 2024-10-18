@@ -1,9 +1,10 @@
 #include "EWEngine/Systems/Rendering/Stationary/StatRS.h"
 
 namespace EWE {
-	StaticRenderSystem* StaticRenderSystem::skinnedMainObject{nullptr};
+	StaticRenderSystem* statMainObject{nullptr};
 
-	StaticRenderSystem::StaticRenderSystem(uint32_t pipelineCount, uint32_t modelLimit) : modelLimit{ modelLimit } {
+	void StaticRenderSystem::Init(uint32_t pipelineCount, uint32_t modelLimit) {
+		this->modelLimit = modelLimit;
 		pipelineStructs.reserve(pipelineCount);
 
 		size_t alignment = 0;
@@ -11,19 +12,18 @@ namespace EWE {
 
 		alignment = std::ceil(static_cast<double>((sizeof(glm::mat4) + sizeof(glm::mat3))) / alignment) * alignment;
 
-		transformBuffer = std::make_unique<EWEBuffer>(sizeof(glm::mat4) + sizeof(glm::mat3), modelLimit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);// , device.getProperties().limits.minStorageBufferOffsetAlignment);
+		transformBuffer = std::make_unique<EWEBuffer>(sizeof(glm::mat4) + sizeof(glm::mat3), modelLimit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);// , device.getProperties().limits.minStorageBufferOffsetAlignment);
 	}
 
 	void StaticRenderSystem::InitStaticRS(uint32_t pipelineCount, uint32_t modelLimit) {
-		assert(skinnedMainObject == nullptr && "double init");
+		assert(statMainObject == nullptr && "double init");
 
-		skinnedMainObject = Construct<StaticRenderSystem>({ pipelineCount, modelLimit });
+		statMainObject = Construct<StaticRenderSystem>({});
+		statMainObject->Init(pipelineCount, modelLimit);
 	}
 	void StaticRenderSystem::DestructStaticRS() {
 
-		skinnedMainObject->~StaticRenderSystem();
-		ewe_free(skinnedMainObject);
-		Deconstruct(skinnedMainObject);
+		Deconstruct(statMainObject);
 	}
 	bool StaticRenderSystem::AddStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureDesc texture, TransformComponent& transform) {
 

@@ -69,7 +69,7 @@ void Deconstruct(T* object) {
 #else
     delete object;
 #endif
-    ewe_free_mem_track();
+    ewe_free_mem_track(object);
 }
 
 

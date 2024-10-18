@@ -203,12 +203,11 @@ namespace EWE {
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = &transitionData.waitSemaphore->semaphore;
 
-		SemaphoreData* signalSemaphore = syncPool.GetSemaphore();
 #if SEMAPHORE_TRACKING
 		static uint64_t graphicsCallbackSemaphoreCounter = 0;
 		std::string graphicsCallbackSemaphoreName{ "graphics callback" };
 		graphicsCallbackSemaphoreName += std::to_string(graphicsCallbackSemaphoreCounter++);
-		signalSemaphore->BeginSignaling(graphicsCallbackSemaphoreName.c_str());
+		SemaphoreData* signalSemaphore = syncPool.GetSemaphoreForSignaling(graphicsCallbackSemaphoreName.c_str());
 #else
 		signalSemaphore->BeginSignaling();
 #endif
@@ -220,7 +219,6 @@ namespace EWE {
 		FenceData& fence = syncPool.GetFence();
 		fence.signalSemaphores[Queue::graphics] = signalSemaphore;
 		fence.waitSemaphores.push_back(transitionData.waitSemaphore);
-		fence.Lock();
 		EWE_VK(vkQueueSubmit, queues[Queue::graphics], 1, &submitInfo, fence.fence);
 
 
@@ -328,15 +326,13 @@ namespace EWE {
 			std::function<void()> graphicsCallbacks = nullptr;
 
 			if (cmdCbs.CleanGraphicsCallbacks()) {
-				fenceData.signalSemaphores[Queue::graphics] = syncPool.GetSemaphore();
 #if SEMAPHORE_TRACKING
 				static uint64_t transferSignalSemaphoreCounter = 0;
 				std::string transferSignalSemaphoreName = "transfer ";
 				transferSignalSemaphoreName += std::to_string(transferSignalSemaphoreCounter++);
-
-				fenceData.signalSemaphores[Queue::graphics]->BeginSignaling(transferSignalSemaphoreName.c_str());
+				fenceData.signalSemaphores[Queue::graphics] = syncPool.GetSemaphoreForSignaling(transferSignalSemaphoreName.c_str());
 #else
-				fenceData.signalSemaphores[Queue::graphics]->BeginSignaling();
+				fenceData.signalSemaphores[Queue::graphics] = syncPool.GetSemaphoreForSignaling();
 #endif
 				graphicsCallbacks = cmdCbs.CombineGraphicsCallbacks();
 			}
@@ -373,10 +369,7 @@ namespace EWE {
 				printf("signal semaphore address : %zu\n", reinterpret_cast<std::size_t>(fenceData.signalSemaphores[Queue::graphics]));
 #endif
 			}
-
-			transferPoolMutex.lock();
-			transferPoolMutex.unlock();
-
+			fenceData.Unlock();
 			cmdCbs = TransferCommandManager::PrepareSubmit();
 		}
 	

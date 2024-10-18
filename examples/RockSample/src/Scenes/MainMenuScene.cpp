@@ -36,21 +36,22 @@ namespace EWE {
 	}
 	void MainMenuScene::exit() {
 		PipelineSystem::DestructAt(Pipe::textured);
-		ewe_free(PipelineSystem::At(Pipe::textured));
 		ewEngine.objectManager.eweObjects.clear();
 	}
 	bool MainMenuScene::render(double dt) {
 		//printf("render main menu scene \n");
 
 
-		FrameInfo frameInfo = ewEngine.BeginRender();
+		FrameInfo frameInfo = ewEngine.BeginRenderWithoutPass();
+		
 		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 			//printf("drawing \n");
+			rockSystem.Dispatch(dt, frameInfo);
 
+			ewEngine.eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 			ewEngine.DrawObjects(frameInfo, dt);
 
-			rockSystem.update();
-			rockSystem.render(frameInfo);
+			//rockSystem.Render(frameInfo);
 			//printf("after displaying render info \n");
 			ewEngine.EndRender(frameInfo);
 			ewEngine.EndFrame(frameInfo);

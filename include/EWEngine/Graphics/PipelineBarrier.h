@@ -26,7 +26,7 @@ namespace EWE {
 		void AddBarrier(VkBufferMemoryBarrier const& bufferBarrier) {
 			bufferBarriers.push_back(bufferBarrier);
 		}
-		void SubmitBarrier(VkCommandBuffer cmdBuf) const;
+		void Submit(VkCommandBuffer cmdBuf) const;
 
 		//the parameter object passed in is no longer usable, submitting both barriers will potentially lead to errors
 		void Merge(PipelineBarrier const& other);

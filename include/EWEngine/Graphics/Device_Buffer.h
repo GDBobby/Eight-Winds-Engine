@@ -20,6 +20,7 @@ namespace EWE {
         void WriteToBufferAligned(void* data, VkDeviceSize size, uint64_t alignmentOffset);
         void WriteToBuffer(void const* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         void Flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        VkDescriptorBufferInfo DescriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
         VkDescriptorBufferInfo* DescriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         void Invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 

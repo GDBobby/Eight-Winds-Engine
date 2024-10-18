@@ -189,11 +189,21 @@ namespace EWE {
             ThreadPool::EnqueueVoidFunction(cmdFreeWrapper);
         }
     }
-
-    SemaphoreData* SyncPool::GetSemaphore() {
+#if SEMAPHORE_TRACKING
+    SemaphoreData* SyncPool::GetSemaphoreForSignaling(const char* signalName) {
+#else
+    SemaphoreData* SyncPool::GetSemaphore()
+#endif
         while (true) {
+            semMut.lock();
             for (uint16_t i = 0; i < size * 2; i++) {
                 if (semaphores[i].Idle()) {
+#if SEMAPHORE_TRACKING
+                    semaphores[i].BeginSignaling(signalName);
+#else
+                    semaphores[i].BeginSignaling();
+#endif
+                    semMut.unlock();
                     return &semaphores[i];
                 }
             }
@@ -203,9 +213,12 @@ namespace EWE {
     }
     FenceData& SyncPool::GetFence() {
         while (true) {
+            fenceMut.lock();
             for (uint8_t i = 0; i < size; i++) {
                 if (!fences[i].inUse) {
+                    fences[i].Lock();
                     fences[i].inUse = true;
+                    fenceMut.unlock();
                     return fences[i];
                 }
             }

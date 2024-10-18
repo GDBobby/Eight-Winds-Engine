@@ -55,6 +55,7 @@ namespace EWE{
 
 		void BindModel(EWEModel* model);
 		void BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet);
+		void BindDescriptor(uint8_t descSlot, const VkDescriptorSet* descSet);
 		void BindTextureDescriptor(uint8_t descSlot, TextureDesc texID);
 
 		void Push(void* push);
@@ -76,7 +77,7 @@ namespace EWE{
 		//pipelayout index is computed before passing in because the calling function is always using it as well
 		static void InitMaterialPipeLayout(uint16_t materialPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump);
 		static MaterialPipelines* GetMaterialPipe(MaterialFlags flags);
-		static MaterialPipelines* GetInstancedSkinMaterialPipe(uint16_t boneCount, MaterialFlags flags);
+		static MaterialPipelines* GetMaterialPipe(MaterialFlags flags, uint16_t boneCount);
 
 		static void InitStaticVariables();
 		static void CleanupStaticVariables();
@@ -86,21 +87,10 @@ namespace EWE{
 		static MaterialPipelines* At(uint16_t boneCount, MaterialFlags flags);
 		static void SetFrameInfo(FrameInfo const& frameInfo);
 
+
 	protected:
 		static std::unordered_map<MaterialFlags, MaterialPipelines*> materialPipelines;
 		static std::unordered_map<SkinInstanceKey, MaterialPipelines*> instancedBonePipelines;
-
-		struct MaterialPipeLayoutInfo {
-			VkPipelineLayout pipeLayout{ VK_NULL_HANDLE };
-			size_t pushSize;
-			VkShaderStageFlags pushStageFlags;
-
-			void Push(VkCommandBuffer cmdBuf, void* pushData) {
-				vkCmdPushConstants(cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, pushData);
-			}
-		};
-
-		static MaterialPipeLayoutInfo materialPipeLayout[DYNAMIC_PIPE_LAYOUT_COUNT];
 
 #if EWE_DEBUG
 		static std::vector<MaterialFlags> bonePipeTracker;
@@ -111,12 +101,7 @@ namespace EWE{
 		static VkCommandBuffer cmdBuf;
 
 		static std::vector<VkDescriptorSetLayout> GetPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, bool hasBump);
-		static VkPipelineCache materialPipelineCache;
-		static VkPipelineCache skinPipelineCache;
-		static VkPipelineCache instanceSkinPipelineCache;
-
-		static void GetPipeCache(bool hasBones, bool instanced, VkPipelineCache& outCache);
-		static MaterialPipelines* CreatePipe(uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags);
+		static MaterialPipelines* CreatePipe(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags);
 	};
 }
 

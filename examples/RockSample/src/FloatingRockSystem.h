@@ -28,7 +28,7 @@ namespace EWE {
 
 		void Dispatch(float dt, FrameInfo const& frameInfo);
 
-		void render(FrameInfo& frameInfo);
+		void Render(FrameInfo& frameInfo);
 	private:
 
 		EWEModel* rockModel;
@@ -65,7 +65,8 @@ namespace EWE {
 
 		EWEBuffer* rockBuffer{ nullptr };
 		EWEBuffer* trackBuffer{ nullptr };
-		EWEBuffer* transformBuffer[2] = { nullptr, nullptr };
+
+		VkBufferMemoryBarrier bufferBarrier[MAX_FRAMES_IN_FLIGHT];
 
 		void InitComputeData();
 	};

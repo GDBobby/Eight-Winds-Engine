@@ -349,7 +349,9 @@ namespace EWE {
                 return availableFormat;
             }
         }
+#if EWE_DEBUG
         printf("did not find a suitable swap surface, potentially assert here\n");
+#endif
         return availableFormats[0];
     }
 

@@ -342,6 +342,13 @@ namespace EWE {
      *
      * @return VkDescriptorBufferInfo of specified offset and range
      */
+    VkDescriptorBufferInfo EWEBuffer::DescriptorInfo(VkDeviceSize size, VkDeviceSize offset) const {
+        VkDescriptorBufferInfo ret = buffer_info;
+        ret.offset = offset;
+        ret.range = size;
+        return ret;
+    }
+
     VkDescriptorBufferInfo* EWEBuffer::DescriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
         buffer_info.offset = offset;
         buffer_info.range = size;

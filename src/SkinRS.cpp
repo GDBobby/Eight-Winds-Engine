@@ -14,8 +14,8 @@ namespace EWE {
 		skinnedMainObject = this;
 
 		//this initializes the descriptors
-		DescriptorHandler::getDescSetLayout(LDSL_boned);
-		DescriptorHandler::getDescSetLayout(LDSL_largeInstance);
+		DescriptorHandler::GetDescSetLayout(LDSL_boned);
+		DescriptorHandler::GetDescSetLayout(LDSL_largeInstance);
 		
 		MaterialPipelines::InitStaticVariables();
 	
@@ -30,16 +30,16 @@ namespace EWE {
 		for (auto& buffer : buffers) {
 			if (!buffer.second.CheckReference()) {
 				for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-					buffer.second.setFrameIndex(i);
-					EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, buffer.second.getDescriptor());
+					buffer.second.SetFrameIndex(i);
+					EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, buffer.second.GetDescriptor());
 					bufferDescriptorsCleared++;
 				}
 			}
 		}
 		for (auto& instanceBuffer : instancedBuffers) {
 			for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-				instanceBuffer.second.setFrameIndex(i);
-				EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, instanceBuffer.second.getDescriptor());
+				instanceBuffer.second.SetFrameIndex(i);
+				EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, instanceBuffer.second.GetDescriptor());
 				instancedBuffersCleared++;
 			}
 		}
@@ -65,7 +65,7 @@ namespace EWE {
 #if EWE_DEBUG
 			assert(buffers.contains(skeletonID) && "trying to change the max actor count for a buffer that doesn't exist");
 #endif
-			buffers.at(skeletonID).changeMaxActorCount(maxActorCount);
+			buffers.at(skeletonID).ChangeMaxActorCount(maxActorCount);
 
 	}
 	void SkinRenderSystem::SetPushData(SkeletonID skeletonID, void* pushData, uint8_t pushSize) {
@@ -99,7 +99,7 @@ namespace EWE {
 
 			pipe->BindPipeline();
 
-			pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
+			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameIndex));
 
 			int64_t bindedSkeletonID = -1;
 
@@ -110,13 +110,13 @@ namespace EWE {
 				assert(instancedBuffers.contains(skeleDataRef.first) && "requested buffer doesn't exist");
 #endif
 
-				if (instancedBuffers.at(skeleDataRef.first).getInstanceCount() <= 0) {
+				if (instancedBuffers.at(skeleDataRef.first).GetInstanceCount() <= 0) {
 					continue;
 				}
 
 				if (bindedSkeletonID != skeleDataRef.first) {
 					bindedSkeletonID = skeleDataRef.first;
-					pipe->BindDescriptor(1, instancedBuffers.at(skeleDataRef.first).getDescriptor());
+					pipe->BindDescriptor(1, instancedBuffers.at(skeleDataRef.first).GetDescriptor());
 				}
 				for (auto& skeleTextureRef : skeleDataRef.second) {
 					pipe->BindTextureDescriptor(2, skeleTextureRef.texture);
@@ -124,7 +124,7 @@ namespace EWE {
 					for (auto& meshRef : skeleTextureRef.meshes) {
 						//meshRef->BindAndDrawInstanceNoBuffer(frameInfo.cmdBuf, actorCount.at(instanced.first));
 						//printf("drawing instanced : %d \n", instancedBuffers.at(bindedSkeletonID).getInstanceCount());
-						meshRef->BindAndDrawInstanceNoBuffer(cmdBuf, instancedBuffers.at(skeleDataRef.first).getInstanceCount());
+						meshRef->BindAndDrawInstanceNoBuffer(cmdBuf, instancedBuffers.at(skeleDataRef.first).GetInstanceCount());
 					}
 				}
 
@@ -132,7 +132,7 @@ namespace EWE {
 		}
 		//printf("after indexed drawing \n");
 		for (auto& instancedBuffer : instancedBuffers) {
-			instancedBuffer.second.resetInstanceCount();
+			instancedBuffer.second.ResetInstanceCount();
 		}
 
 	}
@@ -144,7 +144,7 @@ namespace EWE {
 			//printf("shader flags on non-instanced : %d \n", boned.first);
 			pipe->BindPipeline();
 
-			pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameIndex));
+			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameIndex));
 
 			for (auto& skeleDataRef : boned.second.skeletonData) {
 				if (!pushConstants.contains(skeleDataRef.first)) {
@@ -166,7 +166,7 @@ namespace EWE {
 #if EWE_DEBUG
 				assert(buffers.contains(skeleDataRef.first) && "buffer does not exist");
 #endif
-				pipe->BindDescriptor(1, buffers.at(skeleDataRef.first).getDescriptor());
+				pipe->BindDescriptor(1, buffers.at(skeleDataRef.first).GetDescriptor());
 
 				for (auto& skeleTextureRef : skeleDataRef.second) {
 					pipe->BindTextureDescriptor(2, skeleTextureRef.texture);
@@ -215,7 +215,7 @@ namespace EWE {
 
 	void SkinRenderSystem::FlushBuffers(uint8_t frameIndex) {
 		for (auto& buffer : buffers) {
-			buffer.second.flush();
+			buffer.second.Flush();
 		}
 
 		/*

@@ -27,12 +27,12 @@ namespace EWE {
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
 		EWEDescriptorSetLayout* dsl = EWEDescriptorSetLayout::Builder()
-			.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-			.build();
+			.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+			.AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			.Build();
 		//pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		std::vector<VkDescriptorSetLayout> tempDSL = {
-			DescriptorHandler::getDescSetLayout(LDSL_global),
+			DescriptorHandler::GetDescSetLayout(LDSL_global),
 			dsl->GetDescriptorSetLayout()
 		};
 
@@ -47,7 +47,7 @@ namespace EWE {
 		CreatePipeLayout();
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
-		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
+		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();

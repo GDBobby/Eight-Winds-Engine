@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace FragmentShaderText {
-	std::string version = { "#version 450 \n" };
+	const std::string version = { "#version 450 \n" };
 	/*
 	std::vector<std::string> fragTangentEntry = {
 		{"layout (location = 0) in vec2 fragTexCoord;"},
@@ -14,22 +14,21 @@ namespace FragmentShaderText {
 		{"layout (location = 0) out vec4 outColor;"},
 	};
 	*/
-	std::vector<std::string> fragNNEntry = {
+	const std::vector<std::string> fragNNEntry = {
 		"layout (location = 0) in vec3 fragPosWorld;",
 		"layout (location = 1) in vec3 fragNormalWorld;",
 		"layout (location = 2) in vec2 fragTexCoord;",
 	};
-	std::vector<std::string> fragBumpEntry = {
+	const std::vector<std::string> fragBumpEntry = {
 		"layout(location = 0) in vec3 tangentFragPos;",
 		"layout(location = 1) in vec3 tangentSunDir;",
 		"layout(location = 2) in vec2 fragTexCoord;",
 		"layout(location = 3) in vec3 tangentViewPos;"
 	};
 
-	std::string fragExit = "layout (location = 0) out vec4 outColor;";
+	const std::string fragExit = "layout (location = 0) out vec4 outColor;";
 
-
-	std::vector<std::string> dataBindings = {
+	const std::vector<std::string> dataBindings = {
 		{"struct PointLight{vec4 position;vec4 color;};"},
 
 		{"layout(set = 0, binding = 0) uniform GlobalUbo {"},
@@ -42,7 +41,7 @@ namespace FragmentShaderText {
 
 		{"const float PI = 3.14159265359;"},
 	};
-	std::vector<std::string> functionBlock = {
+	const std::vector<std::string> functionBlock = {
 		{"float DistributionGGX (vec3 Normal, vec3 HalfAngle, float roughness) {"},
 		{"float a2 = roughness * roughness;"},
 		{"float NdotH = max(dot(Normal, HalfAngle), 0.0);"},
@@ -63,19 +62,19 @@ namespace FragmentShaderText {
 
 	//first index is no bones, second index is with bones
 
-	std::string firstHalfBinding[2] = {
+	const std::string firstHalfBinding[2] = {
 		{"layout (set = 1, binding = "},
 		{"layout (set = 2, binding = "},
 	};
-	std::string secondHalfBinding = { ") uniform sampler2D " };
+	const std::string secondHalfBinding = { ") uniform sampler2D " };
 
-	std::vector<std::string> calcNormalFunction = {
+	const std::vector<std::string> calcNormalFunction = {
 		"vec3 calculateNormal() {",
 		"vec3 tangentNormal = texture(normalSampler, fragTexCoord).rgb * 2.0 - 1.0;",
 		"vec3 N = normalize(fragNormalWorld);vec3 T = normalize(fragTangentWorld.xyz);vec3 B = normalize(cross(N, T));mat3 TBN = mat3(T, B, N);",
 		"return normalize(TBN * tangentNormal);}"
 	};
-	std::vector<std::string> parallaxMapping = {
+	const std::vector<std::string> parallaxMapping = {
 		"vec2 parallaxMapping(vec2 uv, vec3 viewDir) {",
 		"float height = 1.0 - textureLod(bumpSampler, uv, 0.0).a;",
 		"vec2 p = viewDir.xy * ((height * 0.005) - .01f) / viewDir.z;", //height * ubo.heightScale * .5
@@ -83,7 +82,7 @@ namespace FragmentShaderText {
 	};
 
 
-	std::vector<std::string> mainEntryBlock[2] = {
+	const std::vector<std::string> mainEntryBlock[2] = {
 		{
 			"void main(){",
 			"vec3 albedo = texture(albedoSampler, fragTexCoord).rgb;",
@@ -99,18 +98,18 @@ namespace FragmentShaderText {
 		}
 	};
 
-	std::vector<std::string> mainSecondBlockNN = {
+	const std::vector<std::string> mainSecondBlockNN = {
 		//"vec3 cameraPosWorld = ubo.inverseView[3].xyz;",
 		"vec3 viewDirection = normalize(ubo.cameraPos.xyz - fragPosWorld);",
 	};
 
-	std::vector<std::string> mainThirdBlock = {
+	const std::vector<std::string> mainThirdBlock = {
 		"float NdotV = max(dot(normal, viewDirection), 0.0);",
 		"vec3 F0 = vec3(0.04);",
 		"F0 = mix(F0, albedo, metal);",
 		"vec3 Lo = vec3(0.0);",
 	};
-	std::vector<std::string> pointLightLoop = {
+	const std::vector<std::string> pointLightLoop = {
 		"for(int i = 0; i < lbo.numLights; i++){",
 		"PointLight light = lbo.pointLights[i];",
 		"vec3 directionToLight = light.position.xyz - fragPosWorld;",
@@ -132,7 +131,7 @@ namespace FragmentShaderText {
 	};
 
 
-	std::vector<std::string> sunCalculation = {
+	const std::vector<std::string> sunCalculation = {
 		"vec3 sunDir = lbo.sunlightDirection.xyz;",
 		"vec3 sunHalfAngle = normalize(viewDirection + sunDir);",
 
@@ -146,7 +145,7 @@ namespace FragmentShaderText {
 		"vec3 sunSpecular = (sunNDF * sunGeo * sunFres) / (4.0 * NdotV * sunNdotL + .0001);",
 		"Lo += (sunKd * albedo / PI + sunSpecular) * lbo.sunlightColor.rgb * lbo.sunlightColor.w * sunNdotL;",
 	};
-	std::vector<std::string> bumpSunCalculation = {
+	const std::vector<std::string> bumpSunCalculation = {
 		"vec3 sunHalfAngle = normalize(viewDirection + tangentSunDir);"
 		"float sunNDF = DistributionGGX(normal, sunHalfAngle, roughness);",
 		"float sunNdotL = max(dot(normal, tangentSunDir), 0.0);",

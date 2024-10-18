@@ -47,15 +47,19 @@ namespace EWE {
 			auto data = readFile(file_path);
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			createInfo.pNext = nullptr;
+			createInfo.flags = 0;
 			createInfo.codeSize = data.size();
 			//printf("template data size : %d \n", data.size());
-			createInfo.pCode = (const uint32_t*)data.data();
+			createInfo.pCode = reinterpret_cast<const uint32_t*>(data.data());
 
 			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
 		void CreateShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			createInfo.pNext = nullptr;
+			createInfo.flags = 0;
 			createInfo.codeSize = data.size() * 4;
 			//printf("uint32_t data size : %d \n", data.size());
 			createInfo.pCode = data.data();
@@ -66,16 +70,21 @@ namespace EWE {
 		void CreateShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			createInfo.pNext = nullptr;
+			createInfo.flags = 0;
 			createInfo.codeSize = data.size() * sizeof(T);
 			//printf("template data size : %d \n", data.size());
-			createInfo.pCode = (const uint32_t*)data.data();
+			createInfo.pCode = reinterpret_cast<const uint32_t*>(data.data());
 
 			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
 		void CreateShaderModule(const void* data, std::size_t dataSize, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			createInfo.pNext = nullptr;
+			createInfo.flags = 0;
 			createInfo.codeSize = dataSize;
+			createInfo.pCode = reinterpret_cast<const uint32_t*>(data);
 			//printf("uint32_t data size : %d \n", data.size());
 			EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, shaderModule);
 		}
@@ -173,7 +182,7 @@ namespace EWE {
 		if (vertFind == shaderModuleMap.end()) {
 			printf("creating vertex shader - %d:%d \n", boneCount, flags);
 			//auto vertCode = readFile(vertPath);
-			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::getVertexShader(hasNormal, boneCount, true), &vertShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetVertexShader(hasNormal, boneCount, true), &vertShaderModule);
 			shaderModuleMap.try_emplace(vertPath, vertShaderModule);
 		}
 		else {
@@ -184,7 +193,7 @@ namespace EWE {
 		const auto fragFind = shaderModuleMap.find(fragPath);
 		if (fragFind == shaderModuleMap.end()) {
 			printf("creating fragment shader : %d \n", flags);
-			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::getFragmentShader(flags, true), &fragShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags, true), &fragShaderModule);
 			//fragPath = ENGINE_DIR + fragPath; //wtf
 			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 		}
@@ -215,7 +224,7 @@ namespace EWE {
 
 		const auto fragModuleIter = shaderModuleMap.find(fragPath);
 		if (fragModuleIter == shaderModuleMap.end()) {
-			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::getFragmentShader(flags, hasBones), &fragShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags, hasBones), &fragShaderModule);
 			fragPath = SHADER_DIR + fragPath;
 			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 		}
@@ -621,9 +630,7 @@ namespace EWE {
 		//printf("boneVertex, flags:%d \n", newFlags);
 		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
 		pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
-		glslang::InitializeProcess();
 		return std::make_unique<EWEPipeline>(device, boneCount, flags, pipelineConfig);
-		glslang::FinalizeProcess();
 		
 	}
 
@@ -676,7 +683,6 @@ namespace EWE {
 		}
 		pipelineConfig.cache = boneMaterialPipelineCache;
 
-		glslang::InitializeProcess();
 		if (hasNormal) {
 			//printf("boneVertex, flags:%d \n", newFlags);
 			pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
@@ -689,7 +695,6 @@ namespace EWE {
 			pipelineConfig.attributeDescriptions = boneVertexNoTangent::GetAttributeDescriptions();
 			return std::make_unique<EWEPipeline>(device, "bone_NT.vert.spv", flags, pipelineConfig, true);
 		}
-		glslang::FinalizeProcess();
 
 	}
 
@@ -708,13 +713,11 @@ namespace EWE {
 		pipelineConfig.attributeDescriptions = LeafVertex::GetAttributeDescriptions();
 
 		printf("before loading vert shader \n");
-		glslang::InitializeProcess();
 		Pipeline_Helper_Functions::createShaderModule(device, ShaderBlock::getLoadingVertShader(), &loadingVertShaderModule);
 
 		printf("before loading frag shader \n");
 		Pipeline_Helper_Functions::createShaderModule(device, ShaderBlock::getLoadingFragShader(), &loadingFragShaderModule);
 		printf("after loading creation shaders \n");
-		glslang::FinalizeProcess();
 
 		loadingPipeline = std::make_unique<EWEPipeline>(device, loadingVertShaderModule, loadingFragShaderModule, pipelineConfig);
 	}

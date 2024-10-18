@@ -6,6 +6,8 @@
 
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
+#include <array>
+
 //this is still a WIP
 
 namespace EWE {
@@ -41,6 +43,7 @@ namespace EWE {
         TextureDesc texture;
         EWEModel* meshPtr;
         RigidInstancedBufferHandler buffer;
+        //i need to combine the texture and bfufer descriptor into 1
         InstancedMaterialObjectInfo(TextureDesc texture, EWEModel* meshPtr, uint32_t entityCount, bool computedTransforms) : 
             texture{ texture },
             meshPtr{ meshPtr }, 
@@ -50,7 +53,7 @@ namespace EWE {
     struct InstancedMaterialRenderInfo {
         MaterialPipelines* pipe;
         std::vector<InstancedMaterialObjectInfo> instancedInfo{};
-        InstancedMaterialRenderInfo(MaterialFlags flags) : pipe{ MaterialPipelines::GetMaterialPipe(flags | Material::Flags::Instanced) } {}
+        InstancedMaterialRenderInfo(MaterialFlags flags, uint32_t entityCount) : pipe{ MaterialPipelines::GetMaterialPipe(flags, entityCount)} {}
         void Render(uint8_t frameIndex);
     };
 
@@ -66,14 +69,22 @@ namespace EWE {
         //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& cleanAndGetMaterialMap();
         void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo);
         void AddMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
-        void AddInstancedMaterialObject(MaterialTextureInfo materialInfo, EWEModel* modelPtr, uint64_t entityCount, bool computedTransforms);
+        void AddInstancedMaterialObject(MaterialTextureInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms);
 
         void AddMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr);
 
         void RemoveByTransform(TextureDesc textureID, TransformComponent* ownerTransform);
+        void RemoveInstancedMaterialObject(EWEModel* modelPtr);
 
         std::vector<TextureDesc> CheckAndClearTextures();
 
         void Render(FrameInfo const& frameInfo);
+
+        const EWEBuffer* GetTransformBuffer(EWEModel* meshPtr, uint8_t frameIndex);
+        //providing the materialInfo doesn't need to iterate through every material in the map
+        const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr, uint8_t frameIndex);
+
+        std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr);
+        std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr);
     };
 }

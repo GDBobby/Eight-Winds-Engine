@@ -26,8 +26,8 @@ namespace EWE {
 
 		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_2d);
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
-		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
-		EWEPipeline::enableAlphaBlending(pipelineConfig);
+		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
+		EWEPipeline::EnableAlphaBlending(pipelineConfig);
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexUI>();
 		pipelineConfig.attributeDescriptions = VertexUI::GetAttributeDescriptions();
 		pipelineConfig.pipelineLayout = PL_2d;
@@ -90,7 +90,7 @@ namespace EWE {
 		printf("binding 2d pipeline in dimension 2 \n");
 #endif
 
-		dimension2Ptr->pipe2d->bind(cmdBuffer);
+		dimension2Ptr->pipe2d->Bind(cmdBuffer);
 		dimension2Ptr->model2D->Bind(cmdBuffer);
 		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED_DESC;
 		dimension2Ptr->frameIndex = frameIndex;

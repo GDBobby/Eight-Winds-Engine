@@ -22,7 +22,7 @@ namespace EWE {
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 		std::vector<VkDescriptorSetLayout> tempDSL = {
-			DescriptorHandler::getDescSetLayout(LDSL_global),
+			DescriptorHandler::GetDescSetLayout(LDSL_global),
 			TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->GetDescriptorSetLayout()
 		};
 			
@@ -35,7 +35,7 @@ namespace EWE {
 		CreatePipeLayout();
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
-		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
+		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<SkyVertex>();

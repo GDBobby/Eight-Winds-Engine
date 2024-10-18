@@ -16,7 +16,7 @@ int main() {
 	auto loadPart2 = [&]() {
 		EWE::LoadingThreadTracker loadingThreadTracker{};
 		ewEngine.FinishLoading();
-		eweSample = new EWE::EWESample(ewEngine, loadingThreadTracker);
+		eweSample = Construct<EWE::EWESample>({ ewEngine, loadingThreadTracker });
 
 		//i think the only way to guarantee this is called after i finish loading, if i add more threads, is to add flags for each loading segment.
 		//the easiest way would be if i just counted the amount of requried threads, then required the completed thread count to equal that count before continuing
@@ -57,11 +57,14 @@ int main() {
 			//just blasting it on all channels lol
 			std::cerr << e.what() << '\n';
 		}
+#if EWE_DEBUG
 		system("pause");
+#endif
 		return EXIT_FAILURE;
 	}
-	delete eweSample;
-
+	Deconstruct(eweSample);
+#if EWE_DEBUG
 	system("pause");
+#endif
 	return EXIT_SUCCESS;
 }

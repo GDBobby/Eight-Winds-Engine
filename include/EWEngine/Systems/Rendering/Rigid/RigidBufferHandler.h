@@ -6,6 +6,7 @@ namespace EWE {
 	class RigidInstancedBufferHandler {
 	public:
 		RigidInstancedBufferHandler(uint32_t entityCount, bool computedTransforms);
+		~RigidInstancedBufferHandler();
 
 		void WritePartialData(glm::mat4* transform, std::size_t offset);
 		//this is for sequential writing only, it's recommended to write to the entire buffer
@@ -16,12 +17,26 @@ namespace EWE {
 
 		void SetFrameIndex(uint8_t frameIndex);
 
+		const VkDescriptorSet* GetDescriptor(uint8_t frameIndex) const {
+			return &descriptorSet[frameIndex];
+		}
+
 		VkDescriptorBufferInfo* GetDescriptorInfo() {
 			return transformBuffer[frameIndex]->DescriptorInfo();
 		}
 		uint32_t GetCurrentEntityCount() const {
 			return currentEntityCount;
 		}
+		const EWEBuffer* GetBuffer(uint8_t frameIndex) const {
+			return transformBuffer[frameIndex];
+		}
+		bool GetComputing() const {
+			return computedTransforms;
+		}
+		VkBufferMemoryBarrier* GetBarrier(uint8_t frameIndex) const {
+			return &bufferBarrier[frameIndex];
+		}
+
 	private:
 		EWEBuffer* transformBuffer[MAX_FRAMES_IN_FLIGHT] = { nullptr, nullptr };
 
@@ -31,6 +46,8 @@ namespace EWE {
 		uint32_t currentEntityCount;
 		uint8_t frameIndex; 
 		bool computedTransforms;
+		VkBufferMemoryBarrier* bufferBarrier; //move this back into RigidRS, it can't be called in the render pass
+		VkDescriptorSet descriptorSet[2];
 	};
 }//namespace EWE
 

@@ -10,7 +10,8 @@ namespace EWE {
 		//i dont really know, but im suspecting that adding an object in without a normal/rough/metal is going to be bad.
 	public:
 		Pipe_SimpleTextured();
-
+		~Pipe_SimpleTextured() override {}
+		
 	protected:
 		void CreatePipeLayout() final;
 		void CreatePipeline() final;

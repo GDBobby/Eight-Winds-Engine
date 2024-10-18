@@ -5,7 +5,6 @@
 namespace EWE {
 	class StaticRenderSystem {
 	private:
-		static StaticRenderSystem* skinnedMainObject;
 		struct GPUStruct {
 			std::unique_ptr<EWEModel> modelData;
 			TextureDesc texture;
@@ -21,10 +20,10 @@ namespace EWE {
 		std::unique_ptr<EWEBuffer> transformBuffer;
 		uint32_t modelLimit;
 
-		StaticRenderSystem(uint32_t pipelineCount, uint32_t modelLimit);
-		~StaticRenderSystem() {}
+		void Init(uint32_t pipelineCount, uint32_t modelLimit);
 
 	public:
+
 		static void InitStaticRS(uint32_t pipelineCount, uint32_t modelLimit);
 		static void DestructStaticRS();
 

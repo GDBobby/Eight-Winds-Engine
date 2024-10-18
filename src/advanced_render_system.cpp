@@ -38,7 +38,7 @@ namespace EWE {
 #if true//DECONSTRUCTION_DEBUG
 		std::cout << "entering ARS deconstructor " << std::endl;
 #endif
-		EWEPipeline::cleanShaderModules();
+		EWEPipeline::CleanShaderModules();
 
 		EWEDescriptorPool::DestructPools();
 
@@ -139,7 +139,7 @@ namespace EWE {
 		//skyboxPipeline->bind(frameInfo.frameInfo.cmdBuf);
 		auto pipe = PipelineSystem::At(Pipe::skybox);
 		pipe->BindPipeline();
-		pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameInfo.index));
 		pipe->BindDescriptor(1, &objectManager.skybox.second);
 
 		pipe->BindModel(objectManager.skybox.first);
@@ -155,7 +155,7 @@ namespace EWE {
 #endif
 			//texturedPipeline->bind(frameInfo.frameInfo.cmdBuf);
 			pipe->BindPipeline();
-			pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameInfo.index));
 
 
 			//std::cout << "post-bind textured" << std::endl;
@@ -248,7 +248,7 @@ namespace EWE {
 #endif
 		PipelineSystem* pipe = PipelineSystem::At(Pipe::grass);
 		pipe->BindPipeline();
-		pipe->BindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameInfo.index));
 		pipe->BindDescriptor(1, &objectManager.grassTextureID);
 
 

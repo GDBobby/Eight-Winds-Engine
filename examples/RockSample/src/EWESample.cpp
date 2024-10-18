@@ -61,20 +61,21 @@ namespace EWE {
 		scenes.emplace(scene_ocean, nullptr);
 		auto sceneLoadFunc = [&]() {
 			printf("loading main menu scene : %u\n", std::this_thread::get_id());
-			scenes.at(scene_mainmenu) = new MainMenuScene(ewEngine);
+
+			scenes.at(scene_mainmenu) = Construct<MainMenuScene>({ ewEngine });
 			LoadSceneIfMatching(scene_mainmenu);
 			loadingThreadTracker.mainSceneThread = true;
 
 		};
 		auto sceneLoadFunc2 = [&]() {
 			printf("loading shader gen scene : %u\n", std::this_thread::get_id());
-			scenes.at(scene_shaderGen) = new ShaderGenerationScene(ewEngine);
+			scenes.at(scene_shaderGen) = Construct<ShaderGenerationScene>({ ewEngine });
 			LoadSceneIfMatching(scene_shaderGen);
 			loadingThreadTracker.shaderGenSceneThread = true;
 		};
 		auto sceneLoadFunc3 = [&]() {
 			printf("loading ocean scene : %u\n", std::this_thread::get_id());
-			scenes.at(scene_ocean) = new OceanScene(ewEngine, skyboxInfo);
+			scenes.at(scene_ocean) = Construct<OceanScene>({ ewEngine, skyboxInfo });
 			LoadSceneIfMatching(scene_ocean);
 			loadingThreadTracker.oceanSceneThread = true;
 		};

@@ -1,7 +1,6 @@
 layout (location = 0) in vec3 fragPosWorld;
 layout (location = 1) in vec3 fragNormalWorld;
 layout (location = 2) in vec2 fragTexCoord;
-layout (location = 3) in vec3 fragTangentWorld;
 layout (location = 0) out vec4 outColor;
 struct PointLight{vec4 position;vec4 color;};
 layout(set = 0, binding = 0) uniform GlobalUbo {
@@ -23,26 +22,14 @@ float g_l = NdotL / (NdotL * (1 - k) + k);
 return g_v * g_l;}
 vec3 FresnelSchlick (float cosTheta, vec3 F0) {
 return F0 + (vec3(1.0) - F0) * pow (1.0 - cosTheta, 5.0); }
-layout (set = 1, binding = 
+layout (set = 2, binding = 
 0
 ) uniform sampler2D 
 albedoSampler;
-layout (set = 1, binding = 
-1
-) uniform sampler2D 
-normalSampler;
-layout (set = 1, binding = 
-2
-) uniform sampler2D 
-amOccSampler;
-vec3 calculateNormal() {
-vec3 tangentNormal = texture(normalSampler, fragTexCoord).rgb * 2.0 - 1.0;
-vec3 N = normalize(fragNormalWorld);vec3 T = normalize(fragTangentWorld.xyz);vec3 B = normalize(cross(N, T));mat3 TBN = mat3(T, B, N);
-return normalize(TBN * tangentNormal);}
 void main(){
 vec3 albedo = texture(albedoSampler, fragTexCoord).rgb;
 vec3 viewDirection = normalize(ubo.cameraPos.xyz - fragPosWorld);
-vec3 normal = calculateNormal();
+vec3 normal = normalize(fragNormalWorld);
 float roughness = 0.5;
 float metal = 0.0;
 float NdotV = max(dot(normal, viewDirection), 0.0);
@@ -74,7 +61,7 @@ vec3 sunFres = FresnelSchlick(max(dot(sunHalfAngle, viewDirection), 0.0), F0);
 vec3 sunKd = (vec3(1.0) - sunFres) * 1.0 - metal;
 vec3 sunSpecular = (sunNDF * sunGeo * sunFres) / (4.0 * NdotV * sunNdotL + .0001);
 Lo += (sunKd * albedo / PI + sunSpecular) * lbo.sunlightColor.rgb * lbo.sunlightColor.w * sunNdotL;
-vec3 ambient = vec3(0.05) * albedo * texture(amOccSampler, fragTexCoord).r;
+vec3 ambient = vec3(0.05) * albedo;
 vec3 color = ambient + Lo;
 color /= (color + vec3(1.0));
 color = pow(color, vec3(1.0/2.2));

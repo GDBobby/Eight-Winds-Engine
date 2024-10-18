@@ -62,6 +62,7 @@ namespace EWE {
 						}
 					}
 					trackPtr->rockCount++;
+					difference++;
 				}
 				else {
 					for (uint32_t i = 1; i < trackCount; i++) {
@@ -70,6 +71,7 @@ namespace EWE {
 						}
 					}
 					trackPtr->rockCount--;
+					difference--;
 				}
 			}
 
@@ -96,16 +98,12 @@ namespace EWE {
 		}
 	};
 
-	void InitBuffers(EWEBuffer*& rockBuffer, EWEBuffer*& trackBuffer, std::vector<RockData>& rockData, std::vector<TrackData>& trackData, EWEBuffer** transformBuffer) {
+	void InitBuffers(EWEBuffer*& rockBuffer, EWEBuffer*& trackBuffer, std::vector<RockData>& rockData, std::vector<TrackData>& trackData) {
 		const std::size_t rockBufferSize = rockData.size() * sizeof(RockData);
 		const std::size_t trackBufferSize = trackData.size() * sizeof(TrackData);
 
 		rockBuffer = Construct<EWEBuffer>({rockBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT});
 		trackBuffer = Construct<EWEBuffer>({ trackBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
-
-		transformBuffer[0] = Construct<EWEBuffer>({ rock_count * sizeof(glm::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
-		transformBuffer[1] = Construct<EWEBuffer>({ rock_count * sizeof(glm::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
-
 		VkPhysicalDevice physDev = EWEDevice::GetEWEDevice()->GetPhysicalDevice();
 		VkDevice vkDevice = EWEDevice::GetVkDevice();
 		StagingBuffer* rockStagingBuffer = Construct<StagingBuffer>({ rockBufferSize, physDev, vkDevice });
@@ -118,32 +116,20 @@ namespace EWE {
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 		VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
 		EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
-		{
-			eweDevice->CopyBuffer(cmdBuf, rockStagingBuffer->buffer, rockBuffer->GetBuffer(), rockBufferSize);
-			CommandWithCallback cb{};
-			cb.cmdBuf = cmdBuf;
-			cb.callback = [sb = rockStagingBuffer,
+		eweDevice->CopyBuffer(cmdBuf, rockStagingBuffer->buffer, rockBuffer->GetBuffer(), rockBufferSize);
+		eweDevice->CopyBuffer(cmdBuf, trackStagingBuffer->buffer, trackBuffer->GetBuffer(), trackBufferSize);
+		CommandWithCallback cb{};
+		cb.cmdBuf = cmdBuf;
+		cb.callback = [rsb = rockStagingBuffer, tsb = trackStagingBuffer,
 #if USING_VMA
-				memMgr = EWEDevice::GetAllocator()
+			memMgr = EWEDevice::GetAllocator()
 #else
-				memMgr = EWEDevice::GetVkDevice()
+			memMgr = EWEDevice::GetVkDevice()
 #endif
-			] {sb->Free(memMgr); Deconstruct(sb);};
-			syncHub->EndSingleTimeCommandTransfer(cb);
-		}
-		{
-			eweDevice->CopyBuffer(cmdBuf, trackStagingBuffer->buffer, trackBuffer->GetBuffer(), trackBufferSize);
-			CommandWithCallback cb{};
-			cb.cmdBuf = cmdBuf;
-			cb.callback = [sb = trackStagingBuffer,
-#if USING_VMA
-				memMgr = EWEDevice::GetAllocator()
-#else
-				memMgr = EWEDevice::GetVkDevice()
-#endif
-			] {sb->Free(memMgr); Deconstruct(sb);};
-			syncHub->EndSingleTimeCommandTransfer(cb);
-		}
+		] {rsb->Free(memMgr); tsb->Free(memMgr); Deconstruct(rsb); Deconstruct(tsb); };
+
+		syncHub->EndSingleTimeCommandTransfer(cb);
+		
 	}
 
 
@@ -165,7 +151,7 @@ namespace EWE {
 		RockData::InitData(rockData, randomGen);
 
 		//buffers
-		InitBuffers(rockBuffer, trackBuffer, rockData, trackData, transformBuffer);
+		InitBuffers(rockBuffer, trackBuffer, rockData, trackData);
 
 		InitComputeData();
 	}
@@ -195,38 +181,32 @@ namespace EWE {
 
 		EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, 1, 1, 1);
 
-	}
-	void FloatingRock::render(FrameInfo& frameInfo) {
-
-		PipelineSystem::SetFrameInfo(frameInfo);
-		auto pipe = PipelineSystem::At(Pipe::textured);
-
-		pipe->BindPipeline();
-
-		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameInfo.index));
-		pipe->BindDescriptor(1, &rockTexture);
-
-		pipe->BindModel(rockModel);
-
-
-		SimplePushConstantData push{ renderModelMatrix, renderNormalMatrix };
-		for (int i = 0; i < rockField.size(); i++) {
-
-			for (int j = 0; j < rockField[i].currentPosition.size(); j++) {
-
-				glm::vec3& tempPosition = rockField[i].trackPositions[rockField[i].currentPosition[j]];
-				push.modelMatrix[3].x = tempPosition.x;
-				push.modelMatrix[3].y = tempPosition.y;
-				push.modelMatrix[3].z = tempPosition.z;
-
-				pipe->PushAndDraw(&push);
-				//ockCount++;
-				//std::cout << "post draw simple" << std::endl;
-			}
-		}
- 
+		EWE_VK(vkCmdPipelineBarrier, frameInfo.cmdBuf,
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+			0,
+			0, nullptr,
+			1, &bufferBarrier[frameInfo.index],
+			0, nullptr
+		);
 	}
 	void FloatingRock::InitComputeData(){
+		RigidRenderingSystem::AddInstancedMaterialObject({ MaterialF_instanced, rockTexture }, rockModel, rock_count, true);
+		const std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(rockModel);
+
+		bufferBarrier[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+		bufferBarrier[0].pNext = nullptr;
+		bufferBarrier[0].buffer = transformBuffers[0]->GetBuffer();
+		bufferBarrier[0].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+		bufferBarrier[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		bufferBarrier[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		bufferBarrier[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		bufferBarrier[0].offset = 0;
+		bufferBarrier[0].size = VK_WHOLE_SIZE;
+
+		bufferBarrier[1] = bufferBarrier[0];
+		bufferBarrier[1].buffer = transformBuffers[1]->GetBuffer();
+
+
 		//descriptor set
 		EWEDescriptorSetLayout::Builder dslBuilder{};
 		dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
@@ -235,17 +215,19 @@ namespace EWE {
 		auto tempDSL = dslBuilder.Build();
 
 		{
+			VkDescriptorBufferInfo descInfo = transformBuffers[0]->DescriptorInfo();
 			EWEDescriptorWriter descWriter{ tempDSL, DescriptorPool_Global };
 			descWriter.WriteBuffer(0, rockBuffer->DescriptorInfo());
 			descWriter.WriteBuffer(1, trackBuffer->DescriptorInfo());
-			descWriter.WriteBuffer(2, transformBuffer[0]->DescriptorInfo());
+			descWriter.WriteBuffer(2, &descInfo);
 			compDescriptorSet[0] = descWriter.Build();
 		}
 		{
+			VkDescriptorBufferInfo descInfo = transformBuffers[1]->DescriptorInfo();
 			EWEDescriptorWriter descWriter{ tempDSL, DescriptorPool_Global };
 			descWriter.WriteBuffer(0, rockBuffer->DescriptorInfo());
 			descWriter.WriteBuffer(1, trackBuffer->DescriptorInfo());
-			descWriter.WriteBuffer(2, transformBuffer[1]->DescriptorInfo());
+			descWriter.WriteBuffer(2, &descInfo);
 			compDescriptorSet[1] = descWriter.Build();
 		}
 
@@ -262,13 +244,12 @@ namespace EWE {
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 
-		VkDescriptorSetLayout tempVkDSL[2] = {
-			DescriptorHandler::GetDescSetLayout(LDSL_global),
+		VkDescriptorSetLayout tempVkDSL{
 			tempDSL->GetDescriptorSetLayout()
 		};
 
-		pipelineLayoutInfo.setLayoutCount = 2;
-		pipelineLayoutInfo.pSetLayouts = tempVkDSL;
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &tempVkDSL;
 
 		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &compPipeLayout);
 
@@ -288,7 +269,6 @@ namespace EWE {
 		pipelineInfo.stage.pSpecializationInfo = nullptr;
 
 		EWE_VK(vkCreateComputePipelines, EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &compPipeline);
-
 	}
 
 }
