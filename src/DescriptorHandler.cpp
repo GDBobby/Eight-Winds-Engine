@@ -16,8 +16,7 @@ namespace EWE {
     void DescriptorHandler::Cleanup() {
         printf("before descriptor handler cleanup \n");
         for (auto& dsl : descriptorSetLayouts) {
-            dsl.second->~EWEDescriptorSetLayout();
-            ewe_free(dsl.second);
+            Deconstruct(dsl.second);
         }
         descriptorSetLayouts.clear();
         printf("after desc set layouts \n");

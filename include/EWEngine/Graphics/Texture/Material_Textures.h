@@ -15,7 +15,7 @@ namespace EWE {
 		};
 
 	public:
-		static MaterialTextureInfo createMaterialTexture(std::string texPath, bool global);
+		static MaterialTextureInfo CreateMaterialTexture(std::string texPath, bool global);
 	protected:
 
 	};

@@ -1,4 +1,5 @@
 #include "EWEngine/LoadingScreen/LeafSystem.h"
+#include "EWEngine/Data/EWE_Import.h"
 
 namespace EWE {
 	//id like to move some of the random generation components to local scope on leaf generation, not sure which ones yet
@@ -24,14 +25,14 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
 		printf("begin deconstructing leaf system \n");
 #endif
-		delete leafModel;
-		vkDestroyShaderModule(EWEDevice::GetVkDevice(), vertexShaderModule, nullptr);
-		vkDestroyShaderModule(EWEDevice::GetVkDevice(), fragmentShaderModule, nullptr);
+		Deconstruct(leafModel);
+		EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), vertexShaderModule, nullptr);
+		EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), fragmentShaderModule, nullptr);
 
 		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), pipeLayout, nullptr);
 
 		for (auto& buffer : leafBuffer) {
-			delete buffer;
+			Deconstruct(buffer);
 			//buffer->~EWEBuffer();
 			//ewe_free(buffer);
 		}
@@ -47,7 +48,7 @@ namespace EWE {
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			leafBuffer.push_back(new EWEBuffer(sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+			leafBuffer.push_back(Construct<EWEBuffer>({ sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT }));
 
 			leafBuffer[i]->Map();
 
@@ -335,10 +336,10 @@ namespace EWE {
 		bool endian = (*((char*)&endianTest) == static_cast<char>(1));
 
 		if (endian) {
-			importMesh.readFromFile(inFile);
+			importMesh.ReadFromFile(inFile);
 		}
 		else {
-			importMesh.readFromFileSwapEndian(inFile);
+			importMesh.ReadFromFileSwapEndian(inFile);
 		}
 		inFile.close();
 		//printf("file read successfully \n");
@@ -388,17 +389,13 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
-		printf("before loading vert shader \n");
 		ShaderBlock::InitializeGlslang();
 		Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetLoadingVertShader(), &vertexShaderModule);
 
-		printf("before loading frag shader \n");
 		Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetLoadingFragShader(), &fragmentShaderModule);
-		printf("after loading creation shaders \n");
 		ShaderBlock::FinalizeGlslang();
 
 		pipe = std::make_unique<EWEPipeline>(vertexShaderModule, fragmentShaderModule, pipelineConfig);
-		printf("after creating leaf pipeline\n");
 	}
 	void LeafSystem::CreatePipeLayout() {
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};

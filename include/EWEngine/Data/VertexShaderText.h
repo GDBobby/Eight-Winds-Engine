@@ -44,7 +44,7 @@ namespace VertexShaderText {
 		"struct PointLight{vec4 position;vec4 color;};",
 
 		"layout(set = 0, binding = 0) uniform GlobalUbo {",
-		"mat4 projection;mat4 view;vec4 cameraPos;} ubo;",
+		"mat4 projView;vec4 cameraPos;} ubo;",
 
 		"layout(set = 0, binding = 1) uniform GPUSceneData {",
 		"vec4 ambientColor;vec4 sunlightDirection;vec4 sunlightColor;",
@@ -67,7 +67,7 @@ namespace VertexShaderText {
 		"mat4 skinMat = finalBonesMatrices[boneIds[0] + boneIndex] * weights[0] + finalBonesMatrices[boneIds[1] + boneIndex] * weights[1]",
 		"+ finalBonesMatrices[boneIds[2] + boneIndex] * weights[2] + finalBonesMatrices[boneIds[3] + boneIndex] * weights[3]; ",
 		"vec4 positionWorld = modelMatrix[gl_InstanceIndex] * skinMat * vec4(position, 1.0f);",
-		"gl_Position = ubo.projection * ubo.view * positionWorld;"
+		"gl_Position = ubo.projView * positionWorld;"
 	};
 
 	const std::vector<std::string> vertexNoInstanceBuffers = {
@@ -77,31 +77,33 @@ namespace VertexShaderText {
 		"mat4 skinMat = finalBonesMatrices[boneIds[0] + push.index_boneCount] * weights[0] + finalBonesMatrices[boneIds[1] + push.index_boneCount] * weights[1]",
 		"+ finalBonesMatrices[boneIds[2] + push.index_boneCount] * weights[2] + finalBonesMatrices[boneIds[3] + push.index_boneCount] * weights[3];",
 		"vec4 positionWorld = push.modelMatrix * skinMat * vec4(position, 1.0f);",
-		"gl_Position = ubo.projection * ubo.view * positionWorld;",
+		"gl_Position = ubo.projView * positionWorld;",
 	};
 
 	const std::vector<std::string> vertexTangentInstancingMainExit = {
-		"fragNormalWorld = normalize(transpose(inverse(mat3(ubo.view * modelMatrix[gl_InstanceIndex] * skinMat))) * normal);",
-		"fragTangentWorld = normalize(transpose(inverse(mat3(ubo.view * modelMatrix[gl_InstanceIndex] * skinMat))) * tangent);",
+		"const mat3 trans3 = mat3(modelMatrix[gl_InstanceIndex] * skinMat);"
+		"fragNormalWorld = normalize(transpose(inverse(trans3)) * normal);",
+		"fragTangentWorld = normalize(trans3 * tangent);",
 
 		"fragPosWorld = positionWorld.xyz;fragTexCoord = uv;}"
 	};
 
 	const std::vector<std::string> vertexTangentNoInstancingMainExit = {
-		"fragNormalWorld = normalize(transpose(inverse(mat3(ubo.view * push.modelMatrix * skinMat))) * normal);",
-		"fragTangentWorld = normalize(transpose(inverse(mat3(ubo.view * push.modelMatrix * skinMat))) * tangent);",
+		"const mat3 trans3 = mat3(push.modelMatrix * skinMat);"
+		"fragNormalWorld = normalize(transpose(inverse(trans3)) * normal);",
+		"fragTangentWorld = normalize(trans3 * tangent);",
 
 		"fragPosWorld = positionWorld.xyz;fragTexCoord = uv;}",
 	};
 
 	const std::vector<std::string> vertexNNInstancingMainExit = {
-		"fragNormalWorld = normalize(transpose(inverse(mat3(ubo.view * modelMatrix[gl_InstanceIndex] * skinMat))) * normal);",
+		"fragNormalWorld = normalize(transpose(inverse(mat3(modelMatrix[gl_InstanceIndex] * skinMat))) * normal);",
 		"fragPosWorld = positionWorld.xyz; fragTexCoord = uv;}",
 	};
 
 
 	const std::vector<std::string> vertexNNNoInstancingMainExit = {
-		"fragNormalWorld = normalize(transpose(inverse(mat3(ubo.view * push.modelMatrix * skinMat))) * normal);",
+		"fragNormalWorld = normalize(transpose(inverse(mat3(push.modelMatrix * skinMat))) * normal);",
 		"fragPosWorld = positionWorld.xyz; fragTexCoord = uv;}",
 	};
 }

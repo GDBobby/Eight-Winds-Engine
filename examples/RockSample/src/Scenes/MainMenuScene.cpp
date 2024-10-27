@@ -7,17 +7,20 @@ namespace EWE {
 		: ewEngine{ ewEngine }, 
 			menuManager{ ewEngine.menuManager }, 
 			soundEngine{ SoundEngine::GetSoundEngineInstance() },
-			rockSystem{}
+			rockSystem{},
+			windowPtr{ ewEngine.mainWindow.getGLFWwindow() },
+			camControl{ windowPtr }
 	{}
 
 	MainMenuScene::~MainMenuScene() {
+#if DECONSTRUCTION_DEBUG
 		printf("deconstructing main menu \n");
+#endif
 	}
 
 
 	void MainMenuScene::load() {
 		menuManager.giveMenuFocus();
-		PipelineSystem::Emplace(Pipe::textured, Construct<Pipe_SimpleTextured>({}));
 	}
 	void MainMenuScene::entry() {
 		soundEngine->StopMusic();
@@ -28,7 +31,7 @@ namespace EWE {
 
 		//old method
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
+			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f });
 		}
 		
 
@@ -40,14 +43,24 @@ namespace EWE {
 	}
 	bool MainMenuScene::render(double dt) {
 		//printf("render main menu scene \n");
-
+		if (!paused && (glfwGetKey(windowPtr, GLFW_KEY_P) == GLFW_PRESS)) {
+			paused = true;
+		}
+		if (paused && (glfwGetKey(windowPtr, GLFW_KEY_U) == GLFW_PRESS)) {
+			paused = false;
+		}
+		camControl.Move(camTransform);
+		camControl.RotateCam(camTransform);
+		camControl.Zoom(camTransform);
+		ewEngine.camera.SetViewYXZ(camTransform.translation, camTransform.rotation);
 
 		FrameInfo frameInfo = ewEngine.BeginRenderWithoutPass();
 		
 		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 			//printf("drawing \n");
-			rockSystem.Dispatch(dt, frameInfo);
-
+			rockSystem.Dispatch(dt * !paused, frameInfo);
+			
+			ewEngine.camera.BindUBO(frameInfo.index);
 			ewEngine.eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
 			ewEngine.DrawObjects(frameInfo, dt);
 

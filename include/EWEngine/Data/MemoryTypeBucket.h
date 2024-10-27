@@ -12,12 +12,12 @@ namespace EWE {
 	private:
 		std::bitset<Size> dataChunkTracker{};
 
-		size_t elementSize;
+		std::size_t elementSize;
 		void* reservedMemory;
 	public:
 
-		MemoryTypeBucket(size_t elementSize) : elementSize{ elementSize } {
-			reservedMemory = ewe_alloc(elementSize, dataChunkTracker.size());
+		MemoryTypeBucket(std::size_t elementSize) : elementSize{ elementSize } {
+			reservedMemory = Internal::ewe_alloc(elementSize, dataChunkTracker.size());
 			//reservedMemory = malloc(elementSize * dataChunkTracker.size());
 		}
 
@@ -25,10 +25,10 @@ namespace EWE {
 #if EWE_DEBUG
 			assert(!dataChunkTracker.any() && "improper memory bucket deconstruction");
 #endif
-			free(reservedMemory);
+			Internal::ewe_free(reservedMemory);
 		}
 
-		size_t GetRemainingSpace() {
+		std::size_t GetRemainingSpace() {
 			return dataChunkTracker.size() - dataChunkTracker.count();
 		}
 		void* GetDataChunk() {
@@ -45,7 +45,7 @@ namespace EWE {
 			return nullptr; //just to squash warnings/compiler errors
 		}
 		void FreeDataChunk(void* location) {
-			size_t freeLocation = (reinterpret_cast<char*>(location) - reinterpret_cast<char*>(reservedMemory)) / elementSize;
+			std::size_t freeLocation = (reinterpret_cast<char*>(location) - reinterpret_cast<char*>(reservedMemory)) / elementSize;
 
 #if EWE_DEBUG
 			assert(dataChunkTracker[freeLocation] && "freeing data from bucket that wasn't allocated");

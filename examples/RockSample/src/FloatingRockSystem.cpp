@@ -1,32 +1,34 @@
 #include "FloatingRockSystem.h"
 #include <EWEngine/Systems/Rendering/Pipelines/Pipe_SimpleTextured.h>
 #include <EWEngine/Systems/Rendering/Rigid/RigidRS.h>
+#include "EWEngine/Data/EWE_Import.h"
 
 namespace EWE {
 	static constexpr uint32_t rock_count = 32 * 32;
-
+#pragma pack(1)
 	struct RockData {
 		uint32_t trackID;
 		uint32_t trackPosition;
 		float tilt;
 		float RPS;
 		glm::vec3 scale;
+		uint32_t p_padding; //not for usage
 		static void InitData(std::vector<RockData>& rockData, std::default_random_engine& randomGen) {
 
-			std::uniform_real_distribution<float> rotationalDistribution(0.1f, 2.f);
+			std::uniform_real_distribution<float> rotationalDistribution(-2.f, 2.f);
 			std::uniform_real_distribution<float> scaleDistribution(0.25f, 0.75f);
 			std::uniform_real_distribution<float> tiltDist(0.f, glm::two_pi<float>());
 
 
-			for (uint32_t i = 0; i < rockData.size(); i++) {
-				rockData[i].RPS = rotationalDistribution(randomGen);
+			for (auto& rock : rockData) {
+				rock.RPS = rotationalDistribution(randomGen);
 
 				const float scale = scaleDistribution(randomGen);
-				rockData[i].scale.x = scale;
-				rockData[i].scale.y = scale;
-				rockData[i].scale.z = scale;
+				rock.scale.x = scale;
+				rock.scale.y = scale;
+				rock.scale.z = scale;
 
-				rockData[i].tilt = tiltDist(randomGen);
+				rock.tilt = tiltDist(randomGen);
 			}
 		}
 	};
@@ -82,7 +84,7 @@ namespace EWE {
 			}
 			assert(finalSum == rock_count);
 #endif
-			std::uniform_real_distribution<float> rotDistribution(0.1f, 2.f); //the higher this number is, the slower they'll be. 250 is 1 full rotation per second
+			std::uniform_real_distribution<float> rotDistribution(0.01f, 0.1f); //the higher this number is, the slower they'll be. 250 is 1 full rotation per second
 
 			uint32_t accountedRocks = 0;
 			for (uint8_t i = 0; i < trackCount; i++) {
@@ -97,6 +99,7 @@ namespace EWE {
 			}
 		}
 	};
+#pragma pop
 
 	void InitBuffers(EWEBuffer*& rockBuffer, EWEBuffer*& trackBuffer, std::vector<RockData>& rockData, std::vector<TrackData>& trackData) {
 		const std::size_t rockBufferSize = rockData.size() * sizeof(RockData);
@@ -133,10 +136,32 @@ namespace EWE {
 	}
 
 
-	FloatingRock::FloatingRock() {
-		rockModel = EWEModel::CreateModelFromFile("rock1.obj", Queue::transfer);
+	FloatingRock::FloatingRock() :rockTexture{ Material_Texture::CreateMaterialTexture("eye/", true) } {
+		//rockModel = EWEModel::CreateModelFromFile("rock1.obj", Queue::transfer);
+		rockTexture.materialFlags |= MaterialF_instanced;
 
-		rockTexture = Texture_Builder::CreateSimpleTexture("rock/rock_albedo.jpg", true, true, VK_SHADER_STAGE_FRAGMENT_BIT);
+		std::ifstream inFile("models/eye_simpleMesh.ewe", std::ifstream::binary);
+		//inFile.open();
+		assert(inFile.is_open() && "failed to open eye model");
+		ImportData::TemplateMeshData<Vertex> importMesh{};
+
+		uint32_t endianTest = 1;
+		bool endian = (*((char*)&endianTest) == static_cast<char>(1));
+
+		if (endian) {
+			importMesh.ReadFromFile(inFile);
+		}
+		else {
+			importMesh.ReadFromFileSwapEndian(inFile);
+		}
+		inFile.close();
+		//printf("file read successfully \n");
+
+		rockModel = EWEModel::CreateMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::transfer);
+
+#if DEBUG_NAMING
+		rockModel->SetDebugNames("eyeModel");
+#endif
 
 		//RANDOM NUMBER GENERATOR
 		std::random_device r;
@@ -188,7 +213,7 @@ namespace EWE {
 		);
 
 		compPushData.secondsSinceBeginning += dt;
-		compPushData.whichIndex = frameInfo.index;
+		//compPushData.whichIndex = frameInfo.index;
 		EWE_VK(vkCmdPushConstants, frameInfo.cmdBuf, compPipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RockCompPushData), &compPushData);
 
 		EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, 1, 1, 1);
@@ -202,7 +227,7 @@ namespace EWE {
 		);
 	}
 	void FloatingRock::InitComputeData(){
-		RigidRenderingSystem::AddInstancedMaterialObject({ MaterialF_instanced, rockTexture }, rockModel, rock_count, true);
+		RigidRenderingSystem::AddInstancedMaterialObject(rockTexture, rockModel, rock_count, true);
 		const std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(rockModel);
 
 		bufferBarrier[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;

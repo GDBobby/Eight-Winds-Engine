@@ -16,7 +16,7 @@ namespace EWE {
 	//GLFWwindow* UIHandler::windowPtr:
 
 	UIHandler::UIHandler(std::pair<uint32_t, uint32_t> dimensions, GLFWwindow* window, TextOverlay* txtOverlay)
-		: screenWidth{ static_cast<float>(dimensions.first) }, screenHeight{ static_cast<float>(dimensions.second) }, windowPtr{ window }, textOverlay{ std::shared_ptr<TextOverlay>(txtOverlay) } {
+		: windowPtr{ window }, screenWidth{ static_cast<float>(dimensions.first) }, screenHeight{ static_cast<float>(dimensions.second) }, textOverlay{ std::shared_ptr<TextOverlay>(txtOverlay) } {
 		printf("beg uiHandler construction, dimensions - %.1f:%.1f \n", screenWidth, screenHeight);
 
 		//textOverlay = std::make_unique<TextOverlay>(eweDevice, EWESwapChain->getFrameBuffers(), EWESwapChain->width(), EWESwapChain->height(), EWESwapChain->getRenderPass(), 1.f);

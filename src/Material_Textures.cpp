@@ -8,18 +8,18 @@
 
 namespace EWE {
 
-    MaterialTextureInfo Material_Texture::createMaterialTexture(std::string texPath, bool global) {
+    MaterialTextureInfo Material_Texture::CreateMaterialTexture(std::string texPath, bool global) {
 
         const std::array<std::vector<std::string>, MAX_MATERIAL_TEXTURE_COUNT> smartTextureTypes = {
             //ordering it like this is necessary, the engine is set up so that vertex textures are always binded lower than fragment textures.
             // this needs to be in sync with MaterialTexType
-            std::vector<std::string>{ "_bump", "_height"},
+            std::vector<std::string>{ "bump", "height"},
 
-            std::vector<std::string>{"_Diffuse", "_albedo", "_diffuse", "_Albedo", "_BaseColor", "_Base_Color", ""},
-            std::vector<std::string>{ "_Normal", "_normal" },
-            std::vector<std::string>{ "_roughness", "_rough", "_Rough", "_Roughness"},
-            std::vector<std::string>{ "_metallic", "_metal", "_Metallic", "_Metal"},
-            std::vector<std::string>{ "_ao", "_ambientOcclusion", "_AO", "_AmbientOcclusion", "_Ao"},
+            std::vector<std::string>{"Diffuse", "albedo", "diffuse", "Albedo", "BaseColor", "Base_Color"},
+            std::vector<std::string>{ "Normal", "normal" },
+            std::vector<std::string>{ "roughness", "rough", "Rough", "Roughness"},
+            std::vector<std::string>{ "metallic", "metal", "Metallic", "Metal"},
+            std::vector<std::string>{ "ao", "ambientOcclusion", "AO", "AmbientOcclusion", "Ao"},
         };
 
         //printf("creating new MRO Texture : %s \n", texPath.c_str());

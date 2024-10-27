@@ -12,7 +12,7 @@ namespace EWE {
     CameraController* CameraController::inputPtr;
 
     
-    void CameraController::setKey(int keyCode) {
+    void CameraController::SetKey(int keyCode) {
         switch (selectedKey) {
             case 0: {
                 //keys.moveForward = keyCode;
@@ -37,7 +37,7 @@ namespace EWE {
 
         selectedKey = -1;
     }
-    void CameraController::type(int keyCode) {
+    void CameraController::Type(int keyCode) {
         std::cout << "typing? " << std::endl;
         if (keyCode == GLFW_KEY_ENTER) {
             selectedKey = -1;
@@ -92,10 +92,10 @@ namespace EWE {
         isMoveFast = (glfwGetKey(window, keys.moveFast) == GLFW_PRESS);
         isMoveSlow = (glfwGetKey(window, keys.moveSlow) == GLFW_PRESS);
         
-        if (glfwGetKey(window, keys.lookRight) == GLFW_PRESS) rotate.y += 1.f;
-        if (glfwGetKey(window, keys.lookLeft) == GLFW_PRESS) rotate.y -= 1.f;
-        if (glfwGetKey(window, keys.lookUp) == GLFW_PRESS) rotate.x += 1.f;
-        if (glfwGetKey(window, keys.lookDown) == GLFW_PRESS) rotate.x -= 1.f;
+        if (glfwGetKey(window, keys.lookRight) == GLFW_PRESS) rotate.y -= 1.f;
+        if (glfwGetKey(window, keys.lookLeft) == GLFW_PRESS) rotate.y += 1.f;
+        if (glfwGetKey(window, keys.lookUp) == GLFW_PRESS) rotate.x -= 1.f;
+        if (glfwGetKey(window, keys.lookDown) == GLFW_PRESS) rotate.x += 1.f;
         
 
         if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon()) {
@@ -122,19 +122,19 @@ namespace EWE {
         }
         if (glfwGetKey(window, keys.moveRight) == GLFW_PRESS) {
             printf("right \n");
-            moveDir -= rightDir;
+            moveDir += rightDir;
         }
         if (glfwGetKey(window, keys.moveLeft) == GLFW_PRESS) {
             printf("left \n");
-            moveDir += rightDir;
+            moveDir -= rightDir;
         }
         if (glfwGetKey(window, keys.moveUp) == GLFW_PRESS) {
             printf("up \n");
-            moveDir.y += 1.f;
+            moveDir.y -= 1.f;
         }
         if (glfwGetKey(window, keys.moveDown) == GLFW_PRESS) {
             printf("down \n");
-            moveDir.y -= 1.f;
+            moveDir.y += 1.f;
         }
 
         if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
@@ -142,15 +142,15 @@ namespace EWE {
             transform.translation += ((moveSpeed + (isMoveFast * 4.f * moveSpeed))) * (1.f - (isMoveSlow * 0.8f)) * glm::normalize(moveDir);
         }
     }
-    void CameraController::rotateCam(TransformComponent& transform) {
+    void CameraController::RotateCam(TransformComponent& transform) {
         double xPos = 0.0;
         double yPos = 0.0;
         glfwGetCursorPos(window, &xPos, &yPos);
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
             float xDiff = static_cast<float>(xPos - mousePos.first);
             float yDiff = static_cast<float>(yPos - mousePos.second);
-            transform.rotation.x -= lookSpeed * yDiff;
-            transform.rotation.y += lookSpeed * xDiff;
+            transform.rotation.x += lookSpeed * yDiff;
+            transform.rotation.y -= lookSpeed * xDiff;
 
             transform.rotation.x = glm::clamp(transform.rotation.x, -glm::half_pi<float>(), glm::half_pi<float>());
             transform.rotation.y = glm::mod(transform.rotation.y, glm::two_pi<float>());
@@ -161,8 +161,8 @@ namespace EWE {
         mousePos.second = yPos;
     }
 
-    void CameraController::zoom(TransformComponent& transform) {
-        forwardDirZoom = { sin(transform.rotation.y), -sin(transform.rotation.x), cos(transform.rotation.y) };
+    void CameraController::Zoom(TransformComponent& transform) {
+        forwardDirZoom = { glm::sin(transform.rotation.y), -glm::sin(transform.rotation.x), glm::cos(transform.rotation.y) };
 
         //forwardDirZoom.y = -forwardDirZoom.y;
         forwardDirZoom = glm::normalize(forwardDirZoom);
@@ -172,7 +172,7 @@ namespace EWE {
         storedZoom = 0.0;
     }
 
-    void CameraController::move2DPlaneXZ(float dt, Transform2dComponent& transform2d) {
+    void CameraController::Move2DPlaneXZ(float dt, Transform2dComponent& transform2d) {
 
         /*
         glm::vec3 moveDir{ 0.f };
@@ -184,76 +184,8 @@ namespace EWE {
 
     }
 
-    glm::vec2 CameraController::menuOperation() {
 
-        /*
-        		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-
-			if (!cursorInit) {
-				if (glfwRawMouseMotionSupported())
-					glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-
-				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-				cursorInit = true;
-
-				if (cursorLock) {
-					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-					cursorLock = false;
-				}
-				else {
-					
-					cursorLock = true;
-				}
-
-
-			}
-
-		}
-		else if (cursorInit) {
-			cursorInit = false;
-		}
-        */
-        /*
-        if (!menuButtonDown) {
-            if (glfwGetKey(window, keys.menuButton) == GLFW_PRESS) {
-                std::cout << "menu press" << std::endl;
-                menuButtonDown = true;
-                if (menuActive) {
-                    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                    menuActive = false;
-                }
-                else {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                    menuActive = true;
-                }
-                
-                //menuActive = !menuActive;
-            }
-        }
-        else if (glfwGetKey(window, keys.menuButton) != GLFW_PRESS) {
-            std::cout << "menu release" << std::endl;
-            menuButtonDown = false;
-        }
-
-        if (!clickDown) {
-            if (glfwGetMouseButton(window, keys.click) == GLFW_PRESS) {
-                double xpos = 0;
-                double ypos = 0;
-                glfwGetCursorPos(window, &xpos, &ypos);
-                //std::cout << "mouse clikc at " << xpos << ":" << ypos << std::endl;
-                clickDown = true;
-                return { static_cast<float>(xpos),static_cast<float>(ypos) };
-            }
-        }
-        else if(glfwGetMouseButton(window, keys.click) != GLFW_PRESS) {
-            clickDown = false;
-        }
-        */
-        return { -6900.f, -42000.f };
-
-    }
-    void CameraController::disableMenu(GLFWwindow *window) {
+    void CameraController::DisableCursor(GLFWwindow *window) {
         printf("camera controller \n");
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         menuActive = false;

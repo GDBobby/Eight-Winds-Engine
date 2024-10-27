@@ -1,6 +1,7 @@
 layout (location = 0) in vec3 fragPosWorld;
 layout (location = 1) in vec3 fragNormalWorld;
 layout (location = 2) in vec2 fragTexCoord;
+layout (location = 3) in vec3 fragTangentWorld;
 layout (location = 0) out vec4 outColor;
 struct PointLight{vec4 position;vec4 color;};
 layout(set = 0, binding = 0) uniform GlobalUbo {
@@ -26,10 +27,18 @@ layout (set = 2, binding =
 0
 ) uniform sampler2D 
 albedoSampler;
+layout (set = 2, binding = 
+1
+) uniform sampler2D 
+normalSampler;
+vec3 calculateNormal() {
+vec3 tangentNormal = texture(normalSampler, fragTexCoord).rgb * 2.0 - 1.0;
+const vec3 N = normalize(fragNormalWorld);const vec3 T = normalize(fragTangentWorld.xyz);const vec3 B = normalize(cross(N, T));const mat3 TBN = mat3(T, B, N);
+return normalize(TBN * tangentNormal);}
 void main(){
 vec3 albedo = texture(albedoSampler, fragTexCoord).rgb;
 vec3 viewDirection = normalize(ubo.cameraPos.xyz - fragPosWorld);
-vec3 normal = normalize(fragNormalWorld);
+vec3 normal = calculateNormal();
 float roughness = 0.5;
 float metal = 0.0;
 float NdotV = max(dot(normal, viewDirection), 0.0);

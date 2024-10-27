@@ -32,7 +32,7 @@ namespace FragmentShaderText {
 		{"struct PointLight{vec4 position;vec4 color;};"},
 
 		{"layout(set = 0, binding = 0) uniform GlobalUbo {"},
-		{"mat4 projection;mat4 view;vec4 cameraPos;"},
+		{"mat4 projView;vec4 cameraPos;"},
 		{"}ubo;"},
 
 		{"layout(set = 0, binding = 1) uniform LightBufferObject {"},
@@ -71,7 +71,7 @@ namespace FragmentShaderText {
 	const std::vector<std::string> calcNormalFunction = {
 		"vec3 calculateNormal() {",
 		"vec3 tangentNormal = texture(normalSampler, fragTexCoord).rgb * 2.0 - 1.0;",
-		"vec3 N = normalize(fragNormalWorld);vec3 T = normalize(fragTangentWorld.xyz);vec3 B = normalize(cross(N, T));mat3 TBN = mat3(T, B, N);",
+		"const vec3 N = normalize(fragNormalWorld);const vec3 T = normalize(fragTangentWorld.xyz);const vec3 B = normalize(cross(N, T));const mat3 TBN = mat3(T, B, N);",
 		"return normalize(TBN * tangentNormal);}"
 	};
 	const std::vector<std::string> parallaxMapping = {

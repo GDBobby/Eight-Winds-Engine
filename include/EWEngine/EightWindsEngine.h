@@ -47,7 +47,7 @@ namespace EWE {
 		EightWindsEngine& operator=(const EightWindsEngine&) = delete;
 
 		//uint64_t boneBufferSize;
-		float elapsedGPUMS = 0.f;
+		float elapsedGPUMS;
 		float averageElapsedGPUMS = 0.f;
 		float totalElapsedGPUMS = 0.f;
 		uint32_t averageElapsedGPUCounter = 0;
@@ -65,7 +65,7 @@ namespace EWE {
 
 
 #if BENCHMARKING_GPU
-		VkQueryPool queryPool{ VK_NULL_HANDLE };
+		VkQueryPool queryPool[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		float gpuTicksPerSecond = 0;
 #endif
 
@@ -139,7 +139,11 @@ namespace EWE {
 		double loadingTime = 0.f;
 
 #if BENCHMARKING_GPU
-		void QueryTimestamp(FrameInfo& frameInfo);
+		void QueryTimestampBegin(FrameInfo& frameInfo);
+		void QueryTimestampEnd(FrameInfo const& frameInfo);
+		void CreateQueryPool();
+		bool previouslySubmitted[MAX_FRAMES_IN_FLIGHT] = { false, false };
+		uint64_t timestamps[4];
 #endif
 	};
 }

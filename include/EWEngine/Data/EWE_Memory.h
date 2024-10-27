@@ -10,10 +10,10 @@
 
 #define USING_MALLOC false
 
-
-void* ewe_alloc(std::size_t element_size, std::size_t element_count, std::source_location srcLoc = std::source_location::current());
-void ewe_free(void* ptr);
-
+namespace Internal { //need header access for the templates
+    void* ewe_alloc(std::size_t element_size, std::size_t element_count, std::source_location srcLoc = std::source_location::current());
+    void ewe_free(void* ptr);
+}//namespace Internal
 
 void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc = std::source_location::current());
 void ewe_free_mem_track(void* ptr);
@@ -43,7 +43,7 @@ struct ConstructHelper {
 #endif
     {
 #if USING_MALLOC
-        void* memory = ewe_alloc_internal(sizeof(T), 1, srcLoc);
+        void* memory = Internal::ewe_alloc(sizeof(T), 1, srcLoc);
         assert(memory);
         ptr = new (memory) T(std::forward<Args>(args)...);
 #endif

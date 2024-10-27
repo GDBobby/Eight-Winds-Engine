@@ -23,8 +23,8 @@ namespace EWE {
 
             boneEData() {}
 
-            void readFromFile(std::ifstream& inFile);
-            void readFromFileSwapEndian(std::ifstream& inFile);
+            void ReadFromFile(std::ifstream& inFile);
+            void ReadFromFileSwapEndian(std::ifstream& inFile);
 
         };
 
@@ -39,7 +39,7 @@ namespace EWE {
             }
             TemplateMeshData() {}
 
-            void readFromFile(std::ifstream& inFile) {
+            void ReadFromFile(std::ifstream& inFile) {
                 std::getline(inFile, versionTracker, (char)0);
                 if (strcmp(versionTracker.c_str(), EXPECTED_IMPORT_VERSION)) {
                     printf("incorrect import version : %s \n", versionTracker.c_str());
@@ -67,7 +67,7 @@ namespace EWE {
                 }
 
             }
-            void readFromFileSwapEndian(std::ifstream& inFile) {
+            void ReadFromFileSwapEndian(std::ifstream& inFile) {
                 std::getline(inFile, versionTracker);
                 assert(versionTracker == EXPECTED_IMPORT_VERSION && "incorrect import version");
 
@@ -96,8 +96,8 @@ namespace EWE {
                 boneEData>>> //{bone id, bone transform}, bone ID will keep track of which bone as i clear useless bones. i could also use a map, might be better
                 animations;
 
-            void readFromFile(std::ifstream& inFile);
-            void readFromFileSwapEndian(std::ifstream& inFile);
+            void ReadFromFile(std::ifstream& inFile);
+            void ReadFromFileSwapEndian(std::ifstream& inFile);
 
         };
         struct FullAnimData {
@@ -110,8 +110,8 @@ namespace EWE {
                 glm::mat4>>> animations;
 
 
-            void readFromFile(std::ifstream& inFile);
-            void readFromFileSwapEndian(std::ifstream& inFile);
+            void ReadFromFile(std::ifstream& inFile);
+            void ReadFromFileSwapEndian(std::ifstream& inFile);
         };
         struct NameExportData {
             std::string versionTracker = "";
@@ -120,7 +120,7 @@ namespace EWE {
             std::vector<std::string> meshSimpleNames;
             std::vector<std::string> meshNTSimpleNames;
 
-            void readFromFile(std::ifstream& inFile);
+            void ReadFromFile(std::ifstream& inFile);
         };
 
         TemplateMeshData<boneVertex> meshExport{};
@@ -131,16 +131,16 @@ namespace EWE {
         NameExportData nameExport;
 
         template <typename T>
-        static void readData(TemplateMeshData<T>& data, std::string meshPath, bool endian) {
+        static void ReadData(TemplateMeshData<T>& data, std::string meshPath, bool endian) {
             //printf("starting up mesh thread :%s \n", meshPath.c_str());
             std::ifstream inFile(meshPath, std::ifstream::binary);
             //inFile.open();
             assert(inFile.is_open() && "failed to open file");
             if (endian) {
-                data.readFromFile(inFile);
+                data.ReadFromFile(inFile);
             }
             else {
-                data.readFromFileSwapEndian(inFile);
+                data.ReadFromFileSwapEndian(inFile);
             }
             inFile.close();
             //printf("file read successfully \n");
@@ -148,7 +148,7 @@ namespace EWE {
 
         //static ImportData loadDataThreaded(std::string importPath);
 
-        static ImportData loadData(std::string importPath);
+        static ImportData LoadData(std::string importPath);
 
     };
 }

@@ -57,8 +57,8 @@ namespace EWE {
 			//main controls
 
 			cameraControl.Move(transform);
-			cameraControl.rotateCam(transform);
-			cameraControl.zoom(transform);
+			cameraControl.RotateCam(transform);
+			cameraControl.Zoom(transform);
 
 			ewEngine.camera.SetViewYXZ(transform.translation, transform.rotation);
 			ewEngine.camera.BindUBO(frameInfo.index);

@@ -139,8 +139,7 @@ namespace EWE {
             EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), pipeLayout, nullptr);
             EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), shaderModule, nullptr);
 
-            eweDSL->~EWEDescriptorSetLayout();
-            ewe_free(eweDSL);
+            Deconstruct(eweDSL);
         }
 
 
@@ -220,8 +219,7 @@ namespace EWE {
             CreatePipeline();
         }
         FFTGPUData::~FFTGPUData() {
-            eweDSL->~EWEDescriptorSetLayout();
-            ewe_free(eweDSL);
+            Deconstruct(eweDSL);
         }
 
         void FFTGPUData::CreateDescriptorSet(VkDescriptorImageInfo* outputImage) {

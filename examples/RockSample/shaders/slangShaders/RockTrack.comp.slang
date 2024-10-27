@@ -18,7 +18,7 @@ struct TrackData {
 };
 
 struct Transform {
-    vec3 translation;
+    vec4 translation;
     vec3 scale;
     vec3 rotation;
 
@@ -49,7 +49,7 @@ struct Transform {
                 scale.z * (cy * cx),
                 0.0f,
             },
-            { translation.x, translation.y, translation.z, 1.0f } 
+            translation 
         };
     }
 };
@@ -61,7 +61,7 @@ layout(set = 0, binding = 1) uniform TrackBuffer {
     TrackData trackInput[MAX_TRACK_COUNT];
 };
 layout(set = 0, binding = 2) buffer OutputBuffer {
-    mat4 rockOutput[];
+    (layout row_major) mat4 rockOutput[];
 };
 
 layout(push_constant) uniform Push {
@@ -87,19 +87,20 @@ void computeMain(uint3 id: SV_DispatchThreadID) {
     const float sTilt = sin(track.tilt);
 
     Transform transform;
-    transform.translation = normalize(vec3(
-                                sFDP * sTilt,
-                                cFDP * cTilt,
-                                cFDP * sTilt    
-                            )) * track.radius;
+    transform.translation = vec4(
+                                sFDP * cTilt * track.radius,
+                                sFDP * sTilt * track.radius,
+                                cFDP * track.radius,
+                                1.0 //this goes into the mat4 later as the final 1.0
+                            );
 
     transform.scale = rock.scale;
 
-    const float rockRotation = rock.tilt + rock.RPS * push.secondsSinceBeginning;
+    const float rockRotation = rock.RPS * push.secondsSinceBeginning;
 
-    transform.rotation.x = cos(rockRotation);
-    transform.rotation.y = sin(rockRotation);
+    transform.rotation.x = sin(rockRotation) * cos(rock.tilt);
+    transform.rotation.y = sin(rockRotation) * sin(rock.tilt);
     transform.rotation.z = cos(rockRotation);
 
-    rockOutput[rockIndex] = transform.CalculateTransform();
+    rockOutput[rockIndex] = transpose(transform.CalculateTransform());
 }

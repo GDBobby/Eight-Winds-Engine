@@ -74,15 +74,11 @@ namespace EWE {
 
 		EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), dimension2Ptr->PL_2d, nullptr);
 		//vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_9, nullptr);
-		delete dimension2Ptr->model2D;
+		Deconstruct(dimension2Ptr->model2D);
 		//delete dimension2Ptr->nineUIModel;
-
-		dimension2Ptr->pipe2d->~EWEPipeline();
-		//dimension2Ptr->pipe9->~EWEPipeline();
-		dimension2Ptr->~Dimension2();
-		ewe_free(dimension2Ptr->pipe2d);
+		Deconstruct(dimension2Ptr->pipe2d);
 		//ewe_free(dimension2Ptr->pipe9);
-		ewe_free(dimension2Ptr);
+		Deconstruct(dimension2Ptr);
 	}
 
 	void Dimension2::Bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {

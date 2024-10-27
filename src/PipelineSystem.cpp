@@ -25,8 +25,8 @@ namespace EWE {
 	void PipelineSystem::Destruct() {
 
 		for (auto iter = pipelineSystem.begin(); iter != pipelineSystem.end(); iter++) {
-			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), iter->second->pipeLayout, nullptr);
-			ewe_free(iter->second);
+			EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), iter->second->pipeLayout, nullptr);
+			Deconstruct(iter->second);
 		}
 
 		pipelineSystem.clear();
@@ -88,11 +88,11 @@ namespace EWE {
 
 
 	void PipelineSystem::Push(void* push) {
-		vkCmdPushConstants(cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
+		EWE_VK(vkCmdPushConstants, cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
 	}
 
 	void PipelineSystem::PushAndDraw(void* push) {
-		vkCmdPushConstants(cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
+		EWE_VK(vkCmdPushConstants, cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
 		
 #if EWE_DEBUG
 		assert(bindedModel != nullptr && "attempting to draw a model while none is binded");

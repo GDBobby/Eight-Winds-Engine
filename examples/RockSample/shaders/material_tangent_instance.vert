@@ -3,10 +3,12 @@
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 uv;
+layout(location = 3) in vec3 tangent;
 
 layout(location = 0) out vec3 fragPosWorld;
 layout(location = 1) out vec3 fragNormalWorld;
 layout(location = 2) out vec2 fragTexCoord;
+layout(location = 3) out vec3 fragTangentWorld;
 
 struct PointLight{
 	vec4 position; //ignore w
@@ -31,12 +33,14 @@ layout(set = 1, binding = 0) buffer TransformData{
 };
 
 void main(){
-	vec4 positionWorld = transformMatrices[gl_InstanceIndex] * vec4(position, 1.0);
+	const vec4 positionWorld = transformMatrices[gl_InstanceIndex] * vec4(position, 1.0);
 	gl_Position = ubo.projView * positionWorld;
 	fragPosWorld = positionWorld.xyz;
 
 	//fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
-	fragNormalWorld = normalize(transpose(inverse(mat3(transformMatrices[gl_InstanceIndex]))) * normal);
+	const mat3 trans3 = mat3(transformMatrices[gl_InstanceIndex]);
+	fragNormalWorld = normalize(transpose(inverse(trans3)) * normal);
 	
 	fragTexCoord = uv;
+	fragTangentWorld = normalize(trans3 * tangent);
 }

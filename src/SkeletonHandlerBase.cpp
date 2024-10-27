@@ -16,27 +16,20 @@
 
 namespace EWE {
 
-    void SkeletonBase::readAnimData(std::string filePath, bool partial, bool endian) {
+    void SkeletonBase::ReadAnimData(std::string filePath, bool partial, bool endian) {
         std::ifstream inFile(filePath, std::ifstream::binary);
-        if (!inFile.is_open()) {
-            printf("failed to open anim file: %s \n", filePath.c_str());
-            throw std::runtime_error("failed to open anim file");
-        }
+        assert(inFile.is_open() && "failed to open anim file");
         //printf("before opening anim archive \n");
         if (partial) {
             ImportData::AnimData importData;
             if (endian) {
-                importData.readFromFile(inFile);
+                importData.ReadFromFile(inFile);
             }
             else {
-                importData.readFromFileSwapEndian(inFile);
+                importData.ReadFromFileSwapEndian(inFile);
             }
             inFile.close();
-            //printf("after loading anim archive \n");
-            if (importData.versionTracker != EXPECTED_IMPORT_VERSION) {
-                printf("FAILED TO MATCH VERSION, DISCARD \n");
-                throw std::runtime_error("failed to match expected import version");
-            }
+            assert(importData.versionTracker == EXPECTED_IMPORT_VERSION);
 
             partialAnimationData.resize(importData.animations.size());
             //printf("animationData size? : %d \n", animationData.size());
@@ -69,10 +62,10 @@ namespace EWE {
         else {
             ImportData::FullAnimData importData;
             if (endian) {
-                importData.readFromFile(inFile);
+                importData.ReadFromFile(inFile);
             }
             else {
-                importData.readFromFileSwapEndian(inFile);
+                importData.ReadFromFileSwapEndian(inFile);
             }
             inFile.close();
             //printf("after loading anim archive \n");
@@ -100,7 +93,7 @@ namespace EWE {
         }
     }
 
-    void SkeletonBase::loadTextures(std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath) {
+    void SkeletonBase::LoadTextures(std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath) {
         //printf("failed to open : %s \n", filePath.c_str());
         std::ifstream inFile(filePath, std::ifstream::binary);
         if (!inFile.is_open()) {
@@ -109,7 +102,7 @@ namespace EWE {
         }
         //printf("before opening name archive \n");
         ImportData::NameExportData importData;
-        importData.readFromFile(inFile);
+        importData.ReadFromFile(inFile);
         inFile.close();
         //TEXTURES
         //this should be put in a separate function but im too lazy rn
@@ -120,8 +113,7 @@ namespace EWE {
             std::string finalDir = texturePath;
             finalDir += importData.meshNames[i];
             
-            MaterialTextureInfo materialInfo{ Material_Texture::createMaterialTexture(finalDir, true) };
-            textureTracker.first.push_back(materialInfo);
+            textureTracker.first.emplace_back(Material_Texture::CreateMaterialTexture(finalDir, true));
             
         }
         //printf("after mesh texutres \n");
@@ -130,8 +122,7 @@ namespace EWE {
             std::string finalDir = texturePath;
             finalDir += importData.meshNTNames[i];
 
-            MaterialTextureInfo materialInfo = Material_Texture::createMaterialTexture(finalDir, true);
-            textureTracker.second.push_back(materialInfo);
+            textureTracker.second.emplace_back(Material_Texture::CreateMaterialTexture(finalDir, true));
         }
         //printf("after mesh nt texutres \n");
     }
@@ -152,7 +143,7 @@ namespace EWE {
 #if !TEST_NO_MESH
         if (meshThread1Exist) {
             //printf("starting up mesh thread 1 \n");
-            meshThread1 = std::thread(&ImportData::readData<boneVertex>, std::ref(importMesh), meshPath, endian);
+            meshThread1 = std::thread(&ImportData::ReadData<boneVertex>, std::ref(importMesh), meshPath, endian);
         }
         else {
             //printf("skeleton mesh path doesn't exist : %s \n", meshPath.c_str());
@@ -164,7 +155,7 @@ namespace EWE {
         ImportData::TemplateMeshData<boneVertexNoTangent> importMeshNT;
         if (meshThread2Exist) {
             //printf("starting up mesh thread 2 \n");
-            meshThread2 = std::thread(&ImportData::readData<boneVertexNoTangent>, std::ref(importMeshNT), meshPath, endian);
+            meshThread2 = std::thread(&ImportData::ReadData<boneVertexNoTangent>, std::ref(importMeshNT), meshPath, endian);
         }
         else {
             //printf("skeleton mesh NT path doesn't exist : %s \n", meshPath.c_str());
@@ -177,16 +168,13 @@ namespace EWE {
             //printf("finna get an error \n");
             partial = false;
             meshPath = importPath + "_fullAnim.ewe";
-            if (!std::filesystem::exists(meshPath)) {
-                //printf("skeleton full anim path doesn't exist : %s \n", meshPath.c_str());
-                throw std::runtime_error("couldn't find either anim path for skeleton");
-            }
+            assert(std::filesystem::exists(meshPath) && "couldn't find either anim path for skeleton");
         }
 
         std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>> textureMappingTracker;
-        readAnimData(meshPath, partial, endian);
+        ReadAnimData(meshPath, partial, endian);
 
-        loadTextures(importPath + "_Names.ewe", textureMappingTracker, texturePath);
+        LoadTextures(importPath + "_Names.ewe", textureMappingTracker, texturePath);
 
         //printf("textures created \n");
 

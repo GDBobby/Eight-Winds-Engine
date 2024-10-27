@@ -467,7 +467,9 @@ namespace EWE {
 					assert(false && "not supported yet");
 				}
 				else if (hasNormal) {
-					assert(false && "not supported yet");
+					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
+					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
+					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_tangent_instance.vert.spv", flags, pipelineConfig, false })).first->second;
 				}
 				else {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();

@@ -23,7 +23,7 @@ namespace EWE {
 #endif
 
 	void SyncHub::Initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool, uint32_t transferQueueIndex) {
-		syncHubSingleton = new SyncHub(device);
+		syncHubSingleton = Construct<SyncHub>({ device });
 		
 		syncHubSingleton->queues[Queue::graphics] = graphicsQueue;
 		syncHubSingleton->queues[Queue::present] = presentQueue;
@@ -54,12 +54,11 @@ namespace EWE {
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			if (renderBuffers[i] != VK_NULL_HANDLE) {
-				vkFreeCommandBuffers(device, renderPool, 1, &renderBuffers[i]);
+				EWE_VK(vkFreeCommandBuffers, device, renderPool, 1, &renderBuffers[i]);
 			}
 		}
 
-		syncHubSingleton->~SyncHub();
-		ewe_free(syncHubSingleton);
+		Deconstruct(syncHubSingleton);
 #if DECONSTRUCTION_DEBUG
 		printf("end synchub destroy \n");
 #endif
@@ -88,7 +87,6 @@ namespace EWE {
 	VkCommandBuffer SyncHub::BeginSingleTimeCommandGraphics() {
 #if EWE_DEBUG
 		if (std::this_thread::get_id() != main_thread) {
-			printf("graphics queue STC not on main thread\n");
 			assert(false && "graphics queue STC not on main thread");
 		}
 #endif

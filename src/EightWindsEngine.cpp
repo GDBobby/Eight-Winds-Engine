@@ -109,13 +109,12 @@ namespace EWE {
 	EightWindsEngine::~EightWindsEngine() {
 		Dimension2::Destruct();
 		PipelineSystem::Destruct();
-		leafSystem->~LeafSystem();
-		ewe_free(leafSystem);
+		Deconstruct(leafSystem);
 #if DECONSTRUCTION_DEBUG
 		printf("beginning of EightWindsEngine deconstructor \n");
 #endif
-		printf("after deconstructig level manager \n");
-		vkDestroyQueryPool(eweDevice.Device(), queryPool, nullptr);
+		EWE_VK(vkDestroyQueryPool, eweDevice.Device(), queryPool[0], nullptr);
+		EWE_VK(vkDestroyQueryPool, eweDevice.Device(), queryPool[1], nullptr);
 		DescriptorHandler::Cleanup();
 
 
@@ -123,16 +122,14 @@ namespace EWE {
 		MaterialPipelines::CleanupStaticVariables();
 
 		for (auto& dsl : TextureDSLInfo::descSetLayouts) {
-			dsl.second->~EWEDescriptorSetLayout();
-			ewe_free(dsl.second);
+			Deconstruct(dsl.second);
 		}
 		TextureDSLInfo::descSetLayouts.clear();
 		Texture_Manager::GetTextureManagerPtr()->Cleanup();
 
 		for (auto& bufferType : bufferMap) {
 			for (auto& buffer : bufferType.second) {
-				buffer->~EWEBuffer();
-				ewe_free(buffer);
+				Deconstruct(buffer);
 			}
 		}
 		bufferMap.clear();
@@ -182,31 +179,36 @@ namespace EWE {
 		//printf("loading screen entry \n");
 		//SyncHub::GetSyncHubInstance()->waitOnTransferFence();
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+#if EWE_DEBUG
 		printf("before init leaf data on GPU\n");
+#endif
 		leafSystem->InitData();
+#if EWE_DEBUG
 		printf("after init leaf data\n");
+#endif
 
 		leafSystem->LoadLeafModel();
+#if EWE_DEBUG
 		printf("after leaf mesh\n");
+#endif
 		
 		leafSystem->LoadLeafTexture();
+#if EWE_DEBUG
 		printf("after leaf texture\n");
+#endif
 
 		//EWE_VK(vmaCheckCorruption(EWEDevice::GetAllocator(), UINT32_MAX));
 
 
 		double renderThreadTime = 0.0;
-		const double renderTimeCheck = 1.0 / 60.0;
+		const double renderTimeCheck = 1000.0 / 60.0;
 		auto startThreadTime = std::chrono::high_resolution_clock::now();
 		auto endThreadTime = startThreadTime;
 		//printf("starting loading thread loop \n");
-		while (loadingEngine){// || (loadingTime < 2.0)) {
-			
-			//printf("loading render looop : %.2f \n", loadingTime);
-
+		while (loadingEngine || (loadingTime < 2000.0)) {
 
 			endThreadTime = std::chrono::high_resolution_clock::now();
-			renderThreadTime += std::chrono::duration<double, std::chrono::seconds::period>(endThreadTime - startThreadTime).count();
+			renderThreadTime += std::chrono::duration<double, std::chrono::milliseconds::period>(endThreadTime - startThreadTime).count();
 			startThreadTime = endThreadTime;
 
 			//auto newTime = std::chrono::high_resolution_clock::now();
@@ -218,12 +220,11 @@ namespace EWE {
 				//printf("rendering loading thread start??? \n");
 				syncHub->RunGraphicsCallbacks();
 
-				/* debugging
 				auto frameInfo = eweRenderer.BeginFrame();
 				if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
 					
 					eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
-					leafSystem->FallCalculation(static_cast<float>(renderThreadTime), frameInfo.index);
+					leafSystem->FallCalculation(static_cast<float>(renderThreadTime / 1000.0), frameInfo.index);
 
 					leafSystem->Render(frameInfo);
 					//uiHandler.drawMenuMain(commandBuffer);
@@ -233,23 +234,26 @@ namespace EWE {
 					}
 				}
 				else {
-					//printf("swap chain extent on start? %i : %i", tempPair.first, tempPair.second);
+
+					menuManager.windowResize(eweRenderer.GetExtent());
 				}
-				*/
 				
-				renderThreadTime = 0.f;
+				renderThreadTime = 0.0;
 				//printf("end rendering thread \n");
 			}
 			//printf("end of render thread loop \n");
 		}
 		finishedLoadingScreen = true;
+		CreateQueryPool();
+#if EWE_DEBUG
 		printf(" ~~~~ END OF LOADING SCREEN FUNCTION \n");
+#endif
 	}
 	FrameInfo EightWindsEngine::BeginRenderWithoutPass() {
 		FrameInfo frameInfo{ eweRenderer.BeginFrame() };
 		if (frameInfo.cmdBuf) {
 #if BENCHMARKING_GPU
-			QueryTimestamp(frameInfo);
+			QueryTimestampBegin(frameInfo);
 #endif
 		}
 		//else {
@@ -266,7 +270,7 @@ namespace EWE {
 		FrameInfo frameInfo{ eweRenderer.BeginFrame() };
 		if (frameInfo.cmdBuf) {
 #if BENCHMARKING_GPU
-			QueryTimestamp(frameInfo);
+			QueryTimestampBegin(frameInfo);
 #endif
 
 			eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
@@ -337,22 +341,19 @@ namespace EWE {
 	}
 
 	void EightWindsEngine::EndRender(FrameInfo const& frameInfo) {
-#if BENCHMARKING_GPU
-		if (displayingRenderInfo) {
-			vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 1);
-		}
-#endif
 		eweRenderer.EndSwapChainRenderPass(frameInfo.cmdBuf);
 	}
 
 	void EightWindsEngine::EndFrame(FrameInfo const& frameInfo) {
 		//printf("end render \n");
-
-
-
+#if BENCHMARKING_GPU
+		QueryTimestampEnd(frameInfo);
+#endif
 		//printf("after ending swap chain \n");
 		if (eweRenderer.EndFrame()) {
+#if EWE_DEBUG
 			printf("dirty swap on end\n");
+#endif
 			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain recreation
 			//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
 			//uiHandler.windowResize(eweRenderer.getExtent());
@@ -360,27 +361,42 @@ namespace EWE {
 		}
 	}
 #if BENCHMARKING_GPU
-	void EightWindsEngine::QueryTimestamp(FrameInfo& frameInfo) {
+	void EightWindsEngine::CreateQueryPool() {
+		if (!displayingRenderInfo) {
+			return;
+		}
+		const VkPhysicalDeviceLimits devLimits = eweDevice.GetProperties().limits;
+		const float timestampPeriod = devLimits.timestampPeriod;
+		if (timestampPeriod == 0.0f || !devLimits.timestampComputeAndGraphics) {
+			displayingRenderInfo = false;
+		}
+		gpuTicksPerSecond = timestampPeriod / 1e6f; //1e6 converts it from seconds to milliseconds
+
+#if EWE_DEBUG
+		assert(queryPool[0] == VK_NULL_HANDLE);
+		assert(queryPool[1] == VK_NULL_HANDLE);
+#endif
+
+		VkQueryPoolCreateInfo queryPoolInfo = {};
+		queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+		queryPoolInfo.pNext = nullptr;
+		queryPoolInfo.flags = 0;
+		queryPoolInfo.pipelineStatistics = 0; //this could be useful https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueryPipelineStatisticFlagBits.html
+		queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+		queryPoolInfo.queryCount = 2;
+		EWE_VK(vkCreateQueryPool, eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool[0]);
+		EWE_VK(vkCreateQueryPool, eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool[1]);
+	}
+
+	void EightWindsEngine::QueryTimestampBegin(FrameInfo& frameInfo) {
 
 		if (displayingRenderInfo) {
-			if (queryPool == VK_NULL_HANDLE) [[unlikely]] {
-				gpuTicksPerSecond = eweDevice.GetProperties().limits.timestampPeriod / 1e5f; //normally 1e9f but im changing so that i dont need to multiply by 1000 later
-
-				VkQueryPoolCreateInfo queryPoolInfo = {};
-				queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-				queryPoolInfo.pNext = nullptr;
-				queryPoolInfo.flags = 0;
-				queryPoolInfo.pipelineStatistics = 0; //this could be useful https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueryPipelineStatisticFlagBits.html
-				queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
-				queryPoolInfo.queryCount = 2;
-				EWE_VK(vkCreateQueryPool, eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool);
-			}
-			else {
-				//printf("before non-null \n");
-				//shouldnt be activated until after the command has already been submitted at least once
-				uint64_t timestampStart, timestampEnd;
-				EWE_VK(vkGetQueryPoolResults, eweDevice.Device(), queryPool, 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
-				EWE_VK(vkGetQueryPoolResults, eweDevice.Device(), queryPool, 1, 1, sizeof(uint64_t) * 2, &timestampEnd, sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT);
+			//printf("before non-null \n");
+			//shouldnt be activated until after the command has already been submitted at least once
+			if (previouslySubmitted[frameInfo.index]) {
+				uint64_t& timestampStart = timestamps[frameInfo.index * 2];
+				uint64_t& timestampEnd = timestamps[frameInfo.index * 2 + 1];
+				EWE_VK(vkGetQueryPoolResults, eweDevice.Device(), queryPool[frameInfo.index], 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t) * 2, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 				elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond;
 				totalElapsedGPUMS += elapsedGPUMS;
 				averageElapsedGPUCounter++;
@@ -389,13 +405,20 @@ namespace EWE {
 					averageElapsedGPUMS = totalElapsedGPUMS / 100.f;
 					totalElapsedGPUMS = 0.f;
 				}
-				//need to add this to the text renderer
-				//printf("elapsed GPU seconds : %.5f \n", elapsedGPUMS);
 			}
+			else {
+				previouslySubmitted[frameInfo.index] = true;
+			}
+			EWE_VK(vkCmdResetQueryPool, frameInfo.cmdBuf, queryPool[frameInfo.index], 0, 2);
+			
 
-			vkCmdResetQueryPool(frameInfo.cmdBuf, queryPool, 0, 2);
-			vkCmdWriteTimestamp(frameInfo.cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0);
+			EWE_VK(vkCmdWriteTimestamp, frameInfo.cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool[frameInfo.index], 0);
 		}
 	}
-#endif
+	void EightWindsEngine::QueryTimestampEnd(FrameInfo const& frameInfo) {
+		if (displayingRenderInfo) {
+			EWE_VK(vkCmdWriteTimestamp, frameInfo.cmdBuf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool[frameInfo.index], 1);
+		}
+	}
+#endif //BENCHMARKING_GPU
 }

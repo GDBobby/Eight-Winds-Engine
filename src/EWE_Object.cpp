@@ -13,7 +13,7 @@ namespace EWE {
 
     EweObject::EweObject(std::string objectPath, bool globalTextures, Queue::Enum queue) {
 
-        ImportData tempData = ImportData::loadData(objectPath);
+        ImportData tempData = ImportData::LoadData(objectPath);
         TextureMapping textureTracker;
         LoadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
 
@@ -24,8 +24,10 @@ namespace EWE {
 #endif
     }
     EweObject::EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, Queue::Enum queue) : mySkinID{ SkinRenderSystem::GetSkinID() } {
-        std::cout << "weapon object construction : objectPath - " << objectPath << std::endl;
-        ImportData tempData = ImportData::loadData(objectPath);
+#if EWE_DEBUG
+        printf("weapon object construction : objectPath - %s\n", objectPath.c_str());
+#endif
+        ImportData tempData = ImportData::LoadData(objectPath);
         TextureMapping textureTracker;
         LoadTextures(objectPath, tempData.nameExport, textureTracker, globalTextures);
 
@@ -42,7 +44,7 @@ namespace EWE {
             RigidRenderingSystem::RemoveByTransform(*iter, &transform);
         }
         for (auto& mesh : meshes) {
-            delete mesh;
+            Deconstruct(mesh);
         }
         //printf("after removing textures \n");
     }
@@ -136,7 +138,7 @@ namespace EWE {
             }
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNames[i];
-            returnPair = Material_Texture::createMaterialTexture(finalDir, globalTextures);
+            returnPair = Material_Texture::CreateMaterialTexture(finalDir, globalTextures);
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNames.push_back(returnPair);
@@ -148,7 +150,7 @@ namespace EWE {
             importData.meshNTNames[i] = importData.meshNTNames[i].substr(0, importData.meshNTNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNTNames[i];
-            Material_Texture::createMaterialTexture(finalDir, globalTextures);
+            Material_Texture::CreateMaterialTexture(finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTNames.push_back(returnPair);
@@ -163,7 +165,7 @@ namespace EWE {
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshSimpleNames[i];
             //printf("simple names final Dir : %s \n", finalDir.c_str());
-            Material_Texture::createMaterialTexture(finalDir, globalTextures);
+            Material_Texture::CreateMaterialTexture(finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshSimpleNames.push_back(returnPair);
@@ -175,7 +177,7 @@ namespace EWE {
             importData.meshNTSimpleNames[i] = importData.meshNTSimpleNames[i].substr(0, importData.meshNTSimpleNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNTSimpleNames[i];
-            Material_Texture::createMaterialTexture(finalDir, globalTextures);
+            Material_Texture::CreateMaterialTexture(finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTSimpleNames.push_back(returnPair);

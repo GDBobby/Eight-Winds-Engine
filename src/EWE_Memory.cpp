@@ -52,29 +52,31 @@ void UpdateMemoryLogFile() {
 }
 #endif
 
-
-void* ewe_alloc(std::size_t element_size, std::size_t element_count, std::source_location srcLoc) {
-	void* ptr = malloc(element_count * element_size);
+namespace Internal {
+	void* ewe_alloc(std::size_t element_size, std::size_t element_count, std::source_location srcLoc) {
+		void* ptr = malloc(element_count * element_size);
 #if EWE_DEBUG
-	ewe_alloc_mem_track(ptr, srcLoc);
+		ewe_alloc_mem_track(ptr, srcLoc);
 #endif
-	return ptr;
-}
+		return ptr;
+	}
 
-void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc){
+
+	void ewe_free(void* ptr) {
+#if USING_MALLOC
+		free(ptr);
+#endif
+#if EWE_DEBUG
+		ewe_free_mem_track(ptr);
+#endif
+	}
+}//namespace Internal
+
+void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc) {
 
 #if EWE_DEBUG
 	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), srcLoc);
 	UpdateMemoryLogFile();
-#endif
-}
-
-void ewe_free(void* ptr) {
-#if USING_MALLOC
-	free(ptr);
-#endif
-#if EWE_DEBUG
-	ewe_free_mem_track(ptr);
 #endif
 }
 

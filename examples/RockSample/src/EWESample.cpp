@@ -62,7 +62,7 @@ namespace EWE {
 		auto sceneLoadFunc = [&]() {
 			printf("loading main menu scene : %u\n", std::this_thread::get_id());
 
-			scenes.at(scene_mainmenu) = Construct<MainMenuScene>({ ewEngine });
+			scenes.at(scene_mainmenu) = Construct<MainMenuScene>({ ewEngine});
 			LoadSceneIfMatching(scene_mainmenu);
 			loadingThreadTracker.mainSceneThread = true;
 

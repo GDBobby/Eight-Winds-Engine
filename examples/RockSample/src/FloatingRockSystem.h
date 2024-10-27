@@ -32,7 +32,7 @@ namespace EWE {
 	private:
 
 		EWEModel* rockModel;
-		TextureDesc rockTexture{ TEXTURE_UNBINDED_DESC };
+		MaterialTextureInfo rockTexture;
 
 		struct RockTrack {
 			std::vector<uint32_t> currentPosition{};
@@ -57,7 +57,6 @@ namespace EWE {
 		VkDescriptorSet compDescriptorSet[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		VkShaderModule compShaderModule{ VK_NULL_HANDLE };
 		struct RockCompPushData {
-			int whichIndex;
 			float secondsSinceBeginning{0.f};
 		};
 		RockCompPushData compPushData{};

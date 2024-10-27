@@ -5,9 +5,11 @@ namespace EWE {
     namespace Basic_Model {
         EWEModel* Circle(Queue::Enum queue, uint16_t const points, float radius) {
             //utilizing a triangle fan
+#if EWE_DEBUG
             if (points < 5) {
                 std::cout << "yo wyd? making a circle with too few points : " << points << std::endl;
             }
+#endif
 
             glm::vec3 color = { 1.f,1.f,1.f };
             glm::vec3 normal = { 0.f, -1.f, 0.f };
@@ -35,7 +37,7 @@ namespace EWE {
             indices.push_back(0);
             indices.push_back(points - 1);
             indices.push_back(1);
-            return new EWEModel(vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue);
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue });
         }
 
         EWEModel* Quad(Queue::Enum queue, glm::vec2 uvScale) {
@@ -46,7 +48,7 @@ namespace EWE {
                 {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}, {1.f, 0.f, 0.f}},
             };
             std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
-            return new EWEModel(vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue);
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue });
         }
         EWEModel* QuadPNU(Queue::Enum queue, glm::vec2 uvScale) {
             std::vector<VertexNT> vertices{
@@ -56,7 +58,7 @@ namespace EWE {
                 {{0.5f,0.0f, 0.5f}, {0.f,1.f,0.f}, {uvScale.x,0.f}},
             };
             std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
-            return new EWEModel(vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue);
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue });
         }
         EWEModel* Simple3DQuad(Queue::Enum queue, glm::vec2 uvScale) {
             std::vector<EffectVertex> vertices{
@@ -66,7 +68,7 @@ namespace EWE {
                 {{0.5f,0.0f, 0.5f}, {uvScale.x,0.f}},
             };
             std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-            return new EWEModel(vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue);
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue });
         }
 
         EWEModel* TileQuad3D(Queue::Enum queue, glm::vec2 uvScale) {
@@ -79,7 +81,7 @@ namespace EWE {
                 {{uvScale.x,uvScale.y}},
             };
             std::vector<uint32_t> indices{};// 0, 1, 2, 2, 3, 0 };
-            return new EWEModel(vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue);
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue });
         }
 
         EWEModel* Grid2D(Queue::Enum queue, glm::vec2 scale) {
@@ -97,7 +99,7 @@ namespace EWE {
                 {rightX, botY}
             };
             std::vector<uint32_t> indices{};
-            return new EWEModel(vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue);
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue });
         }
 
         EWEModel* Quad2D(Queue::Enum queue, glm::vec2 scale) {
@@ -108,7 +110,7 @@ namespace EWE {
                 {{-0.5f, 0.5f}, {0.f, scale.y}}
             };
             std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-            return new EWEModel(vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue);
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue });
         }
         EWEModel* NineUIQuad(Queue::Enum queue) {
             std::vector<VertexUI> vertices{
@@ -125,7 +127,7 @@ namespace EWE {
                 {{-.5f, .5f}, {.0625f, 1.f - .0625f}}, //inner top right
             };
             std::vector<uint32_t> indices{ 1,0,6,1,6,7,1,7,3,1,3,2,1,2,0,5,4,2,5,2,3,5,3,7,5,7,6,5,6,4 };
-            return new EWEModel(vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue);
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue });
         }
         EWEModel* SkyBox(Queue::Enum queue, float scale) {
             //hopefully never have to look at this again
@@ -161,7 +163,7 @@ namespace EWE {
             }
 
             //printf("vertex size ? : %d \n", vertices.size());
-            return new EWEModel(vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue);
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue });
         }
     }//namespace Basic_Model
 } //namespace EWE
