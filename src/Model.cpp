@@ -90,32 +90,24 @@ namespace EWE {
     
     inline void CopyModelBuffer(StagingBuffer* stagingBuffer, VkBuffer dstBuffer, const VkDeviceSize bufferSize, const Queue::Enum queue) {
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-        VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(queue);
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer->buffer, dstBuffer, bufferSize);
+        CommandBufferData& cmdBuf = syncHub->BeginSingleTimeCommand(queue);
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf.cmdBuf, stagingBuffer->buffer, dstBuffer, bufferSize);
 
         if (queue == Queue::graphics) {
             syncHub->EndSingleTimeCommandGraphics(cmdBuf);
 #if USING_VMA
             stagingBuffer->Free(EWEDevice::GetAllocator());
 #else
-            stagingBuffer->Free(EWEDevice::GetVkDevice());
+            stagingBuffer->Free();
 #endif
             Deconstruct(stagingBuffer);
         }
         else if (queue == Queue::transfer) {
             //transitioning from transfer to compute not supported currently
-            CommandWithCallback cb{};
-            cb.cmdBuf = cmdBuf;
-            cb.callback = [sb = stagingBuffer, 
-#if USING_VMA
-            memMgr = EWEDevice::GetAllocator()
-#else
-            memMgr = EWEDevice::GetVkDevice()
-#endif
-            ] {
-                sb->Free(memMgr); Deconstruct(sb); 
-            };
-            syncHub->EndSingleTimeCommandTransfer(cb);
+
+            TransferCommandManager::AddCommand(cmdBuf);
+            TransferCommandManager::AddPropertyToCommand(stagingBuffer);
+            syncHub->EndSingleTimeCommandTransfer();
         }
     }
 
@@ -128,7 +120,7 @@ namespace EWE {
 #if USING_VMA
         StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, EWEDevice::GetAllocator(), data });
 #else
-        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), data });
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, data });
 #endif
 
         instanceBuffer = Construct<EWEBuffer>({
@@ -174,7 +166,7 @@ namespace EWE {
 #if USING_VMA
         StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetAllocator(), data });
 #else
-        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), data });
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, data });
 #endif
 #if DEBUGGING_MEMORY_WITH_VMA
         vertexBuffer = new EWEBuffer(
@@ -204,7 +196,7 @@ namespace EWE {
 #if USING_VMA
         StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetAllocator(), indexData });
 #else
-        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice(), indexData });
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, indexData });
 #endif
 #if DEBUGGING_MEMORY_WITH_VMA
         indexBuffer = Construct<EWEBuffer>({
@@ -472,16 +464,16 @@ namespace EWE {
     void EWEModel::SetDebugNames(std::string const& name){
         std::string comboName{"vertex:"};
         comboName += name;
-        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), vertexBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
+        DebugNaming::SetObjectName(vertexBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
         if(hasIndexBuffer){
             comboName = "index:";
             comboName += name;
-            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), indexBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
+            DebugNaming::SetObjectName(indexBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
         }
         if(hasInstanceBuffer){
            comboName = "instance:";
            comboName += name;   
-           DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), instanceBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
+           DebugNaming::SetObjectName(instanceBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
         }
     }
 #endif

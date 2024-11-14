@@ -1,12 +1,15 @@
 #pragma once
 
 #include "EWEngine/Graphics/VulkanHeader.h"
+#include "EWEngine/Graphics/PipelineBarrier.h"
+#include "EWEngine/Data/CommandCallbacks.h"
 
 #include <type_traits>
 #include <functional>
 #include <cassert>
 #include <thread>
 #include <mutex>
+#include <array>
 
 
 /*
@@ -23,6 +26,28 @@
 */
 
 namespace EWE{
+
+
+
+
+    struct FenceData {
+        VkFence fence{ VK_NULL_HANDLE };
+        CommandCallbacks callbackData{};
+        bool inUse{ false };
+        std::vector<SemaphoreData*> waitSemaphores{}; //each wait could potentially be signaled multiple times in a single queue, and then multiple queues
+        SemaphoreData* signalSemaphores[Queue::_count] = { nullptr, nullptr, nullptr, nullptr }; //each signal is unique per submit that could wait on it, and right now I'm expecting max 1 wait per queue
+
+        CommandCallbacks WaitReturnCallbacks(VkDevice device, uint64_t time);
+        void Lock() {
+            mut.lock();
+        }
+        void Unlock() {
+            mut.unlock();
+        }
+    private:
+        std::mutex mut{};
+    };
+
     //not thread safe
 
     //each semaphore and fence could track which queue it's being used in, but I don't think that's the best approach
@@ -64,18 +89,26 @@ namespace EWE{
 
     //this is explicitly for VkFence, Semaphore, and Event (i don't know yet if event will fit here)
     class SyncPool{
-
+    private:
         const uint8_t size;
         VkDevice device;
 
         FenceData* fences;
         SemaphoreData* semaphores;
+        std::array<CommandBufferData*, Queue::_count> cmdBufs;
 
-        std::mutex fenceMut{};
-        std::mutex semMut{};
+        //acquisition mutexes to ensure multiple threads dont acquire a single object
+        std::mutex fenceAcqMut{};
+        std::mutex semAcqMut{};
+        std::mutex cmdBufAcqMut{};
+
+        std::array<VkCommandPool, Queue::_count> cmdPools;
+
+
+        void HandleCallbacks(std::vector<CommandCallbacks> callbacks);
 
     public:
-        SyncPool(uint8_t size, VkDevice device);
+        SyncPool(uint8_t size, VkDevice device, std::array<VkCommandPool, Queue::_count>& cmdPools);
 
         ~SyncPool();
 
@@ -100,7 +133,7 @@ namespace EWE{
 #endif
         
         bool CheckFencesForUsage();
-        void CheckFencesForCallbacks(std::mutex& transferPoolMutex);
+        void CheckFencesForCallbacks();
 #if SEMAPHORE_TRACKING
         SemaphoreData* GetSemaphoreForSignaling(const char* signalName);
 #else
@@ -108,7 +141,12 @@ namespace EWE{
 #endif
         //this locks the fence as well
         FenceData& GetFence();
-        //FenceData& GetFenceSignal(Queue::Enum queue);
-        
+        CommandBufferData& GetCmdBufSingleTime(Queue::Enum queue);
+        void ResetCommandBuffer(CommandBufferData& cmdBuf, Queue::Enum queue);
+        void ResetCommandBuffer(CommandBufferData& cmdBuf);
+        void ResetCommandBuffers(std::vector<CommandBufferData*>& cmdBufs, Queue::Enum queue);
+        void ResetCommandBuffers(std::vector<CommandBufferData*>& cmdBufs);
+
+        static void (*SubmitGraphicsAsync)(CommandBufferData&, std::vector<SemaphoreData*>);
     };
 } //namespace EWE

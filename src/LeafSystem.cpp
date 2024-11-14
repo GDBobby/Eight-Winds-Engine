@@ -4,14 +4,15 @@
 namespace EWE {
 	//id like to move some of the random generation components to local scope on leaf generation, not sure which ones yet
 	//id also like to attempt to move this entire calculation to the GPU on compute shaders
-	LeafSystem::LeafSystem() : ranDev{}, randomGen{ ranDev() }, ellipseRatioDistribution{ 1.f,2.f }, rotRatioDistribution{ 1.f, 4.f },
+	LeafSystem::LeafSystem() :
+#if EWE_DEBUG
+		PipelineSystem{ Pipe::loading },
+#endif
+		ranDev{}, randomGen{ ranDev() }, ellipseRatioDistribution{ 1.f,2.f }, rotRatioDistribution{ 1.f, 4.f },
 		angularFrequencyDistribution{ glm::pi<float>(), glm::two_pi<float>() }, initTimeDistribution{ 0.f, 20.f },
 		motionDistribution{ 0, 100 }, ellipseOscDistribution{ 0.75f, 1.25f }, depthVarianceDistribution{ -5.f, 5.f },
 		widthVarianceDistribution{ -80.f, 60.f }, fallSwingVarianceDistribution{ 5.f, 10.f }, initHeightVarianceDistribution{ 2.f, 40.f }, varianceDistribution{ -.5f, .5f },
 		rockDist{ 1.75f, 2.25f }
-#if EWE_DEBUG
-		, PipelineSystem{Pipe::loading}
-#endif
 
 	{
 		CreatePipeline();
@@ -26,10 +27,10 @@ namespace EWE {
 		printf("begin deconstructing leaf system \n");
 #endif
 		Deconstruct(leafModel);
-		EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), vertexShaderModule, nullptr);
-		EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), fragmentShaderModule, nullptr);
+		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, vertexShaderModule, nullptr);
+		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, fragmentShaderModule, nullptr);
 
-		vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), pipeLayout, nullptr);
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipeLayout, nullptr);
 
 		for (auto& buffer : leafBuffer) {
 			Deconstruct(buffer);
@@ -70,8 +71,8 @@ namespace EWE {
 			);
 		}
 #if DEBUG_NAMING
-		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), transformDescriptor[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf transform descriptor[0]");
-		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), transformDescriptor[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf transform descriptor[1]");
+		DebugNaming::SetObjectName(transformDescriptor[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf transform descriptor[0]");
+		DebugNaming::SetObjectName(transformDescriptor[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf transform descriptor[1]");
 #endif
 	}
 
@@ -359,7 +360,7 @@ namespace EWE {
 		const std::string leafTexturePath = "leaf.jpg";
 		leafTextureID = Texture_Manager::AddImageInfo(leafTexturePath, imageInfo, VK_SHADER_STAGE_FRAGMENT_BIT, false);
 #if DEBUG_NAMING
-		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), leafTextureID, VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf texture descriptor");
+		DebugNaming::SetObjectName(leafTextureID, VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf texture descriptor");
 #endif
 		//printf("leaf model loaded \n");
 	}
@@ -413,6 +414,6 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
 		pipelineLayoutInfo.pSetLayouts = setLayouts.data();
 
-		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout);
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}
 }

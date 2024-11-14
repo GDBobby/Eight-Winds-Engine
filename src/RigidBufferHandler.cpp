@@ -75,7 +75,7 @@ namespace EWE {
 	}
 	void RigidInstancedBufferHandler::Flush() {
 #if EWE_DEBUG
-		assert(!computedTransforms && "this buffer is unwriteable from CPU");
+		assert(!computedTransforms && "this buffer is not writeable from CPU");
 #endif
 		transformBuffer[frameIndex]->Flush();
 		currentMemOffset = 0;

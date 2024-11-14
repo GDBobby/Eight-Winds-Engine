@@ -71,7 +71,7 @@ namespace EWE {
 
 	namespace Pipeline_Helper_Functions {
 		void CreateShaderModule(std::string const& file_path, VkShaderModule* shaderModule);
-		std::vector<char> readFile(const std::string& filepath);
+		std::vector<char> ReadFile(const std::string& filepath);
 
 		void CreateShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule);
 		void CreateShaderModule(const char* data, std::size_t dataSize, VkShaderModule* shaderModule);
@@ -152,9 +152,8 @@ namespace EWE {
 		static void EnableAlphaBlending(PipelineConfigInfo& configInfo);
 
 		static void CleanShaderModules() {
-			VkDevice const& vkDevice = EWEDevice::GetVkDevice();
 			for (auto iter = shaderModuleMap.begin(); iter != shaderModuleMap.end(); iter++) {
-				EWE_VK(vkDestroyShaderModule, vkDevice, iter->second, nullptr);
+				EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, iter->second, nullptr);
 			}
 			shaderModuleMap.clear();
 		}

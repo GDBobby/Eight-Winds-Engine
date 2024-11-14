@@ -32,7 +32,6 @@ namespace EWE {
 
 		//printf("text overlay construction \n");
 
-		cmdBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 		PrepareResources();
 		//printf("after prepare resources \n");
 		PreparePipeline(pipelineInfo);
@@ -44,20 +43,20 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
 		printf("deconstrructing textoverlay \n");
 #endif
-		delete vertexBuffer[0];
-		delete vertexBuffer[1];
+		Deconstruct(vertexBuffer[0]);
+		Deconstruct(vertexBuffer[1]);
 
 		VkDevice vkDevice = EWEDevice::GetVkDevice();
-		vkDestroySampler(vkDevice, sampler, nullptr);
-		vkDestroyImage(vkDevice, image, nullptr);
-		vkDestroyImageView(vkDevice, view, nullptr);
-		vkFreeMemory(vkDevice, imageMemory, nullptr);
-		vkDestroyShaderModule(vkDevice, vertShaderModule, nullptr);
-		vkDestroyShaderModule(vkDevice, fragShaderModule, nullptr);
-		vkDestroyDescriptorSetLayout(vkDevice, descriptorSetLayout, nullptr);
-		vkDestroyPipelineLayout(vkDevice, pipelineLayout, nullptr);
-		vkDestroyPipelineCache(vkDevice, pipelineCache, nullptr);
-		vkDestroyPipeline(vkDevice, pipeline, nullptr);
+		EWE_VK(vkDestroySampler, vkDevice, sampler, nullptr);
+		EWE_VK(vkDestroyImage, vkDevice, image, nullptr);
+		EWE_VK(vkDestroyImageView, vkDevice, view, nullptr);
+		EWE_VK(vkFreeMemory, vkDevice, imageMemory, nullptr);
+		EWE_VK(vkDestroyShaderModule, vkDevice, vertShaderModule, nullptr);
+		EWE_VK(vkDestroyShaderModule, vkDevice, fragShaderModule, nullptr);
+		EWE_VK(vkDestroyDescriptorSetLayout, vkDevice, descriptorSetLayout, nullptr);
+		EWE_VK(vkDestroyPipelineLayout, vkDevice, pipelineLayout, nullptr);
+		EWE_VK(vkDestroyPipelineCache, vkDevice, pipelineCache, nullptr);
+		EWE_VK(vkDestroyPipeline, vkDevice, pipeline, nullptr);
 
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstruction textoverlay \n");
@@ -71,7 +70,9 @@ namespace EWE {
 		float width = GetWidth(screenWidth);
 		float currentPos = x;
 		stb_fontchar* charData = &stbFontData[(uint32_t)string.back() - STB_FONT_consolas_24_latin1_FIRST_CHAR];
+#if EWE_DEBUG
 		printf("xpos get selection index - %.1f \n", xpos);
+#endif
 		if (align == TA_left) {
 			/*
 			if (xpos >= (x + width - charData->advance * charW / 2.f)) {
@@ -91,9 +92,11 @@ namespace EWE {
 
 		//float lastPos = currentPos;
 		for (uint16_t i = 0; i < string.length(); i++) {
-			charData = &stbFontData[(uint32_t)string[i] - STB_FONT_consolas_24_latin1_FIRST_CHAR];
+			charData = &stbFontData[static_cast<uint32_t>(string[i]) - STB_FONT_consolas_24_latin1_FIRST_CHAR];
 			currentPos += (charData->advance * charW) * screenWidth / 8.f;
+#if EWE_DEBUG
 			printf("currentPos : %.2f \n", currentPos);
+#endif
 			if (xpos <= currentPos) { return i; }
 			currentPos += (charData->advance * charW) * screenWidth * 3.f / 8.f;
 		}
@@ -104,8 +107,8 @@ namespace EWE {
 		const float charW = 1.5f * scale / screenWidth;
 		float textWidth = 0;
 		stb_fontchar* charData;
-		for (auto letter : string) {
-			charData = &stbFontData[(uint32_t)letter - STB_FONT_consolas_24_latin1_FIRST_CHAR];
+		for (auto const& letter : string) {
+			charData = &stbFontData[static_cast<uint32_t>(letter) - STB_FONT_consolas_24_latin1_FIRST_CHAR];
 			textWidth += charData->advance * charW;
 		}
 		//printf("text struct get width : %.5f \n", textWidth);
@@ -125,11 +128,11 @@ namespace EWE {
 		const uint32_t fontWidth = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
 		const uint32_t fontHeight = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
 
-		static unsigned char font24pixels[fontWidth][fontHeight];
+		static uint8_t font24pixels[fontWidth][fontHeight];
 		stb_font_consolas_24_latin1(stbFontData, font24pixels, fontHeight);
 
-		vertexBuffer[0] = new EWEBuffer{ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
-		vertexBuffer[1] = new EWEBuffer{ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
+		vertexBuffer[0] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
+		vertexBuffer[1] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
 
 		// Font texture
 		VkImageCreateInfo imageCreateInfo{};
@@ -159,9 +162,10 @@ namespace EWE {
 #endif
 
 		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(EWEDevice::GetVkDevice(), image, &memRequirements);
+		EWE_VK(vkGetImageMemoryRequirements, EWEDevice::GetVkDevice(), image, &memRequirements);
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.pNext = nullptr;
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = FindMemoryType(EWEDevice::GetEWEDevice()->GetPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -174,12 +178,12 @@ namespace EWE {
 #if USING_VMA
 		StagingBuffer stagingBuffer{allocInfo.allocationSize, EWEDevice::GetAllocator(), &font24pixels[0][0] };
 #else
-		StagingBuffer stagingBuffer{ allocInfo.allocationSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), eweDevice->Device(), &font24pixels[0][0] };
+		StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ allocInfo.allocationSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), eweDevice->Device(), &font24pixels[0][0] });
 #endif
 		// Copy to image
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-		VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::transfer);
+		CommandBufferData& cmdBuf = syncHub->BeginSingleTimeCommand(Queue::transfer);
 		VkImageSubresourceRange subresourceRange{};
 		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		subresourceRange.baseMipLevel = 0;
@@ -189,7 +193,7 @@ namespace EWE {
 		{   //initialize image
 
 			VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
-			vkCmdPipelineBarrier(cmdBuf,
+			EWE_VK(vkCmdPipelineBarrier, cmdBuf.cmdBuf,
 				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 				0,
 				0, nullptr,
@@ -209,8 +213,8 @@ namespace EWE {
 			bufferCopyRegion.imageExtent.depth = 1;
 
 			EWE_VK(vkCmdCopyBufferToImage,
-				cmdBuf,
-				stagingBuffer.buffer,
+				cmdBuf.cmdBuf,
+				stagingBuffer->buffer,
 				image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 				1,
@@ -227,29 +231,18 @@ namespace EWE {
 			pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 			pipeBarrier.AddBarrier(imageBarrier);
 			pipeBarrier.dependencyFlags = 0;
-			pipeBarrier.Submit(cmdBuf);
+			pipeBarrier.Submit(cmdBuf.cmdBuf);
 
-			CommandWithCallback cmdCb{};
-			cmdCb.cmdBuf = cmdBuf;
-#if USING_VMA
-			cmdCb.callback = [sb = stagingBuffer] {sb.Free(EWEDevice::GetAllocator()); };
-#else
-			cmdCb.callback = [sb = stagingBuffer] {sb.Free(EWEDevice::GetVkDevice()); };
-#endif
-			cmdCb.graphicsCallback = [pipeBarrier, syncHub] {
-#if EWE_DEBUG
-					printf(" ~~~~~~ submitting text overlay barrier on the graphics queue\n");
-#endif
-					VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
-					pipeBarrier.Submit(cmdBuf);
-					syncHub->EndSingleTimeCommandGraphicsGroup(cmdBuf);
-				};
-			syncHub->EndSingleTimeCommandTransfer(cmdCb);
+			TransferCommandManager::AddCommand(cmdBuf);
+			TransferCommandManager::AddPropertyToCommand(stagingBuffer);
+			TransferCommandManager::AddPropertyToCommand(pipeBarrier);
+			syncHub->EndSingleTimeCommandTransfer();
 		}
 
 
 		VkImageViewCreateInfo imageViewInfo{};
 		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewInfo.pNext = nullptr;
 		imageViewInfo.image = image;
 		imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		imageViewInfo.format = imageCreateInfo.format;
@@ -260,6 +253,7 @@ namespace EWE {
 		// Sampler
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.pNext = nullptr;
 		samplerInfo.maxAnisotropy = 1.0f;
 		samplerInfo.magFilter = VK_FILTER_LINEAR;
 		samplerInfo.minFilter = VK_FILTER_LINEAR;
@@ -292,7 +286,7 @@ namespace EWE {
 		//EWE_VK(vkCreateDescriptorPool, eweDevice->Device(), &descriptorPoolInfo, nullptr, &descriptorPool);
 
 		// Descriptor set layout
-		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings(2);
+		std::array<VkDescriptorSetLayoutBinding, 2> setLayoutBindings{};
 		setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		setLayoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		setLayoutBindings[0].binding = 0;
@@ -302,12 +296,13 @@ namespace EWE {
 		setLayoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		setLayoutBindings[1].binding = 1;
 		setLayoutBindings[1].descriptorCount = 1;
+		setLayoutBindings[1].pImmutableSamplers = nullptr;
 
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
 		descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		descriptorSetLayoutInfo.pNext = nullptr;
 		descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
-		descriptorSetLayoutInfo.bindingCount = 2;
+		descriptorSetLayoutInfo.bindingCount = setLayoutBindings.size();
 
 		//std::cout << "vkcreatedescriptorsetlayout return pre " << std::endl;
 
@@ -334,6 +329,7 @@ namespace EWE {
 		// Descriptor set
 		VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
 		descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		descriptorSetAllocInfo.pNext = nullptr;
 		descriptorSetAllocInfo.descriptorPool = EWEDescriptorPool::GetPool(DescriptorPool_Global);
 		descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
 		descriptorSetAllocInfo.descriptorSetCount = 1;
@@ -343,46 +339,50 @@ namespace EWE {
 		EWE_VK(vkAllocateDescriptorSets, eweDevice->Device(), &descriptorSetAllocInfo, &descriptorSet[0]);
 		EWE_VK(vkAllocateDescriptorSets, eweDevice->Device(), &descriptorSetAllocInfo, &descriptorSet[1]);
 
-		//std::cout << "check3" << std::endl;
-
-
-
-		std::vector<VkWriteDescriptorSet> writeDescriptorSets(4);
+		VkWriteDescriptorSet writeDescriptorSets[4];
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[0].pNext = nullptr;
 		writeDescriptorSets[0].dstSet = descriptorSet[0];
 		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		writeDescriptorSets[0].dstBinding = 0;
 		writeDescriptorSets[0].pBufferInfo = vertexBuffer[0]->DescriptorInfo();
 		writeDescriptorSets[0].descriptorCount = 1;
+		writeDescriptorSets[0].dstArrayElement = 0;
 
 		VkDescriptorImageInfo texDescriptorInfo{};
 		texDescriptorInfo.sampler = sampler;
 		texDescriptorInfo.imageView = view;
 		texDescriptorInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[1].pNext = nullptr;
 		writeDescriptorSets[1].dstSet = descriptorSet[0];
 		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		writeDescriptorSets[1].dstBinding = 1;
 		writeDescriptorSets[1].pImageInfo = &texDescriptorInfo;
 		writeDescriptorSets[1].descriptorCount = 1;
+		writeDescriptorSets[1].dstArrayElement = 0;
 
 		writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[2].pNext = nullptr;
 		writeDescriptorSets[2].dstSet = descriptorSet[1];
 		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		writeDescriptorSets[2].dstBinding = 0;
 		writeDescriptorSets[2].pBufferInfo = vertexBuffer[1]->DescriptorInfo();
 		writeDescriptorSets[2].descriptorCount = 1;
+		writeDescriptorSets[2].dstArrayElement = 0;
 
 		writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[3].pNext = nullptr;
 		writeDescriptorSets[3].dstSet = descriptorSet[1];
 		writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		writeDescriptorSets[3].dstBinding = 1;
 		writeDescriptorSets[3].pImageInfo = &texDescriptorInfo;
 		writeDescriptorSets[3].descriptorCount = 1;
+		writeDescriptorSets[3].dstArrayElement = 0;
 
 		//std::cout << "check4 " << std::endl;
 
-		EWE_VK(vkUpdateDescriptorSets, eweDevice->Device(), static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
+		EWE_VK(vkUpdateDescriptorSets, eweDevice->Device(), 4, writeDescriptorSets, 0, nullptr);
 
 		//std::cout << "check5" << std::endl;
 		// Pipeline cache
@@ -448,11 +448,11 @@ namespace EWE {
 		multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 		multisampleState.flags = 0;
 		//printf("after multisample state \n");
-		std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		VkDynamicState dynamicStateEnables[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 		VkPipelineDynamicStateCreateInfo dynamicState{};
 		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicState.pDynamicStates = dynamicStateEnables.data();
-		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
+		dynamicState.pDynamicStates = dynamicStateEnables;
+		dynamicState.dynamicStateCount = 2;
 		dynamicState.flags = 0;
 		//printf("after dynamic state enables \n");
 		VkVertexInputBindingDescription vertexInputBindings;
@@ -475,9 +475,9 @@ namespace EWE {
 		vertexInputState.pVertexAttributeDescriptions = &vertexInputAttributes;
 
 		//printf("after vertex input state \n");
-		auto vertCode = Pipeline_Helper_Functions::readFile("textoverlay.vert.spv");
+		auto vertCode = Pipeline_Helper_Functions::ReadFile("textoverlay.vert.spv");
 		//printf("after vert code read file \n");
-		auto fragCode = Pipeline_Helper_Functions::readFile("textoverlay.frag.spv");
+		auto fragCode = Pipeline_Helper_Functions::ReadFile("textoverlay.frag.spv");
 		//printf("after frag code read file \n");
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -562,9 +562,9 @@ namespace EWE {
 		//std::cout << "yo? : " << frameBufferWidth << std::endl;
 		const float charW = 1.5f * scale * textScale / frameBufferWidth;
 		float textWidth = 0;
-		for (auto letter : text)
+		for (auto const& letter : text)
 		{
-			stb_fontchar* charData = &stbFontData[(uint32_t)letter - firstChar];
+			stb_fontchar* charData = &stbFontData[static_cast<uint32_t>(letter) - firstChar];
 			textWidth += charData->advance * charW;
 		}
 		return textWidth;
@@ -585,9 +585,9 @@ namespace EWE {
 		textStruct.y = (textStruct.y / frameBufferHeight * 2.0f) - 1.0f;
 
 		// Calculate text width
-		float textWidth = 0;
-		for (auto letter : textStruct.string) {
-			stb_fontchar* charData = &stbFontData[(uint32_t)letter - firstChar];
+		float textWidth = 0.f;
+		for (auto const& letter : textStruct.string) {
+			stb_fontchar* charData = &stbFontData[static_cast<uint32_t>(letter) - firstChar];
 			textWidth += charData->advance * charW;
 		}
 
@@ -605,8 +605,8 @@ namespace EWE {
 
 
 		// Generate a uv mapped quad per char in the new text
-		for (auto letter : textStruct.string) {
-			stb_fontchar* charData = &stbFontData[(uint32_t)letter - firstChar];
+		for (auto const& letter : textStruct.string) {
+			stb_fontchar* charData = &stbFontData[static_cast<uint32_t>(letter) - firstChar];
 
 			mapped->x = (textStruct.x + static_cast<float>(charData->x0) * charW);
 			mapped->y = (textStruct.y + static_cast<float>(charData->y0) * charH);

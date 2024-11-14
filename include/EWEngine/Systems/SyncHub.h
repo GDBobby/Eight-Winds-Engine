@@ -22,20 +22,19 @@ namespace EWE {
 		static SyncHub* syncHubSingleton;
 		VkDevice device;
 
+		std::array<VkCommandPool, Queue::_count> cmdPools;
 		SyncPool syncPool;
-		TransitionManager transitionManager;
 		
-		VkQueue queues[Queue::_count];
+		std::array<VkQueue, Queue::_count> queues;
 		uint32_t transferQueueIndex;
 
-		VkCommandPool commandPools[Queue::_count];
-		VkCommandBufferBeginInfo bufferBeginInfo{};
 
 		VkSubmitInfo transferSubmitInfo{};
 
 		bool readyForNextTransmit = true;
 		//std::mutex transferFlipFlopMutex{};
 		std::mutex transferPoolMutex{};
+		std::mutex graphicsAsyncMut{};
 		//std::mutex mutexNextTransmit{};
 		bool transferFlipFlop = false;
 
@@ -48,7 +47,15 @@ namespace EWE {
 
 		std::vector<VkFence> imagesInFlight{};
 
-		std::vector<VkCommandBuffer> graphicsSTCGroup{};
+		struct SubmitGroup {
+			CommandBufferData* cmdBuf;
+			std::vector<SemaphoreData*> semaphoreData;
+			SubmitGroup(CommandBufferData& cmdBuf, std::vector<SemaphoreData*>& semaphoreData) :
+				cmdBuf{ &cmdBuf }, 
+				semaphoreData{ std::move(semaphoreData) } 
+			{}
+		};
+		std::vector<SubmitGroup> graphicsSTCGroup{};
 
 		bool transferring = false;
 
@@ -68,17 +75,17 @@ namespace EWE {
 			return syncHubSingleton;
 			
 		}
-		SyncHub(VkDevice device);
+		SyncHub(VkDevice device, std::array<VkQueue, Queue::_count>& queues, std::array<VkCommandPool, Queue::_count>& cmdPools);
 #if EWE_DEBUG
 		~SyncHub();
 #endif
 
 		//only class this from EWEDevice
-		static void Initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool, uint32_t transferQueueIndex);
+		static void Initialize(VkDevice device, std::array<VkQueue, Queue::_count>& queues, std::array<VkCommandPool, Queue::_count>& cmdPools, uint32_t transferQueueIndex);
 		void SetImageCount(uint32_t imageCount) {
 			imagesInFlight.resize(imageCount, VK_NULL_HANDLE);
 		}
-		void Destroy(VkCommandPool renderPool, VkCommandPool computePool, VkCommandPool transferPool);
+		void Destroy();
 
 		VkCommandBuffer GetRenderBuffer(uint8_t frameIndex) {
 			return renderBuffers[frameIndex];
@@ -101,22 +108,19 @@ namespace EWE {
 
 		//this needs to be called from the graphics thread
 		//these have a fence with themselves
-		void EndSingleTimeCommandGraphics(VkCommandBuffer cmdBuf);
-		void EndSingleTimeCommandGraphicsSignal(VkCommandBuffer cmdBuf, VkSemaphore signalSemaphore);
-		void EndSingleTimeCommandGraphicsWaitAndSignal(VkCommandBuffer cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
+		void EndSingleTimeCommandGraphics(CommandBufferData& cmdBuf);
+		void EndSingleTimeCommandGraphicsSignal(CommandBufferData& cmdBuf, VkSemaphore signalSemaphore);
+		void EndSingleTimeCommandGraphicsWaitAndSignal(CommandBufferData& cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
 
-		void EndSingleTimeCommandGraphicsGroup(VkCommandBuffer cmdBuf);
+		static void EndSingleTimeCommandGraphicsGroup(CommandBufferData& cmdBuf, std::vector<SemaphoreData*> waitSemaphores);
 		//void SubmitGraphicsSTCGroup();
 
-		void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf);
-		void EndSingleTimeCommandTransfer(CommandWithCallback cmdCb);
-#if SYNC_QUEUE
-		void EndSingleTimeCommandTransfer(SyncedCommandQueue* cmdQueue);
-#endif
+		//void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf);
+		void EndSingleTimeCommandTransfer();
 
-		VkCommandBuffer BeginSingleTimeCommand(Queue::Enum queue);
-		VkCommandBuffer BeginSingleTimeCommandGraphics();
-		VkCommandBuffer BeginSingleTimeCommandTransfer();
+		CommandBufferData& BeginSingleTimeCommand(Queue::Enum queue);
+		CommandBufferData& BeginSingleTimeCommandGraphics();
+		CommandBufferData& BeginSingleTimeCommandTransfer();
 
 		void AttemptTransferSubmission();
 

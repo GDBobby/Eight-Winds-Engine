@@ -8,12 +8,12 @@ namespace EWE{
         PFN_vkSetDebugUtilsObjectNameEXT pfnSetObjectName;
         bool enabled = false;
 
-        void Initialize(VkDevice device, bool extension_enabled){
+        void Initialize(bool extension_enabled){
             if(extension_enabled){
 
-                pfnQueueBegin = reinterpret_cast<PFN_vkQueueBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(device, "vkQueueBeginDebugUtilsLabelEXT"));
-                pfnQueueEnd = reinterpret_cast<PFN_vkQueueEndDebugUtilsLabelEXT>(vkGetDeviceProcAddr(device, "vkQueueEndDebugUtilsLabelEXT"));
-                pfnSetObjectName = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetDeviceProcAddr(device, "vkSetDebugUtilsObjectNameEXT"));
+                pfnQueueBegin = reinterpret_cast<PFN_vkQueueBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(VK::Object->vkDevice, "vkQueueBeginDebugUtilsLabelEXT"));
+                pfnQueueEnd = reinterpret_cast<PFN_vkQueueEndDebugUtilsLabelEXT>(vkGetDeviceProcAddr(VK::Object->vkDevice, "vkQueueEndDebugUtilsLabelEXT"));
+                pfnSetObjectName = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetDeviceProcAddr(VK::Object->vkDevice, "vkSetDebugUtilsObjectNameEXT"));
                 assert(pfnQueueBegin);
                 assert(pfnQueueEnd);
                 assert(pfnSetObjectName);
@@ -40,7 +40,7 @@ namespace EWE{
         }
 
         void Deconstruct(){}
-        void SetObjectName(VkDevice device, void* object, VkObjectType objectType, const char* name) {
+        void SetObjectName(void* object, VkObjectType objectType, const char* name) {
                 // Check for a valid function pointer
                 if (enabled) {
                     VkDebugUtilsObjectNameInfoEXT nameInfo{};
@@ -50,7 +50,7 @@ namespace EWE{
                     nameInfo.objectType = objectType;
                     nameInfo.pObjectName = name;
                     //pfnDebugMarkerSetObjectName(device, &nameInfo);
-                    pfnSetObjectName(device, &nameInfo);
+                    pfnSetObjectName(VK::Object->vkDevice, &nameInfo);
 
                 }
             }

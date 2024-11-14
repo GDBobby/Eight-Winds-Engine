@@ -2,6 +2,8 @@
 #include "EWEngine/Data/TransformInclude.h"
 #include "EWEngine/Graphics/Texture/Image.h"
 
+#include "EWEngine/Graphics/PipeBarrier.h"
+
 namespace EWE {
 	namespace Ocean {
 		Ocean::Ocean(VkDescriptorImageInfo* skyboxImage) {
@@ -13,15 +15,15 @@ namespace EWE {
 			tdfsGPUData.pushData.CopyFromIFS(ifsGPUData.pushData);
 		}
 		Ocean::~Ocean() {
-			EWE_VK(vkDestroySampler, EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.sampler, nullptr);
-			EWE_VK(vkDestroyImageView, EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.imageView, nullptr);
+			EWE_VK(vkDestroySampler, VK::Object->vkDevice, oceanOutputImageInfoDescriptorCompute.sampler, nullptr);
+			EWE_VK(vkDestroyImageView, VK::Object->vkDevice, oceanOutputImageInfoDescriptorCompute.imageView, nullptr);
 			//vkDestroySampler(EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.sampler, nullptr); //this is a copy
 			//vkDestroyImageView(EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.imageView, nullptr); //this is a copy
-			EWE_VK(vkDestroyImage, EWEDevice::GetVkDevice(), oceanOutputImages, nullptr);
+			EWE_VK(vkDestroyImage, VK::Object->vkDevice, oceanOutputImages, nullptr);
 
-			EWE_VK(vkDestroySampler, EWEDevice::GetVkDevice(), oceanFreqImageInfoDescriptor.sampler, nullptr);
-			EWE_VK(vkDestroyImage, EWEDevice::GetVkDevice(), oceanFreqImages, nullptr);
-			EWE_VK(vkDestroyImageView, EWEDevice::GetVkDevice(), oceanFreqImageInfoDescriptor.imageView, nullptr);
+			EWE_VK(vkDestroySampler, VK::Object->vkDevice, oceanFreqImageInfoDescriptor.sampler, nullptr);
+			EWE_VK(vkDestroyImage, VK::Object->vkDevice, oceanFreqImages, nullptr);
+			EWE_VK(vkDestroyImageView, VK::Object->vkDevice, oceanFreqImageInfoDescriptor.imageView, nullptr);
 		}
 
 
@@ -56,11 +58,9 @@ namespace EWE {
 		void Ocean::PrepareStorageImage() {
 			const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
 
-			EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
-
 			VkFormatProperties formatProperties;
 			// Get device properties for the requested texture format
-			EWE_VK(vkGetPhysicalDeviceFormatProperties, eweDevice->GetPhysicalDevice(), format, &formatProperties);
+			EWE_VK(vkGetPhysicalDeviceFormatProperties, VK::Object->physicalDevice, format, &formatProperties);
 			// Check if requested image format supports image storage operations required for storing pixel from the compute shader
 			assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
 
@@ -94,18 +94,18 @@ namespace EWE {
 
 			SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 			//directly to graphics because no data is being uploaded
-			VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+			CommandBufferData& cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
 
 			VkImageMemoryBarrier imageBarriers[2];
-			imageBarriers[0] = eweDevice->TransitionImageLayout(oceanOutputImages,
+			imageBarriers[0] = Image::TransitionImageLayout(oceanOutputImages,
 				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
 				1, cascade_count * 3
 			);			
-			imageBarriers[1] = eweDevice->TransitionImageLayout(oceanFreqImages,
+			imageBarriers[1] = Image::TransitionImageLayout(oceanFreqImages,
 				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
 				1, cascade_count
 			);
-			EWE_VK(vkCmdPipelineBarrier, cmdBuf,
+			EWE_VK(vkCmdPipelineBarrier, cmdBuf.cmdBuf,
             	VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
             	0,
             	0, nullptr,
@@ -131,7 +131,7 @@ namespace EWE {
 			samplerInfo.minLod = 0.0f;
 			samplerInfo.maxLod = 1.0f;
 			samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-			EWE_VK(vkCreateSampler, eweDevice->Device(), &samplerInfo, nullptr, &oceanOutputImageInfoDescriptorCompute.sampler);
+			EWE_VK(vkCreateSampler, VK::Object->vkDevice, &samplerInfo, nullptr, &oceanOutputImageInfoDescriptorCompute.sampler);
 			oceanOutputImageInfoDescriptorGraphics.sampler = oceanOutputImageInfoDescriptorCompute.sampler;
 
 			// Create image view

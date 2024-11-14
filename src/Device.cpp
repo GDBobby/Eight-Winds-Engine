@@ -18,13 +18,10 @@
 
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
-#define AMD_TARGET false
+#define AMD_TARGET true
 #define NVIDIA_TARGET false && !AMD_TARGET //not currently setup to correctly 
 
 namespace EWE {
-
-
-
 #if DEBUGGING_DEVICE_LOST
     void EWEDevice::AddCheckpoint(VkCommandBuffer cmdBuf, const char* name, VKDEBUG::GFX_vk_checkpoint_type type) {
         deviceLostDebug.AddCheckpoint(cmdBuf, name, type);
@@ -33,12 +30,7 @@ namespace EWE {
 
     EWEDevice* EWEDevice::eweDevice = nullptr;
 
-#if EWE_DEBUG
-    const bool enableValidationLayers = true;
-#else
-    //const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-    const bool enableValidationLayers = true;
-#endif
+    const bool enableValidationLayers = EWE_DEBUG;
 
     // local callback functions
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -220,6 +212,7 @@ namespace EWE {
         //printf("device constructor \n");
         assert(eweDevice == nullptr && "EWEDevice already exists");
         eweDevice = this;
+        VK::Object = new VK();
 #if GPU_LOGGING
         {
             std::ofstream logFile{ GPU_LOG_FILE, std::ofstream::trunc };
@@ -270,16 +263,16 @@ namespace EWE {
 
         //mainThreadID = std::this_thread::get_id();
 
-        SyncHub::Initialize(device_, queues[Queue::graphics], queues[Queue::present], queues[Queue::compute], queues[Queue::transfer], commandPool, computeCommandPool, transferCommandPool, queueData.index[Queue::transfer]);
+        SyncHub::Initialize(VK::Object->vkDevice, queues, VK::Object->VK::Object->commandPools, queueData.index[Queue::transfer]);
         syncHub = SyncHub::GetSyncHubInstance();
-        Sampler::Initialize(device_);
+        Sampler::Initialize(VK::Object->vkDevice);
 
 #if DEBUGGING_DEVICE_LOST
-        VKDEBUG::Initialize(device_, instance, queues, optionalExtensions.at(VK_EXT_DEVICE_FAULT_EXTENSION_NAME), deviceLostDebug.NVIDIAdebug, deviceLostDebug.AMDdebug);
-        deviceLostDebug.Initialize(device_);
+        VKDEBUG::Initialize(VK::Object->vkDevice, instance, queues, optionalExtensions.at(VK_EXT_DEVICE_FAULT_EXTENSION_NAME), deviceLostDebug.NVIDIAdebug, deviceLostDebug.AMDdebug);
+        deviceLostDebug.Initialize(VK::Object->vkDevice);
 #endif
 #if DEBUG_NAMING
-        DebugNaming::Initialize(device_, enableValidationLayers);
+        DebugNaming::Initialize(enableValidationLayers);
 #endif
 
         /*
@@ -291,24 +284,21 @@ namespace EWE {
 
     EWEDevice::~EWEDevice() {
         Sampler::Deconstruct();
-        syncHub->Destroy(commandPool, computeCommandPool, transferCommandPool);
+        syncHub->Destroy();
 #if DECONSTRUCTION_DEBUG
         printf("beginning EWEdevice deconstruction \n");
 #endif
 
-
-        EWE_VK(vkDestroyCommandPool, device_, commandPool, nullptr);
-        if (computeCommandPool != VK_NULL_HANDLE) {
-            EWE_VK(vkDestroyCommandPool, device_, computeCommandPool, nullptr);
-        }
-        if (transferCommandPool != VK_NULL_HANDLE) {
-            EWE_VK(vkDestroyCommandPool, device_, transferCommandPool, nullptr);
+        for (uint8_t i = 0; i < VK::Object->commandPools.size(); i++) {
+            if (VK::Object->commandPools[i] != VK_NULL_HANDLE) {
+                EWE_VK(vkDestroyCommandPool, VK::Object->vkDevice, VK::Object->commandPools[i], nullptr);
+            }
         }
 #if USING_VMA
         vmaDestroyAllocator(allocator);
 #endif
         eweDevice = nullptr;
-        EWE_VK(vkDestroyDevice, device_, nullptr);
+        EWE_VK(vkDestroyDevice, VK::Object->vkDevice, nullptr);
 
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
@@ -316,6 +306,8 @@ namespace EWE {
 
         EWE_VK(vkDestroySurfaceKHR, instance, surface_, nullptr);
         EWE_VK(vkDestroyInstance, instance, nullptr);
+
+        delete VK::Object;
 
 #if DECONSTRUCTION_DEBUG
         printf("end EWEdevice deconstruction \n");
@@ -440,7 +432,7 @@ namespace EWE {
 
         for (auto iter = deviceScores.begin(); iter != deviceScores.end(); iter++) {
             if (IsDeviceSuitable(devices[iter->second])) {
-                physicalDevice = devices[iter->second];
+                VK::Object->physicalDevice = devices[iter->second];
                 break;
             }
             else {
@@ -448,7 +440,7 @@ namespace EWE {
             }
         }
         //printf("before physical device null handle \n");
-        if (physicalDevice == VK_NULL_HANDLE) {
+        if (VK::Object->physicalDevice == VK_NULL_HANDLE) {
             printf("failed to find a suitable GPU! \n");
 #if GPU_LOGGING
             //printf("opening file? \n");
@@ -464,7 +456,7 @@ namespace EWE {
         CheckOptionalExtensions();
 
         //printf("before get physical device properties \n");
-        EWE_VK(vkGetPhysicalDeviceProperties, physicalDevice, &properties);
+        EWE_VK(vkGetPhysicalDeviceProperties, VK::Object->physicalDevice, &properties);
         std::cout << "Physical Device: " << properties.deviceName << std::endl;
         deviceName = properties.deviceName;
         std::cout << "max ubo, storage : " << properties.limits.maxUniformBufferRange << ":" << properties.limits.maxStorageBufferRange << std::endl;
@@ -561,7 +553,7 @@ namespace EWE {
         }
         */
 #if DEBUGGING_DEVICE_LOST
-        deviceLostDebug.GetVendorDebugExtension(physicalDevice);
+        deviceLostDebug.GetVendorDebugExtension(VK::Object->physicalDevice);
         std::vector<const char*> debugDeviceExtensions{ deviceExtensions };
         std::copy(deviceLostDebug.debugExtensions.begin(), deviceLostDebug.debugExtensions.end(), std::back_inserter(debugDeviceExtensions));
 
@@ -598,7 +590,7 @@ namespace EWE {
             logFile.close();
         }
 #endif
-        EWE_VK(vkCreateDevice, physicalDevice, &createInfo, nullptr, &device_);
+        EWE_VK(vkCreateDevice, VK::Object->physicalDevice, &createInfo, nullptr, &VK::Object->vkDevice);
 #if GPU_LOGGING
         {
             //printf("opening file? \n");
@@ -614,18 +606,18 @@ namespace EWE {
         std::cout << "\t compute family:queue index - " << queueData.index[Queue::compute] << std::endl;
         std::cout << "\t transfer family:queue index - " << queueData.index[Queue::transfer] << std::endl;
         //printf("before graphics queue \n");
-        EWE_VK(vkGetDeviceQueue, device_, queueData.index[Queue::graphics], 0, &queues[Queue::graphics]);
+        EWE_VK(vkGetDeviceQueue, VK::Object->vkDevice, queueData.index[Queue::graphics], 0, &queues[Queue::graphics]);
         //printf("after graphics queue \n");
         if (queueData.index[Queue::graphics] != queueData.index[Queue::present]) {
-            EWE_VK(vkGetDeviceQueue, device_, queueData.index[Queue::present], 0, &queues[Queue::present]);
+            EWE_VK(vkGetDeviceQueue, VK::Object->vkDevice, queueData.index[Queue::present], 0, &queues[Queue::present]);
         }
         else {
             queues[Queue::present] = queues[Queue::graphics];
         }
 
-        EWE_VK(vkGetDeviceQueue, device_, queueData.index[Queue::compute], 0, &queues[Queue::compute]);
+        EWE_VK(vkGetDeviceQueue, VK::Object->vkDevice, queueData.index[Queue::compute], 0, &queues[Queue::compute]);
 
-        EWE_VK(vkGetDeviceQueue, device_, queueData.index[Queue::transfer], 0, &queues[Queue::transfer]);
+        EWE_VK(vkGetDeviceQueue, VK::Object->vkDevice, queueData.index[Queue::transfer], 0, &queues[Queue::transfer]);
         printf("after transfer qeuue \n");
 
 #if GPU_LOGGING
@@ -642,8 +634,8 @@ namespace EWE {
         VmaAllocatorCreateInfo allocatorCreateInfo{};
         allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
         allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
-        allocatorCreateInfo.physicalDevice = physicalDevice;
-        allocatorCreateInfo.device = device_;
+        allocatorCreateInfo.VK::Object->physicalDevice = VK::Object->physicalDevice;
+        allocatorCreateInfo.device = VK::Object->vkDevice;
         allocatorCreateInfo.instance = instance;
         allocatorCreateInfo.pVulkanFunctions = nullptr;
         VkResult result = vmaCreateAllocator(&allocatorCreateInfo, &allocator);
@@ -659,7 +651,7 @@ namespace EWE {
         //sascha doesnt use TRANSIENT_BIT
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        EWE_VK(vkCreateCommandPool, device_, &poolInfo, nullptr, &computeCommandPool);
+        EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::compute]);
     }
 
     void EWEDevice::CreateCommandPool() {
@@ -668,7 +660,7 @@ namespace EWE {
         poolInfo.queueFamilyIndex = queueData.index[Queue::graphics];
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        EWE_VK(vkCreateCommandPool, device_, &poolInfo, nullptr, &commandPool);
+        EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::graphics]);
     }
     void EWEDevice::CreateTransferCommandPool() {
 
@@ -684,7 +676,7 @@ namespace EWE {
         }
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        EWE_VK(vkCreateCommandPool, device_, &poolInfo, nullptr, &transferCommandPool);
+        EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::transfer]);
     }
 
     void EWEDevice::CreateSurface() { window.createWindowSurface(instance, &surface_, GPU_LOGGING); }
@@ -844,11 +836,11 @@ namespace EWE {
         }
         uint32_t extensionCount;
 
-        EWE_VK(vkEnumerateDeviceExtensionProperties, physicalDevice, nullptr, &extensionCount, nullptr);
+        EWE_VK(vkEnumerateDeviceExtensionProperties, VK::Object->physicalDevice, nullptr, &extensionCount, nullptr);
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         EWE_VK(vkEnumerateDeviceExtensionProperties,
-            physicalDevice,
+            VK::Object->physicalDevice,
             nullptr,
             &extensionCount,
             availableExtensions.data()
@@ -897,7 +889,7 @@ namespace EWE {
         const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
         for (VkFormat format : candidates) {
             VkFormatProperties props;
-            EWE_VK(vkGetPhysicalDeviceFormatProperties, physicalDevice, format, &props);
+            EWE_VK(vkGetPhysicalDeviceFormatProperties, VK::Object->physicalDevice, format, &props);
 
             if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
                 return format;
@@ -926,348 +918,9 @@ namespace EWE {
     }
 
     //need to find the usage and have it create the single time command
-    VkImageMemoryBarrier EWEDevice::TransitionImageLayout(VkImage &image, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount) {
-        
-        VkImageMemoryBarrier barrier{};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = srcLayout;
-        barrier.newLayout = dstLayout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-        barrier.image = image;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = mipLevels;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = layerCount;
-
-        switch (srcLayout) {
-        case VK_IMAGE_LAYOUT_UNDEFINED:
-            // Image layout is undefined (or does not matter).
-            // Only valid as initial layout. No flags required.
-            barrier.srcAccessMask = 0;
-            break;
-
-        case VK_IMAGE_LAYOUT_PREINITIALIZED:
-            // Image is preinitialized.
-            // Only valid as initial layout for linear images; preserves memory
-            // contents. Make sure host writes have finished.
-            barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-            // Image is a color attachment.
-            // Make sure writes to the color buffer have finished
-            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-            // Image is a depth/stencil attachment.
-            // Make sure any writes to the depth/stencil buffer have finished.
-            barrier.srcAccessMask
-                = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-            // Image is a transfer source.
-            // Make sure any reads from the image have finished
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-            // Image is a transfer destination.
-            // Make sure any writes to the image have finished.
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            // Image is read by a shader.
-            // Make sure any shader reads from the image have finished
-            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            break;
-        case VK_IMAGE_LAYOUT_GENERAL:
-            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            barrier.srcAccessMask |= VK_ACCESS_SHADER_READ_BIT * (dstLayout == VK_IMAGE_LAYOUT_GENERAL);
-            break;
-        default:
-            /* Value not used by callers, so not supported. */
-            assert(false && "unsupported src layout transition");
-        }
-
-        // Target layouts (new)
-        // The destination access mask controls the dependency for the new image
-        // layout.
-        switch (dstLayout) {
-        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-            // Image will be used as a transfer destination.
-            // Make sure any writes to the image have finished.
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-            // Image will be used as a transfer source.
-            // Make sure any reads from and writes to the image have finished.
-            barrier.srcAccessMask |= VK_ACCESS_TRANSFER_READ_BIT;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-            // Image will be used as a color attachment.
-            // Make sure any writes to the color buffer have finished.
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-            // Image layout will be used as a depth/stencil attachment.
-            // Make sure any writes to depth/stencil buffer have finished.
-            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            // Image will be read in a shader (sampler, input attachment).
-            // Make sure any writes to the image have finished.
-            if (barrier.srcAccessMask == 0) {
-                barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-            }
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            break;
-        case VK_IMAGE_LAYOUT_GENERAL:
-            barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
-            break;
-        default:
-            /* Value not used by callers, so not supported. */
-#if EWE_DEBUG
-            assert(false && "unsupported dst layout transition");
-#else
-    #if defined(_MSC_VER) && !defined(__clang__) // MSVC
-        __assume(false);
-    #else // GCC, Clang
-        __builtin_unreachable();
-    #endif
-#endif
-        }
-
-        return barrier;
-    }
-    void EWEDevice::TransitionImageLayoutWithBarrier(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount){
-        VkImageMemoryBarrier imageBarrier{TransitionImageLayout(image, srcLayout, dstLayout, mipLevels, layerCount)};
-        EWE_VK(vkCmdPipelineBarrier, cmdBuf,
-            srcStageMask, dstStageMask,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &imageBarrier
-        );
-    }
 
 
-#define BARRIER_DEBUGGING false
-    void EWEDevice::TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image) {
-        VkImageMemoryBarrier imageBarrier{};
-        imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageBarrier.pNext = nullptr;
-        imageBarrier.image = image;
-#if EWE_DEBUG
-        assert(imageBarrier.image != VK_NULL_HANDLE && "transfering a null image?");
-#endif
-        imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
-        imageBarrier.subresourceRange.baseMipLevel = 0;
-        imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-        imageBarrier.subresourceRange.baseArrayLayer = 0;
-        imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
-        imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-        if ((srcStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) 
-            && ((dstStage & (VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)))
-            ) {
-#if BARRIER_DEBUGGING
-            printf(" COMPUTE TO GRAPHICS IMAGE TRANSFER \n");
-#endif
-            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-            imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
-            imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
-
-            EWE_VK(vkCmdPipelineBarrier,
-                cmdBuf,
-                srcStage, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, // pipeline stage
-                0, //dependency flags
-                0, nullptr, //memory barrier
-                0, nullptr, //buffer barrier
-                1, &imageBarrier //image barrier
-            );
-        }
-        else if (((srcStage & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) || (srcStage & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)) &&
-            (dstStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT))
-        {
-#if BARRIER_DEBUGGING
-            printf(" GRAPHICS TO COMPUTE IMAGE TRANSFER \n");
-#endif
-            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            imageBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for transfer read operation
-            EWE_VK(vkCmdPipelineBarrier,
-                cmdBuf,
-                srcStage, dstStage, // pipeline stage
-                0, //dependency flags
-                0, nullptr, //memory barrier
-                0, nullptr, //buffer barrier
-                1, &imageBarrier //image barrier
-            );
-        }
-        else if (srcStage == dstStage && (srcStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)) {
-#if BARRIER_DEBUGGING
-            printf("COMPUTE TO COMPUTE image barrier \n");
-#endif
-            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-            imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            imageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
-            imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for transfer read operation
-            EWE_VK(vkCmdPipelineBarrier,
-                cmdBuf,
-                srcStage, dstStage, // pipeline stage
-                0, //dependency flags
-                0, nullptr, //memory barrier
-                0, nullptr, //buffer barrier
-                1, &imageBarrier //image barrier
-            );
-        }
-
-    }
-    void EWEDevice::TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImage> const& images) {
-        assert(images.size() > 0);
-        const uint32_t imageCount = static_cast<uint32_t>(images.size());
-
-        std::vector<VkImageMemoryBarrier> imageBarriers{};
-        imageBarriers.resize(imageCount);
-        imageBarriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageBarriers[0].pNext = nullptr;
-        imageBarriers[0].image = images[0];
-#if EWE_DEBUG
-        assert(imageBarriers[0].image != VK_NULL_HANDLE && "transfering a null image?");
-#endif
-
-        imageBarriers[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
-        imageBarriers[0].subresourceRange.baseMipLevel = 0;
-        imageBarriers[0].subresourceRange.levelCount = 1;
-        imageBarriers[0].subresourceRange.baseArrayLayer = 0;
-        imageBarriers[0].subresourceRange.layerCount = 1;
-        if (queueData.index[Queue::compute] != queueData.index[Queue::graphics]) {
-            imageBarriers[0].srcQueueFamilyIndex = queueData.index[Queue::compute];
-            imageBarriers[0].dstQueueFamilyIndex = queueData.index[Queue::graphics];
-        }
-        else {
-            imageBarriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageBarriers[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        }
-
-        if ((srcStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) &&
-            ((dstStage & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) || (dstStage & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT))
-        ) {
-
-            std::cout << " COMPUTE TO GRAPHICS IMAGE TRANSFER \n";
-            imageBarriers[0].oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-            imageBarriers[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageBarriers[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for compute shader writes
-            imageBarriers[0].dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Access mask for transfer read operation
-        }
-        else if (((srcStage & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) || (srcStage & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)) &&
-            (dstStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT))
-        {
-            std::cout << " GRAPHICS TO COMPUTE IMAGE TRANSFER \n";
-            imageBarriers[0].oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageBarriers[0].newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            imageBarriers[0].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
-            imageBarriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
-        }
-
-        for (uint8_t i = 1; i < imageCount; i++) {
-            imageBarriers[i] = imageBarriers[0];
-            imageBarriers[i].image = images[i];
-#if EWE_DEBUG
-            assert(imageBarriers[i].image != VK_NULL_HANDLE && "transfering a null image?");
-#endif
-        }
-
-        EWE_VK(vkCmdPipelineBarrier,
-            cmdBuf,
-            srcStage,  // pipeline stage
-            dstStage, 
-            0,
-            0, nullptr,
-            0, nullptr,
-            imageCount, &imageBarriers[0]
-        );
-    }
-
-
-    void EWEDevice::TransitionFromTransfer(VkCommandBuffer cmdBuf, Queue::Enum dstQueueIndex, VkImage const& image, VkImageLayout finalLayout) {
-        VkImageMemoryBarrier imageBarrier{};
-        imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageBarrier.pNext = nullptr;
-        imageBarrier.image = image;
-        assert(imageBarrier.image != VK_NULL_HANDLE && "transfering a null image?");
-        imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
-        imageBarrier.subresourceRange.baseMipLevel = 0;
-        imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-        imageBarrier.subresourceRange.baseArrayLayer = 0;
-        imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-        imageBarrier.srcQueueFamilyIndex = queueData.index[Queue::transfer];
-
-        imageBarrier.dstQueueFamilyIndex = queueData.index[dstQueueIndex];
-
-        imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        imageBarrier.newLayout = finalLayout;
-        assert((dstQueueIndex == Queue::graphics) || (dstQueueIndex == Queue::compute));
-
-        imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // Access mask for compute shader writes
-        imageBarrier.dstAccessMask = 0; // Access mask for transfer read operation
-        EWE_VK(vkCmdPipelineBarrier,
-            cmdBuf,
-            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, // pipeline stage
-            0, //dependency flags
-            0, nullptr, //memory barrier
-            0, nullptr, //buffer barrier
-            1, &imageBarrier //image barrier
-        );
-    }
-    void EWEDevice::TransitionFromTransferToGraphics(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image) {
-        VkImageMemoryBarrier imageBarrier{};
-        imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageBarrier.pNext = nullptr;
-        imageBarrier.image = image;
-        assert(imageBarrier.image != VK_NULL_HANDLE && "transfering a null image?");
-        imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
-        imageBarrier.subresourceRange.baseMipLevel = 0;
-        imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-        imageBarrier.subresourceRange.baseArrayLayer = 0;
-        imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-        imageBarrier.srcQueueFamilyIndex = queueData.index[Queue::transfer];
-
-        imageBarrier.dstQueueFamilyIndex = queueData.index[Queue::graphics];
-
-        imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-        imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        imageBarrier.srcAccessMask = 0; // Access mask for compute shader writes
-        imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
-        EWE_VK(vkCmdPipelineBarrier,
-            cmdBuf,
-            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // pipeline stage
-            0, //dependency flags
-            0, nullptr, //memory barrier
-            0, nullptr, //buffer barrier
-            1, &imageBarrier //image barrier
-        );
-    }
 
     void EWEDevice::CopyBufferToImage(VkCommandBuffer cmdBuf, VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount) {
 
@@ -1296,7 +949,7 @@ namespace EWE {
 
     VkDeviceSize EWEDevice::GetMemoryRemaining() {
         VkPhysicalDeviceMemoryProperties memoryProperties;
-        EWE_VK(vkGetPhysicalDeviceMemoryProperties, physicalDevice, &memoryProperties);
+        EWE_VK(vkGetPhysicalDeviceMemoryProperties, VK::Object->physicalDevice, &memoryProperties);
 
         uint32_t memoryHeapCount = memoryProperties.memoryHeapCount;
         VkDeviceSize deviceMemoryRemaining = 0;

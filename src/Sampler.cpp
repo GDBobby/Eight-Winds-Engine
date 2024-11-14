@@ -10,7 +10,7 @@
 
 #if SAMPLER_DUPLICATION_TRACKING
 namespace EWE {
-    VkDevice device;
+    VkDevice device = VK_NULL_HANDLE;
 
 
     struct SamplerTracker {
@@ -69,8 +69,7 @@ namespace EWE {
 #if EWE_DEBUG
             assert(storedSamplers.size() < EXPECTED_MAXIMUM_AMOUNT_OF_SAMPLERS && "warning: sampler count is greater than expected maximum amount of samplers");
 #endif
-            storedSamplers.emplace_back(samplerInfo);
-            return storedSamplers.back().sampler;
+            return storedSamplers.emplace_back(samplerInfo).sampler;
 #else
             VkSampler sampler;
             EWE_VK(vkCreateSampler, EWEDevice::GetVkDevice(), &samplerInfo, nullptr, &sampler);
@@ -82,12 +81,15 @@ namespace EWE {
             for (auto iter = storedSamplers.begin(); iter != storedSamplers.end(); iter++) {
                 if (iter->sampler == sampler) {
                     if (iter->tracker.Remove()) {
+                        EWE_VK(vkDestroySampler, device, iter->sampler, nullptr);
                         storedSamplers.erase(iter);
                     }
                     return;
                 }
             }
+#if EWE_DEBUG
             assert(false && "removing a sampler that does not exist");
+#endif
 #else
             EWE_VK(vkDestroySampler, EWEDevice::GetVkDevice(), sampler, nullptr);
 #endif
@@ -100,7 +102,9 @@ namespace EWE {
 #endif
         }
         void Deconstruct() {
+#if EWE_DEBUG
             assert(storedSamplers.size() == 0 && "destroying sampler manager with samplers still in use");
+#endif
 
             //if the sampler was already destroyed this will create a validation error
             //if the sampler was not destroyed, it'll be fun tracing the source

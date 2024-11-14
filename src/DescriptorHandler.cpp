@@ -133,8 +133,8 @@ namespace EWE {
                 .Build());
         }
 #if DEBUG_NAMING
-        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), descriptorSets.at(DS_global)[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "global DS[0]");
-        DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), descriptorSets.at(DS_global)[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "global DS[1]");
+        DebugNaming::SetObjectName(descriptorSets.at(DS_global)[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "global DS[0]");
+        DebugNaming::SetObjectName(descriptorSets.at(DS_global)[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "global DS[1]");
 #endif
     }
 #if DRAWING_POINTS

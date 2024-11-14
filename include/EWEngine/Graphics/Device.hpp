@@ -59,9 +59,6 @@ namespace EWE {
 #endif
             return eweDevice;
         }
-        static VkDevice GetVkDevice() {
-            return eweDevice->Device();
-        }
 #if USING_VMA
         static VmaAllocator GetAllocator() {
             return eweDevice->Allocator();
@@ -70,17 +67,10 @@ namespace EWE {
 #endif
         VkFormatProperties GetVkFormatProperties(VkFormat imageFormat) {
             VkFormatProperties formatProperties;
-            vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
+            EWE_VK(vkGetPhysicalDeviceFormatProperties, VK::Object->physicalDevice, imageFormat, &formatProperties);
             return formatProperties;
         }
 
-        VkCommandPool getCommandPool() { return commandPool; }
-        VkCommandPool getTransferCommandPool() { return transferCommandPool; }
-        VkCommandPool getComputeCommandPool() {
-            return computeCommandPool;
-        }
-        VkDevice Device() const { return device_; }
-        VkPhysicalDevice GetPhysicalDevice() const { return physicalDevice; }
         VkSurfaceKHR surface() const { return surface_; }
         VkQueue GetGraphicsQueue() const { return queues[Queue::graphics]; }
         uint32_t GetGraphicsIndex() const { return queueData.index[Queue::graphics]; }
@@ -103,7 +93,7 @@ namespace EWE {
 
         std::string deviceName;
 
-        SwapChainSupportDetails GetSwapChainSupport() { return QuerySwapChainSupport(physicalDevice); }
+        SwapChainSupportDetails GetSwapChainSupport() { return QuerySwapChainSupport(VK::Object->physicalDevice); }
         QueueData const& GetPhysicalQueueFamilies() { return queueData; }
 
         VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
@@ -112,14 +102,6 @@ namespace EWE {
         //void endSingleTimeCommandsSecondThread(VkCommandBuffer commandBuffer);
         //void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
-        static VkImageMemoryBarrier TransitionImageLayout(VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
-        static void TransitionImageLayoutWithBarrier(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint8_t layerCount = 1);
-
-        void TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImage> const& images);
-        void TransferImageStage(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image);
-        void TransitionFromTransfer(VkCommandBuffer cmdBuf, Queue::Enum dstQueueIndex, VkImage const& image, VkImageLayout finalLayout);
-        void TransitionFromTransferToGraphics(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image);
 
         //QueueTransitionContainer* PostTransitionsToGraphics(VkCommandBuffer cmdBuf, uint8_t frameIndex);
 
@@ -137,18 +119,12 @@ namespace EWE {
 
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
-        VkPhysicalDevice physicalDevice{ VK_NULL_HANDLE };
         MainWindow& window;
-        VkCommandPool commandPool{ VK_NULL_HANDLE };
-        VkCommandPool transferCommandPool{ VK_NULL_HANDLE };
-        VkCommandPool computeCommandPool{ VK_NULL_HANDLE };
-
-        VkDevice device_;
 #if USING_VMA
         VmaAllocator allocator;
 #endif
         VkSurfaceKHR surface_;
-        std::array<VkQueue, 4> queues = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
+        std::array<VkQueue, Queue::_count> queues = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
 
         SyncHub* syncHub;
 

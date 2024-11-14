@@ -38,7 +38,6 @@ namespace EWE {
         selectedKey = -1;
     }
     void CameraController::Type(int keyCode) {
-        std::cout << "typing? " << std::endl;
         if (keyCode == GLFW_KEY_ENTER) {
             selectedKey = -1;
             textSent = true;
@@ -113,27 +112,27 @@ namespace EWE {
         glm::vec3 moveDir{ 0.f };
         
         if (GK_MACRO(keys.moveForward)) {
-            printf("forward \n");
+            //printf("forward \n");
             moveDir -= forwardDir;
         }
         if (glfwGetKey(window, keys.moveBackward) == GLFW_PRESS) {
-            printf("back \n");
+            //printf("back \n");
             moveDir += forwardDir;
         }
         if (glfwGetKey(window, keys.moveRight) == GLFW_PRESS) {
-            printf("right \n");
+            //printf("right \n");
             moveDir += rightDir;
         }
         if (glfwGetKey(window, keys.moveLeft) == GLFW_PRESS) {
-            printf("left \n");
+            //printf("left \n");
             moveDir -= rightDir;
         }
         if (glfwGetKey(window, keys.moveUp) == GLFW_PRESS) {
-            printf("up \n");
+            //printf("up \n");
             moveDir.y -= 1.f;
         }
         if (glfwGetKey(window, keys.moveDown) == GLFW_PRESS) {
-            printf("down \n");
+            //printf("down \n");
             moveDir.y += 1.f;
         }
 
@@ -186,7 +185,7 @@ namespace EWE {
 
 
     void CameraController::DisableCursor(GLFWwindow *window) {
-        printf("camera controller \n");
+        //printf("camera controller \n");
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         menuActive = false;
     }

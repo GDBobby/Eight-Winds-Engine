@@ -21,10 +21,14 @@ void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation
     }
 }
 
+
 namespace EWE {
-    uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, const VkMemoryPropertyFlags properties) {
+    VK* VK::Object{ nullptr };
+
+
+    uint32_t FindMemoryType(uint32_t typeFilter, const VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties;
-        EWE_VK(vkGetPhysicalDeviceMemoryProperties, physicalDevice, &memProperties);
+        EWE_VK(vkGetPhysicalDeviceMemoryProperties, VK::Object->physicalDevice, &memProperties);
 
         /*
         printf("memory heap count : %d \n", memProperties.memoryHeapCount);
@@ -48,61 +52,16 @@ namespace EWE {
         return UINT32_MAX;
     }
 
-#if SEMAPHORE_TRACKING
-    void SemaphoreData::FinishSignaling() {
-        assert(signaling && "finishing a signal that wasn't signaled");
-        if (!waiting) {
-            name = "null";
-            DebugNaming::SetObjectName(device, semaphore, VK_OBJECT_TYPE_SEMAPHORE, name.c_str());
-        }
-        signaling = false;
-    }
-    void SemaphoreData::FinishWaiting() {
-        assert(waiting && "finished waiting when not waiting");
-        waiting = false;
-        name = "null";
-        DebugNaming::SetObjectName(device, semaphore, VK_OBJECT_TYPE_SEMAPHORE, name.c_str());
-    }
-    void SemaphoreData::BeginWaiting() {
-        assert(name != "null" && "semaphore wasn't named");
-        assert(!waiting && "attempting to begin wait while waiting");
-        waiting = true;
-    }
-    void SemaphoreData::BeginSignaling(const char* name) {
 
-        assert(this->name == "null" && "name wasn't reset properly");
-        this->name = name;
-        DebugNaming::SetObjectName(device, semaphore, VK_OBJECT_TYPE_SEMAPHORE, name);
-        assert(!signaling && "attempting to signal while signaled");
-        signaling = true;
-    }
-#else     
-    void SemaphoreData::FinishSignaling() {
-#if EWE_DEBUG
-        assert(signaling == true && "finishing a signal that wasn't signaled");
-#endif
-        signaling = false;
-    }
-    void SemaphoreData::FinishWaiting() {
-#if EWE_DEBUG
-        assert(waiting == true && "finished waiting when not waiting");
-#endif
-        waiting = false;
-    }
-    void SemaphoreData::BeginWaiting() {
-#if EWE_DEBUG
-        assert(waiting == false && "attempting to begin wait while waiting");
-#endif
-        waiting = true;
-    }
-    void SemaphoreData::BeginSignaling() {
-#if EWE_DEBUG
-        assert(signaling == false && "attempting to signal while signaled");
-#endif
-        signaling = true;
-    }
-#endif
+    VkDevice GetVkDevice() {
 
+    }
+    VkPhysicalDevice GetPhysicalDevice() {
+
+    }
+    std::array<VkCommandPool, Queue::_count>& GetCommandPools() {
+
+    }
 
 
 #if USING_VMA
@@ -137,47 +96,51 @@ namespace EWE {
         EWE_VK(vmaCreateBuffer, vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo);
     }
 #else
-    StagingBuffer::StagingBuffer(VkDeviceSize size, VkPhysicalDevice physicalDevice, VkDevice device, const void* data) {
+    StagingBuffer::StagingBuffer(VkDeviceSize size, const void* data) {
         VkBufferCreateInfo bufferCreateInfo{};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCreateInfo.pNext = nullptr;
         bufferCreateInfo.size = size;
         bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        EWE_VK(vkCreateBuffer, device, &bufferCreateInfo, nullptr, &buffer);
+        EWE_VK(vkCreateBuffer, VK::Object->vkDevice, &bufferCreateInfo, nullptr, &buffer);
 
         VkMemoryRequirements memRequirements;
-        EWE_VK(vkGetBufferMemoryRequirements, device, buffer, &memRequirements);
+        EWE_VK(vkGetBufferMemoryRequirements, VK::Object->vkDevice, buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.pNext = nullptr;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        EWE_VK(vkAllocateMemory, device, &allocInfo, nullptr, &memory);
+        EWE_VK(vkAllocateMemory, VK::Object->vkDevice, &allocInfo, nullptr, &memory);
 
-        EWE_VK(vkBindBufferMemory, device, buffer, memory, 0);
+        EWE_VK(vkBindBufferMemory, VK::Object->vkDevice, buffer, memory, 0);
 
-        Stage(device, data, size);
+        Stage(data, size);
     }
-    StagingBuffer::StagingBuffer(VkDeviceSize size, VkPhysicalDevice physicalDevice, VkDevice device) {
+    StagingBuffer::StagingBuffer(VkDeviceSize size) {
         VkBufferCreateInfo bufferCreateInfo{};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCreateInfo.pNext = nullptr;
         bufferCreateInfo.size = size;
         bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        EWE_VK(vkCreateBuffer, device, &bufferCreateInfo, nullptr, &buffer);
+        EWE_VK(vkCreateBuffer, VK::Object->vkDevice, &bufferCreateInfo, nullptr, &buffer);
 
         VkMemoryRequirements memRequirements;
-        EWE_VK(vkGetBufferMemoryRequirements, device, buffer, &memRequirements);
+        EWE_VK(vkGetBufferMemoryRequirements, VK::Object->vkDevice, buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.pNext = nullptr;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        EWE_VK(vkAllocateMemory, device, &allocInfo, nullptr, &memory);
+        EWE_VK(vkAllocateMemory, VK::Object->vkDevice, &allocInfo, nullptr, &memory);
 
-        EWE_VK(vkBindBufferMemory, device, buffer, memory, 0);
+        EWE_VK(vkBindBufferMemory, VK::Object->vkDevice, buffer, memory, 0);
     }
 #endif
 
@@ -188,12 +151,12 @@ namespace EWE {
         }
         EWE_VK(vmaDestroyBuffer, vmaAllocator, buffer, vmaAlloc);
 #else
-    void StagingBuffer::Free(VkDevice device) {
+    void StagingBuffer::Free() {
         if (buffer == VK_NULL_HANDLE) {
             return;
         }
-        EWE_VK(vkDestroyBuffer, device, buffer, nullptr);
-        EWE_VK(vkFreeMemory, device, memory, nullptr);
+        EWE_VK(vkDestroyBuffer, VK::Object->vkDevice, buffer, nullptr);
+        EWE_VK(vkFreeMemory, VK::Object->vkDevice, memory, nullptr);
 #endif
     }
 
@@ -204,12 +167,12 @@ namespace EWE {
         }
         EWE_VK(vmaDestroyBuffer, vmaAllocator, buffer, vmaAlloc);
 #else
-    void StagingBuffer::Free(VkDevice device) const {
+    void StagingBuffer::Free() const {
         if (buffer == VK_NULL_HANDLE) {
             return;
         }
-        EWE_VK(vkDestroyBuffer, device, buffer, nullptr);
-        EWE_VK(vkFreeMemory, device, memory, nullptr);
+        EWE_VK(vkDestroyBuffer, VK::Object->vkDevice, buffer, nullptr);
+        EWE_VK(vkFreeMemory, VK::Object->vkDevice, memory, nullptr);
 #endif
     }
 #if USING_VMA
@@ -220,48 +183,12 @@ namespace EWE {
         memcpy(stagingData, data, bufferSize);
         EWE_VK(vmaUnmapMemory, vmaAllocator, vmaAlloc);
 #else
-    void StagingBuffer::Stage(VkDevice device, const void* data, uint64_t bufferSize) {
+    void StagingBuffer::Stage(const void* data, uint64_t bufferSize) {
         void* stagingData;
-        EWE_VK(vkMapMemory, device, memory, 0, bufferSize, 0, &stagingData);
+        EWE_VK(vkMapMemory, VK::Object->vkDevice, memory, 0, bufferSize, 0, &stagingData);
         memcpy(stagingData, data, bufferSize);
-        EWE_VK(vkUnmapMemory, device, memory);
+        EWE_VK(vkUnmapMemory, VK::Object->vkDevice, memory);
 #endif
     }
 
-    TransferCallbackReturn FenceData::WaitReturnCallbacks(VkDevice device, uint64_t time) {
-        mut.lock();
-        VkResult ret = vkWaitForFences(device, 1, &fence, true, time);
-        if (ret == VK_SUCCESS) {
-            EWE_VK(vkResetFences, device, 1, &fence);
-            mut.unlock();
-            for (auto& waitSem : waitSemaphores) {
-                waitSem->FinishWaiting();
-            }
-            waitSemaphores.clear();
-            for (uint8_t i = 0; i < Queue::_count; i++) {
-                if (signalSemaphores[i] != nullptr) {
-                    signalSemaphores[i]->FinishSignaling();
-                    signalSemaphores[i] = nullptr;
-                }
-            }
-            inUse = false;
-            if (inlineCallbacks) {
-                inlineCallbacks();
-                inlineCallbacks = nullptr;
-            }
-            TransferCallbackReturn ret{ transferCallbacks };
-            transferCallbacks.freeCommandBufferCallback = nullptr;
-            transferCallbacks.otherCallbacks = nullptr;
-            return ret;
-        }
-        else if (ret == VK_TIMEOUT) {
-            mut.unlock();
-            return TransferCallbackReturn{};
-        }
-        else {
-            mut.unlock();
-            EWE_VK_RESULT(ret);
-            return TransferCallbackReturn{}; //error silencing, the above line should throw an error
-        }
-    }
 }

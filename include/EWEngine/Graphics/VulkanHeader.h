@@ -10,9 +10,6 @@
 #endif
 #if DEBUG_NAMING
 #include "EWEngine/Graphics/DebugNaming.h"
-#endif
-
-#if SEMAPHORE_TRACKING
 #include <string>
 #endif
 
@@ -22,63 +19,40 @@
 
 #include <type_traits>
 #include <concepts>
+#include <array>
 
 namespace EWE{
-    struct TransferCallbackReturn {
-        std::function<void()> freeCommandBufferCallback{ nullptr };
-        std::function<void()> otherCallbacks{ nullptr };
+    namespace Queue {
+        enum Enum : uint32_t {
+            graphics,
+            present,
+            compute,
+            transfer,
+            _count,
+        };
+    } //namespace Queue
+
+    uint32_t FindMemoryType(uint32_t typeFilter, const VkMemoryPropertyFlags properties);
+
+    struct VK {
+        static VK* Object;
+
+        VK() {
+            assert(Object == nullptr);
+            Object = this;
+        }
+        VK(VK& copySource) = delete;
+        VK(VK&& moveSource) = delete;
+        VK& operator=(VK const& copySource) = delete;
+        VK& operator=(VK&& moveSource) = delete;
+
+        VkDevice vkDevice{ VK_NULL_HANDLE };
+        VkPhysicalDevice physicalDevice{ VK_NULL_HANDLE };
+        std::array<VkCommandPool, Queue::_count> commandPools{ VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
     };
 
-    uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, const VkMemoryPropertyFlags properties);
 
 	static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
-
-	namespace Queue {
-		enum Enum : uint32_t {
-			graphics,
-			present,
-			compute,
-			transfer,
-			_count,
-		};
-	} //namespace Queue
-
-    struct SemaphoreData {
-        VkSemaphore semaphore{ VK_NULL_HANDLE };
-#if SEMAPHORE_TRACKING
-        std::string name{"null"};
-        VkDevice device;
-#endif
-        bool waiting{ false };
-        bool signaling{ false };
-
-        bool Idle() const {
-            return !(waiting || signaling);
-        }
-        void FinishSignaling();
-        void FinishWaiting();
-        void BeginWaiting();
-        void BeginSignaling(const char* name);
-    };
-
-    struct FenceData {
-        VkFence fence{ VK_NULL_HANDLE };
-        TransferCallbackReturn transferCallbacks{};
-        std::function<void()> inlineCallbacks{ nullptr };
-        bool inUse{ false };
-        std::vector<SemaphoreData*> waitSemaphores{}; //each wait could potentially be signaled multiple times in a single queue, and then multiple queues
-        SemaphoreData* signalSemaphores[Queue::_count] = { nullptr, nullptr, nullptr, nullptr }; //each signal is unique per submit that could wait on it, and right now I'm expecting max 1 wait per queue
-
-        TransferCallbackReturn WaitReturnCallbacks(VkDevice device, uint64_t time);
-        void Lock() {
-            mut.lock();
-        }
-        void Unlock() {
-            mut.unlock();
-        }
-    private:
-        std::mutex mut{};
-    };
 
     struct StagingBuffer {
         VkBuffer buffer{ VK_NULL_HANDLE };
@@ -91,11 +65,11 @@ namespace EWE{
         void Stage(VmaAllocator vmaAllocator, const void* data, uint64_t bufferSize);
 #else
         VkDeviceMemory memory{ VK_NULL_HANDLE };
-        StagingBuffer(VkDeviceSize size, VkPhysicalDevice physicalDevice, VkDevice device);
-        StagingBuffer(VkDeviceSize size, VkPhysicalDevice physicalDevice, VkDevice device, const void* data);
-        void Free(VkDevice device);
-        void Free(VkDevice device) const;
-        void Stage(VkDevice device, const void* data, VkDeviceSize bufferSize);
+        StagingBuffer(VkDeviceSize size);
+        StagingBuffer(VkDeviceSize size, const void* data);
+        void Free();
+        void Free() const;
+        void Stage(const void* data, VkDeviceSize bufferSize);
 #endif
     };
 

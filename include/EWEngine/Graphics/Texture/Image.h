@@ -6,7 +6,6 @@
 #include "EWEngine/Graphics/Device_Buffer.h"
 #include "EWEngine/Data/EWE_Utils.h"
 
-#include <stb/stb_image.h>
 
 #include <unordered_map>
 #include <map>
@@ -33,7 +32,7 @@ namespace EWE {
 
 
 	struct PixelPeek {
-		stbi_uc* pixels{ nullptr };
+		void* pixels{ nullptr };
 		int width;
 		int height;
 		int channels;
@@ -80,14 +79,13 @@ namespace EWE {
 		void CreateTextureSampler();
 
 		//(&ImageInfo::GenerateMipmaps, &imageInfo, format, width, height, srcQueue)
-		void GenerateMipmaps(const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue);
-		static void GenerateMipmaps(VkImage image, uint8_t mipLevels, const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue);
+		void GenerateMipmaps(const VkFormat imageFormat, uint32_t width, uint32_t height, Queue::Enum srcQueue);
 
 		//ImageQueueTransitionData GenerateTransitionData(uint32_t queueIndex, StagingBuffer stagingBuffer){
 		//	return ImageQueueTransitionData{image, mipLevels, arrayLayers, queueIndex, stagingBuffer};
 		//}
 	private: 
-		void GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, int width, int height, Queue::Enum srcQueue);
+		void GenerateMipmaps(VkCommandBuffer cmdBuf, const VkFormat imageFormat, uint32_t width, uint32_t height, Queue::Enum srcQueue);
 
 	public:
 		VkDescriptorImageInfo* GetDescriptorImageInfo() {

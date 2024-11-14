@@ -2,6 +2,8 @@
 #include "EWEngine/Graphics/Texture/Sampler.h"
 #include "EWEngine/Graphics/TransferCommandManager.h"
 
+#include <stb/stb_image.h>
+
 namespace EWE {
 
 #ifndef SKYBOX_DIR
@@ -19,8 +21,8 @@ namespace EWE {
             StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
             EWE_VK(vmaMapMemory, EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
 #else
-            StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice());
-            EWE_VK(vkMapMemory, EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
+            StagingBuffer* stagingBuffer = new StagingBuffer(imageSize);
+            EWE_VK(vkMapMemory, VK::Object->vkDevice, stagingBuffer->memory, 0, imageSize, 0, &data);
 #endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             cubeImage.mipLevels = 1;
@@ -32,7 +34,7 @@ namespace EWE {
 #if USING_VMA
             EWE_VK(vmaUnmapMemory, EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc);
 #else
-            EWE_VK(vkUnmapMemory, EWEDevice::GetVkDevice(), stagingBuffer->memory);
+            EWE_VK(vkUnmapMemory, VK::Object->vkDevice, stagingBuffer->memory);
 
 #endif
 
@@ -56,7 +58,7 @@ namespace EWE {
 
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeImage.image, cubeImage.memory);
 #if DEBUG_NAMING
-            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), cubeImage.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
+            DebugNaming::SetObjectName(cubeImage.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
 #endif
 
 #if IMAGE_DEBUGGING
@@ -70,6 +72,7 @@ namespace EWE {
 
             VkImageViewCreateInfo viewInfo{};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            viewInfo.pNext = nullptr;
             viewInfo.image = cubeImage.image;
             viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
             viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
@@ -80,7 +83,7 @@ namespace EWE {
             viewInfo.subresourceRange.layerCount = cubeImage.arrayLayers;
             viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 
-            EWE_VK(vkCreateImageView, EWEDevice::GetVkDevice(), &viewInfo, nullptr, &cubeImage.imageView);
+            EWE_VK(vkCreateImageView, VK::Object->vkDevice, &viewInfo, nullptr, &cubeImage.imageView);
         }
 
         void CreateCubeSampler(ImageInfo& cubeImage) {

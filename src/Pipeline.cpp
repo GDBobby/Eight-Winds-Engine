@@ -18,7 +18,7 @@
 namespace EWE {
 
 	namespace Pipeline_Helper_Functions {
-		std::vector<char> readFile(const std::string& filepath) {
+		std::vector<char> ReadFile(const std::string& filepath) {
 			
 			//#define ENGINE_DIR "..//shaders//"
 
@@ -44,7 +44,7 @@ namespace EWE {
 			return returnVec;
 		}
 		void CreateShaderModule(std::string const& file_path, VkShaderModule* shaderModule) {
-			auto data = readFile(file_path);
+			auto data = ReadFile(file_path);
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.pNext = nullptr;
@@ -144,7 +144,7 @@ namespace EWE {
 
 		const auto vertFind = shaderModuleMap.find(vertFilepath);
 		if (vertFind == shaderModuleMap.end()) {
-			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilepath);
+			auto vertCode = Pipeline_Helper_Functions::ReadFile(vertFilepath);
 			Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
 
 			shaderModuleMap.try_emplace(vertFilepath, vertShaderModule);
@@ -155,7 +155,7 @@ namespace EWE {
 
 		const auto fragFind = shaderModuleMap.find(fragFilepath);
 		if (fragFind == shaderModuleMap.end()) {
-			auto fragCode = Pipeline_Helper_Functions::readFile(fragFilepath);
+			auto fragCode = Pipeline_Helper_Functions::ReadFile(fragFilepath);
 			Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
 			shaderModuleMap.try_emplace(fragFilepath, fragShaderModule);
 		}
@@ -208,7 +208,7 @@ namespace EWE {
 
 		const auto vertModuleIter = shaderModuleMap.find(vertFilePath);
 		if (vertModuleIter == shaderModuleMap.end()) {
-			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilePath);
+			auto vertCode = Pipeline_Helper_Functions::ReadFile(vertFilePath);
 			Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
 			shaderModuleMap.try_emplace(vertFilePath, vertShaderModule);
 		}

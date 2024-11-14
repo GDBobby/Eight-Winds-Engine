@@ -107,31 +107,28 @@ namespace EWE {
 
 		rockBuffer = Construct<EWEBuffer>({rockBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT});
 		trackBuffer = Construct<EWEBuffer>({ trackBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
-		VkPhysicalDevice physDev = EWEDevice::GetEWEDevice()->GetPhysicalDevice();
-		VkDevice vkDevice = EWEDevice::GetVkDevice();
-		StagingBuffer* rockStagingBuffer = Construct<StagingBuffer>({ rockBufferSize, physDev, vkDevice });
-		StagingBuffer* trackStagingBuffer = Construct<StagingBuffer>({ trackBufferSize, physDev, vkDevice });
+
+		StagingBuffer* stagingBuffers[2] = {
+			Construct<StagingBuffer>({ rockBufferSize }),
+			Construct<StagingBuffer>({ trackBufferSize })
+		};
+		StagingBuffer*& rockStagingBuffer = stagingBuffers[0];
+		StagingBuffer*& trackStagingBuffer = stagingBuffers[1];
 
 
-		rockStagingBuffer->Stage(vkDevice, rockData.data(), rockBufferSize);
-		trackStagingBuffer->Stage(vkDevice, trackData.data(), trackBufferSize);
+		rockStagingBuffer->Stage(rockData.data(), rockBufferSize);
+		trackStagingBuffer->Stage(trackData.data(), trackBufferSize);
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-		VkCommandBuffer cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+		CommandBufferData& cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
 		EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
-		eweDevice->CopyBuffer(cmdBuf, rockStagingBuffer->buffer, rockBuffer->GetBuffer(), rockBufferSize);
-		eweDevice->CopyBuffer(cmdBuf, trackStagingBuffer->buffer, trackBuffer->GetBuffer(), trackBufferSize);
-		CommandWithCallback cb{};
-		cb.cmdBuf = cmdBuf;
-		cb.callback = [rsb = rockStagingBuffer, tsb = trackStagingBuffer,
-#if USING_VMA
-			memMgr = EWEDevice::GetAllocator()
-#else
-			memMgr = EWEDevice::GetVkDevice()
-#endif
-		] {rsb->Free(memMgr); tsb->Free(memMgr); Deconstruct(rsb); Deconstruct(tsb); };
+		eweDevice->CopyBuffer(cmdBuf.cmdBuf, rockStagingBuffer->buffer, rockBuffer->GetBuffer(), rockBufferSize);
+		eweDevice->CopyBuffer(cmdBuf.cmdBuf, trackStagingBuffer->buffer, trackBuffer->GetBuffer(), trackBufferSize);
 
-		syncHub->EndSingleTimeCommandTransfer(cb);
+		TransferCommandManager::AddCommand(cmdBuf);
+		TransferCommandManager::AddPropertyToCommand(rockStagingBuffer);
+		TransferCommandManager::AddPropertyToCommand(trackStagingBuffer);
+		syncHub->EndSingleTimeCommandTransfer();
 		
 	}
 
@@ -185,9 +182,9 @@ namespace EWE {
 		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &compDescriptorSet[0]);
 		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &compDescriptorSet[1]);
 
-		EWE_VK(vkDestroyPipeline, EWEDevice::GetVkDevice(), compPipeline, nullptr);
-		EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), compPipeLayout, nullptr);
-		EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), compShaderModule, nullptr);
+		EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, compPipeline, nullptr);
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, compPipeLayout, nullptr);
+		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, compShaderModule, nullptr);
 	}
 	void FloatingRock::Dispatch(float dt, FrameInfo const& frameInfo) {
 		if (previouslySubmitted) {
@@ -295,7 +292,7 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &tempVkDSL;
 
-		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &compPipeLayout);
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &compPipeLayout);
 
 		//pipeline
 		VkComputePipelineCreateInfo pipelineInfo{};
@@ -312,7 +309,7 @@ namespace EWE {
 		pipelineInfo.stage.flags = 0;
 		pipelineInfo.stage.pSpecializationInfo = nullptr;
 
-		EWE_VK(vkCreateComputePipelines, EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &compPipeline);
+		EWE_VK(vkCreateComputePipelines, VK::Object->vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &compPipeline);
 	}
 
 }

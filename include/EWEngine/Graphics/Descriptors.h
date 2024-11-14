@@ -72,8 +72,8 @@ namespace EWE {
         EWEDescriptorPool(const EWEDescriptorPool&) = delete;
         EWEDescriptorPool& operator=(const EWEDescriptorPool&) = delete;
 
-        static bool AllocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor);
-        bool AllocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) const;
+        static void AllocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor);
+        void AllocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) const;
 
         static void FreeDescriptors(DescriptorPool_ID poolID, std::vector<VkDescriptorSet>& descriptors);
         void FreeDescriptors(std::vector<VkDescriptorSet>& descriptors) const;

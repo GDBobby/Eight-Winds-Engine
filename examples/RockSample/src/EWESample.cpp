@@ -112,7 +112,7 @@ namespace EWE {
 			renderRefreshRate = 1.0 / renderRefreshRate;
 		}
 		do { //having a simple while() may cause a race condition
-			vkDeviceWaitIdle(ewEngine.eweDevice.Device());
+			EWE_VK(vkDeviceWaitIdle, VK::Object->vkDevice);
 		} while (ewEngine.GetLoadingScreenProgress());
 
 		currentScenePtr->entry();
@@ -295,7 +295,7 @@ namespace EWE {
 	void EWESample::SwapScenes() {
 
 		//loading entry?
-		vkDeviceWaitIdle(ewEngine.eweDevice.Device());
+		vkDeviceWaitIdle(VK::Object->vkDevice);
 		currentScenePtr->exit();
 		ewEngine.objectManager.ClearSceneObjects();
 		Texture_Manager::GetTextureManagerPtr()->ClearSceneTextures();

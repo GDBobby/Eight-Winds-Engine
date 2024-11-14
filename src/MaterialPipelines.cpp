@@ -65,7 +65,7 @@ namespace EWE {
 		createInfo.flags = 0;
 		createInfo.pInitialData = nullptr;
 
-		EWE_VK(vkCreatePipelineCache, EWEDevice::GetVkDevice(), &createInfo, nullptr, &retCache);
+		EWE_VK(vkCreatePipelineCache, VK::Object->vkDevice, &createInfo, nullptr, &retCache);
 #if PIPELINE_DERIVATIVES
 		pipelineConfig.basePipelineHandle = nullptr;
 		pipelineConfig.basePipelineIndex = -1;
@@ -278,7 +278,7 @@ namespace EWE {
 			pipeLayoutInfo.pushSize = pushConstantRange.size;
 			pipeLayoutInfo.pushStageFlags = pushConstantRange.stageFlags;
 
-			EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout);
+			EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout);
 		}
 	}
 
@@ -380,21 +380,21 @@ namespace EWE {
 
 		for (auto& plInfo : materialPipeLayout) {
 			if (plInfo.pipeLayout != VK_NULL_HANDLE) {
-				EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), plInfo.pipeLayout, nullptr);
+				EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, plInfo.pipeLayout, nullptr);
 			}
 		}
 
 		if (materialPipelineCache != VK_NULL_HANDLE) {
-			EWE_VK(vkDestroyPipelineCache, EWEDevice::GetVkDevice(), materialPipelineCache, nullptr);
+			EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, materialPipelineCache, nullptr);
 		}
 		if (skinPipelineCache != VK_NULL_HANDLE) {
-			EWE_VK(vkDestroyPipelineCache, EWEDevice::GetVkDevice(), skinPipelineCache, nullptr);
+			EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, skinPipelineCache, nullptr);
 		}
 		if (instanceSkinPipelineCache != VK_NULL_HANDLE) {
-			EWE_VK(vkDestroyPipelineCache, EWEDevice::GetVkDevice(), instanceSkinPipelineCache, nullptr);
+			EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, instanceSkinPipelineCache, nullptr);
 		}
 		if (instanceMaterialPipelineCache != VK_NULL_HANDLE) {
-			EWE_VK(vkDestroyPipelineCache, EWEDevice::GetVkDevice(), instanceMaterialPipelineCache, nullptr);
+			EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, instanceMaterialPipelineCache, nullptr);
 		}
 
 #if DECONSTRUCTION_DEBUG
@@ -497,5 +497,8 @@ namespace EWE {
 				}
 			}
 		}
+
+		assert(false && "investigate this");
+		return nullptr;
 	}
 }

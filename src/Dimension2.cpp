@@ -24,7 +24,7 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &tempDSL;
 
-		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &PL_2d);
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &PL_2d);
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
 		EWEPipeline::EnableAlphaBlending(pipelineConfig);
@@ -34,7 +34,7 @@ namespace EWE {
 
 		VkPipelineCacheCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-		EWE_VK(vkCreatePipelineCache, EWEDevice::GetVkDevice(), &createInfo, nullptr, &cache);
+		EWE_VK(vkCreatePipelineCache, VK::Object->vkDevice, &createInfo, nullptr, &cache);
 
 		pipelineConfig.cache = cache;
 
@@ -45,7 +45,7 @@ namespace EWE {
 		printf("after constructing with UI shaders\n");
 #if DEBUG_NAMING
 		pipe2d->SetDebugName("UI 2d pipeline");
-		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), PL_2d, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "2d pipe layout");
+		DebugNaming::SetObjectName(PL_2d, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "2d pipe layout");
 #endif
 
 		/*
@@ -70,14 +70,11 @@ namespace EWE {
 
 	}
 	void Dimension2::Destruct() {
-		EWE_VK(vkDestroyPipelineCache, EWEDevice::GetVkDevice(), dimension2Ptr->cache, nullptr);
+		EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, dimension2Ptr->cache, nullptr);
 
-		EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), dimension2Ptr->PL_2d, nullptr);
-		//vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dimension2Ptr->PL_9, nullptr);
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, dimension2Ptr->PL_2d, nullptr);
 		Deconstruct(dimension2Ptr->model2D);
-		//delete dimension2Ptr->nineUIModel;
 		Deconstruct(dimension2Ptr->pipe2d);
-		//ewe_free(dimension2Ptr->pipe9);
 		Deconstruct(dimension2Ptr);
 	}
 

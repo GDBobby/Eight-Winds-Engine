@@ -113,8 +113,8 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
 		printf("beginning of EightWindsEngine deconstructor \n");
 #endif
-		EWE_VK(vkDestroyQueryPool, eweDevice.Device(), queryPool[0], nullptr);
-		EWE_VK(vkDestroyQueryPool, eweDevice.Device(), queryPool[1], nullptr);
+		EWE_VK(vkDestroyQueryPool, VK::Object->vkDevice, queryPool[0], nullptr);
+		EWE_VK(vkDestroyQueryPool, VK::Object->vkDevice, queryPool[1], nullptr);
 		DescriptorHandler::Cleanup();
 
 
@@ -384,8 +384,8 @@ namespace EWE {
 		queryPoolInfo.pipelineStatistics = 0; //this could be useful https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueryPipelineStatisticFlagBits.html
 		queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
 		queryPoolInfo.queryCount = 2;
-		EWE_VK(vkCreateQueryPool, eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool[0]);
-		EWE_VK(vkCreateQueryPool, eweDevice.Device(), &queryPoolInfo, nullptr, &queryPool[1]);
+		EWE_VK(vkCreateQueryPool, VK::Object->vkDevice, &queryPoolInfo, nullptr, &queryPool[0]);
+		EWE_VK(vkCreateQueryPool, VK::Object->vkDevice, &queryPoolInfo, nullptr, &queryPool[1]);
 	}
 
 	void EightWindsEngine::QueryTimestampBegin(FrameInfo& frameInfo) {
@@ -396,7 +396,7 @@ namespace EWE {
 			if (previouslySubmitted[frameInfo.index]) {
 				uint64_t& timestampStart = timestamps[frameInfo.index * 2];
 				uint64_t& timestampEnd = timestamps[frameInfo.index * 2 + 1];
-				EWE_VK(vkGetQueryPoolResults, eweDevice.Device(), queryPool[frameInfo.index], 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t) * 2, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+				EWE_VK(vkGetQueryPoolResults, VK::Object->vkDevice, queryPool[frameInfo.index], 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t) * 2, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 				elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond;
 				totalElapsedGPUMS += elapsedGPUMS;
 				averageElapsedGPUCounter++;

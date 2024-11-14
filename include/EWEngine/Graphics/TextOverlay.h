@@ -71,7 +71,7 @@ namespace EWE {
 		bool visible = true;
 		float scale;
 
-		std::vector<VkCommandBuffer> cmdBuffers;
+		VkCommandBuffer cmdBuffers[MAX_FRAMES_IN_FLIGHT];
 
 		TextOverlay(
 			float framebufferwidth,
