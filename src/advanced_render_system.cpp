@@ -48,32 +48,32 @@ namespace EWE {
 #endif
 	}
 
-	void AdvancedRenderSystem::renderGameObjects(FrameInfo &frameInfo, float time) {
+	void AdvancedRenderSystem::renderGameObjects(float time) {
 #if DEBUGGING_PIPELINES
 		printf("getting into render game objects \n");
 #endif
 		if (drawSkybox) {
-			renderSkybox(frameInfo);
+			renderSkybox();
 		}
-		//renderSimpleGameObjects(frameInfo);
-		//renderBonedWeapons(frameInfo);
+		//renderSimpleGameObjects();
+		//renderBonedWeapons();
 		
-		renderTexturedGameObjects(frameInfo);
+		renderTexturedGameObjects();
 
-		//RenderDynamicMaterials(frameInfo);
+		//RenderDynamicMaterials();
 
-		RigidRenderingSystem::Render(frameInfo);
+		RigidRenderingSystem::Render();
 #if DEBUGGING_PIPELINES
 		printf("after rendering dynamic \n");
 #endif
 
-		renderVisualEffects(frameInfo);
+		renderVisualEffects();
 
-		RenderLightning(frameInfo);
+		RenderLightning();
 
 		if (shouldRenderPoints){ //shouldRenderPoints) {
 #if DRAWING_POINTS
-			renderPointLights(frameInfo);
+			renderPointLights();
 #endif
 		}
 
@@ -82,7 +82,7 @@ namespace EWE {
 #endif
 	}
 
-	void AdvancedRenderSystem::renderSprites(FrameInfo& frameInfo) {
+	void AdvancedRenderSystem::renderSprites() {
 		/*
 			PipelineManager::pipelines[Pipe::sprite]->bind(frameInfo.commandBuffer);
 			vkCmdBindDescriptorSets(
@@ -131,7 +131,7 @@ namespace EWE {
 */
 	}
 
-	void AdvancedRenderSystem::renderSkybox(FrameInfo& frameInfo) {
+	void AdvancedRenderSystem::renderSkybox() {
 		assert(objectManager.skybox.first != nullptr);
 #if DEBUGGING_PIPELINES
 		printf("drawing skybox \n");
@@ -139,7 +139,7 @@ namespace EWE {
 		//skyboxPipeline->bind(frameInfo.frameInfo.cmdBuf);
 		auto pipe = PipelineSystem::At(Pipe::skybox);
 		pipe->BindPipeline();
-		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameInfo.index));
+		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
 		pipe->BindDescriptor(1, &objectManager.skybox.second);
 
 		pipe->BindModel(objectManager.skybox.first);
@@ -147,7 +147,7 @@ namespace EWE {
 		
 	}
 
-	inline void AdvancedRenderSystem::renderTexturedGameObjects(FrameInfo& frameInfo) {
+	inline void AdvancedRenderSystem::renderTexturedGameObjects() {
 		if ((objectManager.texturedGameObjects.size() > 0)) {
 			auto pipe = PipelineSystem::At(Pipe::textured);
 #if DEBUGGING_PIPELINES
@@ -155,7 +155,7 @@ namespace EWE {
 #endif
 			//texturedPipeline->bind(frameInfo.frameInfo.cmdBuf);
 			pipe->BindPipeline();
-			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameInfo.index));
+			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
 
 
 			//std::cout << "post-bind textured" << std::endl;
@@ -191,7 +191,7 @@ namespace EWE {
 		
 	}
 
-	void AdvancedRenderSystem::renderVisualEffects(FrameInfo& frameInfo) {
+	void AdvancedRenderSystem::renderVisualEffects() {
 
 	}
 #if DRAWING_POINTS
@@ -236,11 +236,11 @@ namespace EWE {
 	}
 #endif
 
-	void AdvancedRenderSystem::RenderLightning(FrameInfo const& frameInfo) {
+	void AdvancedRenderSystem::RenderLightning() {
 		//printf("beginning render lightning \n");
 		//i need to pull this data out of the voids gaze source, if it still exists (rip)
 	}
-	void AdvancedRenderSystem::RenderGrass(FrameInfo const& frameInfo, float time) {
+	void AdvancedRenderSystem::RenderGrass(float time) {
 
 		if (objectManager.grassField.size() == 0) { return; }
 #if DEBUGGING_PIPELINES
@@ -248,7 +248,7 @@ namespace EWE {
 #endif
 		PipelineSystem* pipe = PipelineSystem::At(Pipe::grass);
 		pipe->BindPipeline();
-		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameInfo.index));
+		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
 		pipe->BindDescriptor(1, &objectManager.grassTextureID);
 
 
@@ -263,14 +263,14 @@ namespace EWE {
 #endif
 	}
 
-	void AdvancedRenderSystem::render2DGameObjects(FrameInfo const& frameInfo, bool menuActive) {
+	void AdvancedRenderSystem::render2DGameObjects(bool menuActive) {
 
 		//printf("beginning r2d : %d \n", frameInfo.menuActive);
 		//if (frameInfo.menuActive || GameUI::GetActive()) {
 		if (!menuActive) {
 			
 			if (uiHandler->overlay) {
-				if (!uiHandler->overlay->getActive()) {
+				if (!uiHandler->overlay->GetActive()) {
 					return;
 				}
 			}
@@ -281,7 +281,7 @@ namespace EWE {
 		}
 
 		if (menuActive) {
-			Dimension2::Bind2D(frameInfo.cmdBuf, frameInfo.index);
+			Dimension2::Bind2D();
 			if (menuManager.drawingNineUI()) {
 				menuManager.drawNewNine();
 			}
@@ -289,13 +289,13 @@ namespace EWE {
 			menuManager.drawNewMenuObejcts();
 
 			if (uiHandler->overlay) {
-				uiHandler->overlay->drawObjects(frameInfo);
+				uiHandler->overlay->DrawObjects();
 			}
 		}
 		else {
 			if (uiHandler->overlay) {
-				Dimension2::Bind2D(frameInfo.cmdBuf, frameInfo.index);
-				uiHandler->overlay->drawObjects(frameInfo);
+				Dimension2::Bind2D();
+				uiHandler->overlay->DrawObjects();
 			}
 		}
 	}

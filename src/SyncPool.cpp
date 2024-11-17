@@ -2,42 +2,68 @@
 
 #include "EWEngine/Systems/ThreadPool.h"
 
+#include "EWEngine/Graphics/Texture/ImageFunctions.h"
+
 namespace EWE {
-
-
-    CommandCallbacks FenceData::WaitReturnCallbacks(VkDevice device, uint64_t time) {
+    bool FenceData::CheckReturn(uint64_t time) {
         mut.lock();
-        VkResult ret = vkWaitForFences(device, 1, &fence, true, time);
+        VkResult ret = vkWaitForFences(VK::Object->vkDevice, 1, &fence, true, time);
         if (ret == VK_SUCCESS) {
-            EWE_VK(vkResetFences, device, 1, &fence);
-            mut.unlock();
+            EWE_VK(vkResetFences, VK::Object->vkDevice, 1, &fence);
+            //its up to the calling function to unlock the mutex
             for (auto& waitSem : waitSemaphores) {
                 waitSem->FinishWaiting();
             }
             waitSemaphores.clear();
-            for (uint8_t i = 0; i < Queue::_count; i++) {
-                if (signalSemaphores[i] != nullptr) {
-                    signalSemaphores[i]->FinishSignaling();
-                    callbackData.semaphoreData = signalSemaphores[i];
-                    signalSemaphores[i] = nullptr;
-                }
-            }
-            inUse = false;
-            return callbackData;
+            return true;
         }
         else if (ret == VK_TIMEOUT) {
-            mut.unlock();
-            return CommandCallbacks{};
+            //its up to the calling function to unlock the mutex
+            return false;
         }
         else {
-            mut.unlock();
+            //its up to the calling function to unlock the mutex
             EWE_VK_RESULT(ret);
-            return CommandCallbacks{}; //error silencing, the above line should throw an error
+            return false; //error silencing, this should not be reached
         }
     }
 
 
-    RenderSyncData::RenderSyncData(VkDevice device) : device{ device } {
+    void GraphicsFenceData::CheckReturn(std::vector<CommandBuffer*>& output, uint64_t time) {
+        if (fenceData.CheckReturn(time)) {
+            fenceData.mut.unlock();
+#if EWE_DEBUG
+            assert(commands.size() > 0);
+#endif
+            output.insert(output.end(), commands.begin(), commands.end());
+            commands.clear();
+            fenceData.inUse = false;
+            return;
+        }
+
+        fenceData.mut.unlock();
+    }
+
+    void TransferFenceData::WaitReturnCallbacks(std::vector<TransferCommandCallbacks>& output, uint64_t time) {
+        if (fenceData.CheckReturn(time)) {
+            fenceData.mut.unlock();
+
+            if (signalSemaphoreForGraphics != nullptr) {
+                if (callbacks.images.size() > 0 || callbacks.pipeBarriers.size() > 0) {
+                    signalSemaphoreForGraphics->BeginWaiting();
+                }
+                signalSemaphoreForGraphics->FinishSignaling();
+                signalSemaphoreForGraphics = nullptr;
+            }
+            output.push_back(std::move(callbacks));
+            fenceData.inUse = false;
+            return;
+        }
+        fenceData.mut.unlock();
+    }
+
+
+    RenderSyncData::RenderSyncData() {
         VkFenceCreateInfo fenceInfo{};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.pNext = nullptr;
@@ -47,25 +73,25 @@ namespace EWE {
         semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         semInfo.pNext = nullptr;
         for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            EWE_VK(vkCreateFence, device, &fenceInfo, nullptr, &inFlight[i]);
-            EWE_VK(vkCreateSemaphore, device, &semInfo, nullptr, &imageAvailableSemaphore[i]);
-            EWE_VK(vkCreateSemaphore, device, &semInfo, nullptr, &renderFinishedSemaphore[i]);
+            EWE_VK(vkCreateFence, VK::Object->vkDevice, &fenceInfo, nullptr, &inFlight[i]);
+            EWE_VK(vkCreateSemaphore, VK::Object->vkDevice, &semInfo, nullptr, &imageAvailableSemaphore[i]);
+            EWE_VK(vkCreateSemaphore, VK::Object->vkDevice, &semInfo, nullptr, &renderFinishedSemaphore[i]);
 #if DEBUG_NAMING
             std::string objName{};
             objName = "in flight " + std::to_string(i);
-            DebugNaming::SetObjectName(device, inFlight[i], VK_OBJECT_TYPE_FENCE, objName.c_str());
+            DebugNaming::SetObjectName(inFlight[i], VK_OBJECT_TYPE_FENCE, objName.c_str());
             objName = "image available " + std::to_string(i);
-            DebugNaming::SetObjectName(device, imageAvailableSemaphore[i], VK_OBJECT_TYPE_SEMAPHORE, objName.c_str());
+            DebugNaming::SetObjectName(imageAvailableSemaphore[i], VK_OBJECT_TYPE_SEMAPHORE, objName.c_str());
             objName = "render finished " + std::to_string(i);
-            DebugNaming::SetObjectName(device, renderFinishedSemaphore[i], VK_OBJECT_TYPE_SEMAPHORE, objName.c_str());
+            DebugNaming::SetObjectName(renderFinishedSemaphore[i], VK_OBJECT_TYPE_SEMAPHORE, objName.c_str());
 #endif
         }
     }
     RenderSyncData::~RenderSyncData() {
         for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            EWE_VK(vkDestroyFence, device, inFlight[i], nullptr);
-            EWE_VK(vkDestroySemaphore, device, imageAvailableSemaphore[i], nullptr);
-            EWE_VK(vkDestroySemaphore, device, renderFinishedSemaphore[i], nullptr);
+            EWE_VK(vkDestroyFence, VK::Object->vkDevice, inFlight[i], nullptr);
+            EWE_VK(vkDestroySemaphore, VK::Object->vkDevice, imageAvailableSemaphore[i], nullptr);
+            EWE_VK(vkDestroySemaphore, VK::Object->vkDevice, renderFinishedSemaphore[i], nullptr);
         }
     }
     void RenderSyncData::AddWaitSemaphore(SemaphoreData* semaphore, VkPipelineStageFlags waitDstStageMask) {
@@ -80,63 +106,63 @@ namespace EWE {
         signalSemaphores.push_back(semaphore);
         signalMutex.unlock();
     }
-    void RenderSyncData::SetWaitData(uint8_t frameIndex, VkSubmitInfo& submitInfo) {
+    void RenderSyncData::SetWaitData(VkSubmitInfo& submitInfo) {
         waitMutex.lock();
-        for (auto& waitSem : previousWait[frameIndex].semaphores) {
+        for (auto& waitSem : previousWait[VK::Object->frameIndex].semaphores) {
             waitSem->FinishWaiting();
         }
-        previousWait[frameIndex].semaphores.clear();
-        previousWait[frameIndex].waitDstMask.clear();
-        previousWait[frameIndex].semaphoreData.clear();
-        previousWait[frameIndex] = waitData; //i think this makes the above clears repetitive, but im not sure
+        previousWait[VK::Object->frameIndex].semaphores.clear();
+        previousWait[VK::Object->frameIndex].waitDstMask.clear();
+        previousWait[VK::Object->frameIndex].semaphoreData.clear();
+        previousWait[VK::Object->frameIndex] = waitData; //i think this makes the above clears repetitive, but im not sure
         waitData.semaphores.clear();
         waitData.waitDstMask.clear();
         waitData.semaphoreData.clear();
+#if EWE_DEBUG
+        assert(previousWait[VK::Object->frameIndex].semaphores.size() == previousWait[VK::Object->frameIndex].waitDstMask.size());
+#endif
 
-        assert(previousWait[frameIndex].semaphores.size() == previousWait[frameIndex].waitDstMask.size());
-
-        for (auto& waitSem : previousWait[frameIndex].semaphores) {
-            previousWait[frameIndex].semaphoreData.push_back(waitSem->semaphore);
+        for (auto& waitSem : previousWait[VK::Object->frameIndex].semaphores) {
+            previousWait[VK::Object->frameIndex].semaphoreData.push_back(waitSem->semaphore);
         }
-        previousWait[frameIndex].semaphoreData.push_back(imageAvailableSemaphore[frameIndex]);
-        previousWait[frameIndex].waitDstMask.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        previousWait[VK::Object->frameIndex].semaphoreData.push_back(imageAvailableSemaphore[VK::Object->frameIndex]);
+        previousWait[VK::Object->frameIndex].waitDstMask.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-        submitInfo.pWaitDstStageMask = previousWait[frameIndex].waitDstMask.data();
-        submitInfo.waitSemaphoreCount = previousWait[frameIndex].semaphoreData.size();
-        submitInfo.pWaitSemaphores = previousWait[frameIndex].semaphoreData.data();
+        submitInfo.pWaitDstStageMask = previousWait[VK::Object->frameIndex].waitDstMask.data();
+        submitInfo.waitSemaphoreCount = previousWait[VK::Object->frameIndex].semaphoreData.size();
+        submitInfo.pWaitSemaphores = previousWait[VK::Object->frameIndex].semaphoreData.data();
 
         waitMutex.unlock();
     }
-    std::vector<VkSemaphore> RenderSyncData::GetSignalData(uint8_t frameIndex) {
+    std::vector<VkSemaphore> RenderSyncData::GetSignalData() {
         signalMutex.lock();
-        for (auto& sigSem : previousSignals[frameIndex]) {
+        for (auto& sigSem : previousSignals[VK::Object->frameIndex]) {
             sigSem->FinishSignaling();
         }
-        previousSignals[frameIndex].clear();
-        previousSignals[frameIndex] = signalSemaphores;
+        previousSignals[VK::Object->frameIndex].clear();
+        previousSignals[VK::Object->frameIndex] = signalSemaphores;
         signalSemaphores.clear();
 
         std::vector<VkSemaphore> ret{};
-        ret.reserve(previousSignals[frameIndex].size() + 1);
-        for (auto& sigSem : previousSignals[frameIndex]) {
+        ret.reserve(previousSignals[VK::Object->frameIndex].size() + 1);
+        for (auto& sigSem : previousSignals[VK::Object->frameIndex]) {
             ret.push_back(sigSem->semaphore);
         }
-        ret.push_back(renderFinishedSemaphore[frameIndex]);
+        ret.push_back(renderFinishedSemaphore[VK::Object->frameIndex]);
         signalMutex.unlock();
         return ret;
     }
     
 
 
-    void (*SyncPool::SubmitGraphicsAsync)(CommandBufferData&, std::vector<SemaphoreData*>) = nullptr;
+    void (*SyncPool::SubmitGraphicsAsync)(CommandBuffer&, std::vector<SemaphoreData*>) = nullptr;
 
-    SyncPool::SyncPool(uint8_t size, VkDevice device, std::array<VkCommandPool, Queue::_count>& cmdPools) :
+    SyncPool::SyncPool(uint8_t size) :
         size{ size },
-        device{ device },
-        fences{ new FenceData[size] },
-        semaphores{ new SemaphoreData[size * 2] },
-        cmdBufs{ new CommandBufferData[size], new CommandBufferData[size], new CommandBufferData[size], new CommandBufferData[size] },
-        cmdPools{cmdPools}
+        transferFences{ size },
+        graphicsFences{ size },
+        semaphores{ static_cast<std::size_t>(size * 2)},
+        cmdBufs{}
     {
         assert(size <= 64 && "this isn't optimized very well, don't use big size"); //big size probably also isn't necessary
 
@@ -145,7 +171,8 @@ namespace EWE {
         fenceInfo.pNext = nullptr;
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         for (uint8_t i = 0; i < size; i++) {
-            EWE_VK(vkCreateFence, device, &fenceInfo, nullptr, &fences[i].fence);
+            EWE_VK(vkCreateFence, VK::Object->vkDevice, &fenceInfo, nullptr, &transferFences[i].fenceData.fence);
+            EWE_VK(vkCreateFence, VK::Object->vkDevice, &fenceInfo, nullptr, &graphicsFences[i].fenceData.fence);
         }
 
         VkSemaphoreCreateInfo semInfo{};
@@ -153,10 +180,9 @@ namespace EWE {
         semInfo.pNext = nullptr;
         semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         for (uint8_t i = 0; i < size * 2; i++) {
-            EWE_VK(vkCreateSemaphore, device, &semInfo, nullptr, &semaphores[i].semaphore);
-#if SEMAPHORE_TRACKING
-            semaphores[i].device = device;
-#endif
+            EWE_VK(vkCreateSemaphore, VK::Object->vkDevice, &semInfo, nullptr, &semaphores[i].semaphore);
+            std::string name = "syncpool semaphore[" + std::to_string(i) + ']';
+            DebugNaming::SetObjectName(semaphores[i].semaphore, VK_OBJECT_TYPE_SEMAPHORE, name.c_str());
         }
         std::vector<VkCommandBuffer> cmdBufVector{};
         //im assuming the input cmdBuf doesn't matter, and it's overwritten without being read
@@ -169,12 +195,12 @@ namespace EWE {
         cmdBufAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
         for (int queue = 0; queue < Queue::_count; queue++) {
-            if (cmdPools[queue] == VK_NULL_HANDLE) {
-
+            if (VK::Object->commandPools[queue] == VK_NULL_HANDLE) {
                 continue;
             }
-            cmdBufAllocInfo.commandPool = cmdPools[queue];
-            EWE_VK(vkAllocateCommandBuffers, device, &cmdBufAllocInfo, cmdBufVector.data());
+            cmdBufs[queue].resize(size);
+            cmdBufAllocInfo.commandPool = VK::Object->commandPools[queue];
+            EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &cmdBufAllocInfo, cmdBufVector.data());
 
             std::sort(cmdBufVector.begin(), cmdBufVector.end());
             for (int i = 0; i < size; i++) {
@@ -185,22 +211,30 @@ namespace EWE {
     }
     SyncPool::~SyncPool() {
         for (uint8_t i = 0; i < size; i++) {
-            EWE_VK(vkDestroyFence, device, fences[i].fence, nullptr);
-            EWE_VK(vkDestroySemaphore, device, semaphores[i].semaphore, nullptr);
+            EWE_VK(vkDestroyFence, VK::Object->vkDevice, transferFences[i].fenceData.fence, nullptr);
+            EWE_VK(vkDestroyFence, VK::Object->vkDevice, graphicsFences[i].fenceData.fence, nullptr);
+            EWE_VK(vkDestroySemaphore, VK::Object->vkDevice, semaphores[i].semaphore, nullptr);
+            EWE_VK(vkDestroySemaphore, VK::Object->vkDevice, semaphores[i + size].semaphore, nullptr);
         }
 
-        delete[] fences;
-        delete[] semaphores;
+        graphicsFences.clear();
+        transferFences.clear();
+        semaphores.clear();
 
         std::vector<VkCommandBuffer> rawCmdBufs(size);
         for (uint8_t queue = 0; queue < Queue::_count; queue++) {
-            for (uint8_t i = 0; i < size; i++) {
-                rawCmdBufs[i] = cmdBufs[queue][i].cmdBuf;
+            if (VK::Object->commandPools[queue] != VK_NULL_HANDLE) {
+                for (uint8_t i = 0; i < size; i++) {
+                    rawCmdBufs[i] = cmdBufs[queue][i].cmdBuf;
+                }
+                EWE_VK(vkFreeCommandBuffers, VK::Object->vkDevice, VK::Object->commandPools[queue], size, rawCmdBufs.data());
+                cmdBufs[queue].clear();
             }
-            EWE_VK(vkFreeCommandBuffers, device, cmdPools[queue], size, rawCmdBufs.data());
-            delete[] cmdBufs[queue];
         }
     }
+#if 0//SEMAPHORE_TRACKING
+
+#else
     SemaphoreData& SyncPool::GetSemaphoreData(VkSemaphore semaphore) {
         for (uint8_t i = 0; i < size * 2; i++) {
             if (semaphores[i].semaphore == semaphore) {
@@ -211,48 +245,74 @@ namespace EWE {
         return semaphores[0]; //DO NOT return this, error silencing
         //only way for this to not return an error is if the return type is changed to pointer and nullptr is returned if not found, or std::conditional which im not a fan of
     }
-
+#endif
     bool SyncPool::CheckFencesForUsage() {
         for (uint16_t i = 0; i < size; i++) {
-            if (fences[i].inUse) {
+            if (transferFences[i].fenceData.inUse) {
+                return true;
+            }
+        }
+        for (uint16_t i = 0; i < size; i++) {
+            if (graphicsFences[i].fenceData.inUse) {
                 return true;
             }
         }
         return false;
     }
 
-    void SyncPool::HandleCallbacks(std::vector<CommandCallbacks> callbacks) {
-        std::vector<SemaphoreData*> semaphoreData{};
-        semaphoreData.push_back(callbacks[0].semaphoreData);
-        for (int i = 1; i < callbacks.size(); i++) {
-            callbacks[0].commands.insert(callbacks[0].commands.end(), callbacks[i].commands.begin(), callbacks[i].commands.end());
-            callbacks[0].pipeBarriers.insert(callbacks[0].pipeBarriers.end(), callbacks[i].pipeBarriers.begin(), callbacks[i].pipeBarriers.end());
-            callbacks[0].mipParamPacks.insert(callbacks[0].mipParamPacks.end(), callbacks[i].mipParamPacks.begin(), callbacks[i].mipParamPacks.end());
-            semaphoreData.push_back(callbacks[i].semaphoreData);
+    template<typename T>
+    void InsertSecondIntoFirst(std::vector<T>& first, std::vector<T>& second) {
+        if (second.size() > 0) {
+            first.insert(first.begin(), std::make_move_iterator(second.begin()), std::make_move_iterator(second.end()));
         }
-        std::sort(callbacks[0].commands.begin(), callbacks[0].commands.end());
+    }
+
+    void SyncPool::HandleTransferCallbacks(std::vector<TransferCommandCallbacks> callbacks) {
+        std::vector<SemaphoreData*> semaphoreData{};
+        if ((callbacks[0].images.size() > 0) || (callbacks[0].pipeBarriers.size() > 0)) {
+            assert(callbacks[0].semaphoreData != nullptr);
+            semaphoreData.push_back(callbacks[0].semaphoreData);
+        }
+
+        for (int i = 1; i < callbacks.size(); i++) {
+            InsertSecondIntoFirst(callbacks[0].commands, callbacks[i].commands);
+            InsertSecondIntoFirst(callbacks[0].pipeBarriers, callbacks[i].pipeBarriers);
+            InsertSecondIntoFirst(callbacks[0].images, callbacks[i].images);
+            if (callbacks[i].semaphoreData != nullptr) {
+                semaphoreData.push_back(callbacks[i].semaphoreData);
+            }
+#if EWE_DEBUG
+            if ((callbacks[i].images.size() > 0) || (callbacks[i].pipeBarriers.size() > 0)) {
+                assert(callbacks[i].semaphoreData != nullptr);
+#endif
+            }
+        }
+        if (callbacks[0].commands.size() > 0) {
+            std::sort(callbacks[0].commands.begin(), callbacks[0].commands.end());
+        }
 
         ResetCommandBuffers(callbacks[0].commands, Queue::transfer);
-
 
         PipelineBarrier::SimplifyVector(callbacks[0].pipeBarriers);
 
         for (auto& callback : callbacks) {
             for (auto& sb : callback.stagingBuffers) {
-                sb->Free(device);
+                sb->Free();
             }
         }
-        if ((callbacks[0].mipParamPacks.size() > 0) || (callbacks[0].pipeBarriers.size() > 0)) {
-            CommandBufferData& cmdBuf = GetCmdBufSingleTime(Queue::graphics);
-            if (callbacks[0].mipParamPacks.size() > 1) {
-                Image::GenerateMipMapsForMultipleImages(cmdBuf.cmdBuf, callbacks[0].mipParamPacks);
+        if ((callbacks[0].images.size() > 0) || (callbacks[0].pipeBarriers.size() > 0)) {
+            CommandBuffer& cmdBuf = GetCmdBufSingleTime(Queue::graphics);
+            if (callbacks[0].images.size() > 1) {
+
+                Image::GenerateMipMapsForMultipleImagesTransferQueue(cmdBuf, callbacks[0].images);
             }
-            else {
-                Image::GenerateMipmaps(cmdBuf.cmdBuf, callbacks[0].mipParamPacks[0]);
+            else if(callbacks[0].images.size() == 1) {
+
+                Image::GenerateMipmaps(cmdBuf, callbacks[0].images[0], Queue::transfer);
             }
         
             for (auto& barrier : callbacks[0].pipeBarriers) {
-                barrier.Submit(cmdBuf.cmdBuf);
+                barrier.Submit(cmdBuf);
             }
             SubmitGraphicsAsync(cmdBuf, semaphoreData);
         }
@@ -261,21 +321,33 @@ namespace EWE {
 
     void SyncPool::CheckFencesForCallbacks() {
 
-        std::vector<CommandCallbacks> callbacks{};
+        std::vector<TransferCommandCallbacks> callbacks{};
         for (uint16_t i = 0; i < size; i++) {
-            if (fences[i].inUse) {
+            if (transferFences[i].fenceData.inUse) {
                 //the pipeline barriers should already be simplified, might be worth calling it again in case 2 transfers submitted before graphics got to it
                 //probably worth profiling
-                callbacks.push_back(fences[i].WaitReturnCallbacks(device, 0));
+                transferFences[i].WaitReturnCallbacks(callbacks, 0);
             }
         }
 #if EWE_DEBUG
         assert(SubmitGraphicsAsync != nullptr);
 #endif
-        ThreadPool::EnqueueVoid(&SyncPool::HandleCallbacks, this, std::move(callbacks));
+        if (callbacks.size() > 0) {
+            ThreadPool::EnqueueVoid(&SyncPool::HandleTransferCallbacks, this, std::move(callbacks));
+        }
+
+        std::vector<CommandBuffer*> graphicsCmdBuf{};
+        for (uint16_t i = 0; i < size; i++) {
+            if (graphicsFences[i].fenceData.inUse) {
+                graphicsFences[i].CheckReturn(graphicsCmdBuf, 0);
+            }
+        }
+        if (graphicsCmdBuf.size() > 0) {
+            ResetCommandBuffers(graphicsCmdBuf, Queue::graphics);
+        }
     }
 #if SEMAPHORE_TRACKING
-    SemaphoreData* SyncPool::GetSemaphoreForSignaling(const char* signalName) {
+    SemaphoreData* SyncPool::GetSemaphoreForSignaling(std::source_location srcLoc) {
 #else
     SemaphoreData* SyncPool::GetSemaphoreForSignaling() {
 #endif
@@ -284,7 +356,7 @@ namespace EWE {
             for (uint16_t i = 0; i < size * 2; i++) {
                 if (semaphores[i].Idle()) {
 #if SEMAPHORE_TRACKING
-                    semaphores[i].BeginSignaling(signalName);
+                    semaphores[i].BeginSignaling(srcLoc);
 #else
                     semaphores[i].BeginSignaling();
 #endif
@@ -297,15 +369,15 @@ namespace EWE {
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
-    FenceData& SyncPool::GetFence() {
+    GraphicsFenceData& SyncPool::GetGraphicsFence() {
         while (true) {
-            fenceAcqMut.lock();
+            graphicsFenceAcqMut.lock();
             for (uint8_t i = 0; i < size; i++) {
-                if (!fences[i].inUse) {
-                    fences[i].Lock();
-                    fences[i].inUse = true;
-                    fenceAcqMut.unlock();
-                    return fences[i];
+                if (!graphicsFences[i].fenceData.inUse) {
+                    graphicsFences[i].fenceData.mut.lock();
+                    graphicsFences[i].fenceData.inUse = true;
+                    graphicsFenceAcqMut.unlock();
+                    return graphicsFences[i];
                 }
             }
             //potentially add a resizing function here
@@ -313,7 +385,23 @@ namespace EWE {
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
-    CommandBufferData& SyncPool::GetCmdBufSingleTime(Queue::Enum queue) {
+    TransferFenceData& SyncPool::GetTransferFence() {
+        while (true) {
+            transferFenceAcqMut.lock();
+            for (uint8_t i = 0; i < size; i++) {
+                if (!transferFences[i].fenceData.inUse) {
+                    transferFences[i].fenceData.mut.lock();
+                    transferFences[i].fenceData.inUse = true;
+                    transferFenceAcqMut.unlock();
+                    return transferFences[i];
+                }
+            }
+            //potentially add a resizing function here
+            assert(false && "no available fence when requested, if waiting for a fence to become available instead of crashing is acceptable, comment this line");
+            std::this_thread::sleep_for(std::chrono::microseconds(1));
+        }
+    }
+    CommandBuffer& SyncPool::GetCmdBufSingleTime(Queue::Enum queue) {
         while (true) {
             cmdBufAcqMut.lock();
             for(uint8_t i = 0; i < size; i++){
@@ -328,7 +416,7 @@ namespace EWE {
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
-    void SyncPool::ResetCommandBuffer(CommandBufferData& cmdBuf, Queue::Enum queue) {
+    void SyncPool::ResetCommandBuffer(CommandBuffer& cmdBuf, Queue::Enum queue) {
         for (uint8_t i = 0; i < size; i++) {
             if (&cmdBuf == &cmdBufs[queue][i]) {
                 cmdBufs[queue][i].Reset();
@@ -337,7 +425,7 @@ namespace EWE {
         }
         assert(false && "failed to find the commadn buffer to be reset, incorrect queue potentially");
     }
-    void SyncPool::ResetCommandBuffer(CommandBufferData& cmdBuf) {
+    void SyncPool::ResetCommandBuffer(CommandBuffer& cmdBuf) {
         for (uint8_t queue = 0; queue < Queue::_count; queue++) {
             for (uint8_t i = 0; i < size; i++) {
                 if (&cmdBuf == &cmdBufs[queue][i]) {
@@ -348,8 +436,9 @@ namespace EWE {
         }
         assert(false && "failed to find the command buffer to be reset");
     }
-    void SyncPool::ResetCommandBuffers(std::vector<CommandBufferData*>& cmdBufVec, Queue::Enum queue) {
-        uint8_t i = 0; //this works because both containers are sorted
+    void SyncPool::ResetCommandBuffers(std::vector<CommandBuffer*>& cmdBufVec, Queue::Enum queue) {
+        uint8_t i = 0;
+         //this works because both containers are sorted
         for (int j = 0; j < cmdBufVec.size(); j++) {
             bool found = false;
             for (; i < size; i++) {
@@ -362,7 +451,8 @@ namespace EWE {
             assert(found && "failed to find the command buffer to be reset");
         }
     }
-    void SyncPool::ResetCommandBuffers(std::vector<CommandBufferData*>& cmdBufVec) {
+    void SyncPool::ResetCommandBuffers(std::vector<CommandBuffer*>& cmdBufVec) {
+
         for (int j = 0; j < cmdBufVec.size(); j++) {
             bool found = false;
             for (uint8_t queue = 0; queue < Queue::_count; queue++) {

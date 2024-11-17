@@ -87,7 +87,7 @@ namespace EWE {
 		//printf("camera pos : %.2f:%.2f:%.2f \n", ubo.cameraPos.x, ubo.cameraPos.y, ubo.cameraPos.z);
 	}
 
-	void EWECamera::ViewTargetDirect(uint8_t currentFrame) {
+	void EWECamera::ViewTargetDirect() {
 
 
 		if (dataHasBeenUpdated == 0) {
@@ -124,11 +124,11 @@ namespace EWE {
 		ubo.projView = projection * view;
 		//ubo.projection = projection;
 		//ubo.view = view;
-		uniformBuffers->at(currentFrame)->WriteToBuffer(&ubo);
+		uniformBuffers->at(VK::Object->frameIndex)->WriteToBuffer(&ubo);
 
 
 		//printf("view target direct, currentFrmae : %d \n", currentFrame);
-		uniformBuffers->at(currentFrame)->Flush();
+		uniformBuffers->at(VK::Object->frameIndex)->Flush();
 	}
 
 	void EWECamera::SetViewYXZ(glm::vec3 const& position, glm::vec3 const& rotation) {
@@ -160,11 +160,17 @@ namespace EWE {
 		//ubo.view = view;
 		ubo.cameraPos = position;
 	}
-	void EWECamera::BindUBO(uint8_t frameIndex) {
+	void EWECamera::BindBothUBOs() {
+		uniformBuffers->at(0)->WriteToBuffer(&ubo, sizeof(GlobalUbo));
+		uniformBuffers->at(0)->Flush();
+		uniformBuffers->at(1)->WriteToBuffer(&ubo, sizeof(GlobalUbo));
+		uniformBuffers->at(1)->Flush();
+	}
+	void EWECamera::BindUBO() {
 		//printf("camera set ubo \n");
 		//printf("offset of camera pos : %zu\n", offsetof(GlobalUbo, GlobalUbo::cameraPos));
-		uniformBuffers->at(frameIndex)->WriteToBuffer(&ubo, sizeof(GlobalUbo));
-		uniformBuffers->at(frameIndex)->Flush();
+		uniformBuffers->at(VK::Object->frameIndex)->WriteToBuffer(&ubo, sizeof(GlobalUbo));
+		uniformBuffers->at(VK::Object->frameIndex)->Flush();
 	}
 	void EWECamera::PrintCameraPos() {
 		printf("camera pos : %.3f:%.3f:%.3f\n", ubo.cameraPos.x, ubo.cameraPos.y, ubo.cameraPos.z);

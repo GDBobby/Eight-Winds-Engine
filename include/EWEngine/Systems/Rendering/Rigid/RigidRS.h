@@ -36,7 +36,7 @@ namespace EWE {
         MaterialPipelines* pipe;
         std::unordered_map<TextureDesc, std::vector<MaterialObjectInfo>> materialMap{};
         MaterialRenderInfo(MaterialFlags flags) : pipe{MaterialPipelines::GetMaterialPipe(flags)} {}
-        void Render(uint8_t frameIndex);
+        void Render();
     };
 
     struct InstancedMaterialObjectInfo {
@@ -54,7 +54,7 @@ namespace EWE {
         MaterialPipelines* pipe;
         std::vector<InstancedMaterialObjectInfo> instancedInfo{};
         InstancedMaterialRenderInfo(MaterialFlags flags, uint32_t entityCount) : pipe{ MaterialPipelines::GetMaterialPipe(flags, entityCount)} {}
-        void Render(uint8_t frameIndex);
+        void Render();
     };
 
     //singleton
@@ -78,13 +78,13 @@ namespace EWE {
 
         std::vector<TextureDesc> CheckAndClearTextures();
 
-        void Render(FrameInfo const& frameInfo);
+        void Render();
 
-        const EWEBuffer* GetTransformBuffer(EWEModel* meshPtr, uint8_t frameIndex);
+        const EWEBuffer* GetTransformBuffer(EWEModel* meshPtr);
         //providing the materialInfo doesn't need to iterate through every material in the map
-        const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr, uint8_t frameIndex);
+        const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr);
 
-        std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr);
-        std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr);
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr);
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr);
     };
 }

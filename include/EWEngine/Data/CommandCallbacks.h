@@ -2,27 +2,28 @@
 
 #include "EWEngine/Graphics/VulkanHeader.h"
 #include "EWEngine/Graphics/PipelineBarrier.h"
+#include "EWEngine/Graphics/Texture/Image.h"
 
 #include <vector>
 
 namespace EWE {
 
 
-    struct CommandBufferData {
-        bool inUse;
-        VkCommandBuffer cmdBuf;
-
-        CommandBufferData() : inUse{ false }, cmdBuf{ VK_NULL_HANDLE } {}
-        void Reset();
-        void BeginSingleTime();
-        //void Begin();
-    };
-
     struct SemaphoreData {
         VkSemaphore semaphore{ VK_NULL_HANDLE };
 #if SEMAPHORE_TRACKING
-        std::string name{ "null" };
-        VkDevice device;
+        struct Tracking{
+            enum State {
+                BeginSignaling,
+                FinishSignaling,
+                BeginWaiting,
+                FinishWaiting,
+            };
+            State state;
+            std::source_location srcLocation;
+            Tracking(State state, std::source_location srcLocation) : state{ state }, srcLocation{ srcLocation } {}
+        };
+        std::vector<Tracking> tracking{};
 #endif
         bool waiting{ false };
         bool signaling{ false };
@@ -30,28 +31,33 @@ namespace EWE {
         bool Idle() const {
             return !(waiting || signaling);
         }
+#if SEMAPHORE_TRACKING
+
+        void BeginSignaling(std::source_location srcLoc = std::source_location::current());
+        void FinishSignaling(std::source_location srcLoc = std::source_location::current());
+        void FinishWaiting(std::source_location srcLoc = std::source_location::current());
+        void BeginWaiting(std::source_location srcLoc = std::source_location::current());
+#else
+        void BeginSignaling();
         void FinishSignaling();
         void FinishWaiting();
         void BeginWaiting();
-#if SEMAPHORE_TRACKING
-        void BeginSignaling(const char* name);
-#else
-        void BeginSignaling();
 #endif
     };
 
-    struct CommandCallbacks {
-        std::vector<CommandBufferData*> commands;
+    struct TransferCommandCallbacks {
+        std::vector<CommandBuffer*> commands;
         std::vector<StagingBuffer*> stagingBuffers;
         std::vector<PipelineBarrier> pipeBarriers;
-        std::vector<MipParamPack> mipParamPacks;
+        std::vector<ImageInfo> images;
         SemaphoreData* semaphoreData;
 
-        CommandCallbacks() : commands{}, stagingBuffers{}, pipeBarriers{}, mipParamPacks{}, semaphoreData{ nullptr } {} //constructor
-        CommandCallbacks(CommandCallbacks& copySource); //copy constructor
-        CommandCallbacks& operator=(CommandCallbacks& copySource); //copy assignment
-        CommandCallbacks(CommandCallbacks&& moveSource) noexcept;//move constructor
-        CommandCallbacks& operator=(CommandCallbacks&& moveSource) noexcept; //move assignment
+        TransferCommandCallbacks() : commands{}, stagingBuffers{}, pipeBarriers{}, images{}, semaphoreData{ nullptr } {} //constructor
+        TransferCommandCallbacks(TransferCommandCallbacks& copySource); //copy constructor
+        TransferCommandCallbacks& operator=(TransferCommandCallbacks& copySource); //copy assignment
+        TransferCommandCallbacks(TransferCommandCallbacks&& moveSource) noexcept;//move constructor
+        TransferCommandCallbacks& operator=(TransferCommandCallbacks&& moveSource) noexcept; //move assignment
+        //TransferCommandCallbacks& operator+=(TransferCommandCallbacks& copySource);
     };
     /*
     struct CallbacksForGraphics {

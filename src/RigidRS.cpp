@@ -3,12 +3,12 @@
 #include "EWEngine/Graphics/PushConstants.h"
 
 namespace EWE {
-    void MaterialRenderInfo::Render(uint8_t frameIndex) {
+    void MaterialRenderInfo::Render() {
         if (materialMap.size() == 0) {
             return;
         }
         pipe->BindPipeline();
-        pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameIndex));
+        pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
         for (auto iterTexID = materialMap.begin(); iterTexID != materialMap.end(); iterTexID++) {
 
             pipe->BindTextureDescriptor(1, iterTexID->first);
@@ -25,13 +25,13 @@ namespace EWE {
             }
         }
     }
-    void InstancedMaterialRenderInfo::Render(uint8_t frameIndex) {
+    void InstancedMaterialRenderInfo::Render() {
         if (instancedInfo.size() == 0) { return; }
         pipe->BindPipeline();
 
-        pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameIndex));
+        pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
         for (auto const& instanceInfo : instancedInfo) {
-            pipe->BindDescriptor(1, instanceInfo.buffer.GetDescriptor(frameIndex));
+            pipe->BindDescriptor(1, instanceInfo.buffer.GetDescriptor());
             pipe->BindTextureDescriptor(2, instanceInfo.texture);
             const uint32_t instanceCount = instanceInfo.buffer.GetCurrentEntityCount();
             if (instanceCount == 0) {
@@ -204,7 +204,7 @@ namespace EWE {
             }
         }
 
-        void RenderInstancedMemberMethod(FrameInfo const& frameInfo) {
+        void RenderInstancedMemberMethod() {
             for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
 
 #if DEBUGGING_MATERIAL_PIPE || DEBUGGING_PIPELINES
@@ -218,10 +218,10 @@ namespace EWE {
                 uint8_t flags = iter->first;
                 assert(((flags & 128) == 0) && "should not have bones here");
 #endif
-                iter->second.Render(frameInfo.index);
+                iter->second.Render();
             }
         }
-        void RenderMemberMethod(FrameInfo const& frameInfo) {
+        void RenderMemberMethod() {
 
             for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
 
@@ -236,7 +236,7 @@ namespace EWE {
                 uint8_t flags = iter->first;
                 assert(((flags & 128) == 0) && "should not have bones here");
 #endif
-                iter->second.Render(frameInfo.index);
+                iter->second.Render();
 
 
 #if DEBUGGING_MATERIAL_PIPE
@@ -248,19 +248,18 @@ namespace EWE {
 #endif
         }
 
-        void Render(FrameInfo const& frameInfo) {
+        void Render() {
             //ill replace this shit eventually
-            MaterialPipelines::SetFrameInfo(frameInfo);
 
-            RenderMemberMethod(frameInfo);
-            RenderInstancedMemberMethod(frameInfo);
+            RenderMemberMethod();
+            RenderInstancedMemberMethod();
         }
 
-        const EWEBuffer* GetTransformBuffer(EWEModel* meshPtr, uint8_t frameIndex) {
+        const EWEBuffer* GetTransformBuffer(EWEModel* meshPtr) {
             for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
                 for (auto const& instanced : iter->second.instancedInfo) {
                     if (meshPtr == instanced.meshPtr) {
-                        return instanced.buffer.GetBuffer(frameIndex);
+                        return instanced.buffer.GetBuffer();
                     }
                 }
             }
@@ -270,14 +269,14 @@ namespace EWE {
             //unreachable
 #endif
         }
-        const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr, uint8_t frameIndex) {
+        const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr) {
 #if EWE_DEBUG
             assert(instancedMaterialMap->contains(materialFlags));
 #endif
             auto& ref = instancedMaterialMap->at(materialFlags);
             for (auto const& instanced : ref.instancedInfo) {
                 if (meshPtr == instanced.meshPtr) {
-                    return instanced.buffer.GetBuffer(frameIndex);
+                    return instanced.buffer.GetBuffer();
                 }
             }
 #if EWE_DEBUG
@@ -287,14 +286,11 @@ namespace EWE {
 #endif
         }
 
-        std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr) {
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr) {
             for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
                 for (auto const& instanced : iter->second.instancedInfo) {
                     if (meshPtr == instanced.meshPtr) {
-                        return {
-                            instanced.buffer.GetBuffer(0),
-                            instanced.buffer.GetBuffer(1)
-                        };
+                        return instanced.buffer.GetBothBuffers();
                     }
                 }
             }
@@ -304,17 +300,14 @@ namespace EWE {
             //unreachable
 #endif
         }
-        std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr) {
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr) {
 #if EWE_DEBUG
             assert(instancedMaterialMap->contains(materialFlags));
 #endif
             auto& ref = instancedMaterialMap->at(materialFlags);
             for (auto const& instanced : ref.instancedInfo) {
                 if (meshPtr == instanced.meshPtr) {
-                    return {
-                        instanced.buffer.GetBuffer(0),
-                        instanced.buffer.GetBuffer(1)
-                    };
+                    return instanced.buffer.GetBothBuffers();
                 }
             }
 #if EWE_DEBUG

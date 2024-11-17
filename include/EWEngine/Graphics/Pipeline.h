@@ -87,7 +87,7 @@ namespace EWE {
 
 		static EWE_Compute_Pipeline CreatePipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path);
 		static EWE_Compute_Pipeline CreatePipeline(VkPipelineLayout pipe_layout, std::string compute_path);
-		void Bind(VkCommandBuffer cmdBuf) {
+		void Bind(CommandBuffer cmdBuf) {
 			EWE_VK(vkCmdBindPipeline, cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 		}
 	private:
@@ -146,7 +146,7 @@ namespace EWE {
 		EWEPipeline(EWEPipeline const&) = delete;
 		EWEPipeline& operator=(EWEPipeline const&) = delete;
 
-		void Bind(VkCommandBuffer commandBuffer);
+		void Bind();
 		static void DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
 		static void Enable2DConfig(PipelineConfigInfo& configInfo);
 		static void EnableAlphaBlending(PipelineConfigInfo& configInfo);

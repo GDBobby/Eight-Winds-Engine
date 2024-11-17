@@ -142,16 +142,8 @@ namespace EWE {
                     }
                 }
             }
-            if (containedTextures.size() == 0) {
-                //its possible that the textures were loaded in a different order
-                //not adding a catch for that
-                printf("descriptor was declared non-unique, but no match was found \n");
-                throw std::runtime_error("was not unique, but no match found");
-            }
-            else if (containedTextures.size() > 1) {
-                printf("more than one match was found for a descriptor \n");
-                throw std::runtime_error("descriptor duplication error");
-            }
+            assert(containedTextures.size() != 0 && "was not unique, but no match found");
+            assert(containedTextures.size() == 1 && "descriptor duplication error");
             return *containedTextures.begin();
         }
     }
@@ -222,7 +214,7 @@ namespace EWE {
 
         for (auto& image : imageMap) {
             //printf("%d tracking \n", tracker++);
-            image.second->imageInfo.Destroy();
+            Image::Destroy(image.second->imageInfo);
             image.second->~ImageTracker();
             imageTrackerBucket.FreeDataChunk(image.second);
         }
@@ -266,7 +258,7 @@ namespace EWE {
                 imageTracker->usedInTexture.erase(sceneID);
 #endif
                 if (imageTracker->usedInTexture.size() == 0) {
-                    imageTracker->imageInfo.Destroy();
+                    Image::Destroy(imageTracker->imageInfo);
                     for (auto iter = imageMap.begin(); iter != imageMap.end(); iter++) {
                         if (iter->second == imageTracker) {
                             
@@ -299,7 +291,7 @@ namespace EWE {
     ImageTracker* Texture_Manager::ConstructImageTracker(std::string const& path, bool mipmap) {
         ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(textureManagerPtr->imageTrackerBucket.GetDataChunk());
 
-        new(imageTracker) ImageTracker(path, true);
+        new(imageTracker) ImageTracker(path, mipmap);
 
         return textureManagerPtr->imageMap.try_emplace(path, imageTracker).first->second;
     }
@@ -323,6 +315,7 @@ namespace EWE {
 
         ImageInfo arrayImageInfo{};
         printf("before ui image\n");
+
         UI_Texture::CreateUIImage(arrayImageInfo, pixelPeeks, Queue::transfer);
         printf("after ui image\n");
         UI_Texture::CreateUIImageView(arrayImageInfo);

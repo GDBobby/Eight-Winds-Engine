@@ -11,8 +11,8 @@ namespace EWE {
 		size_t pushSize;
 		VkShaderStageFlags pushStageFlags;
 
-		void Push(VkCommandBuffer cmdBuf, void* pushData) {
-			vkCmdPushConstants(cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, pushData);
+		void Push(void* pushData) {
+			EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, pushStageFlags, 0, pushSize, pushData);
 		}
 	};
 
@@ -140,16 +140,16 @@ namespace EWE {
 	}
 
 	void MaterialPipelines::BindPipeline() {
-		pipeline.Bind(cmdBuf);
+		pipeline.Bind();
 		bindedTexture = TEXTURE_UNBINDED_DESC;
 		bindedModel = nullptr;
 	}
 	void MaterialPipelines::BindModel(EWEModel* model) {
 		bindedModel = model;
-		bindedModel->Bind(cmdBuf);
+		bindedModel->Bind();
 	}
 	void MaterialPipelines::BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
-		vkCmdBindDescriptorSets(cmdBuf,
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			materialPipeLayout[pipeLayoutIndex].pipeLayout,
 			descSlot, 1,
@@ -158,7 +158,7 @@ namespace EWE {
 		);
 	}
 	void MaterialPipelines::BindDescriptor(uint8_t descSlot, const VkDescriptorSet* descSet) {
-		vkCmdBindDescriptorSets(cmdBuf,
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			materialPipeLayout[pipeLayoutIndex].pipeLayout,
 			descSlot, 1,
@@ -174,36 +174,34 @@ namespace EWE {
 		}
 	}
 	void MaterialPipelines::Push(void* push) {
-		materialPipeLayout[pipeLayoutIndex].Push(cmdBuf, push);
+		materialPipeLayout[pipeLayoutIndex].Push(push);
 	}
 
 	void MaterialPipelines::PushAndDraw(void* push) {
-		materialPipeLayout[pipeLayoutIndex].Push(cmdBuf, push);
+		materialPipeLayout[pipeLayoutIndex].Push(push);
 
 #if EWE_DEBUG
 		assert(bindedModel != nullptr && "failed model draw");
 #endif
-		bindedModel->Draw(cmdBuf);
+		bindedModel->Draw();
 	}
 	void MaterialPipelines::DrawModel() {
 #if EWE_DEBUG
 		assert(bindedModel != nullptr && "failed model draw");
 #endif
-		bindedModel->Draw(cmdBuf);
+		bindedModel->Draw();
 	}
 	void MaterialPipelines::DrawInstanced(EWEModel* model) {
-		model->BindAndDrawInstance(cmdBuf);
+		model->BindAndDrawInstance();
 	}
 	void MaterialPipelines::DrawInstanced(EWEModel* model, uint32_t instanceCount) {
-		model->BindAndDrawInstance(cmdBuf, instanceCount);
+		model->BindAndDrawInstance(instanceCount);
 	}
 
 
 
 //~~~~~~~~~~~~~~~~~~~ STATIC PORTION ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	uint8_t MaterialPipelines::frameIndex;
-	VkCommandBuffer MaterialPipelines::cmdBuf;
 #if EWE_DEBUG
 	MaterialPipelines* MaterialPipelines::currentPipe;
 #endif
@@ -232,11 +230,6 @@ namespace EWE {
 		return currentPipe;
 #endif
 		return instancedBonePipelines.at(key);
-	}
-
-	void MaterialPipelines::SetFrameInfo(FrameInfo const& frameInfo) {
-		cmdBuf = frameInfo.cmdBuf;
-		frameIndex = frameInfo.index;
 	}
 
 	void MaterialPipelines::InitMaterialPipeLayout(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {

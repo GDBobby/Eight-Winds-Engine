@@ -169,10 +169,10 @@ namespace EWE {
         //printf("returning from init VkDescriptorSets \n");
     }
 #endif
-    VkDescriptorSet* DescriptorHandler::GetDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex) {
+    VkDescriptorSet* DescriptorHandler::GetDescSet(DescSet_Enum whichDescSet) {
 #if EWE_DEBUG
         assert(descriptorSets.contains(whichDescSet) && "Failed to find descset");
 #endif
-        return &descriptorSets.at(whichDescSet)[whichFrameIndex];
+        return &descriptorSets.at(whichDescSet)[VK::Object->frameIndex];
     }
 }

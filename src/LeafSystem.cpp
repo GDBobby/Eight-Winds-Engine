@@ -144,7 +144,7 @@ namespace EWE {
 
 	}
 
-	void LeafSystem::FallCalculation(float timeStep, uint8_t frameIndex) {
+	void LeafSystem::FallCalculation(float timeStep) {
 		//angF = angularFrequency * timestep
 		//EllRatio = ratio of minor to major axis in ellipse
 		//rotRatio = ratio of elliptical oscillation to rotation of leaf itself
@@ -305,7 +305,7 @@ namespace EWE {
 
 
 
-			leaf.transform.mat4(leafBufferData[frameIndex] + (sizeof(glm::mat4) / sizeof(float) * i));
+			leaf.transform.mat4(leafBufferData[VK::Object->frameIndex] + (sizeof(glm::mat4) / sizeof(float) * i));
 			/*
 			if (i == 0) {
 				printf("translation, motion Type - %.3f:%.3f:%.3f - %d \n", leaf.transform.translation.x, leaf.transform.translation.y, leaf.transform.translation.z, leaf.fallMotion);
@@ -313,7 +313,7 @@ namespace EWE {
 			*/
 
 		}
-		leafBuffer[frameIndex]->Flush();
+		leafBuffer[VK::Object->frameIndex]->Flush();
 		//printf("before instancing \n");
 		//return leafModel->updateInstancing(LEAF_COUNT, sizeof(glm::mat4), transformBuffer.data(), frameIndex, cmdBuf);
 		//printf("after instancing \n");
@@ -354,8 +354,7 @@ namespace EWE {
 	}
 	void LeafSystem::LoadLeafTexture() {
 		const std::string fullLeafTexturePath = "textures/leaf.jpg";
-		ImageInfo imageInfo{};
-		imageInfo.Initialize(fullLeafTexturePath, false, Queue::graphics);
+		ImageInfo imageInfo = Image::CreateImage(fullLeafTexturePath, false, Queue::graphics);
 
 		const std::string leafTexturePath = "leaf.jpg";
 		leafTextureID = Texture_Manager::AddImageInfo(leafTexturePath, imageInfo, VK_SHADER_STAGE_FRAGMENT_BIT, false);
@@ -364,20 +363,19 @@ namespace EWE {
 #endif
 		//printf("leaf model loaded \n");
 	}
-	void LeafSystem::Render(FrameInfo& frameInfo) {
-		SetFrameInfo(frameInfo);
+	void LeafSystem::Render() {
 #if EWE_DEBUG
 		currentPipe = myID;
 #endif
 		BindPipeline();
-		BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameInfo.index));
+		BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
 
 		//printf("after binding descriptor set 0 \n");
 		BindDescriptor(1, &leafTextureID);
 
-		BindDescriptor(2, &transformDescriptor[frameInfo.index]);
+		BindDescriptor(2, &transformDescriptor[VK::Object->frameIndex]);
 
-		leafModel->BindAndDrawInstanceNoBuffer(cmdBuf, LEAF_COUNT);
+		leafModel->BindAndDrawInstanceNoBuffer(LEAF_COUNT);
 	}
 	void LeafSystem::CreatePipeline() {
 		CreatePipeLayout();

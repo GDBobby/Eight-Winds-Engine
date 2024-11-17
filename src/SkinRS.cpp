@@ -30,19 +30,13 @@ namespace EWE {
 		uint16_t instancedBuffersCleared = 0;
 		for (auto& buffer : buffers) {
 			if (!buffer.second.CheckReference()) {
-				for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-					buffer.second.SetFrameIndex(i);
-					EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, buffer.second.GetDescriptor());
-					bufferDescriptorsCleared++;
-				}
+				buffer.second.FreeDescriptors();
+				bufferDescriptorsCleared++;
 			}
 		}
 		for (auto& instanceBuffer : instancedBuffers) {
-			for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-				instanceBuffer.second.SetFrameIndex(i);
-				EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, instanceBuffer.second.GetDescriptor());
-				instancedBuffersCleared++;
-			}
+			instanceBuffer.second.FreeDescriptors();
+			instancedBuffersCleared++;
 		}
 #if DECONSTRUCTION_DEBUG
 		printf("after clearing buffer descriptors - count - %d:%d  \n", bufferDescriptorsCleared, instancedBuffersCleared);
@@ -92,7 +86,7 @@ namespace EWE {
 		}
 	}
 
-	void SkinRenderSystem::RenderInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex) {
+	void SkinRenderSystem::RenderInstanced() {
 
 		MaterialPipelines* pipe;
 
@@ -102,7 +96,7 @@ namespace EWE {
 
 			pipe->BindPipeline();
 
-			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameIndex));
+			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
 
 			int64_t bindedSkeletonID = -1;
 
@@ -127,7 +121,7 @@ namespace EWE {
 					for (auto& meshRef : skeleTextureRef.meshes) {
 						//meshRef->BindAndDrawInstanceNoBuffer(frameInfo.cmdBuf, actorCount.at(instanced.first));
 						//printf("drawing instanced : %d \n", instancedBuffers.at(bindedSkeletonID).getInstanceCount());
-						meshRef->BindAndDrawInstanceNoBuffer(cmdBuf, instancedBuffers.at(skeleDataRef.first).GetInstanceCount());
+						meshRef->BindAndDrawInstanceNoBuffer(instancedBuffers.at(skeleDataRef.first).GetInstanceCount());
 					}
 				}
 
@@ -139,7 +133,7 @@ namespace EWE {
 		}
 
 	}
-	void SkinRenderSystem::RenderNonInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex) {
+	void SkinRenderSystem::RenderNonInstanced() {
 
 		MaterialPipelines* pipe;
 		for (auto& boned : boneData) {
@@ -147,7 +141,7 @@ namespace EWE {
 			//printf("shader flags on non-instanced : %d \n", boned.first);
 			pipe->BindPipeline();
 
-			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global, frameIndex));
+			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
 
 			for (auto& skeleDataRef : boned.second.skeletonData) {
 				if (!pushConstants.contains(skeleDataRef.first)) {
@@ -191,7 +185,7 @@ namespace EWE {
 		}
 	}
 
-	void SkinRenderSystem::Render(FrameInfo frameInfo) {
+	void SkinRenderSystem::Render() {
 		//printf("skin render? \n");
 		/*
 		if (enemyData->actorCount[actorType - 3] == 0) {
@@ -202,21 +196,20 @@ namespace EWE {
 		//setFrameIndex(frameInfo.index);
 
 		//printf("pre instance drawing in skinned RS \n");
-		MaterialPipelines::SetFrameInfo(frameInfo);
-		RenderInstanced(frameInfo.cmdBuf, frameInfo.index);
+		RenderInstanced();
 
-		RenderNonInstanced(frameInfo.cmdBuf, frameInfo.index);
+		RenderNonInstanced();
 		
 
 		//printf("after skinned RS drawing \n");
 	}
 
-	void SkinRenderSystem::UpdateBuffers(uint8_t frameIndex) {
+	void SkinRenderSystem::UpdateBuffers() {
 		printf("am i using update buffers? i dont think i should be \n");
-		FlushBuffers(frameIndex);
+		FlushBuffers();
 	}
 
-	void SkinRenderSystem::FlushBuffers(uint8_t frameIndex) {
+	void SkinRenderSystem::FlushBuffers() {
 		for (auto& buffer : buffers) {
 			buffer.second.Flush();
 		}

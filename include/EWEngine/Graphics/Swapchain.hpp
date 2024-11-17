@@ -46,7 +46,7 @@ class EWESwapChain {
 
         //return true if recreating swap chain is necessary
         bool AcquireNextImage(uint32_t *imageIndex);
-        VkResult SubmitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex);
+        VkResult SubmitCommandBuffers(CommandBuffer *buffers, uint32_t *imageIndex);
 
         bool CompareSwapFormats(const EWESwapChain& swapChain) const {
             return swapChain.swapChainDepthFormat == swapChainDepthFormat && swapChain.swapChainImageFormat == swapChainImageFormat;
@@ -59,9 +59,9 @@ class EWESwapChain {
         VkImage GetImage(uint8_t imageIndex) {
             return swapChainImages[imageIndex];
         }
-        void BeginRender(VkCommandBuffer commandBuffer, uint8_t imageIndex) {
+        void BeginRender(uint8_t imageIndex) {
             //std::cout << "before vkCmdBeginRendering : " << std::endl;
-            vkCmdBeginRendering(commandBuffer, &dynamicStructs[imageIndex].render_info); //might need to use the frameIndex from renderer, not sure
+            EWE_VK(vkCmdBeginRendering, VK::Object->GetFrameBuffer(), &dynamicStructs[imageIndex].render_info); //might need to use the frameIndex from renderer, not sure
             //std::cout << "after vkCmdBeginRendering : " << std::endl;
         }
 
@@ -111,8 +111,6 @@ class EWESwapChain {
 
     VkSwapchainKHR swapChain{};
     std::shared_ptr<EWESwapChain> oldSwapChain{};
-
-    uint8_t currentFrame = 0;
 
 
     std::shared_ptr<SyncHub> syncHub;

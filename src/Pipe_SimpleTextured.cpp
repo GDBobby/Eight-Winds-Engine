@@ -1,5 +1,5 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Pipe_SimpleTextured.h"
-#include "EWEngine/Graphics/Texture/Image.h"
+#include "EWEngine/Graphics/Texture/TextureDSL.h"
 
 namespace EWE {
 	Pipe_SimpleTextured::Pipe_SimpleTextured()
@@ -15,6 +15,7 @@ namespace EWE {
 		
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.pNext = nullptr;
 
 		VkPushConstantRange pushConstantRange{};
 		pushConstantRange.offset = 0;
@@ -36,7 +37,7 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
-		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout);
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}
 
 	void Pipe_SimpleTextured::CreatePipeline() {
@@ -57,7 +58,7 @@ namespace EWE {
 		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
 #if DEBUG_NAMING
 		pipe->SetDebugName("simple textured pipeline");
-		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "simple textured pipe layout");
+		DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "simple textured pipe layout");
 #endif
 		//memory leak for now, return to std::unique_ptr;
 	}

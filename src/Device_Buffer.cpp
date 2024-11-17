@@ -24,10 +24,10 @@ namespace EWE {
             minOffsetAlignment = 1;
         }
         else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
-            minOffsetAlignment = EWEDevice::GetEWEDevice()->GetProperties().limits.minUniformBufferOffsetAlignment;
+            minOffsetAlignment = VK::Object->properties.limits.minUniformBufferOffsetAlignment;
         }
         else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
-            minOffsetAlignment = EWEDevice::GetEWEDevice()->GetProperties().limits.minStorageBufferOffsetAlignment;
+            minOffsetAlignment = VK::Object->properties.limits.minStorageBufferOffsetAlignment;
         }
 
         if (minOffsetAlignment > 0) {
@@ -44,11 +44,11 @@ namespace EWE {
             minOffsetAlignment = 1;
         }
         else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
-            minOffsetAlignment = EWEDevice::GetEWEDevice()->GetProperties().limits.minUniformBufferOffsetAlignment;
+            minOffsetAlignment = VK::Object->properties.limits.minUniformBufferOffsetAlignment;
             //printf("uniform buffer alignment : %zu\n", minOffsetAlignment);
         }
         else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
-            minOffsetAlignment = EWEDevice::GetEWEDevice()->GetProperties().limits.minStorageBufferOffsetAlignment;
+            minOffsetAlignment = VK::Object->properties.limits.minStorageBufferOffsetAlignment;
         }
 
         if (minOffsetAlignment > 0) {

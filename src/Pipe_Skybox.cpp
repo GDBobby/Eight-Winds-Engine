@@ -1,6 +1,6 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Pipe_Skybox.h"
 #include "EWEngine/Graphics/DescriptorHandler.h"
-#include "EWEngine/Graphics/Texture/Image.h"
+#include "EWEngine/Graphics/Texture/TextureDSL.h"
 
 namespace EWE {
 	Pipe_Skybox::Pipe_Skybox()
@@ -29,7 +29,7 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
 		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
-		EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout);
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}
 	void Pipe_Skybox::CreatePipeline() {
 		CreatePipeLayout();
@@ -47,7 +47,7 @@ namespace EWE {
 		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
 #if DEBUG_NAMING
 		pipe->SetDebugName("skybox pipeline");
-		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "skybox pipe layout");
+		DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "skybox pipe layout");
 #endif
 	}
 }

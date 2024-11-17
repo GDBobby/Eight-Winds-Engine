@@ -4,12 +4,11 @@
 #include "EWEngine/Graphics/PipelineBarrier.h"
 #include "EWEngine/Data/CommandCallbacks.h"
 
-#include <type_traits>
-#include <functional>
 #include <cassert>
 #include <thread>
 #include <mutex>
 #include <array>
+#include <vector>
 
 
 /*
@@ -26,26 +25,29 @@
 */
 
 namespace EWE{
-
-
-
-
     struct FenceData {
         VkFence fence{ VK_NULL_HANDLE };
-        CommandCallbacks callbackData{};
         bool inUse{ false };
-        std::vector<SemaphoreData*> waitSemaphores{}; //each wait could potentially be signaled multiple times in a single queue, and then multiple queues
-        SemaphoreData* signalSemaphores[Queue::_count] = { nullptr, nullptr, nullptr, nullptr }; //each signal is unique per submit that could wait on it, and right now I'm expecting max 1 wait per queue
-
-        CommandCallbacks WaitReturnCallbacks(VkDevice device, uint64_t time);
-        void Lock() {
-            mut.lock();
-        }
-        void Unlock() {
-            mut.unlock();
-        }
-    private:
         std::mutex mut{};
+        std::vector<SemaphoreData*> waitSemaphores{};
+
+        //its up to the calling function to unlock the mutex
+        bool CheckReturn(uint64_t time);
+    };
+
+    struct GraphicsFenceData {
+        FenceData fenceData{};
+        std::vector<CommandBuffer*> commands{};
+
+        void CheckReturn(std::vector<CommandBuffer*>& output, uint64_t time);
+    };
+
+    struct TransferFenceData {
+        FenceData fenceData{};
+        SemaphoreData* signalSemaphoreForGraphics{ nullptr };
+        TransferCommandCallbacks callbacks{};
+
+        void WaitReturnCallbacks(std::vector<TransferCommandCallbacks>& output, uint64_t time);
     };
 
     //not thread safe
@@ -68,7 +70,6 @@ namespace EWE{
     private:
         std::mutex waitMutex{};
         std::mutex signalMutex{};
-        VkDevice device;
         WaitData previousWait[MAX_FRAMES_IN_FLIGHT]{};
         std::vector<SemaphoreData*> previousSignals[MAX_FRAMES_IN_FLIGHT]{};
     public:
@@ -78,12 +79,12 @@ namespace EWE{
         WaitData waitData{};
         std::vector<SemaphoreData*> signalSemaphores{};
 
-        RenderSyncData(VkDevice device);
+        RenderSyncData();
         ~RenderSyncData();
         void AddWaitSemaphore(SemaphoreData* semaphore, VkPipelineStageFlags waitDstStageMask);
         void AddSignalSemaphore(SemaphoreData* semaphore);
-        void SetWaitData(uint8_t frameIndex, VkSubmitInfo& submitInfo);
-        std::vector<VkSemaphore> GetSignalData(uint8_t frameIndex);
+        void SetWaitData(VkSubmitInfo& submitInfo);
+        std::vector<VkSemaphore> GetSignalData();
     };
 
 
@@ -91,62 +92,71 @@ namespace EWE{
     class SyncPool{
     private:
         const uint8_t size;
-        VkDevice device;
 
-        FenceData* fences;
-        SemaphoreData* semaphores;
-        std::array<CommandBufferData*, Queue::_count> cmdBufs;
+        std::vector<TransferFenceData> transferFences;
+        std::vector<GraphicsFenceData> graphicsFences;
+        std::vector<SemaphoreData> semaphores;
+        std::array<std::vector<CommandBuffer>, Queue::_count> cmdBufs;
 
         //acquisition mutexes to ensure multiple threads dont acquire a single object
-        std::mutex fenceAcqMut{};
+        std::mutex graphicsFenceAcqMut{};
+        std::mutex transferFenceAcqMut{};
         std::mutex semAcqMut{};
         std::mutex cmdBufAcqMut{};
 
-        std::array<VkCommandPool, Queue::_count> cmdPools;
 
-
-        void HandleCallbacks(std::vector<CommandCallbacks> callbacks);
+        void HandleTransferCallbacks(std::vector<TransferCommandCallbacks> callbacks);
 
     public:
-        SyncPool(uint8_t size, VkDevice device, std::array<VkCommandPool, Queue::_count>& cmdPools);
+        SyncPool(uint8_t size);
 
         ~SyncPool();
-
         SemaphoreData& GetSemaphoreData(VkSemaphore semaphore);
-        void SemaphoreBeginWaiting(VkSemaphore semaphore){
-            GetSemaphoreData(semaphore).BeginWaiting();
-        }
-        void SemaphoreFinishedWaiting(VkSemaphore semaphore){
-            GetSemaphoreData(semaphore).FinishWaiting();  
-        }
-        void SemaphoreFinishedSignaling(VkSemaphore semaphore){
-            GetSemaphoreData(semaphore).FinishSignaling();
-        }
+
 #if SEMAPHORE_TRACKING
-        void SemaphoreBeginSignaling(VkSemaphore semaphore, const char* name){
-            GetSemaphoreData(semaphore).BeginSignaling(name);
+        void SemaphoreBeginSignaling(VkSemaphore semaphore, std::source_location srcLoc = std::source_location::current()){
+            GetSemaphoreData(semaphore).BeginSignaling(srcLoc);
+        }
+        void SemaphoreBeginWaiting(VkSemaphore semaphore, std::source_location srcLoc = std::source_location::current()) {
+            GetSemaphoreData(semaphore).BeginWaiting(srcLoc);
+        }
+        void SemaphoreFinishedWaiting(VkSemaphore semaphore, std::source_location srcLoc = std::source_location::current()) {
+            GetSemaphoreData(semaphore).FinishWaiting(srcLoc);
+        }
+        void SemaphoreFinishedSignaling(VkSemaphore semaphore, std::source_location srcLoc = std::source_location::current()) {
+            GetSemaphoreData(semaphore).FinishSignaling(srcLoc);
         }
 #else
         void SemaphoreBeginSignaling(VkSemaphore semaphore) {
             GetSemaphoreData(semaphore).BeginSignaling();
+        }
+        void SemaphoreBeginWaiting(VkSemaphore semaphore) {
+            GetSemaphoreData(semaphore).BeginWaiting();
+        }
+        void SemaphoreFinishedWaiting(VkSemaphore semaphore) {
+            GetSemaphoreData(semaphore).FinishWaiting();
+        }
+        void SemaphoreFinishedSignaling(VkSemaphore semaphore) {
+            GetSemaphoreData(semaphore).FinishSignaling();
         }
 #endif
         
         bool CheckFencesForUsage();
         void CheckFencesForCallbacks();
 #if SEMAPHORE_TRACKING
-        SemaphoreData* GetSemaphoreForSignaling(const char* signalName);
+        SemaphoreData* GetSemaphoreForSignaling(std::source_location srcLoc = std::source_location::current());
 #else
         SemaphoreData* GetSemaphoreForSignaling();
 #endif
         //this locks the fence as well
-        FenceData& GetFence();
-        CommandBufferData& GetCmdBufSingleTime(Queue::Enum queue);
-        void ResetCommandBuffer(CommandBufferData& cmdBuf, Queue::Enum queue);
-        void ResetCommandBuffer(CommandBufferData& cmdBuf);
-        void ResetCommandBuffers(std::vector<CommandBufferData*>& cmdBufs, Queue::Enum queue);
-        void ResetCommandBuffers(std::vector<CommandBufferData*>& cmdBufs);
+        TransferFenceData& GetTransferFence();
+        GraphicsFenceData& GetGraphicsFence();
+        CommandBuffer& GetCmdBufSingleTime(Queue::Enum queue);
+        void ResetCommandBuffer(CommandBuffer& cmdBuf, Queue::Enum queue);
+        void ResetCommandBuffer(CommandBuffer& cmdBuf);
+        void ResetCommandBuffers(std::vector<CommandBuffer*>& cmdBufs, Queue::Enum queue);
+        void ResetCommandBuffers(std::vector<CommandBuffer*>& cmdBufs);
 
-        static void (*SubmitGraphicsAsync)(CommandBufferData&, std::vector<SemaphoreData*>);
+        static void (*SubmitGraphicsAsync)(CommandBuffer&, std::vector<SemaphoreData*>);
     };
 } //namespace EWE

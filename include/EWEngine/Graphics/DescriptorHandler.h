@@ -61,6 +61,6 @@ namespace EWE {
         static void InitDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
 #endif
         static VkDescriptorSetLayout GetDescSetLayout(LDSL_Enum whichDescSet);
-        static VkDescriptorSet* GetDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex);
+        static VkDescriptorSet* GetDescSet(DescSet_Enum whichDescSet);
     };
 }

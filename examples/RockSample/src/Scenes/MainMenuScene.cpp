@@ -53,21 +53,19 @@ namespace EWE {
 		camControl.RotateCam(camTransform);
 		camControl.Zoom(camTransform);
 		ewEngine.camera.SetViewYXZ(camTransform.translation, camTransform.rotation);
-
-		FrameInfo frameInfo = ewEngine.BeginRenderWithoutPass();
 		
-		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
+		if (ewEngine.BeginRenderWithoutPass()) {
 			//printf("drawing \n");
-			rockSystem.Dispatch(dt * !paused, frameInfo);
+			rockSystem.Dispatch(dt * !paused);
 			
-			ewEngine.camera.BindUBO(frameInfo.index);
-			ewEngine.eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
-			ewEngine.DrawObjects(frameInfo, dt);
+			ewEngine.camera.BindUBO();
+			ewEngine.eweRenderer.BeginSwapChainRenderPass();
+			ewEngine.DrawObjects(dt);
 
-			//rockSystem.Render(frameInfo);
+			//rockSystem.Render();
 			//printf("after displaying render info \n");
-			ewEngine.EndRender(frameInfo);
-			ewEngine.EndFrame(frameInfo);
+			ewEngine.EndRender();
+			ewEngine.EndFrame();
 			//std::cout << "after ending render \n";
 			return false;
 		}

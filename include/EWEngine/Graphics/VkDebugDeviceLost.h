@@ -89,9 +89,9 @@ namespace EWE {
 
             bool GetVendorDebugExtension(VkPhysicalDevice physDevice);
 
-            static void AddAMDCheckpoint(DeviceLostDebugStructure* thisPtr, VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type);
-            static void AddNvidiaCheckpoint(DeviceLostDebugStructure* thisPtr, VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type);
-            void AddCheckpoint(VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type);
+            static void AddAMDCheckpoint(DeviceLostDebugStructure* thisPtr, CommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type);
+            static void AddNvidiaCheckpoint(DeviceLostDebugStructure* thisPtr, CommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type);
+            void AddCheckpoint(CommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type);
 
             void ClearCheckpoints();
         };

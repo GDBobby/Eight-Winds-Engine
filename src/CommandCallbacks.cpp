@@ -2,49 +2,29 @@
 
 namespace EWE {
 
-    void CommandBufferData::Reset() {
-        //VkCommandBufferResetFlags flags = VkCommandBufferResetFlagBits::VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT;
-        VkCommandBufferResetFlags flags = 0;
-        EWE_VK(vkResetCommandBuffer, cmdBuf, flags);
-        inUse = false;
-    }
-    void CommandBufferData::BeginSingleTime() {
-        inUse = true;
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.pNext = nullptr;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        EWE_VK(vkBeginCommandBuffer, cmdBuf, &beginInfo);
-    }
 
 
 #if SEMAPHORE_TRACKING
-    void SemaphoreData::FinishSignaling() {
+    void SemaphoreData::FinishSignaling(std::source_location srcLoc) {
+        tracking.emplace_back(Tracking::State::FinishSignaling, srcLoc);
         assert(signaling && "finishing a signal that wasn't signaled");
-        if (!waiting) {
-            name = "null";
-            DebugNaming::SetObjectName(device, semaphore, VK_OBJECT_TYPE_SEMAPHORE, name.c_str());
-        }
         signaling = false;
     }
-    void SemaphoreData::FinishWaiting() {
+    void SemaphoreData::FinishWaiting(std::source_location srcLoc) {
         assert(waiting && "finished waiting when not waiting");
         waiting = false;
-        name = "null";
-        DebugNaming::SetObjectName(device, semaphore, VK_OBJECT_TYPE_SEMAPHORE, name.c_str());
+        tracking.emplace_back(Tracking::State::FinishWaiting, srcLoc);
     }
-    void SemaphoreData::BeginWaiting() {
-        assert(name != "null" && "semaphore wasn't named");
+    void SemaphoreData::BeginWaiting(std::source_location srcLoc) {
         assert(!waiting && "attempting to begin wait while waiting");
         waiting = true;
+        tracking.emplace_back(Tracking::State::BeginWaiting, srcLoc);
     }
-    void SemaphoreData::BeginSignaling(const char* name) {
+    void SemaphoreData::BeginSignaling(std::source_location srcLoc) {
 
-        assert(this->name == "null" && "name wasn't reset properly");
-        this->name = name;
-        DebugNaming::SetObjectName(device, semaphore, VK_OBJECT_TYPE_SEMAPHORE, name);
         assert(!signaling && "attempting to signal while signaled");
         signaling = true;
+        tracking.emplace_back(Tracking::State::BeginSignaling, srcLoc);
     }
 #else     
     void SemaphoreData::FinishSignaling() {
@@ -58,6 +38,7 @@ namespace EWE {
         assert(waiting == true && "finished waiting when not waiting");
 #endif
         waiting = false;
+        signaling = false; //im not sure if this is good or not. currently its a bit rough to keep track of the graphics single time signaling
     }
     void SemaphoreData::BeginWaiting() {
 #if EWE_DEBUG
@@ -76,43 +57,74 @@ namespace EWE {
 
 
 
-    CommandCallbacks::CommandCallbacks(CommandCallbacks& copySource) : //copy constructor
+    TransferCommandCallbacks::TransferCommandCallbacks(TransferCommandCallbacks& copySource) : //copy constructor
         commands{ std::move(copySource.commands) },
         stagingBuffers{ std::move(copySource.stagingBuffers) },
         pipeBarriers{ std::move(copySource.pipeBarriers) },
-        mipParamPacks{ std::move(copySource.mipParamPacks) },
+        images{ std::move(copySource.images) },
         semaphoreData{ copySource.semaphoreData }
     {
+        printf("TransferCommandCallbacks:: copy constructor\n");
+
         copySource.semaphoreData = nullptr;
     }
-    CommandCallbacks& CommandCallbacks::operator=(CommandCallbacks& copySource) { //copy assignment
+    TransferCommandCallbacks& TransferCommandCallbacks::operator=(TransferCommandCallbacks& copySource) { //copy assignment
         commands = std::move(copySource.commands);
         stagingBuffers = std::move(copySource.stagingBuffers);
         pipeBarriers = std::move(copySource.pipeBarriers);
-        mipParamPacks = std::move(copySource.mipParamPacks);
+        images = std::move(copySource.images);
         semaphoreData = copySource.semaphoreData;
         copySource.semaphoreData = nullptr;
+        printf("TransferCommandCallbacks:: copy constructor\n");
+
         return *this;
     }
 
-    CommandCallbacks::CommandCallbacks(CommandCallbacks&& moveSource) noexcept ://move constructor
+    //TransferCommandCallbacks& TransferCommandCallbacks::operator+=(TransferCommandCallbacks& copySource) {
+    //    if (copySource.commands.size() > 0) {
+    //        commands.insert(commands.end(), copySource.commands.begin(), copySource.commands.end());
+    //        copySource.commands.clear();
+    //    }
+    //    if (copySource.stagingBuffers.size() > 0) {
+    //        stagingBuffers.insert(stagingBuffers.end(), copySource.stagingBuffers.begin(), copySource.stagingBuffers.end());
+    //        copySource.stagingBuffers.clear();
+    //    }
+    //    if (copySource.pipeBarriers.size() > 0) {
+    //        pipeBarriers.insert(pipeBarriers.end(), copySource.pipeBarriers.begin(), copySource.pipeBarriers.end());
+    //        copySource.pipeBarriers.clear();
+    //    }
+    //    if (copySource.images.size() > 0) {
+    //        images.insert(images.end(), copySource.images.begin(), copySource.images.end());
+    //        copySource.images.clear();
+    //    }
+
+    //    semaphoreData = copySource.semaphoreData;
+    //    copySource.semaphoreData = nullptr;
+    //}
+
+    TransferCommandCallbacks::TransferCommandCallbacks(TransferCommandCallbacks&& moveSource) noexcept ://move constructor
         commands{ std::move(moveSource.commands) },
         stagingBuffers{ std::move(moveSource.stagingBuffers) },
         pipeBarriers{ std::move(moveSource.pipeBarriers) },
-        mipParamPacks{ std::move(moveSource.mipParamPacks) },
+        images{ std::move(moveSource.images) },
         semaphoreData{ moveSource.semaphoreData }
 
     {
+
+        printf("TransferCommandCallbacks:: move constructor\n");
+
         moveSource.semaphoreData = nullptr;
     }
 
-    CommandCallbacks& CommandCallbacks::operator=(CommandCallbacks&& moveSource) noexcept { //move assignment
+    TransferCommandCallbacks& TransferCommandCallbacks::operator=(TransferCommandCallbacks&& moveSource) noexcept { //move assignment
         commands = std::move(moveSource.commands);
         stagingBuffers = std::move(moveSource.stagingBuffers);
         pipeBarriers = std::move(moveSource.pipeBarriers);
-        mipParamPacks = std::move(moveSource.mipParamPacks);
+        images = std::move(moveSource.images);
         semaphoreData = moveSource.semaphoreData;
         moveSource.semaphoreData = nullptr;
+
+        printf("TransferCommandCallbacks:: move assignment\n");
 
         return *this;
     }
@@ -120,36 +132,36 @@ namespace EWE {
     /*
     CallbacksForGraphics::CallbacksForGraphics(CallbacksForGraphics& copySource) : //copy constructor
         pipeBarriers{ std::move(copySource.pipeBarriers) },
-        mipParamPacks{ std::move(copySource.mipParamPacks) }
+        images{ std::move(copySource.images) }
     {}
     CallbacksForGraphics& CallbacksForGraphics::operator=(CallbacksForGraphics const& copySource) { //copy assignment
         pipeBarriers = std::move(copySource.pipeBarriers);
-        mipParamPacks = std::move(copySource.mipParamPacks);
+        images = std::move(copySource.images);
 
         return *this;
     }
     CallbacksForGraphics& CallbacksForGraphics::operator=(CallbacksForGraphics&& moveSource) noexcept { //move assignment
         pipeBarriers = std::move(moveSource.pipeBarriers);
-        mipParamPacks = std::move(moveSource.mipParamPacks);
+        images = std::move(moveSource.images);
 
         return *this;
     }
 
     CallbacksForGraphics::CallbacksForGraphics(CommandCallbacks& copySource) : //copy constructor
         pipeBarriers{ std::move(copySource.pipeBarriers) },
-        mipParamPacks{ std::move(copySource.mipParamPacks) }
+        images{ std::move(copySource.images) }
     {
         
     }
     CallbacksForGraphics& CallbacksForGraphics::operator=(CommandCallbacks const& copySource) { //copy assignment
         pipeBarriers = std::move(copySource.pipeBarriers);
-        mipParamPacks = std::move(copySource.mipParamPacks);
+        images = std::move(copySource.images);
 
         return *this;
     }
     CallbacksForGraphics& CallbacksForGraphics::operator=(CommandCallbacks&& moveSource) noexcept { //move assignment
         pipeBarriers = std::move(moveSource.pipeBarriers);
-        mipParamPacks = std::move(moveSource.mipParamPacks);
+        images = std::move(moveSource.images);
 
         return *this;
     }

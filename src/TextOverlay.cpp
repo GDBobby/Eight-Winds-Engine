@@ -46,17 +46,16 @@ namespace EWE {
 		Deconstruct(vertexBuffer[0]);
 		Deconstruct(vertexBuffer[1]);
 
-		VkDevice vkDevice = EWEDevice::GetVkDevice();
-		EWE_VK(vkDestroySampler, vkDevice, sampler, nullptr);
-		EWE_VK(vkDestroyImage, vkDevice, image, nullptr);
-		EWE_VK(vkDestroyImageView, vkDevice, view, nullptr);
-		EWE_VK(vkFreeMemory, vkDevice, imageMemory, nullptr);
-		EWE_VK(vkDestroyShaderModule, vkDevice, vertShaderModule, nullptr);
-		EWE_VK(vkDestroyShaderModule, vkDevice, fragShaderModule, nullptr);
-		EWE_VK(vkDestroyDescriptorSetLayout, vkDevice, descriptorSetLayout, nullptr);
-		EWE_VK(vkDestroyPipelineLayout, vkDevice, pipelineLayout, nullptr);
-		EWE_VK(vkDestroyPipelineCache, vkDevice, pipelineCache, nullptr);
-		EWE_VK(vkDestroyPipeline, vkDevice, pipeline, nullptr);
+		EWE_VK(vkDestroySampler, VK::Object->vkDevice, sampler, nullptr);
+		EWE_VK(vkDestroyImage, VK::Object->vkDevice, image, nullptr);
+		EWE_VK(vkDestroyImageView, VK::Object->vkDevice, view, nullptr);
+		EWE_VK(vkFreeMemory, VK::Object->vkDevice, imageMemory, nullptr);
+		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, vertShaderModule, nullptr);
+		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, fragShaderModule, nullptr);
+		EWE_VK(vkDestroyDescriptorSetLayout, VK::Object->vkDevice, descriptorSetLayout, nullptr);
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipelineLayout, nullptr);
+		EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, pipelineCache, nullptr);
+		EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, pipeline, nullptr);
 
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstruction textoverlay \n");
@@ -123,7 +122,6 @@ namespace EWE {
 	}
 
 	void TextOverlay::PrepareResources() {
-		EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
 
 		const uint32_t fontWidth = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
 		const uint32_t fontHeight = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
@@ -156,34 +154,34 @@ namespace EWE {
 		//eweDevice.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 
 
-		EWE_VK(vkCreateImage, EWEDevice::GetVkDevice(), &imageCreateInfo, nullptr, &image);
+		EWE_VK(vkCreateImage, VK::Object->vkDevice, &imageCreateInfo, nullptr, &image);
 #if DEBUG_NAMING
-		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), image, VK_OBJECT_TYPE_IMAGE, "textoverlay image");
+		DebugNaming::SetObjectName(image, VK_OBJECT_TYPE_IMAGE, "textoverlay image");
 #endif
 
 		VkMemoryRequirements memRequirements;
-		EWE_VK(vkGetImageMemoryRequirements, EWEDevice::GetVkDevice(), image, &memRequirements);
+		EWE_VK(vkGetImageMemoryRequirements, VK::Object->vkDevice, image, &memRequirements);
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.pNext = nullptr;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = FindMemoryType(EWEDevice::GetEWEDevice()->GetPhysicalDevice(), memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		EWE_VK(vkAllocateMemory, EWEDevice::GetVkDevice(), &allocInfo, nullptr, &imageMemory);
+		EWE_VK(vkAllocateMemory, VK::Object->vkDevice, &allocInfo, nullptr, &imageMemory);
 
-		EWE_VK(vkBindImageMemory, EWEDevice::GetVkDevice(), image, imageMemory, 0);
+		EWE_VK(vkBindImageMemory, VK::Object->vkDevice, image, imageMemory, 0);
 
 
 		// Staging
 #if USING_VMA
 		StagingBuffer stagingBuffer{allocInfo.allocationSize, EWEDevice::GetAllocator(), &font24pixels[0][0] };
 #else
-		StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ allocInfo.allocationSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), eweDevice->Device(), &font24pixels[0][0] });
+		StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ allocInfo.allocationSize, &font24pixels[0][0] });
 #endif
 		// Copy to image
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-		CommandBufferData& cmdBuf = syncHub->BeginSingleTimeCommand(Queue::transfer);
+		CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand(Queue::transfer);
 		VkImageSubresourceRange subresourceRange{};
 		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		subresourceRange.baseMipLevel = 0;
@@ -193,7 +191,7 @@ namespace EWE {
 		{   //initialize image
 
 			VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
-			EWE_VK(vkCmdPipelineBarrier, cmdBuf.cmdBuf,
+			EWE_VK(vkCmdPipelineBarrier, cmdBuf,
 				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 				0,
 				0, nullptr,
@@ -213,7 +211,7 @@ namespace EWE {
 			bufferCopyRegion.imageExtent.depth = 1;
 
 			EWE_VK(vkCmdCopyBufferToImage,
-				cmdBuf.cmdBuf,
+				cmdBuf,
 				stagingBuffer->buffer,
 				image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -223,15 +221,15 @@ namespace EWE {
 		}
 		{//transition image to a read state, and from transfer queue to graphics queue (in one barrier?)
 			VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
-			imageBarrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetTransferIndex();
-			imageBarrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex();
+			imageBarrier.srcQueueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
+			imageBarrier.dstQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
 
 			PipelineBarrier pipeBarrier{};
 			pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 			pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 			pipeBarrier.AddBarrier(imageBarrier);
 			pipeBarrier.dependencyFlags = 0;
-			pipeBarrier.Submit(cmdBuf.cmdBuf);
+			pipeBarrier.Submit(cmdBuf);
 
 			TransferCommandManager::AddCommand(cmdBuf);
 			TransferCommandManager::AddPropertyToCommand(stagingBuffer);
@@ -248,7 +246,7 @@ namespace EWE {
 		imageViewInfo.format = imageCreateInfo.format;
 		imageViewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 		imageViewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		EWE_VK(vkCreateImageView, eweDevice->Device(), &imageViewInfo, nullptr, &view);
+		EWE_VK(vkCreateImageView, VK::Object->vkDevice, &imageViewInfo, nullptr, &view);
 
 		// Sampler
 		VkSamplerCreateInfo samplerInfo{};
@@ -306,7 +304,7 @@ namespace EWE {
 
 		//std::cout << "vkcreatedescriptorsetlayout return pre " << std::endl;
 
-		EWE_VK(vkCreateDescriptorSetLayout, eweDevice->Device(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
+		EWE_VK(vkCreateDescriptorSetLayout, VK::Object->vkDevice, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
 		//std::cout << "vkcreatedescriptorsetlayout return : " << printInt << std::endl;
 
 		// Pipeline layout
@@ -320,9 +318,9 @@ namespace EWE {
 
 		//std::cout << "pipelineinfo 3" << std::endl;
 
-		EWE_VK(vkCreatePipelineLayout, eweDevice->Device(), &pipelineLayoutInfo, nullptr, &pipelineLayout);
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout);
 #if DEBUG_NAMING
-		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), pipelineLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "textoverlay pipe layout");
+		DebugNaming::SetObjectName(pipelineLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "textoverlay pipe layout");
 #endif
 		//std::cout << "pipeline info2??" << std::endl;
 
@@ -336,8 +334,8 @@ namespace EWE {
 
 		//std::cout << "check 2" << std::endl;
 
-		EWE_VK(vkAllocateDescriptorSets, eweDevice->Device(), &descriptorSetAllocInfo, &descriptorSet[0]);
-		EWE_VK(vkAllocateDescriptorSets, eweDevice->Device(), &descriptorSetAllocInfo, &descriptorSet[1]);
+		EWE_VK(vkAllocateDescriptorSets, VK::Object->vkDevice, &descriptorSetAllocInfo, &descriptorSet[0]);
+		EWE_VK(vkAllocateDescriptorSets, VK::Object->vkDevice, &descriptorSetAllocInfo, &descriptorSet[1]);
 
 		VkWriteDescriptorSet writeDescriptorSets[4];
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -382,7 +380,7 @@ namespace EWE {
 
 		//std::cout << "check4 " << std::endl;
 
-		EWE_VK(vkUpdateDescriptorSets, eweDevice->Device(), 4, writeDescriptorSets, 0, nullptr);
+		EWE_VK(vkUpdateDescriptorSets, VK::Object->vkDevice, 4, writeDescriptorSets, 0, nullptr);
 
 		//std::cout << "check5" << std::endl;
 		// Pipeline cache
@@ -392,7 +390,7 @@ namespace EWE {
 		pipelineCacheCreateInfo.initialDataSize = 0;
 		pipelineCacheCreateInfo.pInitialData = nullptr;
 		pipelineCacheCreateInfo.flags = 0;
-		EWE_VK(vkCreatePipelineCache, eweDevice->Device(), &pipelineCacheCreateInfo, nullptr, &pipelineCache);
+		EWE_VK(vkCreatePipelineCache, VK::Object->vkDevice, &pipelineCacheCreateInfo, nullptr, &pipelineCache);
 
 
 		//std::cout << "end of function" << std::endl;
@@ -486,13 +484,13 @@ namespace EWE {
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(vertCode.data());
 		createInfo.flags = 0;
 		//printf("after shader module create info \n");
-		EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, &vertShaderModule);
+		EWE_VK(vkCreateShaderModule, VK::Object->vkDevice, &createInfo, nullptr, &vertShaderModule);
 		//printf("after successfully creating shader module \n");
 
 		createInfo.codeSize = fragCode.size();
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(fragCode.data());
 		//printf("setting shader module create info to frag \n");
-		EWE_VK(vkCreateShaderModule, EWEDevice::GetVkDevice(), &createInfo, nullptr, &fragShaderModule);
+		EWE_VK(vkCreateShaderModule, VK::Object->vkDevice, &createInfo, nullptr, &fragShaderModule);
 		//printf("after successfully creating another shader module \n");
 		//EWEPipeline::createShaderModule(vertCode, &vertShaderModule);
 		//EWEPipeline::createShaderModule(fragCode, &fragShaderModule);
@@ -536,9 +534,9 @@ namespace EWE {
 
 		//std::make_unique<EWEPipeline>(eweDevice, "texture_shader.vert.spv", "texture_shader.frag.spv", pipelineConfig);
 
-		EWE_VK(vkCreateGraphicsPipelines, EWEDevice::GetVkDevice(), pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline);
+		EWE_VK(vkCreateGraphicsPipelines, VK::Object->vkDevice, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline);
 #if DEBUG_NAMING
-		DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), pipeline, VK_OBJECT_TYPE_PIPELINE, "textoverlay pipeline");
+		DebugNaming::SetObjectName(pipeline, VK_OBJECT_TYPE_PIPELINE, "textoverlay pipeline");
 #endif
 		//printf("successfully created textoverlay graphics pipeline \n");
 		//printf("end of text overlay constructor \n");
@@ -640,14 +638,14 @@ namespace EWE {
 		//return textWidth;
 	}
 
-	void TextOverlay::Draw(FrameInfo frameInfo) {
-			EWERenderer::BindGraphicsPipeline(frameInfo.cmdBuf, pipeline);
+	void TextOverlay::Draw() {
+			EWERenderer::BindGraphicsPipeline(pipeline);
 
-			EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet[frameInfo.index], 0, nullptr);
+			EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet[VK::Object->frameIndex], 0, nullptr);
 
 			//EWE_VK(vkCmdBindVertexBuffers, commandBuffer, 0, 1, &vertexBuffer, &offsets);
 			//EWE_VK(vkCmdBindVertexBuffers, commandBuffer, 1, 1, &vertexBuffer, &offsets);
-			EWE_VK(vkCmdDraw, frameInfo.cmdBuf, 4, numLetters, 0, 0);
+			EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), 4, numLetters, 0, 0);
 			//for (uint32_t j = 0; j < numLetters; j++) {
 			//	EWE_VK(vkCmdDraw, commandBuffer, 4, 1, j * 4, 0);
 			//}
@@ -661,16 +659,16 @@ namespace EWE {
 			*/
 	}
 
-	void TextOverlay::BeginTextUpdate(uint8_t frameIndex) {
-		vertexBuffer[frameIndex]->Map();
-		mapped = reinterpret_cast<glm::vec4*>(vertexBuffer[frameIndex]->GetMappedMemory());
+	void TextOverlay::BeginTextUpdate() {
+		vertexBuffer[VK::Object->frameIndex]->Map();
+		mapped = reinterpret_cast<glm::vec4*>(vertexBuffer[VK::Object->frameIndex]->GetMappedMemory());
 		numLetters = 0;
 	}
 
-	void TextOverlay::EndTextUpdate(FrameInfo frameInfo) {
-		vertexBuffer[frameInfo.index]->Flush();
-		vertexBuffer[frameInfo.index]->Unmap();
+	void TextOverlay::EndTextUpdate() {
+		vertexBuffer[VK::Object->frameIndex]->Flush();
+		vertexBuffer[VK::Object->frameIndex]->Unmap();
 		mapped = nullptr;
-		Draw(frameInfo);
+		Draw();
 	}
 }

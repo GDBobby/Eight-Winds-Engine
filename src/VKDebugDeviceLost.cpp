@@ -111,7 +111,7 @@ namespace EWE {
 			checkpointPtr = &DeviceLostDebugStructure::AddAMDCheckpoint;
 		}
 
-		void DeviceLostDebugStructure::AddNvidiaCheckpoint(DeviceLostDebugStructure* thisPtr, VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
+		void DeviceLostDebugStructure::AddNvidiaCheckpoint(DeviceLostDebugStructure* thisPtr, CommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
 			VkCheckpointDataNV baseCopy{};
 			baseCopy.sType = VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV;
 			baseCopy.pNext = nullptr;
@@ -127,7 +127,7 @@ namespace EWE {
 			assert(thisPtr->checkpoints.size() < 50 && "checkpoints is getting oversized, missed a clear?");
 			vkCmdSetCheckpointNVX(cmdBuf, &thisPtr->checkpoints.back());
 		}
-		void DeviceLostDebugStructure::AddAMDCheckpoint(DeviceLostDebugStructure* thisPtr, VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
+		void DeviceLostDebugStructure::AddAMDCheckpoint(DeviceLostDebugStructure* thisPtr, CommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
 			printf("not implemented\n");
 			/*
 			from what I saw,
@@ -148,7 +148,7 @@ namespace EWE {
 			//vkCmdWriteBufferMarkerAMD(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, buffer, 0, static_cast<uint32_t>(type));
 		}
 
-		void DeviceLostDebugStructure::AddCheckpoint(VkCommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
+		void DeviceLostDebugStructure::AddCheckpoint(CommandBuffer cmdBuf, const char* name, GFX_vk_checkpoint_type type) {
 
 			printf("\n\n *** ADDING CHECKPOINT *** \n\n");
 			//checkpointPtr(this, cmdBuf, name, type);

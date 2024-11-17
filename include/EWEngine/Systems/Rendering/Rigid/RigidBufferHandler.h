@@ -17,8 +17,8 @@ namespace EWE {
 
 		void SetFrameIndex(uint8_t frameIndex);
 
-		const VkDescriptorSet* GetDescriptor(uint8_t frameIndex) const {
-			return &descriptorSet[frameIndex];
+		const VkDescriptorSet* GetDescriptor() const {
+			return &descriptorSet[VK::Object->frameIndex];
 		}
 
 		VkDescriptorBufferInfo* GetDescriptorInfo() {
@@ -27,7 +27,10 @@ namespace EWE {
 		uint32_t GetCurrentEntityCount() const {
 			return currentEntityCount;
 		}
-		const EWEBuffer* GetBuffer(uint8_t frameIndex) const {
+		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothBuffers() const {
+			return transformBuffer;
+		}
+		const EWEBuffer* GetBuffer() const {
 			return transformBuffer[frameIndex];
 		}
 		bool GetComputing() const {
@@ -35,7 +38,7 @@ namespace EWE {
 		}
 
 	private:
-		EWEBuffer* transformBuffer[MAX_FRAMES_IN_FLIGHT] = { nullptr, nullptr };
+		std::array<EWEBuffer*, 2> transformBuffer = { nullptr, nullptr };
 
 		std::size_t currentMemOffset{ 0 };
 

@@ -85,7 +85,6 @@ namespace EWE{
 		static MaterialPipelines* At(MaterialFlags flags);
 		static MaterialPipelines* At(SkinInstanceKey skinInstanceKey);
 		static MaterialPipelines* At(uint16_t boneCount, MaterialFlags flags);
-		static void SetFrameInfo(FrameInfo const& frameInfo);
 
 
 	protected:
@@ -97,8 +96,6 @@ namespace EWE{
 		static std::vector<std::pair<uint16_t, MaterialFlags>> instancedBonePipeTracker;
 		static MaterialPipelines* currentPipe;
 #endif
-		static uint8_t frameIndex;
-		static VkCommandBuffer cmdBuf;
 
 		static std::vector<VkDescriptorSetLayout> GetPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, bool hasBump);
 		static MaterialPipelines* CreatePipe(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags);

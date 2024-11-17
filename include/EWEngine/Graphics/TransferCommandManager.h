@@ -13,11 +13,11 @@ namespace EWE {
 	namespace TransferCommandManager {
 
 		bool Empty();
-		CommandCallbacks PrepareSubmit();
-		void AddCommand(CommandBufferData& cmdBuf);
+		TransferCommandCallbacks PrepareSubmit();
+		void AddCommand(CommandBuffer& cmdBuf);
 		void AddPropertyToCommand(PipelineBarrier& pipeBarrier);
 		void AddPropertyToCommand(StagingBuffer* stagingBuffer);
-		void AddPropertyToCommand(VkImage image, uint8_t mipLevels, uint32_t width, uint32_t height);
+		void AddPropertyToCommand(ImageInfo& imageInfo);
 		void FinalizeCommand();
 		//this requires the pointer to be deleted
 	};

@@ -27,15 +27,15 @@ namespace EWE {
         std::vector<VkPresentModeKHR> presentModes;
     };
 
-    struct QueueData {
+    //struct QueueData {
 
-        std::array<int, 4> index = { -1, -1, -1, -1 };
-        std::array<bool, 4> found = {false, false, false, false};
-        std::vector<VkQueueFamilyProperties> queueFamilies{};
-        void FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface_);
+    //    std::array<int, 4> index = { -1, -1, -1, -1 };
+    //    std::array<bool, 4> found = {false, false, false, false};
+    //    std::vector<VkQueueFamilyProperties> queueFamilies{};
+    //    void FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface_);
 
-        bool isComplete() const { return found[Queue::graphics] && found[Queue::present] && found[Queue::transfer] && found[Queue::compute]; }
-    };
+    //    bool isComplete() const { return found[Queue::graphics] && found[Queue::present] && found[Queue::transfer] && found[Queue::compute]; }
+    //};
 
     //std::vector<VkDeviceQueueCreateInfo> queueInfo;
 
@@ -59,72 +59,28 @@ namespace EWE {
 #endif
             return eweDevice;
         }
-#if USING_VMA
-        static VmaAllocator GetAllocator() {
-            return eweDevice->Allocator();
-        }
-        VmaAllocator Allocator() const { return allocator; }
-#endif
-        VkFormatProperties GetVkFormatProperties(VkFormat imageFormat) {
-            VkFormatProperties formatProperties;
-            EWE_VK(vkGetPhysicalDeviceFormatProperties, VK::Object->physicalDevice, imageFormat, &formatProperties);
-            return formatProperties;
-        }
-
-        VkSurfaceKHR surface() const { return surface_; }
-        VkQueue GetGraphicsQueue() const { return queues[Queue::graphics]; }
-        uint32_t GetGraphicsIndex() const { return queueData.index[Queue::graphics]; }
-
-        VkQueue GetPresentQueue() const { return queues[Queue::present]; }
-        uint32_t GetPresentIndex() const { return queueData.index[Queue::present]; }
-
-        VkQueue GetQueue(Queue::Enum queue) const { return queues[queue]; }
-        uint32_t GetQueueIndex(Queue::Enum queue) const { return queueData.index[queue]; }
 
         //VkQueue computeQueue() { return queue[Queue::compute]; }
         //uint32_t getComputeIndex() { return computeIndex; }
 
-        uint32_t GetTransferIndex() const { return queueData.index[Queue::transfer]; }
-        VkQueue GetTransferQueue() const { return queues[Queue::transfer]; }
-
-        uint32_t GetComputeIndex() const { return queueData.index[Queue::compute]; }
-        VkQueue GetComputeQueue() const { return queues[Queue::compute]; }
 
 
         std::string deviceName;
 
         SwapChainSupportDetails GetSwapChainSupport() { return QuerySwapChainSupport(VK::Object->physicalDevice); }
-        QueueData const& GetPhysicalQueueFamilies() { return queueData; }
 
-        VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        VkFormat FindSupportedFormat(std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
-        // Buffer Helper Functions
-        //void endSingleTimeCommandsSecondThread(VkCommandBuffer commandBuffer);
-        //void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void CopyBuffer(VkCommandBuffer cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        void CopyBuffer(CommandBuffer& cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-        //QueueTransitionContainer* PostTransitionsToGraphics(VkCommandBuffer cmdBuf, uint8_t frameIndex);
-
-        void CopyBufferToImage(VkCommandBuffer cmdBuf, VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, uint32_t layerCount);
-
-        VkInstance GetInstance() { return instance; }
-        const VkPhysicalDeviceProperties& GetProperties() { return properties; }
 
         VkDeviceSize GetMemoryRemaining();
 
 
     private:
-        VkPhysicalDeviceProperties properties{};
-        QueueData queueData;
-
-        VkInstance instance;
+        //QueueData queueData;
         VkDebugUtilsMessengerEXT debugMessenger;
         MainWindow& window;
-#if USING_VMA
-        VmaAllocator allocator;
-#endif
-        VkSurfaceKHR surface_;
-        std::array<VkQueue, Queue::_count> queues = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
 
         SyncHub* syncHub;
 
@@ -170,7 +126,7 @@ namespace EWE {
 
 #if DEBUGGING_DEVICE_LOST
     public:
-        void AddCheckpoint(VkCommandBuffer cmdBuf, const char* name, VKDEBUG::GFX_vk_checkpoint_type type);
+        void AddCheckpoint(CommandBuffer cmdBuf, const char* name, VKDEBUG::GFX_vk_checkpoint_type type);
         VKDEBUG::DeviceLostDebugStructure deviceLostDebug{};
 #endif
 

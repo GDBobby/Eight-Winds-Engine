@@ -1,6 +1,13 @@
 #include "EWEngine/Graphics/Texture/UI_Texture.h"
 #include "EWEngine/Graphics/Texture/Sampler.h"
 
+#include "EWEngine/Graphics/Texture/ImageFunctions.h"
+
+#include "EWEngine/Data/EWE_Memory.h"
+
+#include <stb/stb_image.h>
+
+
 namespace EWE {
     namespace UI_Texture {
 
@@ -22,8 +29,8 @@ namespace EWE {
             StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize, EWEDevice::GetAllocator() });
             vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
 #else
-            StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize, EWEDevice::GetEWEDevice()->GetPhysicalDevice(), EWEDevice::GetVkDevice() });
-            EWE_VK(vkMapMemory, EWEDevice::GetVkDevice(), stagingBuffer->memory, 0, imageSize, 0, &data);
+            StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize });
+            EWE_VK(vkMapMemory, VK::Object->vkDevice, stagingBuffer->memory, 0, imageSize, 0, &data);
 #endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             uiImageInfo.mipLevels = 1;
@@ -36,7 +43,7 @@ namespace EWE {
 #if USING_VMA
             vmaUnmapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc);
 #else
-            EWE_VK(vkUnmapMemory, EWEDevice::GetVkDevice(), stagingBuffer->memory);
+            EWE_VK(vkUnmapMemory, VK::Object->vkDevice, stagingBuffer->memory);
 #endif
 
             VkImageCreateInfo imageCreateInfo;
@@ -59,12 +66,12 @@ namespace EWE {
 
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.memory);
 #if DEBUG_NAMING
-            DebugNaming::SetObjectName(EWEDevice::GetVkDevice(), uiImageInfo.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
+            DebugNaming::SetObjectName(uiImageInfo.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
 #endif
 #if IMAGE_DEBUGGING
-            uiImageInfo.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false, pixelPeek[0].debugName);
+            Image::CreateImageCommands(uiImageInfo, imageCreateInfo, stagingBuffer, queue, false, pixelPeek[0].debugName);
 #else
-            uiImageInfo.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
+            Image::CreateImageCommands(uiImageInfo, imageCreateInfo, stagingBuffer, queue, false);
 #endif
         }
 
@@ -83,7 +90,7 @@ namespace EWE {
             viewInfo.subresourceRange.layerCount = uiImageInfo.arrayLayers;
             viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 
-            EWE_VK(vkCreateImageView, EWEDevice::GetVkDevice(), &viewInfo, nullptr, &uiImageInfo.imageView);
+            EWE_VK(vkCreateImageView, VK::Object->vkDevice, &viewInfo, nullptr, &uiImageInfo.imageView);
         }
 
         void CreateUISampler(ImageInfo& uiImageInfo) {
@@ -102,7 +109,7 @@ namespace EWE {
             samplerInfo.addressModeW = samplerInfo.addressModeU;
 
             samplerInfo.anisotropyEnable = VK_TRUE;
-            samplerInfo.maxAnisotropy = EWEDevice::GetEWEDevice()->GetProperties().limits.maxSamplerAnisotropy;
+            samplerInfo.maxAnisotropy = VK::Object->properties.limits.maxSamplerAnisotropy;
 
             samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
             samplerInfo.unnormalizedCoordinates = VK_FALSE;

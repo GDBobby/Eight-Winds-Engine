@@ -61,7 +61,7 @@ namespace EWE {
             InitialFrequencySpectrumGPUData();
             ~InitialFrequencySpectrumGPUData();
 
-            void Compute(FrameInfo const& frameInfo);
+            void Compute();
             void CreateDescriptorSet(VkDescriptorImageInfo* descImageInfo);
         private:
             void CreatePipeLayout();
@@ -80,7 +80,7 @@ namespace EWE {
             ~TimeDependentFrequencySpectrumGPUData();
 
             void CreateDescriptorSet(VkDescriptorImageInfo* frequencyImage, VkDescriptorImageInfo* outputImage);
-            void Compute(FrameInfo const& frameInfo, float dt);
+            void Compute(float dt);
         private:
             void CreatePipeLayout();
             void CreatePipeline();
@@ -102,7 +102,7 @@ namespace EWE {
 
             FFTGPUData();
             ~FFTGPUData();
-            void Compute(FrameInfo const& frameInfo, float dt);
+            void Compute(float dt);
 
             void CreateDescriptorSet(VkDescriptorImageInfo* outputImage);
             void SetVkImage(VkImage image) { fftImage = image; }
@@ -182,7 +182,7 @@ namespace EWE {
             OceanGraphicsGPUData();
             ~OceanGraphicsGPUData();
 
-            void Render(FrameInfo const& frameInfo);
+            void Render();
             void CreateDescriptorSet(VkDescriptorImageInfo* outputImages, VkDescriptorImageInfo* skyboxImage);
         private:
             void CreatePipeLayout();

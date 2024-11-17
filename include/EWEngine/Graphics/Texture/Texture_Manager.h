@@ -2,7 +2,8 @@
 
 #include <EWEngine/Data/EngineDataTypes.h>
 
-#include <EWEngine/Graphics/Texture/Image.h>
+#include <EWEngine/Graphics/Texture/ImageFunctions.h>
+#include <EWEngine/Graphics/Texture/TextureDSL.h>
 
 #include <EWEngine/Data/MemoryTypeBucket.h>
 
@@ -43,7 +44,7 @@ namespace EWE {
 	struct ImageTracker {
 		ImageInfo imageInfo;
 		std::unordered_set<TextureDesc> usedInTexture{};
-		ImageTracker(std::string const& path, bool mipmap) : imageInfo{path, mipmap} {}
+		ImageTracker(std::string const& path, bool mipmap) : imageInfo{Image::CreateImage(path, mipmap)} {}
 		ImageTracker(ImageInfo& imageInfo) : imageInfo{ imageInfo } {}
 		ImageTracker() : imageInfo{} {}
 	};

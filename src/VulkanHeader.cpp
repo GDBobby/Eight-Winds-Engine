@@ -53,19 +53,8 @@ namespace EWE {
     }
 
 
-    VkDevice GetVkDevice() {
-
-    }
-    VkPhysicalDevice GetPhysicalDevice() {
-
-    }
-    std::array<VkCommandPool, Queue::_count>& GetCommandPools() {
-
-    }
-
-
 #if USING_VMA
-    StagingBuffer::StagingBuffer(VkDeviceSize size, VmaAllocator vmaAllocator, const void* data) {
+    StagingBuffer::StagingBuffer(VkDeviceSize size, const void* data) {
         VkBufferCreateInfo bufferCreateInfo{};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferCreateInfo.size = size;
@@ -77,11 +66,11 @@ namespace EWE {
         vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
         vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        EWE_VK(vmaCreateBuffer, vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo);
+        EWE_VK(vmaCreateBuffer, VK::Object->vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo);
 
         Stage(vmaAllocator, data, size);
     }
-    StagingBuffer::StagingBuffer(VkDeviceSize size, VmaAllocator vmaAllocator) {
+    StagingBuffer::StagingBuffer(VkDeviceSize size) {
         VkBufferCreateInfo bufferCreateInfo{};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferCreateInfo.size = size;
@@ -93,7 +82,7 @@ namespace EWE {
         vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
         vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        EWE_VK(vmaCreateBuffer, vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo);
+        EWE_VK(vmaCreateBuffer, VK::Object->vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo);
     }
 #else
     StagingBuffer::StagingBuffer(VkDeviceSize size, const void* data) {
@@ -145,11 +134,11 @@ namespace EWE {
 #endif
 
 #if USING_VMA
-    void StagingBuffer::Free(VmaAllocator vmaAllocator) {
+    void StagingBuffer::Free() {
         if (buffer == VK_NULL_HANDLE) {
             return;
         }
-        EWE_VK(vmaDestroyBuffer, vmaAllocator, buffer, vmaAlloc);
+        EWE_VK(vmaDestroyBuffer, VK::Object->vmaAllocator, buffer, vmaAlloc);
 #else
     void StagingBuffer::Free() {
         if (buffer == VK_NULL_HANDLE) {
@@ -161,11 +150,11 @@ namespace EWE {
     }
 
 #if USING_VMA
-    void StagingBuffer::Free(VmaAllocator vmaAllocator) const {
+    void StagingBuffer::Free() const {
         if (buffer == VK_NULL_HANDLE) {
             return;
         }
-        EWE_VK(vmaDestroyBuffer, vmaAllocator, buffer, vmaAlloc);
+        EWE_VK(vmaDestroyBuffer, VK::Object->vmaAllocator, buffer, vmaAlloc);
 #else
     void StagingBuffer::Free() const {
         if (buffer == VK_NULL_HANDLE) {
@@ -176,14 +165,14 @@ namespace EWE {
 #endif
     }
 #if USING_VMA
-    void StagingBuffer::Stage(VmaAllocator vmaAllocator, const void* data, uint64_t bufferSize) {
+    void StagingBuffer::Stage(const void* data, uint64_t bufferSize) {
         void* stagingData;
 
-        EWE_VK(vmaMapMemory, vmaAllocator, vmaAlloc, &stagingData);
+        EWE_VK(vmaMapMemory, VK::Object->vmaAllocator, vmaAlloc, &stagingData);
         memcpy(stagingData, data, bufferSize);
-        EWE_VK(vmaUnmapMemory, vmaAllocator, vmaAlloc);
+        EWE_VK(vmaUnmapMemory, VK::Object->vmaAllocator, vmaAlloc);
 #else
-    void StagingBuffer::Stage(const void* data, uint64_t bufferSize) {
+    void StagingBuffer::Stage(const void* data, VkDeviceSize bufferSize) {
         void* stagingData;
         EWE_VK(vkMapMemory, VK::Object->vkDevice, memory, 0, bufferSize, 0, &stagingData);
         memcpy(stagingData, data, bufferSize);
@@ -191,4 +180,22 @@ namespace EWE {
 #endif
     }
 
+
+
+
+
+    void CommandBuffer::Reset() {
+        //VkCommandBufferResetFlags flags = VkCommandBufferResetFlagBits::VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT;
+        VkCommandBufferResetFlags flags = 0;
+        EWE_VK(vkResetCommandBuffer, *this, flags);
+        inUse = false;
+    }
+    void CommandBuffer::BeginSingleTime() {
+        inUse = true;
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.pNext = nullptr;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        EWE_VK(vkBeginCommandBuffer, *this, &beginInfo);
+    }
 }

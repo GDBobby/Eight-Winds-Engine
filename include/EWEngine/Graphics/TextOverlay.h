@@ -71,7 +71,7 @@ namespace EWE {
 		bool visible = true;
 		float scale;
 
-		VkCommandBuffer cmdBuffers[MAX_FRAMES_IN_FLIGHT];
+		CommandBuffer cmdBuffers[MAX_FRAMES_IN_FLIGHT];
 
 		TextOverlay(
 			float framebufferwidth,
@@ -88,10 +88,10 @@ namespace EWE {
 
 		static void StaticAddText(TextStruct textStruct);
 
-		void Draw(FrameInfo frameInfo);
+		void Draw();
 		void AddDefaultText(double time, double peakTime, double averageTime, double highTime);
-		void BeginTextUpdate(uint8_t frameIndex);
-		void EndTextUpdate(FrameInfo frameInfo);
+		void BeginTextUpdate();
+		void EndTextUpdate();
 
 		void WindowResize(float newWidth, float newHeight) {
 			frameBufferWidth = newWidth;

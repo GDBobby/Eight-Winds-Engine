@@ -8,17 +8,17 @@ namespace EWE {
 	public:
 		OverlayBase(float screenWidth, float screenHeight);
 
-		virtual void drawText();
+		virtual void DrawText();
 
-		bool getActive() {
+		bool GetActive() {
 			return isActive;
 		}
-		void setActive(bool activity) {
+		void SetActive(bool activity) {
 			isActive = activity;
 		}
 
-		virtual void drawObjects(FrameInfo const& frameInfo) = 0;
-		void resizeWindow(std::pair<uint32_t, uint32_t> nextDims);
+		virtual void DrawObjects() = 0;
+		void ResizeWindow(std::pair<uint32_t, uint32_t> nextDims);
 		
 	protected:
 		bool isActive = false;

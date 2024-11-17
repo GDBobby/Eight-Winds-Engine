@@ -10,7 +10,6 @@
 
 #if SAMPLER_DUPLICATION_TRACKING
 namespace EWE {
-    VkDevice device = VK_NULL_HANDLE;
 
 
     struct SamplerTracker {
@@ -39,7 +38,7 @@ namespace EWE {
         SamplerTracker tracker{};
 
         SamplerDuplicateTracker(VkSamplerCreateInfo const& samplerInfo) : samplerInfo(samplerInfo) {
-            EWE_VK(vkCreateSampler, device, &samplerInfo, nullptr, &sampler);
+            EWE_VK(vkCreateSampler, VK::Object->vkDevice, &samplerInfo, nullptr, &sampler);
         }
     };
 
@@ -81,7 +80,7 @@ namespace EWE {
             for (auto iter = storedSamplers.begin(); iter != storedSamplers.end(); iter++) {
                 if (iter->sampler == sampler) {
                     if (iter->tracker.Remove()) {
-                        EWE_VK(vkDestroySampler, device, iter->sampler, nullptr);
+                        EWE_VK(vkDestroySampler, VK::Object->vkDevice, iter->sampler, nullptr);
                         storedSamplers.erase(iter);
                     }
                     return;
@@ -94,9 +93,8 @@ namespace EWE {
             EWE_VK(vkDestroySampler, EWEDevice::GetVkDevice(), sampler, nullptr);
 #endif
         }
-        void Initialize(VkDevice vkDevice) {
+        void Initialize() {
 
-            device = vkDevice;
 #if SAMPLER_DUPLICATION_TRACKING
             storedSamplers.reserve(EXPECTED_MAXIMUM_AMOUNT_OF_SAMPLERS);
 #endif
@@ -110,9 +108,9 @@ namespace EWE {
             //if the sampler was not destroyed, it'll be fun tracing the source
             for (auto const& sampler : storedSamplers) {
 #if SAMPLER_DUPLICATION_TRACKING
-                EWE_VK(vkDestroySampler, device, sampler.sampler, nullptr);
+                EWE_VK(vkDestroySampler, VK::Object->vkDevice, sampler.sampler, nullptr);
 #else
-                EWE_VK(vkDestroySampler, device, sampler, nullptr);
+                EWE_VK(vkDestroySampler, VK::Object->vkDevice, sampler, nullptr);
 #endif
             }
         }

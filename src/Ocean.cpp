@@ -1,8 +1,8 @@
 #include "EWEngine/Systems/Ocean/Ocean.h"
 #include "EWEngine/Data/TransformInclude.h"
-#include "EWEngine/Graphics/Texture/Image.h"
+#include "EWEngine/Graphics/Texture/ImageFunctions.h"
 
-#include "EWEngine/Graphics/PipeBarrier.h"
+#include "EWEngine/Graphics/PipelineBarrier.h"
 
 namespace EWE {
 	namespace Ocean {
@@ -39,14 +39,14 @@ namespace EWE {
 			graphicsGPUData.CreateDescriptorSet(&oceanOutputImageInfoDescriptorGraphics, skyboxImage);
 			
 		}
-		void Ocean::TransferComputeToGraphics(VkCommandBuffer cmdBuf) {
-			EWEDevice::GetEWEDevice()->TransferImageStage(cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, oceanOutputImages);
+		void Ocean::TransferComputeToGraphics() {
+			Barrier::TransferImageStage(VK::Object->GetFrameBuffer(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, oceanOutputImages);
 		}
 
-		void Ocean::TransferGraphicsToCompute(VkCommandBuffer cmdBuf) {
-			EWEDevice::GetEWEDevice()->TransferImageStage(cmdBuf, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, oceanOutputImages);
+		void Ocean::TransferGraphicsToCompute() {
+			Barrier::TransferImageStage(VK::Object->GetFrameBuffer(), VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, oceanOutputImages);
 		}
-		//void Ocean::ComputeBarrier(VkCommandBuffer cmdBuf) {
+		//void Ocean::ComputeBarrier(CommandBuffer cmdBuf) {
 		//}
 
 		void Ocean::CreateBuffers() {
@@ -80,7 +80,8 @@ namespace EWE {
 			imageCreateInfo.flags = 0;
 			imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-			uint32_t queueData[] = { eweDevice->GetGraphicsIndex(), eweDevice->GetPresentIndex() };
+			
+			uint32_t queueData[] = { static_cast<uint32_t>(VK::Object->queueIndex[Queue::graphics]), static_cast<uint32_t>(VK::Object->queueIndex[Queue::present])};
 			const bool differentFamilies = (queueData[0] != queueData[1]);
 			imageCreateInfo.sharingMode = (VkSharingMode)differentFamilies;
 			imageCreateInfo.queueFamilyIndexCount = 1 + differentFamilies;
@@ -94,18 +95,18 @@ namespace EWE {
 
 			SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 			//directly to graphics because no data is being uploaded
-			CommandBufferData& cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+			CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
 
 			VkImageMemoryBarrier imageBarriers[2];
-			imageBarriers[0] = Image::TransitionImageLayout(oceanOutputImages,
+			imageBarriers[0] = Barrier::TransitionImageLayout(oceanOutputImages,
 				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
 				1, cascade_count * 3
 			);			
-			imageBarriers[1] = Image::TransitionImageLayout(oceanFreqImages,
+			imageBarriers[1] = Barrier::TransitionImageLayout(oceanFreqImages,
 				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
 				1, cascade_count
 			);
-			EWE_VK(vkCmdPipelineBarrier, cmdBuf.cmdBuf,
+			EWE_VK(vkCmdPipelineBarrier, cmdBuf,
             	VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
             	0,
             	0, nullptr,
@@ -146,11 +147,11 @@ namespace EWE {
 			view.subresourceRange.baseArrayLayer = 0;
 			view.subresourceRange.layerCount = cascade_count * 3;
 			view.image = oceanOutputImages;
-			EWE_VK(vkCreateImageView, eweDevice->Device(), &view, nullptr, &oceanOutputImageInfoDescriptorCompute.imageView);
+			EWE_VK(vkCreateImageView, VK::Object->vkDevice, &view, nullptr, &oceanOutputImageInfoDescriptorCompute.imageView);
 			oceanOutputImageInfoDescriptorGraphics.imageView = oceanOutputImageInfoDescriptorCompute.imageView;
 			view.image = oceanFreqImages;
 			view.subresourceRange.layerCount = cascade_count;
-			EWE_VK(vkCreateImageView, eweDevice->Device(), &view, nullptr, &oceanFreqImageInfoDescriptor.imageView);
+			EWE_VK(vkCreateImageView, VK::Object->vkDevice, &view, nullptr, &oceanFreqImageInfoDescriptor.imageView);
 
 
 			// Initialize a descriptor for later use
@@ -161,35 +162,35 @@ namespace EWE {
 			//ifsGPUData.CreateDescriptorSet(&oceanImageInfoDescriptor);
 		}
 
-		void Ocean::InitializeSpectrum(FrameInfo const& frameInfo) {
-			ifsGPUData.Compute(frameInfo);
+		void Ocean::InitializeSpectrum() {
+			ifsGPUData.Compute();
 
 		}
-		void Ocean::UpdateSpectrum(FrameInfo const& frameInfo, float dt) {
-			tdfsGPUData.Compute(frameInfo, dt);
+		void Ocean::UpdateSpectrum(float dt) {
+			tdfsGPUData.Compute(dt);
 		}
 
-		void Ocean::ComputeFFT(FrameInfo const& frameInfo, float deltaTime) {
-			fftGPUData.Compute(frameInfo, deltaTime);
+		void Ocean::ComputeFFT(float deltaTime) {
+			fftGPUData.Compute(deltaTime);
 		}
 
-		void Ocean::RenderOcean(FrameInfo const& frameInfo) {
-			graphicsGPUData.Render(frameInfo);
+		void Ocean::RenderOcean() {
+			graphicsGPUData.Render();
 		}
 
-		void Ocean::UpdateNoInit(FrameInfo const& frameInfo, float dt) {
-			tdfsGPUData.Compute(frameInfo, dt);
-			fftGPUData.Compute(frameInfo, dt);
+		void Ocean::UpdateNoInit(float dt) {
+			tdfsGPUData.Compute(dt);
+			fftGPUData.Compute(dt);
 		}
-		void Ocean::ReinitUpdate(FrameInfo const& frameInfo, float dt) {
+		void Ocean::ReinitUpdate(float dt) {
 
-			ifsGPUData.Compute(frameInfo);
-			EWEDevice::GetEWEDevice()->TransferImageStage(frameInfo.cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, oceanFreqImages);
-			tdfsGPUData.Compute(frameInfo, dt);
-			EWEDevice::GetEWEDevice()->TransferImageStage(frameInfo.cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, oceanOutputImages);
-			fftGPUData.Compute(frameInfo, dt);
+			ifsGPUData.Compute();
+			Barrier::TransferImageStage(VK::Object->GetFrameBuffer(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, oceanFreqImages);
+			tdfsGPUData.Compute(dt);
+			Barrier::TransferImageStage(VK::Object->GetFrameBuffer(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, oceanOutputImages);
+			fftGPUData.Compute(dt);
 
-			TransferComputeToGraphics(frameInfo.cmdBuf);
+			TransferComputeToGraphics();
 		}
 
 	}//ocean namespace

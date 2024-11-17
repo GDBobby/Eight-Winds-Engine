@@ -26,14 +26,15 @@ namespace EWE {
 			const glm::vec3 upDir{ 0.f, 1.f, 0.f };
 			NewViewTarget(position, target, upDir);
 		}
-		void ViewTargetDirect(uint8_t currentFrame);
+		void ViewTargetDirect();
 		void SetViewYXZ(glm::vec3 const& position, glm::vec3 const& rotation);
 
 		const glm::mat4& GetProjection() const { return projection; }
 		const glm::mat4& GetView() const { return view; }
 		//const glm::mat4& getInverseView() const { return inverseViewMatrix; }
 
-		void BindUBO(uint8_t frameIndex);
+		void BindBothUBOs();
+		void BindUBO();
 
 		void SetBuffers(std::vector<EWEBuffer*>* buffers) {
 			assert(buffers->size() > 0);

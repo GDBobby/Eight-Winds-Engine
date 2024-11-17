@@ -34,19 +34,18 @@ namespace EWE {
 		//printf("render main menu scene \n");
 
 
-		auto frameInfo = ewEngine.BeginRender();
-		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
+		if (ewEngine.BeginRender()) {
 			//printf("drawing \n");
-			ewEngine.Draw2DObjects(frameInfo);
-			ewEngine.DrawText(frameInfo, dt);
+			ewEngine.Draw2DObjects();
+			ewEngine.DrawText(dt);
 
 			currentTime += dt;
 			if (currentTime >= saveTime) {
 				SaveShader();
 			}
 
-			ewEngine.EndRender(frameInfo);
-			ewEngine.EndFrame(frameInfo);
+			ewEngine.EndRender();
+			ewEngine.EndFrame();
 			return false;
 		}
 		return true;

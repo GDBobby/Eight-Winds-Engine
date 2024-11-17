@@ -24,8 +24,6 @@ namespace EWE {
 		VkPipelineCache cache;
 		EWEModel* model2D;
 		//EWEModel* nineUIModel;
-		VkCommandBuffer cmdBuffer;
-		uint8_t frameIndex;
 
 
 	public:
@@ -33,8 +31,8 @@ namespace EWE {
 		static void Init();
 		static void Destruct();
 
-		//static void BindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
-		static void Bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
+		//static void BindNineUI(CommandBuffer cmdBuffer, uint8_t frameIndex);
+		static void Bind2D();
 
 		static void BindTexture2DUI(TextureDesc texture);
 		static void BindTexture2D(TextureDesc texture);

@@ -4,14 +4,14 @@ namespace EWE {
 	OverlayBase::OverlayBase(float screenWidth, float screenHeight) : screenWidth{ screenWidth }, screenHeight{screenHeight} {
 
 	}
-	void OverlayBase::drawText() {
+	void OverlayBase::DrawText() {
 		if (isActive) {
 			for (int i = 0; i < textStructs.size(); i++) {
 				TextOverlay::StaticAddText(textStructs[i]);
 			}
 		}
 	}
-	void OverlayBase::resizeWindow(std::pair<uint32_t, uint32_t> nextDims) {
+	void OverlayBase::ResizeWindow(std::pair<uint32_t, uint32_t> nextDims) {
 		float nextWidth = static_cast<float>(nextDims.first);
 		float nextHeight = static_cast<float>(nextDims.second);
 		for (auto& textS : textStructs) {

@@ -25,14 +25,14 @@ namespace EWE {
 		//~MonsterBoneBufferDescriptorStruct();
 
 		//void addActorToBuffer(glm::mat4* modelMatrix, void* finalBoneMatrices, uint32_t skeletonID);
-		void UpdateBuffers(uint8_t frameIndex);
+		void UpdateBuffers();
 
-		void FlushBuffers(uint8_t frameIndex);
+		void FlushBuffers();
 
-		void Render(FrameInfo frameInfo);
+		void Render();
 	protected:
-		void RenderInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex);
-		void RenderNonInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex);
+		void RenderInstanced();
+		void RenderNonInstanced();
 	public:
 
 		static SkeletonID GetSkinID() {
@@ -45,16 +45,6 @@ namespace EWE {
 		static void AddWeapon(MaterialTextureInfo& materialInfo, EWEModel* meshes, SkeletonID skeletonID, SkeletonID ownerID);
 
 		static void RemoveSkeleton(SkeletonID skeletonID);
-
-		//put this pointer in to actor classes, matching the skeleton id, only use writedata
-		void SetFrameIndex(uint8_t frameIndex) {
-			for (auto& buffer : buffers) {
-				buffer.second.SetFrameIndex(frameIndex);
-			}
-			for (auto& instanceBuffer : instancedBuffers) {
-				instanceBuffer.second.SetFrameIndex(frameIndex);
-			}
-		}
 
 		static SkinBufferHandler* GetSkinBuffer(SkeletonID skeletonID);
 		InstancedSkinBufferHandler* GetInstancedSkinBuffer(SkeletonID skeletonID);

@@ -45,14 +45,12 @@ namespace EWE {
 		//printf("render main menu scene \n");
 
 
-		auto frameInfo = ewEngine.BeginRenderWithoutPass();
-		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
+		if (ewEngine.BeginRenderWithoutPass()) {
 			//printf("drawing \n");
-			ocean->ReinitUpdate(frameInfo, dt);
+			ocean->ReinitUpdate(dt);
 
 
-			ewEngine.eweRenderer.BeginSwapChainRenderPass(frameInfo.cmdBuf);
-			ewEngine.skinnedRS.SetFrameIndex(frameInfo.index);
+			ewEngine.eweRenderer.BeginSwapChainRenderPass();
 
 			//main controls
 
@@ -61,14 +59,14 @@ namespace EWE {
 			cameraControl.Zoom(transform);
 
 			ewEngine.camera.SetViewYXZ(transform.translation, transform.rotation);
-			ewEngine.camera.BindUBO(frameInfo.index);
+			ewEngine.camera.BindUBO();
 
-			ewEngine.DrawObjects(frameInfo, dt);
-			ocean->RenderOcean(frameInfo);
+			ewEngine.DrawObjects( dt);
+			ocean->RenderOcean();
 			//printf("after displaying render info \n");
-			ewEngine.EndRender(frameInfo);
-			ocean->TransferGraphicsToCompute(frameInfo.cmdBuf);
-			ewEngine.EndFrame(frameInfo);
+			ewEngine.EndRender();
+			ocean->TransferGraphicsToCompute();
+			ewEngine.EndFrame();
 			//std::cout << "after ending render \n";
 			return false;
 		}

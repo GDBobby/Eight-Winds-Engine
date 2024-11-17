@@ -47,9 +47,9 @@ namespace EWE {
             EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet[0]);
             EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet[1]);
 
-			EWE_VK(vkDestroyPipeline, EWEDevice::GetVkDevice(), pipeline, nullptr);
-			EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), pipeLayout, nullptr);
-			EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), shaderModule, nullptr);
+			EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, pipeline, nullptr);
+			EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipeLayout, nullptr);
+			EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, shaderModule, nullptr);
 
             Deconstruct(jonswapBuffer);
 
@@ -79,7 +79,7 @@ namespace EWE {
             pipelineLayoutInfo.setLayoutCount = 1;
             pipelineLayoutInfo.pSetLayouts = &dsLayout;
 
-            EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout);
+            EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
         }
         void InitialFrequencySpectrumGPUData::CreatePipeline() {
             VkComputePipelineCreateInfo pipelineInfo{};
@@ -93,7 +93,7 @@ namespace EWE {
             computeShaderStageInfo.module = shaderModule;
             computeShaderStageInfo.pName = "main";
             pipelineInfo.stage = computeShaderStageInfo;
-            EWE_VK(vkCreateComputePipelines, EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+            EWE_VK(vkCreateComputePipelines, VK::Object->vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
         }
         void InitialFrequencySpectrumGPUData::CreateBuffers() {
             jonswapBuffer = EWEBuffer::CreateAndInitBuffer(&jonswapParams, sizeof(JONSWAP_Parameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -106,23 +106,23 @@ namespace EWE {
             descriptorSet[0] = descWriter.Build();
             descriptorSet[1] = descWriter.Build();
         }
-        void InitialFrequencySpectrumGPUData::Compute(FrameInfo const& frameInfo) {
-            EWE_VK(vkCmdBindPipeline, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+        void InitialFrequencySpectrumGPUData::Compute() {
+            EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-            EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf,
+            EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
                 VK_PIPELINE_BIND_POINT_COMPUTE,
                 pipeLayout,
                 0, 1,
-                &descriptorSet[frameInfo.index],
+                &descriptorSet[VK::Object->frameIndex],
                 0, nullptr
             );
 
-            EWE_VK(vkCmdPushConstants, frameInfo.cmdBuf, pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
+            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
 
 #if CASCADE_COUNT_IN_ZED_GROUP_COUNT
-            EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, cascade_count);
+            EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, cascade_count);
 #else
-            EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, 1);
+            EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, 1);
 #endif
         }
 
@@ -135,9 +135,9 @@ namespace EWE {
         TimeDependentFrequencySpectrumGPUData::~TimeDependentFrequencySpectrumGPUData() {
             EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet);
 
-            EWE_VK(vkDestroyPipeline, EWEDevice::GetVkDevice(), pipeline, nullptr);
-            EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), pipeLayout, nullptr);
-            EWE_VK(vkDestroyShaderModule, EWEDevice::GetVkDevice(), shaderModule, nullptr);
+            EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, pipeline, nullptr);
+            EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipeLayout, nullptr);
+            EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, shaderModule, nullptr);
 
             Deconstruct(eweDSL);
         }
@@ -166,7 +166,7 @@ namespace EWE {
             pipelineLayoutInfo.setLayoutCount = 1;
             pipelineLayoutInfo.pSetLayouts = &dsLayout;
 
-            EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout);
+            EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
         }
         void TimeDependentFrequencySpectrumGPUData::CreatePipeline() {
 
@@ -181,7 +181,7 @@ namespace EWE {
             computeShaderStageInfo.module = shaderModule;
             computeShaderStageInfo.pName = "main";
             pipelineInfo.stage = computeShaderStageInfo;
-            EWE_VK(vkCreateComputePipelines, EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+            EWE_VK(vkCreateComputePipelines, VK::Object->vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
         }
         void TimeDependentFrequencySpectrumGPUData::CreateDescriptorSet(VkDescriptorImageInfo* frequencyImage, VkDescriptorImageInfo* outputImage) {
 
@@ -190,10 +190,10 @@ namespace EWE {
             descWriter.WriteImage(1, outputImage);
             descriptorSet = descWriter.Build();
         }
-        void TimeDependentFrequencySpectrumGPUData::Compute(FrameInfo const& frameInfo, float dt) {
-            EWE_VK(vkCmdBindPipeline, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+        void TimeDependentFrequencySpectrumGPUData::Compute(float dt) {
+            EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-            EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf,
+            EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
                 VK_PIPELINE_BIND_POINT_COMPUTE,
                 pipeLayout,
                 0, 1,
@@ -201,12 +201,12 @@ namespace EWE {
                 0, nullptr
             );
             pushData.mTime += dt;
-            EWE_VK(vkCmdPushConstants, frameInfo.cmdBuf, pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
+            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
 
 #if CASCADE_COUNT_IN_ZED_GROUP_COUNT
-            EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, cascade_count);
+            EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, cascade_count);
 #else
-            EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, 1);
+            EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, 1);
 #endif
         }
 
@@ -249,7 +249,7 @@ namespace EWE {
             pipelineLayoutInfo.setLayoutCount = 1;
             pipelineLayoutInfo.pSetLayouts = &dsLayout;
 
-            EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout);
+            EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
         }
         void FFTGPUData::CreatePipeline() {
 
@@ -264,12 +264,12 @@ namespace EWE {
             computeShaderStageInfo.module = shaderModule;
             computeShaderStageInfo.pName = "main";
             pipelineInfo.stage = computeShaderStageInfo;
-            EWE_VK(vkCreateComputePipelines, EWEDevice::GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+            EWE_VK(vkCreateComputePipelines, VK::Object->vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
         }
-        void FFTGPUData::Compute(FrameInfo const& frameInfo, float dt) {
-            EWE_VK(vkCmdBindPipeline, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+        void FFTGPUData::Compute(float dt) {
+            EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-            EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf,
+            EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
                 VK_PIPELINE_BIND_POINT_COMPUTE,
                 pipeLayout,
                 0, 1,
@@ -278,16 +278,16 @@ namespace EWE {
             );
             pushData.deltaTime = dt;
             pushData.secondPass = 0;
-            EWE_VK(vkCmdPushConstants, frameInfo.cmdBuf, pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
+            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
 
 #if CASCADE_COUNT_IN_ZED_GROUP_COUNT
-            EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, 1, OCEAN_WAVE_COUNT, cascade_count);
+            EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), 1, OCEAN_WAVE_COUNT, cascade_count);
 #else
-            EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, 1, OCEAN_WAVE_COUNT, 1);
-            EWEDevice::GetEWEDevice()->TransferImageStage(frameInfo.cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, fftImage);
+            EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), 1, OCEAN_WAVE_COUNT, 1);
+            Barrier::TransferImageStage(VK::Object->GetFrameBuffer(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, fftImage);
             pushData.secondPass = 1;
-            EWE_VK(vkCmdPushConstants, frameInfo.cmdBuf, pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
-            EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, 1, OCEAN_WAVE_COUNT, 1);
+            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
+            EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), 1, OCEAN_WAVE_COUNT, 1);
 #endif
         }
 
@@ -347,7 +347,7 @@ namespace EWE {
             
             pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
             pipelineLayoutInfo.pSetLayouts = tempDSL.data();
-            EWE_VK(vkCreatePipelineLayout, EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayout);
+            EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
         }
         void OceanGraphicsGPUData::CreatePipeline(){
             EWEPipeline::PipelineConfigInfo pipelineConfig{};
@@ -415,21 +415,21 @@ namespace EWE {
             oceanModel = EWEModel::CreateMesh(gridVertices.data(), gridVertices.size(), sizeof(gridVertices[0]), gridIndices, Queue::graphics);
         }
 
-        void OceanGraphicsGPUData::Render(FrameInfo const& frameInfo) {
-            pipe->Bind(frameInfo.cmdBuf);
+        void OceanGraphicsGPUData::Render() {
+            pipe->Bind();
 
-            EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout,
+            EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout,
                 0, 1,
-                DescriptorHandler::GetDescSet(DS_global, frameInfo.index),
+                DescriptorHandler::GetDescSet(DS_global),
                 0, nullptr
             );
-            EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout,
+            EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout,
                 1, 1,
-                &descriptorSet[frameInfo.index],
+                &descriptorSet[VK::Object->frameIndex],
                 0, nullptr
             );
 
-            oceanModel->BindAndDraw(frameInfo.cmdBuf);
+            oceanModel->BindAndDraw();
         }
 
     } //namespace Ocean

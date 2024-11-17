@@ -11,7 +11,7 @@ namespace EWE {
 		gpuReference = innerPtr;
 	}
 	void SkinBufferHandler::WriteData(void* finalBoneMatrices) {
-		gpuData[frameIndex].bone->WriteToBuffer(finalBoneMatrices, boneBlockSize, boneMemOffset);
+		gpuData[VK::Object->frameIndex].bone->WriteToBuffer(finalBoneMatrices, boneBlockSize, boneMemOffset);
 		boneMemOffset += boneBlockSize;
 
 	}
@@ -25,19 +25,15 @@ namespace EWE {
 		}
 	}
 	void SkinBufferHandler::Flush() {
-		gpuData[frameIndex].Flush();
+		gpuData[VK::Object->frameIndex].Flush();
 		boneMemOffset = 0;
-	}
-	void SkinBufferHandler::SetFrameIndex(uint8_t frameIndex) {
-		this->frameIndex = frameIndex;
-
 	}
 	VkDescriptorSet* SkinBufferHandler::GetDescriptor() {
 		if (gpuReference == nullptr) {
-			return &gpuData[frameIndex].descriptor;
+			return &gpuData[VK::Object->frameIndex].descriptor;
 		}
 		else {
-			return &gpuReference->at(frameIndex).descriptor;
+			return &gpuReference->at(VK::Object->frameIndex).descriptor;
 		}
 	}
 	SkinBufferHandler::InnerBufferStruct::InnerBufferStruct(uint8_t maxActorCount, uint32_t boneBlockSize) :

@@ -12,10 +12,6 @@ namespace EWE {
 		void ChangeMaxActorCount(uint16_t actorCount);
 		void Flush();
 
-		void SetFrameIndex(uint8_t frameIndex) {
-			//printf("setting instance count to 0 \n");
-			this->frameIndex = frameIndex;
-		}
 		void ResetInstanceCount() {
 			currentInstanceCount = 0;
 		}
@@ -23,10 +19,14 @@ namespace EWE {
 			return maxActorCount;
 		}
 		VkDescriptorSet* GetDescriptor() {
-			return &gpuData[frameIndex].descriptor;
+			return &gpuData[VK::Object->frameIndex].descriptor;
 		}
 		uint32_t GetInstanceCount() {
 			return currentInstanceCount;
+		}
+		void FreeDescriptors() {
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &gpuData[0].descriptor);
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &gpuData[1].descriptor);
 		}
 
 	private:
@@ -103,6 +103,10 @@ namespace EWE {
 		std::vector<InnerBufferStruct>* GetInnerPtr() {
 			return &gpuData;
 		}
+		void FreeDescriptors() {
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &gpuData[0].descriptor);
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &gpuData[1].descriptor);
+		}
 	private:
 
 		std::vector<InnerBufferStruct>* gpuReference{nullptr};
@@ -111,6 +115,5 @@ namespace EWE {
 		uint8_t maxActorCount{ 1 };
 
 		uint64_t boneMemOffset = 0;
-		uint8_t frameIndex{0};
 	};
 }

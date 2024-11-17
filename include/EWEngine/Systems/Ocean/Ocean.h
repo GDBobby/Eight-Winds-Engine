@@ -53,23 +53,23 @@ namespace EWE {
 		public:
 			Ocean(VkDescriptorImageInfo* skyboxImage);
 			~Ocean();
-			void UpdateNoInit(FrameInfo const& frameInfo, float dt);
-			void ReinitUpdate(FrameInfo const& frameInfo, float dt);
-			void InitializeSpectrum(FrameInfo const& frameInfo);
-			void UpdateSpectrum(FrameInfo const& frameInfo, float dt);
-			void ComputeFFT(FrameInfo const& frameInfo, float deltaTime);
+			void UpdateNoInit(float dt);
+			void ReinitUpdate(float dt);
+			void InitializeSpectrum();
+			void UpdateSpectrum(float dt);
+			void ComputeFFT(float deltaTime);
 
 
-			void RenderOcean(FrameInfo const& frameInfo);
+			void RenderOcean();
 
 			void CreateBuffers();
 			void PrepareStorageImage();
 			void CreateDescriptor(VkDescriptorImageInfo* skyboxImage);
 
-			void TransferComputeToGraphics(VkCommandBuffer cmdBuf);
+			void TransferComputeToGraphics();
 
-			void TransferGraphicsToCompute(VkCommandBuffer cmdBuf);
-			//void ComputeBarrier(VkCommandBuffer cmdBuf);
+			void TransferGraphicsToCompute();
+			//void ComputeBarrier(CommandBuffer cmdBuf);
 			
 
 

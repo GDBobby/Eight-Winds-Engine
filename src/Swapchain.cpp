@@ -1,6 +1,6 @@
 #include "EWEngine/Graphics/Swapchain.hpp"
 
-#include "EWEngine/Graphics/Texture/Image.h"
+#include "EWEngine/Graphics/Texture/ImageFunctions.h"
 
 // std
 #include <array>
@@ -65,24 +65,23 @@ namespace EWE {
     EWESwapChain::~EWESwapChain() {
         //device.removeImageInFlightFences(&imagesInFlight);
         //logFile.close();
-        VkDevice const& vkDevice = EWEDevice::GetVkDevice();
         for (auto imageView : swapChainImageViews) {
-            EWE_VK(vkDestroyImageView, vkDevice, imageView, nullptr);
+            EWE_VK(vkDestroyImageView, VK::Object->vkDevice, imageView, nullptr);
         }
         swapChainImageViews.clear();
 
         if (swapChain != nullptr) {
-            EWE_VK(vkDestroySwapchainKHR, vkDevice, swapChain, nullptr);
+            EWE_VK(vkDestroySwapchainKHR, VK::Object->vkDevice, swapChain, nullptr);
             swapChain = nullptr;
         }
 
         for (int i = 0; i < depthImages.size(); i++) {
-            EWE_VK(vkDestroyImageView, vkDevice, depthImageViews[i], nullptr);
+            EWE_VK(vkDestroyImageView, VK::Object->vkDevice, depthImageViews[i], nullptr);
 #if USING_VMA
             vmaDestroyImage(EWEDevice::GetAllocator(), depthImages[i], depthImageMemorys[i]);
 #else
-            EWE_VK(vkDestroyImage, vkDevice, depthImages[i], nullptr);
-            EWE_VK(vkFreeMemory, vkDevice, depthImageMemorys[i], nullptr);
+            EWE_VK(vkDestroyImage, VK::Object->vkDevice, depthImages[i], nullptr);
+            EWE_VK(vkFreeMemory, VK::Object->vkDevice, depthImageMemorys[i], nullptr);
 #endif
         }
         /*
@@ -104,21 +103,19 @@ namespace EWE {
 
         //printf("before waiting for in flight fence\n");
         EWE_VK(vkWaitForFences, 
-            EWEDevice::GetVkDevice(),
+            VK::Object->vkDevice,
             1,
-            syncHub->GetFlightFence(currentFrame),
-            //&inFlightFences[currentFrame],
+            syncHub->GetFlightFence(),
             VK_TRUE,
             std::numeric_limits<uint64_t>::max()
         );
         //printf("after waiting for fence in ANI \n");
         //printf("before acquiring image\n");
         VkResult result = vkAcquireNextImageKHR(
-            EWEDevice::GetVkDevice(),
+            VK::Object->vkDevice,
             swapChain,
             std::numeric_limits<uint64_t>::max(),
-            syncHub->GetImageAvailableSemaphore(currentFrame),
-            //imageAvailableSemaphores[currentFrame],  // must be a not signaled semaphore
+            syncHub->GetImageAvailableSemaphore(),
             VK_NULL_HANDLE,
             imageIndex
         );
@@ -130,23 +127,21 @@ namespace EWE {
         return false;
     }
 
-    VkResult EWESwapChain::SubmitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex) {
+    VkResult EWESwapChain::SubmitCommandBuffers(CommandBuffer* buffers, uint32_t *imageIndex) {
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = buffers;
+        submitInfo.pCommandBuffers = &buffers->cmdBuf;
 
-        syncHub->SubmitGraphics(submitInfo, currentFrame, imageIndex);
+        syncHub->SubmitGraphics(submitInfo, imageIndex);
 
         VkPresentInfoKHR presentInfo = {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &swapChain;
         presentInfo.pImageIndices = imageIndex;
-        auto result = syncHub->PresentKHR(presentInfo, currentFrame);
-
-        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+        auto result = syncHub->PresentKHR(presentInfo);
         return result;
     }
 
@@ -168,7 +163,7 @@ namespace EWE {
         VkSwapchainCreateInfoKHR createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         //createInfo.pNext = &surfaceFullScreenExclusiveInfoEXT;
-        createInfo.surface = eweDevice->surface();
+        createInfo.surface = VK::Object->surface;
 
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;
@@ -177,7 +172,7 @@ namespace EWE {
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        uint32_t queueData[] = { eweDevice->GetGraphicsIndex(), eweDevice->GetPresentIndex() };
+        uint32_t queueData[] = { static_cast<uint32_t>(VK::Object->queueIndex[Queue::graphics]), static_cast<uint32_t>(VK::Object->queueIndex[Queue::present])};
 
         /*
         if (queueData[0] != queueData[1]) {
@@ -204,17 +199,17 @@ namespace EWE {
         createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapChain;
 
         //logFile << "values initialized, vkcreateswapchain now \n";
-        EWE_VK(vkCreateSwapchainKHR, EWEDevice::GetVkDevice(), &createInfo, nullptr, &swapChain);
+        EWE_VK(vkCreateSwapchainKHR, VK::Object->vkDevice, &createInfo, nullptr, &swapChain);
         //logFile << "afterr vkswapchain \n";
         // we only specified a minimum number of images in the swap chain, so the implementation is
         // allowed to create a swap chain with more. That's why we'll first query the final number of
         // images with vkGetSwapchainImagesKHR, then resize the container and finally call it again to
         // retrieve the handles.
-        EWE_VK(vkGetSwapchainImagesKHR, EWEDevice::GetVkDevice(), swapChain, &imageCount, nullptr);
+        EWE_VK(vkGetSwapchainImagesKHR, VK::Object->vkDevice, swapChain, &imageCount, nullptr);
         assert(imageCount > 0 && "failed to get swap chain images\n");
 
         swapChainImages.resize(imageCount);
-        EWE_VK(vkGetSwapchainImagesKHR, EWEDevice::GetVkDevice(), swapChain, &imageCount, swapChainImages.data());
+        EWE_VK(vkGetSwapchainImagesKHR, VK::Object->vkDevice, swapChain, &imageCount, swapChainImages.data());
         //logFile << "after vkgetswapchain images \n";
 
         swapChainImageFormat = surfaceFormat.format;
@@ -235,7 +230,7 @@ namespace EWE {
             viewInfo.subresourceRange.baseArrayLayer = 0;
             viewInfo.subresourceRange.layerCount = 1;
 
-            EWE_VK(vkCreateImageView, EWEDevice::GetVkDevice(), &viewInfo, nullptr, &swapChainImageViews[i]);
+            EWE_VK(vkCreateImageView, VK::Object->vkDevice, &viewInfo, nullptr, &swapChainImageViews[i]);
         }
     }
 
@@ -321,7 +316,7 @@ namespace EWE {
             viewInfo.subresourceRange.baseArrayLayer = 0;
             viewInfo.subresourceRange.layerCount = 1;
 
-            EWE_VK(vkCreateImageView, EWEDevice::GetVkDevice(), &viewInfo, nullptr, &depthImageViews[i]);
+            EWE_VK(vkCreateImageView, VK::Object->vkDevice, &viewInfo, nullptr, &depthImageViews[i]);
         }
     }
     /*

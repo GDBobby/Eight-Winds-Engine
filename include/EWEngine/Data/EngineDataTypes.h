@@ -71,11 +71,4 @@ namespace EWE {
 
 		//MaterialF_hasBones = 128, //removed from texture flags
 	};
-
-	struct FrameInfo {
-		VkCommandBuffer cmdBuf;
-		uint8_t index;
-		FrameInfo(VkCommandBuffer cmdBuffer, uint8_t frameIndex) : cmdBuf{ cmdBuffer }, index{ frameIndex } {}
-		FrameInfo() {}
-	};
 } //namespace EWE

@@ -14,8 +14,6 @@ namespace EWE {
 	class PipelineSystem {
 	protected:
 		static std::unordered_map<PipelineID, PipelineSystem*> pipelineSystem;
-		static uint8_t frameIndex;
-		static VkCommandBuffer cmdBuf;
 #if EWE_DEBUG
 		static PipelineID currentPipe;
 		PipelineSystem(PipelineID pipeID) : myID{pipeID} {}
@@ -27,7 +25,6 @@ namespace EWE {
 
 	public:
 		virtual ~PipelineSystem() {}
-		static void SetFrameInfo(FrameInfo const& frameInfo);
 		static PipelineSystem* At(PipelineID pipeID);
 		static void Emplace(PipelineID pipeID, PipelineSystem* pipeSys);
 		static void Destruct();

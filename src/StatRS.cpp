@@ -8,7 +8,7 @@ namespace EWE {
 		pipelineStructs.reserve(pipelineCount);
 
 		size_t alignment = 0;
-		alignment = EWEDevice::GetEWEDevice()->GetProperties().limits.minStorageBufferOffsetAlignment;
+		alignment = VK::Object->properties.limits.minStorageBufferOffsetAlignment;
 
 		alignment = std::ceil(static_cast<double>((sizeof(glm::mat4) + sizeof(glm::mat3))) / alignment) * alignment;
 

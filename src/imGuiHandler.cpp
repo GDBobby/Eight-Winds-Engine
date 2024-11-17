@@ -17,13 +17,12 @@ namespace EWE {
 		createDescriptorPool();
 
 		ImGui_ImplGlfw_InitForVulkan(window, true);
-		EWEDevice* const& device = EWEDevice::GetEWEDevice();
 		ImGui_ImplVulkan_InitInfo init_info = {};
-		init_info.Instance = device->GetInstance();
-		init_info.PhysicalDevice = device->GetPhysicalDevice();
-		init_info.Device = device->Device();
-		init_info.QueueFamily = device->GetGraphicsIndex();
-		init_info.Queue = device->GetGraphicsQueue();
+		init_info.Instance = VK::Object->instance;
+		init_info.PhysicalDevice = VK::Object->physicalDevice;
+		init_info.Device = VK::Object->vkDevice;
+		init_info.QueueFamily = VK::Object->queueIndex[Queue::graphics];
+		init_info.Queue = VK::Object->queues[Queue::graphics];
 		init_info.PipelineCache = nullptr;
 		init_info.Allocator = nullptr;
 		init_info.MinImageCount = imageCount;
@@ -54,9 +53,9 @@ namespace EWE {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 	}
-	void ImGUIHandler::endRender(VkCommandBuffer cmdBuf) {
+	void ImGUIHandler::endRender(CommandBuffer& cmdBuf) {
 		ImGui::Render();
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf);
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf.cmdBuf);
 	}
 
 

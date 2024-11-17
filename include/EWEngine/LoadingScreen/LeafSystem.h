@@ -52,7 +52,7 @@ namespace EWE {
 		~LeafSystem() override;
 
 		void LeafPhysicsInitialization();
-		void FallCalculation(float timeStep, uint8_t frameIndex);
+		void FallCalculation(float timeStep);
 
 		////this should be a graphics queue command buffer
 		void InitData();
@@ -61,7 +61,7 @@ namespace EWE {
 
 		void LoadLeafTexture();
 
-		void Render(FrameInfo& frameInfo);
+		void Render();
 
 		EWEModel* leafModel;
 		TextureDesc leafTextureID = 0;

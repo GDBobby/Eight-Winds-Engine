@@ -120,10 +120,10 @@ namespace EWE {
 		trackStagingBuffer->Stage(trackData.data(), trackBufferSize);
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-		CommandBufferData& cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
+		CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
 		EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
-		eweDevice->CopyBuffer(cmdBuf.cmdBuf, rockStagingBuffer->buffer, rockBuffer->GetBuffer(), rockBufferSize);
-		eweDevice->CopyBuffer(cmdBuf.cmdBuf, trackStagingBuffer->buffer, trackBuffer->GetBuffer(), trackBufferSize);
+		eweDevice->CopyBuffer(cmdBuf, rockStagingBuffer->buffer, rockBuffer->GetBuffer(), rockBufferSize);
+		eweDevice->CopyBuffer(cmdBuf, trackStagingBuffer->buffer, trackBuffer->GetBuffer(), trackBufferSize);
 
 		TransferCommandManager::AddCommand(cmdBuf);
 		TransferCommandManager::AddPropertyToCommand(rockStagingBuffer);
@@ -186,46 +186,46 @@ namespace EWE {
 		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, compPipeLayout, nullptr);
 		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, compShaderModule, nullptr);
 	}
-	void FloatingRock::Dispatch(float dt, FrameInfo const& frameInfo) {
+	void FloatingRock::Dispatch(float dt) {
 		if (previouslySubmitted) {
-			EWE_VK(vkCmdPipelineBarrier, frameInfo.cmdBuf,
+			EWE_VK(vkCmdPipelineBarrier, VK::Object->GetFrameBuffer(),
 				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
 				0,
 				0, nullptr,
-				1, &bufferBarrier[frameInfo.index + MAX_FRAMES_IN_FLIGHT],
+				1, &bufferBarrier[VK::Object->frameIndex + MAX_FRAMES_IN_FLIGHT],
 				0, nullptr
 			);
 		}
 		else {
 			previouslySubmitted = true;
 		}
-		EWE_VK(vkCmdBindPipeline, frameInfo.cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, compPipeline);
+		EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, compPipeline);
 
-		EWE_VK(vkCmdBindDescriptorSets, frameInfo.cmdBuf,
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_COMPUTE,
 			compPipeLayout,
 			0, 1,
-			&compDescriptorSet[frameInfo.index],
+			&compDescriptorSet[VK::Object->frameIndex],
 			0, nullptr
 		);
 
 		compPushData.secondsSinceBeginning += dt;
 		//compPushData.whichIndex = frameInfo.index;
-		EWE_VK(vkCmdPushConstants, frameInfo.cmdBuf, compPipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RockCompPushData), &compPushData);
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), compPipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(RockCompPushData), &compPushData);
 
-		EWE_VK(vkCmdDispatch, frameInfo.cmdBuf, 1, 1, 1);
+		EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), 1, 1, 1);
 
-		EWE_VK(vkCmdPipelineBarrier, frameInfo.cmdBuf,
+		EWE_VK(vkCmdPipelineBarrier, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
 			0,
 			0, nullptr,
-			1, &bufferBarrier[frameInfo.index],
+			1, &bufferBarrier[VK::Object->frameIndex],
 			0, nullptr
 		);
 	}
 	void FloatingRock::InitComputeData(){
 		RigidRenderingSystem::AddInstancedMaterialObject(rockTexture, rockModel, rock_count, true);
-		const std::array<const EWEBuffer*, MAX_FRAMES_IN_FLIGHT> transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(rockModel);
+		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(rockModel);
 
 		bufferBarrier[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 		bufferBarrier[0].pNext = nullptr;
@@ -258,19 +258,17 @@ namespace EWE {
 		auto tempDSL = dslBuilder.Build();
 
 		{
-			VkDescriptorBufferInfo descInfo = transformBuffers[0]->DescriptorInfo();
 			EWEDescriptorWriter descWriter{ tempDSL, DescriptorPool_Global };
 			descWriter.WriteBuffer(0, rockBuffer->DescriptorInfo());
 			descWriter.WriteBuffer(1, trackBuffer->DescriptorInfo());
-			descWriter.WriteBuffer(2, &descInfo);
+			descWriter.WriteBuffer(2, transformBuffers[0]->DescriptorInfo());
 			compDescriptorSet[0] = descWriter.Build();
 		}
 		{
-			VkDescriptorBufferInfo descInfo = transformBuffers[1]->DescriptorInfo();
 			EWEDescriptorWriter descWriter{ tempDSL, DescriptorPool_Global };
 			descWriter.WriteBuffer(0, rockBuffer->DescriptorInfo());
 			descWriter.WriteBuffer(1, trackBuffer->DescriptorInfo());
-			descWriter.WriteBuffer(2, &descInfo);
+			descWriter.WriteBuffer(2, transformBuffers[1]->DescriptorInfo());
 			compDescriptorSet[1] = descWriter.Build();
 		}
 

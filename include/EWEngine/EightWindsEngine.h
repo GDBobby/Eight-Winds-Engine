@@ -111,18 +111,18 @@ namespace EWE {
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		void InitGlobalBuffers();
 
-		FrameInfo BeginRender();
+		bool BeginRender();
 
-		FrameInfo BeginRenderWithoutPass();
+		bool BeginRenderWithoutPass();
 //#define RENDER_OBJECT_DEBUG
 
-		void Draw2DObjects(FrameInfo& frameInfo);
-		void Draw3DObjects(FrameInfo& frameInfo, double dt);
-		void DrawText(FrameInfo& frameInfo, double dt);
-		void DrawObjects(FrameInfo& frameInfo, double dt);
+		void Draw2DObjects();
+		void Draw3DObjects(double dt);
+		void DrawText(double dt);
+		void DrawObjects(double dt);
 
-		void EndRender(FrameInfo const& frameInfo);
-		void EndFrame(FrameInfo const& frameInfo);
+		void EndRender();
+		void EndFrame();
 
 		void LoadingScreen();
 
@@ -139,8 +139,8 @@ namespace EWE {
 		double loadingTime = 0.f;
 
 #if BENCHMARKING_GPU
-		void QueryTimestampBegin(FrameInfo& frameInfo);
-		void QueryTimestampEnd(FrameInfo const& frameInfo);
+		void QueryTimestampBegin();
+		void QueryTimestampEnd();
 		void CreateQueryPool();
 		bool previouslySubmitted[MAX_FRAMES_IN_FLIGHT] = { false, false };
 		uint64_t timestamps[4];

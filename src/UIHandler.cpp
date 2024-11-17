@@ -73,10 +73,10 @@ namespace EWE {
 #endif
 
 
-	void UIHandler::drawOverlayText(VkCommandBuffer commandBuffer, bool displayingRenderInfo) {
+	void UIHandler::DrawOverlayText(bool displayingRenderInfo) {
 
 		if (overlay) {
-			overlay->drawText();
+			overlay->DrawText();
 		}
 		//printf("returning draw menu main \n");
 	}

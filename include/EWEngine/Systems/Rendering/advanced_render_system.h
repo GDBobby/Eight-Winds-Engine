@@ -26,12 +26,12 @@ namespace EWE {
 		AdvancedRenderSystem(const AdvancedRenderSystem&) = delete;
 		AdvancedRenderSystem& operator=(const AdvancedRenderSystem&) = delete;
 
-		void renderGameObjects(FrameInfo& frameInfo, float time);
-		void render2DGameObjects(FrameInfo const& frameInfo, bool menuActive);
+		void renderGameObjects(float time);
+		void render2DGameObjects(bool menuActive);
 
 
 #if LEVEL_BUILDER
-		void renderBuilderObjects(FrameInfo& frameInfo);
+		void renderBuilderObjects();
 #endif
 
 		bool shouldRenderPoints = false;
@@ -53,18 +53,18 @@ namespace EWE {
 
 		EWEModel* model2D;
 
-		void renderSkybox(FrameInfo& frameInfo);
-		void renderTexturedGameObjects(FrameInfo& frameInfo);
-		void renderVisualEffects(FrameInfo& frameInfo);
+		void renderSkybox();
+		void renderTexturedGameObjects();
+		void renderVisualEffects();
 		
-		void renderSprites(FrameInfo& frameInfo);
+		void renderSprites();
 
 #if DRAWING_POINTS
-		void renderPointLights(FrameInfo& frameInfo);
+		void renderPointLights();
 #endif
-		void RenderLightning(FrameInfo const& frameInfo);
+		void RenderLightning();
 
-		void RenderGrass(FrameInfo const& frameInfo, float time);
+		void RenderGrass(float time);
 
 	};
 }

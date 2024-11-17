@@ -2,6 +2,8 @@
 #include "EWEngine/Graphics/Texture/Sampler.h"
 #include "EWEngine/Graphics/TransferCommandManager.h"
 
+#include "EWEngine/Graphics/Texture/ImageFunctions.h"
+
 #include <stb/stb_image.h>
 
 namespace EWE {
@@ -62,9 +64,10 @@ namespace EWE {
 #endif
 
 #if IMAGE_DEBUGGING
-            cubeImage.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false, pixelPeek[0].debugName);
+            Image::CreateImageCommands(cubeImage, imageCreateInfo, stagingBuffer, queue, false, pixelPeek[0].debugName);
 #else
-            cubeImage.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
+//            cubeImage.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
+            Image::CreateImageCommands(cubeImage, imageCreateInfo, stagingBuffer, queue, false);
 #endif
         }
 
@@ -101,7 +104,7 @@ namespace EWE {
             samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
             samplerInfo.anisotropyEnable = VK_TRUE;
-            samplerInfo.maxAnisotropy = EWEDevice::GetEWEDevice()->GetProperties().limits.maxSamplerAnisotropy;
+            samplerInfo.maxAnisotropy = VK::Object->properties.limits.maxSamplerAnisotropy;
 
             samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
             samplerInfo.unnormalizedCoordinates = VK_FALSE;

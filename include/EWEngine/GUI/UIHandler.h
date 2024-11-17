@@ -43,13 +43,13 @@ namespace EWE{
 		bool escapePressed = false;
 
 		void Benchmarking(double time, double peakTime, double averageTime, double highTime, double avgLogic, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU);
-		void drawOverlayText(VkCommandBuffer commandBuffer, bool displayingRenderInfo);
+		void DrawOverlayText(bool displayingRenderInfo);
 
-		void beginTextRender(uint8_t frameIndex) {
-			textOverlay->BeginTextUpdate(frameIndex);
+		void BeginTextRender() {
+			textOverlay->BeginTextUpdate();
 		}
-		void endTextRender(FrameInfo frameInfo) {
-			textOverlay->EndTextUpdate(frameInfo);
+		void EndTextRender() {
+			textOverlay->EndTextUpdate();
 		}
 
 		unsigned int* activeTargets = 0;

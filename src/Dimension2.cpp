@@ -78,18 +78,16 @@ namespace EWE {
 		Deconstruct(dimension2Ptr);
 	}
 
-	void Dimension2::Bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {
+	void Dimension2::Bind2D() {
 #if RENDER_DEBUG
 		printf("binding 2d pipeline in dimension 2 \n");
 #endif
 
-		dimension2Ptr->pipe2d->Bind(cmdBuffer);
-		dimension2Ptr->model2D->Bind(cmdBuffer);
+		dimension2Ptr->pipe2d->Bind();
+		dimension2Ptr->model2D->Bind();
 		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED_DESC;
-		dimension2Ptr->frameIndex = frameIndex;
-		dimension2Ptr->cmdBuffer = cmdBuffer;
 	}
-//	void Dimension2::BindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex) {
+//	void Dimension2::BindNineUI(CommandBuffer cmdBuffer, uint8_t frameIndex) {
 //#if RENDER_DEBUG
 //		printf("binding 9ui in dimension 2 \n");
 //#endif
@@ -102,7 +100,7 @@ namespace EWE {
 
 	void Dimension2::BindTexture2DUI(TextureDesc texture) {
 		if (texture != dimension2Ptr->bindedTexture) {
-			EWE_VK(vkCmdBindDescriptorSets, dimension2Ptr->cmdBuffer,
+			EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
@@ -114,7 +112,7 @@ namespace EWE {
 	}
 	void Dimension2::BindTexture2D(TextureDesc texture) {
 		if (texture != dimension2Ptr->bindedTexture) {
-			EWE_VK(vkCmdBindDescriptorSets, dimension2Ptr->cmdBuffer,
+			EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
@@ -141,11 +139,7 @@ namespace EWE {
 		//possibly do a check here, to ensure the pipeline and descriptors are properly binded
 		//thats really just a feature to check bad programming, dont rely on the programmer being bad. (easy enough to debug)
 
-		EWE_VK(vkCmdPushConstants, dimension2Ptr->cmdBuffer, dimension2Ptr->PL_2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
-		dimension2Ptr->model2D->Draw(dimension2Ptr->cmdBuffer);
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+		dimension2Ptr->model2D->Draw();
 	}
-	//void Dimension2::PushAndDraw(NineUIPushConstantData& push) {
-	//	vkCmdPushConstants(dimension2Ptr->cmdBuffer, dimension2Ptr->PL_9, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(NineUIPushConstantData), &push);
-	//	dimension2Ptr->nineUIModel->Draw(dimension2Ptr->cmdBuffer);
-	//}
 }

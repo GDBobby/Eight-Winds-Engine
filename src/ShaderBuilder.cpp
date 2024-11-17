@@ -317,14 +317,6 @@ namespace EWE {
 			debugShader << cstr << '\n';
 		}
 
-		//debugShader.write(shaderString.c_str(), shaderString.length());
-		//for (int i = 0; i < shaderString.size(); i++) {
-		//	if ((shaderString[i] == ';') || (shaderString[i] == '{') || (shaderString[i] == '}')) {
-		//		shaderString.insert(shaderString.begin() + i + 1, '\n');
-		//		i++;
-		//	}
-		//}
-		//debugShader << shaderString;
 		debugShader.close();
 #endif
 

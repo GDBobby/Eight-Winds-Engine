@@ -20,20 +20,14 @@ namespace EWE {
 		friend class EWEDevice;
 
 		static SyncHub* syncHubSingleton;
-		VkDevice device;
 
-		std::array<VkCommandPool, Queue::_count> cmdPools;
 		SyncPool syncPool;
-		
-		std::array<VkQueue, Queue::_count> queues;
-		uint32_t transferQueueIndex;
 
 
 		VkSubmitInfo transferSubmitInfo{};
 
 		bool readyForNextTransmit = true;
 		//std::mutex transferFlipFlopMutex{};
-		std::mutex transferPoolMutex{};
 		std::mutex graphicsAsyncMut{};
 		//std::mutex mutexNextTransmit{};
 		bool transferFlipFlop = false;
@@ -42,15 +36,14 @@ namespace EWE {
 		//VkFence fence{ VK_NULL_HANDLE };
 		VkFence singleTimeFenceGraphics{ VK_NULL_HANDLE };
 
-		VkCommandBuffer renderBuffers[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		RenderSyncData renderSyncData;
 
 		std::vector<VkFence> imagesInFlight{};
 
 		struct SubmitGroup {
-			CommandBufferData* cmdBuf;
+			CommandBuffer* cmdBuf;
 			std::vector<SemaphoreData*> semaphoreData;
-			SubmitGroup(CommandBufferData& cmdBuf, std::vector<SemaphoreData*>& semaphoreData) :
+			SubmitGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*>& semaphoreData) :
 				cmdBuf{ &cmdBuf }, 
 				semaphoreData{ std::move(semaphoreData) } 
 			{}
@@ -75,31 +68,27 @@ namespace EWE {
 			return syncHubSingleton;
 			
 		}
-		SyncHub(VkDevice device, std::array<VkQueue, Queue::_count>& queues, std::array<VkCommandPool, Queue::_count>& cmdPools);
+		SyncHub();
 #if EWE_DEBUG
 		~SyncHub();
 #endif
 
 		//only class this from EWEDevice
-		static void Initialize(VkDevice device, std::array<VkQueue, Queue::_count>& queues, std::array<VkCommandPool, Queue::_count>& cmdPools, uint32_t transferQueueIndex);
+		static void Initialize();
 		void SetImageCount(uint32_t imageCount) {
 			imagesInFlight.resize(imageCount, VK_NULL_HANDLE);
 		}
 		void Destroy();
 
-		VkCommandBuffer GetRenderBuffer(uint8_t frameIndex) {
-			return renderBuffers[frameIndex];
+		VkFence* GetFlightFence() {
+			return &renderSyncData.inFlight[VK::Object->frameIndex];
+		}
+		VkSemaphore GetImageAvailableSemaphore() {
+			return renderSyncData.imageAvailableSemaphore[VK::Object->frameIndex];
 		}
 
-		VkFence* GetFlightFence(uint8_t frameIndex) {
-			return &renderSyncData.inFlight[frameIndex];
-		}
-		VkSemaphore GetImageAvailableSemaphore(uint8_t frameIndex) {
-			return renderSyncData.imageAvailableSemaphore[frameIndex];
-		}
-
-		void SubmitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex);
-		VkResult PresentKHR(VkPresentInfoKHR& presentInfo, uint8_t currentFrame);
+		void SubmitGraphics(VkSubmitInfo& submitInfo, uint32_t* imageIndex);
+		VkResult PresentKHR(VkPresentInfoKHR& presentInfo);
 
 		void DomDemand();
 		void DomRelease();
@@ -108,24 +97,24 @@ namespace EWE {
 
 		//this needs to be called from the graphics thread
 		//these have a fence with themselves
-		void EndSingleTimeCommandGraphics(CommandBufferData& cmdBuf);
-		void EndSingleTimeCommandGraphicsSignal(CommandBufferData& cmdBuf, VkSemaphore signalSemaphore);
-		void EndSingleTimeCommandGraphicsWaitAndSignal(CommandBufferData& cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
+		void EndSingleTimeCommandGraphics(CommandBuffer& cmdBuf);
+		//void EndSingleTimeCommandGraphicsSignal(CommandBufferData& cmdBuf, VkSemaphore signalSemaphore);
+		//void EndSingleTimeCommandGraphicsWaitAndSignal(CommandBufferData& cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
 
-		static void EndSingleTimeCommandGraphicsGroup(CommandBufferData& cmdBuf, std::vector<SemaphoreData*> waitSemaphores);
+		static void EndSingleTimeCommandGraphicsGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*> waitSemaphores);
 		//void SubmitGraphicsSTCGroup();
 
-		//void EndSingleTimeCommandTransfer(VkCommandBuffer cmdBuf);
+		//void EndSingleTimeCommandTransfer(CommandBuffer cmdBuf);
 		void EndSingleTimeCommandTransfer();
 
-		CommandBufferData& BeginSingleTimeCommand(Queue::Enum queue);
-		CommandBufferData& BeginSingleTimeCommandGraphics();
-		CommandBufferData& BeginSingleTimeCommandTransfer();
+		CommandBuffer& BeginSingleTimeCommand(Queue::Enum queue);
+		CommandBuffer& BeginSingleTimeCommandGraphics();
+		CommandBuffer& BeginSingleTimeCommandTransfer();
 
 		void AttemptTransferSubmission();
 
-		void WaitOnGraphicsFence(const uint8_t frameIndex) {
-			EWE_VK(vkWaitForFences, device, 1, &renderSyncData.inFlight[frameIndex], VK_TRUE, UINT64_MAX);
+		void WaitOnGraphicsFence() {
+			EWE_VK(vkWaitForFences, VK::Object->vkDevice, 1, &renderSyncData.inFlight[VK::Object->frameIndex], VK_TRUE, UINT64_MAX);
 		}
 
 		void RunGraphicsCallbacks();
@@ -137,7 +126,7 @@ namespace EWE {
 
 		void CreateSyncObjects();
 
-		void CreateBuffers(VkCommandPool graphicsCommandPool);
+		void CreateBuffers();
 
 		void SubmitTransferBuffers();
 

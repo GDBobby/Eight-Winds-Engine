@@ -51,7 +51,7 @@ namespace EWE {
     }
 
 
-	void PipelineBarrier::Submit(VkCommandBuffer cmdBuf) const {
+	void PipelineBarrier::Submit(CommandBuffer& cmdBuf) const {
 		EWE_VK(vkCmdPipelineBarrier, cmdBuf,
 			srcStageMask, dstStageMask,
 			dependencyFlags,
@@ -262,7 +262,7 @@ namespace EWE {
             return barrier;
         }
 	
-        void TransitionImageLayoutWithBarrier(VkCommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount) {
+        void TransitionImageLayoutWithBarrier(CommandBuffer cmdBuf, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkImage& image, VkImageLayout srcLayout, VkImageLayout dstLayout, uint32_t mipLevels, uint8_t layerCount) {
             VkImageMemoryBarrier imageBarrier{ TransitionImageLayout(image, srcLayout, dstLayout, mipLevels, layerCount) };
             EWE_VK(vkCmdPipelineBarrier, cmdBuf,
                 srcStageMask, dstStageMask,
@@ -272,308 +272,148 @@ namespace EWE {
                 1, &imageBarrier
             );
         }
-}//namespace Barrier
 
-
-    namespace Image {
-        void GenerateMipMapsForMultipleImages(VkCommandBuffer cmdBuf, std::vector<MipParamPack>& mipParamPack) {
-            //printf("before mip map loop? size of image : %d \n", image.size());
-
-            //printf("after beginning single time command \n");
-            uint8_t maxMipLevels;
-            for (auto const& paramPack : mipParamPack) {
-                if (paramPack.mipLevels > maxMipLevels) {
-                    maxMipLevels = paramPack.mipLevels;
+#define BARRIER_DEBUGGING false
+        void TransferImageStage(CommandBuffer& cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image) {
+            VkImageMemoryBarrier imageBarrier{};
+            imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            imageBarrier.pNext = nullptr;
+            imageBarrier.image = image;
 #if EWE_DEBUG
-                    assert(paramPack.mipLevels >= 1);
+            assert(imageBarrier.image != VK_NULL_HANDLE && "transfering a null image?");
 #endif
-                }
+            imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
+            imageBarrier.subresourceRange.baseMipLevel = 0;
+            imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+            imageBarrier.subresourceRange.baseArrayLayer = 0;
+            imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+            imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+            if ((srcStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+                && ((dstStage & (VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)))
+                ) {
+#if BARRIER_DEBUGGING
+                printf(" COMPUTE TO GRAPHICS IMAGE TRANSFER \n");
+#endif
+                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+                imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
+                imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
+
+                EWE_VK(vkCmdPipelineBarrier,
+                    cmdBuf,
+                    srcStage, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, // pipeline stage
+                    0, //dependency flags
+                    0, nullptr, //memory barrier
+                    0, nullptr, //buffer barrier
+                    1, &imageBarrier //image barrier
+                );
             }
-
-
-            VkImageMemoryBarrier barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.pNext = nullptr;
-            barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetTransferIndex();
-            barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex(); //graphics queue is the only queue that can support vkCmdBlitImage
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
-            barrier.subresourceRange.levelCount = 1;
-            barrier.subresourceRange.baseMipLevel = 0;
-            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
+            else if (((srcStage & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) || (srcStage & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)) &&
+                (dstStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT))
             {
-                const uint32_t mipLevel = 1;
-                { //prebarrier, transfers ownership, prepares the current miplevel to be a transfer src
-                    std::vector<VkImageMemoryBarrier> preBarriers{};
-                    preBarriers.reserve(mipParamPack.size());
-                    for (auto const& paramPack : mipParamPack) {
-
-                        barrier.image = paramPack.image;
-                        preBarriers.push_back(barrier);
-                    }
-
-                    EWE_VK(vkCmdPipelineBarrier, cmdBuf,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                        0, nullptr,
-                        0, nullptr,
-                        preBarriers.size(), preBarriers.data()
-                    );
-                }
-                { //blit, copies the current image to the next with linear scaling
-                    VkImageBlit blit{};
-                    blit.srcOffsets[0] = { 0, 0, 0 };
-                    blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    blit.srcSubresource.mipLevel = mipLevel - 1;
-                    blit.srcSubresource.baseArrayLayer = 0;
-                    blit.srcSubresource.layerCount = 1;
-                    blit.dstOffsets[0] = { 0, 0, 0 };
-                    blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    blit.dstSubresource.mipLevel = mipLevel;
-                    blit.dstSubresource.baseArrayLayer = 0;
-                    blit.dstSubresource.layerCount = 1;
-                    for (auto const& paramPack : mipParamPack) {
-                        blit.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(paramPack.width), static_cast<int32_t>(paramPack.height), 1 };
-                        blit.dstOffsets[1] = { paramPack.width > 1 ? static_cast<int32_t>(paramPack.width) / 2 : 1, paramPack.height > 1 ? static_cast<int32_t>(paramPack.height) / 2 : 1, 1 };
-                        //printf("before blit image \n");
-                        EWE_VK(vkCmdBlitImage, cmdBuf,
-                            paramPack.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                            paramPack.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                            1, &blit,
-                            VK_FILTER_LINEAR
-                        );
-                    }
-                }
-                //printf("after blit image \n");
-                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                { //post barrier, finalizes the current mip level and prepares it for reading in the fragment stage
-                    std::vector<VkImageMemoryBarrier> postBarriers{};
-                    postBarriers.reserve(mipParamPack.size());
-                    for (auto& paramPack : mipParamPack) {
-                        barrier.image = paramPack.image;
-                        postBarriers.push_back(barrier);
-                        if (paramPack.width > 1) { paramPack.width /= 2; }
-                        if (paramPack.height > 1) { paramPack.height /= 2; }
-                    }
-                    EWE_VK(vkCmdPipelineBarrier, cmdBuf,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                        0, nullptr,
-                        0, nullptr,
-                        postBarriers.size(), postBarriers.data()
-                    );
-                }
-                //printf("after pipeline barrier 2 \n");
-            }
-
-            for (uint32_t mipLevel = 2; mipLevel < maxMipLevels; mipLevel++) {
-                barrier.subresourceRange.baseMipLevel = mipLevel - 1;
-                std::vector<VkImageMemoryBarrier> preBarriers{};
-                std::vector<VkImageMemoryBarrier> postBarriers{};
-
-                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-
-                { //prebarrier, transfers ownership, prepares the current miplevel to be a transfer src
-                    std::vector<VkImageMemoryBarrier> preBarriers{};
-                    preBarriers.reserve(mipParamPack.size());
-                    for (auto const& paramPack : mipParamPack) {
-
-                        if (paramPack.mipLevels <= mipLevel) {
-                            continue;
-                        }
-                        barrier.image = paramPack.image;
-                        preBarriers.push_back(barrier);
-                        //printf("before cmd pipeline barrier \n");
-                        //this barrier right here needs a transfer queue partner
-                    }
-
-                    EWE_VK(vkCmdPipelineBarrier, cmdBuf,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                        0, nullptr,
-                        0, nullptr,
-                        preBarriers.size(), preBarriers.data()
-                    );
-                }
-
-                { //blit, copies the current image to the next with linear scaling
-                    VkImageBlit blit{};
-                    blit.srcOffsets[0] = { 0, 0, 0 };
-                    blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    blit.srcSubresource.mipLevel = mipLevel - 1;
-                    blit.srcSubresource.baseArrayLayer = 0;
-                    blit.srcSubresource.layerCount = 1;
-                    blit.dstOffsets[0] = { 0, 0, 0 };
-                    blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    blit.dstSubresource.mipLevel = mipLevel;
-                    blit.dstSubresource.baseArrayLayer = 0;
-                    blit.dstSubresource.layerCount = 1;
-                    for (auto const& paramPack : mipParamPack) {
-                        if (paramPack.mipLevels <= mipLevel) {
-                            continue;
-                        }
-
-                        blit.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(paramPack.width), static_cast<int32_t>(paramPack.height), 1 };
-                        blit.dstOffsets[1] = { paramPack.width > 1 ? static_cast<int32_t>(paramPack.width) / 2 : 1, paramPack.height > 1 ? static_cast<int32_t>(paramPack.height) / 2 : 1, 1 };
-                        //printf("before blit image \n");
-                        EWE_VK(vkCmdBlitImage, cmdBuf,
-                            paramPack.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                            paramPack.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                            1, &blit,
-                            VK_FILTER_LINEAR
-                        );
-                    }
-                }
-                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                { //post barrier, finalizes the current mip level and prepares it for reading in the fragment stage
-                    std::vector<VkImageMemoryBarrier> postBarriers{};
-                    postBarriers.reserve(mipParamPack.size());
-                    for (auto& paramPack : mipParamPack) {
-
-                        if (paramPack.mipLevels <= mipLevel) {
-                            continue;
-                        }
-                        barrier.image = paramPack.image;
-                        postBarriers.push_back(barrier);
-                        if (paramPack.width > 1) { paramPack.width /= 2; }
-                        if (paramPack.height > 1) { paramPack.height /= 2; }
-                    }
-                    EWE_VK(vkCmdPipelineBarrier, cmdBuf,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                        0, nullptr,
-                        0, nullptr,
-                        postBarriers.size(), postBarriers.data()
-                    );
-                }
-            }
-
-            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            { //transition of the final mip level, which was copied to but never copied from, to be readable by the fragment shader
-                std::vector<VkImageMemoryBarrier> finalBarriers{ mipParamPack.size() };
-                for (uint8_t i = 0; i < mipParamPack.size(); i++) {
-                    barrier.subresourceRange.baseMipLevel = mipParamPack[i].mipLevels - 1;
-                    finalBarriers[i] = barrier;
-                }
-
-                EWE_VK(vkCmdPipelineBarrier, cmdBuf,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                    0, nullptr,
-                    0, nullptr,
-                    finalBarriers.size(), finalBarriers.data()
+#if BARRIER_DEBUGGING
+                printf(" GRAPHICS TO COMPUTE IMAGE TRANSFER \n");
+#endif
+                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+                imageBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for transfer read operation
+                EWE_VK(vkCmdPipelineBarrier,
+                    cmdBuf,
+                    srcStage, dstStage, // pipeline stage
+                    0, //dependency flags
+                    0, nullptr, //memory barrier
+                    0, nullptr, //buffer barrier
+                    1, &imageBarrier //image barrier
                 );
             }
+            else if (srcStage == dstStage && (srcStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)) {
+#if BARRIER_DEBUGGING
+                printf("COMPUTE TO COMPUTE image barrier \n");
+#endif
+                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+                imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+                imageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
+                imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for transfer read operation
+                EWE_VK(vkCmdPipelineBarrier,
+                    cmdBuf,
+                    srcStage, dstStage, // pipeline stage
+                    0, //dependency flags
+                    0, nullptr, //memory barrier
+                    0, nullptr, //buffer barrier
+                    1, &imageBarrier //image barrier
+                );
+            }
+
         }
+        void TransferImageStage(CommandBuffer& cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImage> const& images) {
+            assert(images.size() > 0);
+            const uint32_t imageCount = static_cast<uint32_t>(images.size());
 
-        void GenerateMipmaps(VkCommandBuffer cmdBuf, MipParamPack paramPack) {
-            GenerateMipmaps(cmdBuf, paramPack.image, paramPack.mipLevels, paramPack.width, paramPack.height);
-        }
+            std::vector<VkImageMemoryBarrier> imageBarriers{};
+            imageBarriers.resize(imageCount);
+            imageBarriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            imageBarriers[0].pNext = nullptr;
+            imageBarriers[0].image = images[0];
+#if EWE_DEBUG
+            assert(imageBarriers[0].image != VK_NULL_HANDLE && "transfering a null image?");
+#endif
 
-        void GenerateMipmaps(VkCommandBuffer cmdBuf, VkImage image, uint8_t mipLevels, uint32_t width, uint32_t height) {
-            //printf("before mip map loop? size of image : %d \n", image.size());
-
-            //printf("after beginning single time command \n");
-
-            VkImageMemoryBarrier barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.pNext = nullptr;
-            barrier.image = image;
-            barrier.srcQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetTransferIndex();
-            barrier.dstQueueFamilyIndex = EWEDevice::GetEWEDevice()->GetGraphicsIndex(); //graphics queue is the only queue that can support vkCmdBlitImage
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
-            barrier.subresourceRange.levelCount = 1;
-
-            VkImageBlit blit{};
-            blit.srcOffsets[0] = { 0, 0, 0 };
-            blit.srcSubresource.baseArrayLayer = 0;
-            blit.srcSubresource.layerCount = 1;
-            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.dstOffsets[0] = { 0, 0, 0 };
-            blit.dstSubresource.baseArrayLayer = 0;
-            blit.dstSubresource.layerCount = 1;
-            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-            for (uint32_t i = 1; i < mipLevels; i++) {
-                barrier.subresourceRange.baseMipLevel = i - 1;
-                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                //printf("before cmd pipeline barrier \n");
-                //this barrier right here needs a transfer queue partner
-                EWE_VK(vkCmdPipelineBarrier, cmdBuf,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                    0, nullptr,
-                    0, nullptr,
-                    1, &barrier
-                );
-                //printf("after cmd pipeline barreir \n");
-                blit.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(width), static_cast<int32_t>(height), 1 };
-                blit.srcSubresource.mipLevel = i - 1;
-                blit.dstOffsets[1] = { width > 1 ? static_cast<int32_t>(width) / 2 : 1, height > 1 ? static_cast<int32_t>(height) / 2 : 1, 1 };
-                blit.dstSubresource.mipLevel = i;
-                //printf("before blit image \n");
-                EWE_VK(vkCmdBlitImage, cmdBuf,
-                    image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    1, &blit,
-                    VK_FILTER_LINEAR
-                );
-                //printf("after blit image \n");
-                //this is going to be set again for each mip level, extremely small performance hit, potentially optimized away
-                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                EWE_VK(vkCmdPipelineBarrier, cmdBuf,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                    0, nullptr,
-                    0, nullptr,
-                    1, &barrier
-                );
-                //printf("after pipeline barrier 2 \n");
-                if (width > 1) { width /= 2; }
-                if (height > 1) { height /= 2; }
+            imageBarriers[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // or VK_IMAGE_ASPECT_DEPTH_BIT for depth images
+            imageBarriers[0].subresourceRange.baseMipLevel = 0;
+            imageBarriers[0].subresourceRange.levelCount = 1;
+            imageBarriers[0].subresourceRange.baseArrayLayer = 0;
+            imageBarriers[0].subresourceRange.layerCount = 1;
+            if (VK::Object->queueIndex[Queue::compute] != VK::Object->queueIndex[Queue::graphics]) {
+                imageBarriers[0].srcQueueFamilyIndex = VK::Object->queueIndex[Queue::compute];
+                imageBarriers[0].dstQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
+            }
+            else {
+                imageBarriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarriers[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             }
 
-            barrier.subresourceRange.baseMipLevel = mipLevels - 1;
-            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            //printf("before pipeline barrier 3 \n");
+            if ((srcStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) &&
+                ((dstStage & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) || (dstStage & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT))
+                ) {
+
+                std::cout << " COMPUTE TO GRAPHICS IMAGE TRANSFER \n";
+                imageBarriers[0].oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+                imageBarriers[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageBarriers[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for compute shader writes
+                imageBarriers[0].dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Access mask for transfer read operation
+            }
+            else if (((srcStage & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) || (srcStage & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)) &&
+                (dstStage & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT))
+            {
+                std::cout << " GRAPHICS TO COMPUTE IMAGE TRANSFER \n";
+                imageBarriers[0].oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageBarriers[0].newLayout = VK_IMAGE_LAYOUT_GENERAL;
+                imageBarriers[0].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
+                imageBarriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
+            }
+
+            for (uint8_t i = 1; i < imageCount; i++) {
+                imageBarriers[i] = imageBarriers[0];
+                imageBarriers[i].image = images[i];
+#if EWE_DEBUG
+                assert(imageBarriers[i].image != VK_NULL_HANDLE && "transfering a null image?");
+#endif
+            }
+
             EWE_VK(vkCmdPipelineBarrier,
                 cmdBuf,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                srcStage,  // pipeline stage
+                dstStage,
+                0,
                 0, nullptr,
                 0, nullptr,
-                1, &barrier
+                imageCount, &imageBarriers[0]
             );
         }
-    }//namespace Image
+}//namespace Barrier
+
 } //namespace EWE

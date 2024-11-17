@@ -26,9 +26,7 @@ namespace EWE {
 		FloatingRock(FloatingRock&&) = default;
 		FloatingRock& operator=(FloatingRock&&) = default;
 
-		void Dispatch(float dt, FrameInfo const& frameInfo);
-
-		void Render(FrameInfo& frameInfo);
+		void Dispatch(float dt);
 	private:
 
 		EWEModel* rockModel;

@@ -88,17 +88,17 @@ namespace EWE {
         static EWEModel* CreateSimpleModelFromFile(const std::string& filePath, Queue::Enum queue);
         static EWEModel* CreateGrassModelFromFile(const std::string& filePath, Queue::Enum queue);
 
-        void BindAndDraw(VkCommandBuffer commandBuffer);
-        void BindAndDrawNoIndex(VkCommandBuffer commandBuffer);
-        void Bind(VkCommandBuffer commandBuffer);
-        void BindNoIndex(VkCommandBuffer commandBuffer);
-        void Draw(VkCommandBuffer commandBuffer);
-        void DrawNoIndex(VkCommandBuffer commandBuffer);
-        void BindAndDrawInstance(VkCommandBuffer commandBuffer);
-        void BindAndDrawInstance(VkCommandBuffer cmdBuf, uint32_t instanceCount);
-        void BindAndDrawInstanceNoIndex(VkCommandBuffer commandBuffer);
-        void BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount);
-        void BindAndDrawInstanceNoBufferNoIndex(VkCommandBuffer commandBuffer, int instanceCount);
+        void BindAndDraw();
+        void BindAndDrawNoIndex();
+        void Bind();
+        void BindNoIndex();
+        void Draw();
+        void DrawNoIndex();
+        void BindAndDrawInstance();
+        void BindAndDrawInstance(uint32_t instanceCount);
+        void BindAndDrawInstanceNoIndex();
+        void BindAndDrawInstanceNoBuffer(int instanceCount);
+        void BindAndDrawInstanceNoBufferNoIndex(int instanceCount);
 
         uint32_t GetVertexCount() { return vertexCount; }
         uint32_t GetIndexCount() { return indexCount; }
@@ -109,7 +109,7 @@ namespace EWE {
 
         //delete needs to be called on this at destruction, or put it into a smart pointer
         //static EWEBuffer* CreateIndexBuffer(std::vector<uint32_t> const& indices);
-        //static EWEBuffer* CreateIndexBuffer(VkCommandBuffer cmdBuf, std::vector<uint32_t> const& indices);
+        //static EWEBuffer* CreateIndexBuffer(CommandBuffer cmdBuf, std::vector<uint32_t> const& indices);
 
     protected:
         //void createVertexBuffers(const std::vector<Vertex>& vertices);

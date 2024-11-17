@@ -4,16 +4,9 @@
 
 namespace EWE {
 	std::unordered_map<PipelineID, PipelineSystem*> PipelineSystem::pipelineSystem{};
-	uint8_t PipelineSystem::frameIndex;
-	VkCommandBuffer PipelineSystem::cmdBuf;
 #if EWE_DEBUG
 	PipelineID PipelineSystem::currentPipe;
 #endif
-
-	void PipelineSystem::SetFrameInfo(FrameInfo const& frameInfo) {
-		cmdBuf = frameInfo.cmdBuf;
-		frameIndex = frameInfo.index;
-	}
 	
 	void PipelineSystem::Emplace(PipelineID pipeID, PipelineSystem* pipeSys) {
 #if EWE_DEBUG
@@ -25,7 +18,7 @@ namespace EWE {
 	void PipelineSystem::Destruct() {
 
 		for (auto iter = pipelineSystem.begin(); iter != pipelineSystem.end(); iter++) {
-			EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), iter->second->pipeLayout, nullptr);
+			EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, iter->second->pipeLayout, nullptr);
 			Deconstruct(iter->second);
 		}
 
@@ -37,7 +30,7 @@ namespace EWE {
 		assert(foundPipe != pipelineSystem.end() && "destructing invalid pipe \n");
 #endif
 
-		EWE_VK(vkDestroyPipelineLayout, EWEDevice::GetVkDevice(), foundPipe->second->pipeLayout, nullptr);
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, foundPipe->second->pipeLayout, nullptr);
 		Deconstruct(foundPipe->second);
 	}
 
@@ -55,7 +48,7 @@ namespace EWE {
 #if EWE_DEBUG
 		assert(currentPipe == myID && "pipe id mismatch on model bind");
 #endif
-		pipe->Bind(cmdBuf);
+		pipe->Bind();
 		bindedTexture = TEXTURE_UNBINDED_DESC;
 	}
 	void PipelineSystem::BindModel(EWEModel* model) {
@@ -63,13 +56,13 @@ namespace EWE {
 #if EWE_DEBUG
 		assert(currentPipe == myID && "pipe id mismatch on model bind");
 #endif
-		bindedModel->Bind(cmdBuf);
+		bindedModel->Bind();
 	}
 	void PipelineSystem::BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
 #if EWE_DEBUG
 		assert(currentPipe == myID && "pipe id mismatch on desc bind");
 #endif
-		vkCmdBindDescriptorSets(cmdBuf,
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			pipeLayout,
 			descSlot, 1,
@@ -88,26 +81,26 @@ namespace EWE {
 
 
 	void PipelineSystem::Push(void* push) {
-		EWE_VK(vkCmdPushConstants, cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, pushStageFlags, 0, pushSize, push);
 	}
 
 	void PipelineSystem::PushAndDraw(void* push) {
-		EWE_VK(vkCmdPushConstants, cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, pushStageFlags, 0, pushSize, push);
 		
 #if EWE_DEBUG
 		assert(bindedModel != nullptr && "attempting to draw a model while none is binded");
 		assert(currentPipe == myID && "pipe id mismatch on model draw");
 #endif
-		bindedModel->Draw(cmdBuf);
+		bindedModel->Draw();
 	}
 	void PipelineSystem::DrawModel() {
 #if EWE_DEBUG
 		assert(bindedModel != nullptr && "attempting to draw a model while none is binded");
 		assert(currentPipe == myID && "pipe id mismatch on model draw");
 #endif
-		bindedModel->Draw(cmdBuf);
+		bindedModel->Draw();
 	}
 	void PipelineSystem::DrawInstanced(EWEModel* model) {
-		model->BindAndDrawInstance(cmdBuf);
+		model->BindAndDrawInstance();
 	}
 }
