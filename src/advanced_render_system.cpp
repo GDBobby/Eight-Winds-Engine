@@ -136,7 +136,6 @@ namespace EWE {
 #if DEBUGGING_PIPELINES
 		printf("drawing skybox \n");
 #endif
-		//skyboxPipeline->bind(frameInfo.frameInfo.cmdBuf);
 		auto pipe = PipelineSystem::At(Pipe::skybox);
 		pipe->BindPipeline();
 		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
@@ -153,7 +152,6 @@ namespace EWE {
 #if DEBUGGING_PIPELINES
 			printf("Drawing texutered game objects \n");
 #endif
-			//texturedPipeline->bind(frameInfo.frameInfo.cmdBuf);
 			pipe->BindPipeline();
 			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
 
@@ -194,47 +192,6 @@ namespace EWE {
 	void AdvancedRenderSystem::renderVisualEffects() {
 
 	}
-#if DRAWING_POINTS
-	void AdvancedRenderSystem::renderPointLights(FrameInfo& frameInfo) {
-		if (objectManager.pointLights.size() < 1) {
-			return;
-		}
-		PipelineManager::pipelines[Pipe::pointLight]->bind(frameInfo.frameInfo.cmdBuf);
-
-		if (pointLightDescriptorSet[frameInfo.frameInfo.index] != VK_NULL_HANDLE) {
-			EWE_VK(vkCmdBindDescriptorSets,
-				frameInfo.frameInfo.cmdBuf,
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				PipelineManager::pipeLayouts[PL_pointLight],
-				0, 1,
-				&pointLightDescriptorSet[frameInfo.frameInfo.index],
-				0,
-				nullptr
-			);
-		}
-		else {
-			std::cout << "point light null handle descriptor " << std::endl;
-		}
-
-		PointLightPushConstants push{};
-		for (int i = 0; i < objectManager.pointLights.size(); i++) {
-			push.position = glm::vec4(objectManager.pointLights[i].transform.translation, 1.f);
-			push.color = glm::vec4(objectManager.pointLights[i].color, objectManager.pointLights[i].lightIntensity);
-			push.radius = objectManager.pointLights[i].transform.scale.x;
-
-			EWE_VK(vkCmdPushConstants, frameInfo.frameInfo.cmdBuf, PipelineManager::pipeLayouts[PL_pointLight], VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PointLightPushConstants), &push);
-			EWE_VK(vkCmdDraw, frameInfo.frameInfo.cmdBuf, 6, 1, 0, 0);
-		}
-		/*
-		push.position = glm::vec4(objectManager.sunPoint.transform.translation, 1.f);
-		push.color = glm::vec4(objectManager.sunPoint.color, objectManager.sunPoint.lightIntensity);
-		push.radius = objectManager.sunPoint.transform.scale.x;
-
-		vkCmdPushConstants(frameInfo.frameInfo.cmdBuf, pointlightLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PointLightPushConstants), &push);
-		vkCmdDraw(frameInfo.frameInfo.cmdBuf, 6, 1, 0, 0);
-		*/
-	}
-#endif
 
 	void AdvancedRenderSystem::RenderLightning() {
 		//printf("beginning render lightning \n");

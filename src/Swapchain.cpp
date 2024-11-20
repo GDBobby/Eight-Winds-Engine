@@ -127,12 +127,12 @@ namespace EWE {
         return false;
     }
 
-    VkResult EWESwapChain::SubmitCommandBuffers(CommandBuffer* buffers, uint32_t *imageIndex) {
+    VkResult EWESwapChain::SubmitCommandBuffers(uint32_t *imageIndex) {
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &buffers->cmdBuf;
+        submitInfo.pCommandBuffers = &VK::Object->GetVKCommandBufferDirect();
 
         syncHub->SubmitGraphics(submitInfo, imageIndex);
 

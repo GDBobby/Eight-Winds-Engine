@@ -76,6 +76,7 @@ namespace EWE {
 		assert(barriers.size() < 256 && "too many barriers"); //reduce the barrier count. if not possible, change the values and data types here
 #endif
 
+        uint8_t lastComparisonIndex = 0;
 		uint8_t currentComparisonIndex = 1;
 		int16_t nextComparisonIndex = -1;
 
@@ -92,7 +93,7 @@ namespace EWE {
                 const bool dstComp{ cDstStageMask == barriers[currentComparisonIndex].dstStageMask };
                 const bool dfComp{ cDependencyFlags == barriers[currentComparisonIndex].dependencyFlags };
                 if (srcComp && dstComp && dfComp) {
-                    barriers[currentComparisonIndex].Merge(barriers[currentComparisonIndex]);
+                    barriers[lastComparisonIndex].Merge(barriers[currentComparisonIndex]);
                     barriers.erase(barriers.begin() + currentComparisonIndex);
                     currentComparisonIndex--;
                 }
@@ -100,7 +101,8 @@ namespace EWE {
                     nextComparisonIndex = currentComparisonIndex;
                 }
             }
-            currentComparisonIndex = nextComparisonIndex;
+            lastComparisonIndex = nextComparisonIndex;
+            currentComparisonIndex = lastComparisonIndex + 1;
         }
 	}
 

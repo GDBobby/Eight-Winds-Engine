@@ -240,23 +240,12 @@ namespace EWE {
         CreateVmaAllocator();
 #endif
 
-        CreateCommandPool();
-        CreateComputeCommandPool();
+        CreateCommandPools();
 #if GPU_LOGGING
         //printf("opening file? \n");
         {
             std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "after creating command pool " << std::endl;
-            logFile.close();
-        }
-#endif
-        //printf("after creating command pool, end of device constructor \n");
-        CreateTransferCommandPool();
-#if GPU_LOGGING
-        //printf("opening file? \n");
-        {
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "after creating transfer comand pool " << std::endl;
+            logFile << "after creating command pools " << std::endl;
             logFile.close();
         }
 #endif
@@ -649,42 +638,53 @@ namespace EWE {
     }
 #endif
 
-    void EWEDevice::CreateComputeCommandPool() {
-        VkCommandPoolCreateInfo poolInfo = {};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::compute];
-
-        //sascha doesnt use TRANSIENT_BIT
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-        EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::compute]);
-    }
-
-    void EWEDevice::CreateCommandPool() {
-        VkCommandPoolCreateInfo poolInfo = {};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-        EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::graphics]);
-    }
-    void EWEDevice::CreateTransferCommandPool() {
-
-        VkCommandPoolCreateInfo poolInfo = {};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        if (VK::Object->queueIndex[Queue::transfer] != -1) {
-            printf("transfer command pool created with transfer queue family \n");
-            poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
-        }
-        else {
-            printf("transfer command pool created with graphics queue family \n");
+    void EWEDevice::CreateCommandPools() {
+        {
+            VkCommandPoolCreateInfo poolInfo = {};
+            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
             poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
+            poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::graphics]);
         }
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        {
+            VkCommandPoolCreateInfo poolInfo = {};
+            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
+            poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::transfer]);
+            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->STGCmdPool);
+        }
+        {
+            VkCommandPoolCreateInfo poolInfo = {};
+            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            if (VK::Object->queueIndex[Queue::transfer] != -1) {
+#if EWE_DEBUG
+                printf("transfer command pool created with transfer queue family \n");
+#endif
+                poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
+            }
+            else {
+#if EWE_DEBUG
+                printf("transfer command pool created with graphics queue family \n");
+#endif
+                poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
+            }
+            poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::transfer]);
+        }
+        {
+            VkCommandPoolCreateInfo poolInfo = {};
+            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::compute];
+
+            //sascha doesnt use TRANSIENT_BIT
+            poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::compute]);
+        }
     }
-
     void EWEDevice::CreateSurface() { window.createWindowSurface(VK::Object->instance, &VK::Object->surface, GPU_LOGGING); }
 
     bool EWEDevice::IsDeviceSuitable(VkPhysicalDevice device) {

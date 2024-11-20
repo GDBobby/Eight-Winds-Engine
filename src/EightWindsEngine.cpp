@@ -319,6 +319,7 @@ namespace EWE {
 	}
 
 	void EightWindsEngine::DrawText(double dt) {
+
 		uiHandler.BeginTextRender();
 #if BENCHMARKING
 		if (displayingRenderInfo) {

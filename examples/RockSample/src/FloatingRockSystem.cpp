@@ -88,7 +88,7 @@ namespace EWE {
 
 			uint32_t accountedRocks = 0;
 			for (uint8_t i = 0; i < trackCount; i++) {
-				trackData[i].tilt = glm::two_pi<float>() * i / trackCount;
+				trackData[i].tilt = glm::pi<float>() * i / trackCount;
 				trackData[i].radius = powf(static_cast<float>(i) + 1.f, 0.6f) + 30.f;
 				trackData[i].RPS = rotDistribution(randomGen);
 				for (uint16_t j = 0; j < trackData[i].rockCount; j++) {

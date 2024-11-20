@@ -195,16 +195,25 @@ namespace EWE {
         cmdBufAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
         for (int queue = 0; queue < Queue::_count; queue++) {
-            if (VK::Object->commandPools[queue] == VK_NULL_HANDLE) {
-                continue;
-            }
-            cmdBufs[queue].resize(size);
-            cmdBufAllocInfo.commandPool = VK::Object->commandPools[queue];
-            EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &cmdBufAllocInfo, cmdBufVector.data());
+            if (queue == Queue::graphics) {
+                cmdBufs[queue].resize(size);
+                cmdBufAllocInfo.commandPool = VK::Object->STGCmdPool;
+                EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &cmdBufAllocInfo, cmdBufVector.data());
 
-            std::sort(cmdBufVector.begin(), cmdBufVector.end());
-            for (int i = 0; i < size; i++) {
-                cmdBufs[queue][i].cmdBuf = cmdBufVector[i];
+                std::sort(cmdBufVector.begin(), cmdBufVector.end());
+                for (int i = 0; i < size; i++) {
+                    cmdBufs[queue][i].cmdBuf = cmdBufVector[i];
+                }
+            }
+            else if (VK::Object->commandPools[queue] != VK_NULL_HANDLE) {
+                cmdBufs[queue].resize(size);
+                cmdBufAllocInfo.commandPool = VK::Object->commandPools[queue];
+                EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &cmdBufAllocInfo, cmdBufVector.data());
+
+                std::sort(cmdBufVector.begin(), cmdBufVector.end());
+                for (int i = 0; i < size; i++) {
+                    cmdBufs[queue][i].cmdBuf = cmdBufVector[i];
+                }
             }
         }
 
@@ -223,7 +232,14 @@ namespace EWE {
 
         std::vector<VkCommandBuffer> rawCmdBufs(size);
         for (uint8_t queue = 0; queue < Queue::_count; queue++) {
-            if (VK::Object->commandPools[queue] != VK_NULL_HANDLE) {
+            if (queue == Queue::graphics) {
+                for (uint8_t i = 0; i < size; i++) {
+                    rawCmdBufs[i] = cmdBufs[queue][i].cmdBuf;
+                }
+                EWE_VK(vkFreeCommandBuffers, VK::Object->vkDevice, VK::Object->STGCmdPool, size, rawCmdBufs.data());
+                cmdBufs[queue].clear();
+            }
+            else if (VK::Object->commandPools[queue] != VK_NULL_HANDLE) {
                 for (uint8_t i = 0; i < size; i++) {
                     rawCmdBufs[i] = cmdBufs[queue][i].cmdBuf;
                 }
@@ -406,7 +422,14 @@ namespace EWE {
             cmdBufAcqMut.lock();
             for(uint8_t i = 0; i < size; i++){
                 if (!cmdBufs[queue][i].inUse) {
-                    cmdBufs[queue][i].BeginSingleTime();
+                    if (queue == Queue::graphics) {
+                        VK::Object->STGMutex.lock();
+                        cmdBufs[queue][i].BeginSingleTime();
+                        VK::Object->STGMutex.unlock();
+                    }
+                    else {
+                        cmdBufs[queue][i].BeginSingleTime();
+                    }
                     cmdBufAcqMut.unlock();
                     return cmdBufs[queue][i];
                 }
@@ -419,7 +442,14 @@ namespace EWE {
     void SyncPool::ResetCommandBuffer(CommandBuffer& cmdBuf, Queue::Enum queue) {
         for (uint8_t i = 0; i < size; i++) {
             if (&cmdBuf == &cmdBufs[queue][i]) {
-                cmdBufs[queue][i].Reset();
+                if (queue == Queue::graphics) {
+                    VK::Object->STGMutex.lock();
+                    cmdBufs[queue][i].Reset();
+                    VK::Object->STGMutex.unlock();
+                }
+                else {
+                    cmdBufs[queue][i].Reset();
+                }
                 return;
             }
         }
@@ -429,7 +459,14 @@ namespace EWE {
         for (uint8_t queue = 0; queue < Queue::_count; queue++) {
             for (uint8_t i = 0; i < size; i++) {
                 if (&cmdBuf == &cmdBufs[queue][i]) {
-                    cmdBufs[queue][i].Reset();
+                    if (queue == Queue::graphics) {
+                        VK::Object->STGMutex.lock();
+                        cmdBufs[queue][i].Reset();
+                        VK::Object->STGMutex.unlock();
+                    }
+                    else{
+                        cmdBufs[queue][i].Reset();
+                    }
                     return;
                 }
             }
@@ -443,7 +480,14 @@ namespace EWE {
             bool found = false;
             for (; i < size; i++) {
                 if (cmdBufVec[j] == &cmdBufs[queue][i]) {
-                    cmdBufs[queue][i].Reset();
+                    if (queue == Queue::graphics) {
+                        VK::Object->STGMutex.lock();
+                        cmdBufs[queue][i].Reset();
+                        VK::Object->STGMutex.unlock();
+                    }
+                    else{
+                        cmdBufs[queue][i].Reset();
+                    }
                     found = true;
                     break;
                 }
@@ -461,7 +505,14 @@ namespace EWE {
                 }
                 for (uint8_t i = 0; i < size; i++) {
                     if (cmdBufVec[j] == &cmdBufs[queue][i]) {
-                        cmdBufs[queue][i].Reset();
+                        if (queue == Queue::graphics) {
+                            VK::Object->STGMutex.lock();
+                            cmdBufs[queue][i].Reset();
+                            VK::Object->STGMutex.unlock();
+                        }
+                        else{
+                            cmdBufs[queue][i].Reset();
+                        }
                         found = true;
                         break;
                     }

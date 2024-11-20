@@ -1,5 +1,9 @@
 #include "EWEngine/Graphics/DebugNaming.h"
 
+#include "EWEngine/Graphics/VulkanHeader.h"
+
+#include <cassert>
+
 namespace EWE{
 #if DEBUG_NAMING
     namespace DebugNaming{

@@ -46,7 +46,7 @@ class EWESwapChain {
 
         //return true if recreating swap chain is necessary
         bool AcquireNextImage(uint32_t *imageIndex);
-        VkResult SubmitCommandBuffers(CommandBuffer *buffers, uint32_t *imageIndex);
+        VkResult SubmitCommandBuffers(uint32_t *imageIndex);
 
         bool CompareSwapFormats(const EWESwapChain& swapChain) const {
             return swapChain.swapChainDepthFormat == swapChainDepthFormat && swapChain.swapChainImageFormat == swapChainImageFormat;

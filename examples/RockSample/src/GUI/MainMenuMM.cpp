@@ -2,6 +2,7 @@
 
 namespace EWE {
 	MainMenuMM::MainMenuMM(float screenWidth, float screenHeight) {
+
 		//float widthRescaling = screenWidth / DEFAULT_WIDTH;
 		const float heightRescaling = screenHeight / DEFAULT_HEIGHT;
 

@@ -53,9 +53,9 @@ namespace EWE {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 	}
-	void ImGUIHandler::endRender(CommandBuffer& cmdBuf) {
+	void ImGUIHandler::endRender() {
 		ImGui::Render();
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf.cmdBuf);
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), VK::Object->GetVKCommandBufferDirect());
 	}
 
 

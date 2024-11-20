@@ -55,8 +55,9 @@ namespace EWE {
 	}
 
 	void EWERenderer::RecreateSwapChain() {
-
+#if EWE_DEBUG
 		std::cout << "recreating swap chain" << std::endl;
+#endif
 		needToReadjust = true;
 		auto extent = mainWindow.getExtent();
 		while (extent.width == 0 || extent.height == 0) {
@@ -110,18 +111,17 @@ namespace EWE {
 
 		EWE_VK(vkBeginCommandBuffer, VK::Object->GetFrameBuffer(), &beginInfo);
 #if DEBUG_NAMING
-		DebugNaming::SetObjectName(VK::Object->GetFrameBuffer().cmdBuf, VK_OBJECT_TYPE_COMMAND_BUFFER, "graphics cmd buffer");
+		DebugNaming::SetObjectName(VK::Object->GetVKCommandBufferDirect(), VK_OBJECT_TYPE_COMMAND_BUFFER, "graphics cmd buffer");
 #endif
 
 		return true;
 	}
 	bool EWERenderer::EndFrame() {
 		//printf("end frame :: isFrameStarted : %d \n", isFrameStarted);
-		auto& commandBuffer = VK::Object->GetFrameBuffer();
 
-		EWE_VK(vkEndCommandBuffer, commandBuffer);
+		EWE_VK(vkEndCommandBuffer, VK::Object->GetFrameBuffer());
 		//printf("after end command buffer \n");
-		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&commandBuffer, &currentImageIndex);
+		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&currentImageIndex);
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
 			mainWindow.resetWindowResizedFlag();
 			RecreateSwapChain();
@@ -140,11 +140,10 @@ namespace EWE {
 	}
 
 	bool EWERenderer::EndFrameAndWaitForFence() {
-		auto& commandBuffer = VK::Object->GetFrameBuffer();
 
-		EWE_VK(vkEndCommandBuffer, commandBuffer);
+		EWE_VK(vkEndCommandBuffer, VK::Object->GetFrameBuffer());
 		//printf("after end command buffer \n");
-		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&commandBuffer, &currentImageIndex);
+		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&currentImageIndex);
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
 			mainWindow.resetWindowResizedFlag();
 			RecreateSwapChain();

@@ -38,7 +38,7 @@ namespace EWE{
     } //namespace Queue
 
     uint32_t FindMemoryType(uint32_t typeFilter, const VkMemoryPropertyFlags properties);
-
+#if COMMAND_BUFFER_TRACING
     struct CommandBuffer {
         VkCommandBuffer cmdBuf;
         bool inUse;
@@ -47,9 +47,9 @@ namespace EWE{
             std::source_location srcLoc;
             Tracking(std::string const& funcName, std::source_location const& srcLoc) : funcName{ funcName }, srcLoc{ srcLoc } {}
         };
-        std::vector<Tracking> usageTracking{};
+        std::vector<Tracking> usageTracking;
 
-        CommandBuffer() : cmdBuf{ VK_NULL_HANDLE }, inUse{ false } {}
+        CommandBuffer() : cmdBuf{ VK_NULL_HANDLE }, inUse{ false }, usageTracking{} {}
 
         //dont use these, but i need it for the vector. reenable to spot check and ensure none happen periodically
         //CommandBuffer(CommandBuffer const& other) = delete;
@@ -63,6 +63,9 @@ namespace EWE{
 
         //void Begin();
     };
+#else
+    typedef CommandBuffer = VkCommandBuffer;
+#endif
 
 
     struct VK {
@@ -81,17 +84,28 @@ namespace EWE{
         VkPhysicalDevice physicalDevice;
         VkInstance instance;
         std::array<std::mutex, Queue::_count> poolMutex{};
+        std::mutex STGMutex{};
         std::array<VkCommandPool, Queue::_count> commandPools = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
+        VkCommandPool STGCmdPool{ VK_NULL_HANDLE }; //separate graphics pool for single time commands
         std::array<VkQueue, Queue::_count> queues;
         std::array<int, Queue::_count> queueIndex;
         VkSurfaceKHR surface;
         VkPhysicalDeviceProperties properties;
 
-        uint8_t frameIndex{};
+        uint8_t frameIndex{0};
 
         std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> renderCommands{};
 
+        VkCommandBuffer& GetVKCommandBufferDirect() {
+#if COMMAND_BUFFER_TRACING
+            return renderCommands[frameIndex].cmdBuf;
+#else
+            renderCommands[frameIndex];
+#endif
+        }
+
         CommandBuffer& GetFrameBuffer() {
+
             return renderCommands[frameIndex];
         }
 #if USING_VMA
@@ -136,25 +150,14 @@ namespace EWE{
 #if CALL_TRACING
 void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation = std::source_location::current());
 
+#if COMMAND_BUFFER_TRACING
 namespace Recasting {
 
     template<typename Arg>
     auto ArgumentCasting(std::string const& funcName, std::source_location const& sourceLocation, Arg&& arg) {
 
         static_assert(!std::is_same_v<Arg, VkCommandBuffer>);
-        //static_assert(!std::is_same_v<std::decay_t<Arg>, EWE::CommandBuffer>);
 
-        //if constexpr (std::is_same_v<std::remove_cv_t<std::remove_pointer_t<Arg>>, EWE::CommandBuffer*>) {
-        //    arg->usageTracking.emplace_back(funcName, sourceLocation);
-        //    return arg->cmdBuf;
-        //}
-        //else if constexpr (std::is_same_v<std::decay_t<Arg>, EWE::CommandBuffer>) {
-        //    arg.usageTracking.emplace_back(funcName, sourceLocation);
-        //    return arg.cmdBuf;
-        //}
-        //else {
-        //    return std::forward<Arg>(arg);
-        //}
         if constexpr (requires{arg.usageTracking.emplace_back(funcName, sourceLocation); }) {
             arg.usageTracking.emplace_back(funcName, sourceLocation);
             return std::forward<VkCommandBuffer>(arg.cmdBuf);
@@ -186,7 +189,7 @@ namespace Recasting {
     template<>
     struct Apply<0> {
         template<typename F, typename T, typename... A>
-        static inline auto apply(F&& f, T&&, A &&... a) {
+        static inline auto apply(F&& f, T&&, A &&... a) requires std::invocable<F, A...> {
             return std::forward<F>(f)(std::forward<A>(a)...);
         }
     };
@@ -210,6 +213,7 @@ namespace Recasting {
         }
     }
 }
+#endif
 
 //if having difficulty with template errors related to this function, define the vulkan function by itself before using this function to ensure its correct
 template<typename F, typename... Args>
@@ -219,20 +223,21 @@ struct EWE_VK {
         //call a preliminary function
 #endif
 
-
+#if COMMAND_BUFFER_TRACING
         const std::string funcName = typeid(func).name();
         auto reinterpretedArgs = Recasting::ReinterpretArguments(funcName, sourceLocation, std::forward<Args>(args)...);
         Recasting::CallWithReinterpretedArguments(sourceLocation, func, std::move(reinterpretedArgs));
+#else
+        if constexpr (std::is_void_v<decltype(std::forward<F>(f)(std::forward<Args>(args)...))>) {
+            //std::bind(std::forward<F>(f), std::forward<Args>(args)...)(); //std bind is constexpr, might be worth using
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+        }
+        else {
+            VkResult vkResult = std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+            EWE_VK_RESULT(vkResult, sourceLocation);
 
-        //if constexpr (std::is_void_v<decltype(std::forward<F>(f)(std::forward<Args>(args)...))>) {
-        //    //std::bind(std::forward<F>(f), std::forward<Args>(args)...)(); //std bind is constexpr, might be worth using
-        //    std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-        //}
-        //else {
-        //    VkResult vkResult = std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-        //    EWE_VK_RESULT(vkResult, sourceLocation);
-
-        //}
+        }
+#endif
 #if WRAPPING_VULKAN_FUNCTIONS
         //call a following function
 #endif

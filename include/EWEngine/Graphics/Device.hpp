@@ -110,9 +110,7 @@ namespace EWE {
         void CreateVmaAllocator();
 #endif
 
-        void CreateCommandPool();
-        void CreateComputeCommandPool();
-        void CreateTransferCommandPool();
+        void CreateCommandPools();
 
 
         // helper functions

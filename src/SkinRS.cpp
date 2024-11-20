@@ -119,8 +119,6 @@ namespace EWE {
 					pipe->BindTextureDescriptor(2, skeleTextureRef.texture);
 
 					for (auto& meshRef : skeleTextureRef.meshes) {
-						//meshRef->BindAndDrawInstanceNoBuffer(frameInfo.cmdBuf, actorCount.at(instanced.first));
-						//printf("drawing instanced : %d \n", instancedBuffers.at(bindedSkeletonID).getInstanceCount());
 						meshRef->BindAndDrawInstanceNoBuffer(instancedBuffers.at(skeleDataRef.first).GetInstanceCount());
 					}
 				}
@@ -171,7 +169,6 @@ namespace EWE {
 					//race condition here for deletion of push constant
 					for (auto& meshRef : skeleTextureRef.meshes) {
 						//printf("for each mesh in non-instanced \n");
-						//meshRef->BindAndDrawInstanceNoBuffer(frameInfo.cmdBuf, actorCount.at(instanced.first));
 						pipe->BindModel(meshRef);
 #if RENDER_DEBUG
 						printf("before drawing to noninstanced skin pipeline : %d \n", boned.first);

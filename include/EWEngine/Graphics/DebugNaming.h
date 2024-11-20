@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EWEngine/Graphics/VulkanHeader.h"
+#include "vulkan/vulkan.h"
 #include "Preprocessor.h"
 
 #if DEBUG_NAMING

@@ -18,6 +18,7 @@ namespace EWE {
 		menuManager{ ewEngine.menuManager },
 		soundEngine{SoundEngine::GetSoundEngineInstance()}
  {
+
 		float screenWidth = ewEngine.uiHandler.getScreenWidth();
 		float screenHeight = ewEngine.uiHandler.getScreenHeight();
 
@@ -35,8 +36,9 @@ namespace EWE {
 
 		//addModulesToMenuManager(screenWidth, screenHeight);
 		{
-			auto loadFunc = [&]() {
+			auto loadFunc = [&, screenWidth, screenHeight]() {
 				printf("adding modules to menu manager : %u\n", std::this_thread::get_id());
+
 				addModulesToMenuManager(screenWidth, screenHeight);
 				loadingThreadTracker.menuModuleThread = true;
 			};

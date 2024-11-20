@@ -12,12 +12,12 @@ namespace EWE {
 		main_thread{ std::this_thread::get_id() }
 	{
 #if EWE_DEBUG
-		printf("COSTRUCTING SYNCHUB\n");
+		printf("CONSTRUCTING SYNCHUB\n");
 #endif
 	}
 #if EWE_DEBUG
 	SyncHub::~SyncHub() {
-		printf("DE COSTRUCTING SYNCHUB\n");
+		printf("DECONSTRUCTING SYNCHUB\n");
 	}
 #endif
 
@@ -28,6 +28,7 @@ namespace EWE {
 #if DEBUG_NAMING
 		DebugNaming::SetObjectName(VK::Object->commandPools[Queue::transfer], VK_OBJECT_TYPE_COMMAND_BUFFER, "transfer command pool");
 		DebugNaming::SetObjectName(VK::Object->commandPools[Queue::graphics], VK_OBJECT_TYPE_COMMAND_BUFFER, "graphics command pool");
+		DebugNaming::SetObjectName(VK::Object->STGCmdPool, VK_OBJECT_TYPE_COMMAND_BUFFER, "STG command pool");
 #endif
 
 		syncHubSingleton->transferSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -57,10 +58,18 @@ namespace EWE {
 	void SyncHub::CreateBuffers() {
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.pNext = nullptr;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandPool = VK::Object->commandPools[Queue::graphics];
 		allocInfo.commandBufferCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &allocInfo, &VK::Object->renderCommands[0]);
+#if COMMAND_BUFFER_TRACING
+		std::array<VkCommandBuffer, MAX_FRAMES_IN_FLIGHT> tempCmdBuf{};
+		EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &allocInfo, &tempCmdBuf[0]);
+		VK::Object->renderCommands[0].cmdBuf = tempCmdBuf[0];
+		VK::Object->renderCommands[1].cmdBuf = tempCmdBuf[1];
+#else
+		EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &allocInfo, VK::Object->renderCommands);
+#endif
 	}
 
 	void SyncHub::CreateSyncObjects() {
@@ -213,49 +222,6 @@ namespace EWE {
 		//std::cout << "before transfer subm
 	}
 
-	//void SyncHub::EndSingleTimeCommandGraphicsSignal(CommandBufferData& cmdBuf, VkSemaphore signalSemaphore){
-	//	EWE_VK(vkEndCommandBuffer, cmdBuf);
-	//	EWE_VK(vkResetFences, VK::Object->vkDevice, 1, &singleTimeFenceGraphics);
-	//	VkSubmitInfo submitInfo{};
-	//	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	//	submitInfo.pNext = nullptr;
-	//	submitInfo.commandBufferCount = 1;
-	//	submitInfo.pCommandBuffers = &cmdBuf.cmdBuf;
-	//	submitInfo.signalSemaphoreCount = 1;
-	//	submitInfo.pSignalSemaphores = &signalSemaphore;
-	//	//std::cout << "before graphics EST signal submit \n";
-	//	EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, singleTimeFenceGraphics);
-	//	//std::cout << "after graphics EST signal submit \n";
-
-	//	EWE_VK(vkWaitForFences, VK::Object->vkDevice, 1, &singleTimeFenceGraphics, VK_TRUE, UINT64_MAX);
-	//	syncPool.ResetCommandBuffer(cmdBuf, Queue::graphics);
-	//}
-	//void SyncHub::EndSingleTimeCommandGraphicsWaitAndSignal(CommandBufferData& cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore){
-	//	EWE_VK(vkEndCommandBuffer, cmdBuf);
-	//	EWE_VK(vkResetFences, VK::Object->vkDevice, 1, &singleTimeFenceGraphics);
-	//	VkSubmitInfo submitInfo{};
-	//	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	//	submitInfo.pNext = nullptr;
-	//	submitInfo.commandBufferCount = 1;
-	//	submitInfo.pCommandBuffers = &cmdBuf.cmdBuf;
-	//	submitInfo.waitSemaphoreCount = 1;
-	//	submitInfo.pWaitSemaphores = &waitSemaphore;
-	//	submitInfo.signalSemaphoreCount = 1;
-	//	submitInfo.pSignalSemaphores = &signalSemaphore;
-	//	//std::cout << "before graphics EST signal submit \n";
-	//	EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, singleTimeFenceGraphics);
-	//	//std::cout << "after graphics EST signal submit \n";
-
-	//	EWE_VK(vkWaitForFences, VK::Object->vkDevice, 1, &singleTimeFenceGraphics, VK_TRUE, UINT64_MAX);
-	//	syncPool.ResetCommandBuffer(cmdBuf, Queue::graphics);
-	//}
-
-	//void SyncHub::EndSingleTimeCommandTransfer(CommandBuffer cmdBuf){
-	//	TransferCommandManager::AddCommand(cmdBuf);
-	//	TransferCommandManager::FinalizeCommand();
-
-	//	AttemptTransferSubmission();
-	//}
 	void SyncHub::EndSingleTimeCommandTransfer() {
 
 		TransferCommandManager::FinalizeCommand();
