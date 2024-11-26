@@ -7,35 +7,29 @@ namespace EWE {
 	static constexpr uint32_t rock_count = 32 * 32;
 #pragma pack(1)
 	struct RockData {
-		glm::vec3 scale;
-		uint32_t p_padding; //not for usage
-
-		//x is 1 azimuthal rotation, y is radius, z is speed. the object rotates around the zenith 
-		glm::vec3 translationSpherical;
-		uint32_t p_padding1; //not for usage
-
-		static void InitData(std::vector<RockData>& rockData, std::default_random_engine& randomGen) {
-
-			std::uniform_real_distribution<float> rotationalDistribution(-2.f, 2.f);
-			std::uniform_real_distribution<float> scaleDist(0.25f, 0.75f);
-			std::uniform_real_distribution<float> aziDist(0.f, glm::two_pi<float>());
-			std::uniform_real_distribution<float> speedDist(0.01f, 0.1f);
-			std::uniform_real_distribution<float> radiusDist(30.f, 35.f);
-
-			for (auto& rock : rockData) {
-
-				const float scale = scaleDist(randomGen);
-				rock.scale.x = scale;
-				rock.scale.y = scale;
-				rock.scale.z = scale;
-
-				rock.translationSpherical.x = aziDist(randomGen);
-				rock.translationSpherical.y = speedDist(randomGen);
-				rock.translationSpherical.z = radiusDist(randomGen);
-			}
-		}
+		float scale;
+		float azimuthalRotation;
+		float radius;
+		float speed;
 	};
 #pragma pop
+
+	static void InitRockData(std::vector<RockData>& rockData, std::default_random_engine& randomGen) {
+
+		std::uniform_real_distribution<float> rotationalDistribution(-2.f, 2.f);
+		std::uniform_real_distribution<float> scaleDist(0.25f, 0.75f);
+		std::uniform_real_distribution<float> aziDist(0.f, glm::two_pi<float>());
+		std::uniform_real_distribution<float> speedDist(0.01f, 0.1f);
+		std::uniform_real_distribution<float> radiusDist(30.f, 35.f);
+
+		for (auto& rock : rockData) {
+			rock.scale = scaleDist(randomGen);
+
+			rock.azimuthalRotation = aziDist(randomGen);
+			rock.radius = radiusDist(randomGen);
+			rock.speed = speedDist(randomGen);
+		}
+	}
 
 	void InitBuffers(EWEBuffer*& rockBuffer, std::vector<RockData>& rockData) {
 		const std::size_t rockBufferSize = rockData.size() * sizeof(RockData);
@@ -92,7 +86,7 @@ namespace EWE {
 
 		std::vector<RockData> rockData(rock_count);
 
-		RockData::InitData(rockData, randomGen);
+		InitRockData(rockData, randomGen);
 
 		//buffers
 		InitBuffers(rockBuffer, rockData);
