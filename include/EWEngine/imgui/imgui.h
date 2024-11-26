@@ -25,7 +25,7 @@
 // (Integer encoded as XYYZZ for use in #if preprocessor conditionals, e.g. '#if IMGUI_VERSION_NUM >= 12345')
 
 #include <EWEngine/Data/EngineDataTypes.h>
-#define ImTextureID EWE::TextureDesc
+#define ImTextureID VkDescriptorSet
 
 #define IMGUI_VERSION       "1.90.3"
 #define IMGUI_VERSION_NUM   19030

@@ -7,135 +7,61 @@ namespace EWE {
 	static constexpr uint32_t rock_count = 32 * 32;
 #pragma pack(1)
 	struct RockData {
-		uint32_t trackID;
-		uint32_t trackPosition;
-		float tilt;
-		float RPS;
 		glm::vec3 scale;
 		uint32_t p_padding; //not for usage
+
+		//x is 1 azimuthal rotation, y is radius, z is speed. the object rotates around the zenith 
+		glm::vec3 translationSpherical;
+		uint32_t p_padding1; //not for usage
+
 		static void InitData(std::vector<RockData>& rockData, std::default_random_engine& randomGen) {
 
 			std::uniform_real_distribution<float> rotationalDistribution(-2.f, 2.f);
-			std::uniform_real_distribution<float> scaleDistribution(0.25f, 0.75f);
-			std::uniform_real_distribution<float> tiltDist(0.f, glm::two_pi<float>());
-
+			std::uniform_real_distribution<float> scaleDist(0.25f, 0.75f);
+			std::uniform_real_distribution<float> aziDist(0.f, glm::two_pi<float>());
+			std::uniform_real_distribution<float> speedDist(0.01f, 0.1f);
+			std::uniform_real_distribution<float> radiusDist(30.f, 35.f);
 
 			for (auto& rock : rockData) {
-				rock.RPS = rotationalDistribution(randomGen);
 
-				const float scale = scaleDistribution(randomGen);
+				const float scale = scaleDist(randomGen);
 				rock.scale.x = scale;
 				rock.scale.y = scale;
 				rock.scale.z = scale;
 
-				rock.tilt = tiltDist(randomGen);
-			}
-		}
-	};
-	struct TrackData {
-		uint32_t rockCount;
-		float RPS;
-		float tilt;
-		float radius;
-		static void InitData(std::vector<TrackData>& trackData, std::vector<RockData>& rockData, uint8_t trackCount, std::default_random_engine& randomGen) {
-			std::uniform_int_distribution<uint32_t> rockDistribution(8, 32);
-
-			std::vector<float> rockPerTrack(trackCount);
-			float rockSum = 0.f;
-			for (uint8_t i = 0; i < trackCount; i++) {
-				rockPerTrack[i] = static_cast<float>(rockDistribution(randomGen));
-				rockSum += rockPerTrack[i];
-			}
-			const float normalizationRatio = rock_count / rockSum;
-			uint32_t preadjustedSum = 0;
-			for (uint8_t i = 0; i < trackCount; i++) {
-				rockPerTrack[i] *= normalizationRatio;
-				trackData[i].rockCount = glm::round(rockPerTrack[i]);
-				preadjustedSum += trackData[i].rockCount;
-			}
-			int32_t difference = static_cast<int32_t>(preadjustedSum) - static_cast<int32_t>(rock_count);
-
-			while (difference != 0) {
-				TrackData* trackPtr = &trackData[0];
-				if (difference < 0) {
-					for (uint32_t i = 1; i < trackCount; i++) {
-						if (trackData[i].rockCount < trackPtr->rockCount) {
-							trackPtr = &trackData[i];
-						}
-					}
-					trackPtr->rockCount++;
-					difference++;
-				}
-				else {
-					for (uint32_t i = 1; i < trackCount; i++) {
-						if (trackData[i].rockCount > trackPtr->rockCount) {
-							trackPtr = &trackData[i];
-						}
-					}
-					trackPtr->rockCount--;
-					difference--;
-				}
-			}
-
-#if EWE_DEBUG
-			uint32_t finalSum = 0;
-			for (uint8_t i = 0; i < trackCount; i++) {
-				finalSum += trackData[i].rockCount;
-			}
-			assert(finalSum == rock_count);
-#endif
-			std::uniform_real_distribution<float> rotDistribution(0.01f, 0.1f); //the higher this number is, the slower they'll be. 250 is 1 full rotation per second
-
-			uint32_t accountedRocks = 0;
-			for (uint8_t i = 0; i < trackCount; i++) {
-				trackData[i].tilt = glm::pi<float>() * i / trackCount;
-				trackData[i].radius = powf(static_cast<float>(i) + 1.f, 0.6f) + 30.f;
-				trackData[i].RPS = rotDistribution(randomGen);
-				for (uint16_t j = 0; j < trackData[i].rockCount; j++) {
-					rockData[j + accountedRocks].trackID = i;
-					rockData[j + accountedRocks].trackPosition = j;
-				}
-				accountedRocks += trackData[i].rockCount;
+				rock.translationSpherical.x = aziDist(randomGen);
+				rock.translationSpherical.y = speedDist(randomGen);
+				rock.translationSpherical.z = radiusDist(randomGen);
 			}
 		}
 	};
 #pragma pop
 
-	void InitBuffers(EWEBuffer*& rockBuffer, EWEBuffer*& trackBuffer, std::vector<RockData>& rockData, std::vector<TrackData>& trackData) {
+	void InitBuffers(EWEBuffer*& rockBuffer, std::vector<RockData>& rockData) {
 		const std::size_t rockBufferSize = rockData.size() * sizeof(RockData);
-		const std::size_t trackBufferSize = trackData.size() * sizeof(TrackData);
 
 		rockBuffer = Construct<EWEBuffer>({rockBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT});
-		trackBuffer = Construct<EWEBuffer>({ trackBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
 
-		StagingBuffer* stagingBuffers[2] = {
-			Construct<StagingBuffer>({ rockBufferSize }),
-			Construct<StagingBuffer>({ trackBufferSize })
-		};
-		StagingBuffer*& rockStagingBuffer = stagingBuffers[0];
-		StagingBuffer*& trackStagingBuffer = stagingBuffers[1];
+		StagingBuffer* rockStagingBuffer = Construct<StagingBuffer>({ rockBufferSize });
 
 
 		rockStagingBuffer->Stage(rockData.data(), rockBufferSize);
-		trackStagingBuffer->Stage(trackData.data(), trackBufferSize);
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 		CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
 		EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
 		eweDevice->CopyBuffer(cmdBuf, rockStagingBuffer->buffer, rockBuffer->GetBuffer(), rockBufferSize);
-		eweDevice->CopyBuffer(cmdBuf, trackStagingBuffer->buffer, trackBuffer->GetBuffer(), trackBufferSize);
 
 		TransferCommandManager::AddCommand(cmdBuf);
 		TransferCommandManager::AddPropertyToCommand(rockStagingBuffer);
-		TransferCommandManager::AddPropertyToCommand(trackStagingBuffer);
 		syncHub->EndSingleTimeCommandTransfer();
 		
 	}
 
 
-	FloatingRock::FloatingRock() :rockTexture{ Material_Texture::CreateMaterialTexture("eye/", true) } {
+	FloatingRock::FloatingRock() :rockMaterial{ Material_Image::CreateMaterialImage("eye/", true) } {
 		//rockModel = EWEModel::CreateModelFromFile("rock1.obj", Queue::transfer);
-		rockTexture.materialFlags |= MaterialF_instanced;
+		rockMaterial.materialFlags |= MaterialF_instanced;
 
 		std::ifstream inFile("models/eye_simpleMesh.ewe", std::ifstream::binary);
 		//inFile.open();
@@ -163,17 +89,13 @@ namespace EWE {
 		//RANDOM NUMBER GENERATOR
 		std::random_device r;
 		std::default_random_engine randomGen(r());
-		std::uniform_int_distribution<uint32_t> trackDistribution(16, 32); //tracks per field (only 1 field)
-		uint32_t trackCount = trackDistribution(randomGen);
 
 		std::vector<RockData> rockData(rock_count);
-		std::vector<TrackData> trackData(trackCount);
 
-		TrackData::InitData(trackData, rockData, trackCount, randomGen);
 		RockData::InitData(rockData, randomGen);
 
 		//buffers
-		InitBuffers(rockBuffer, trackBuffer, rockData, trackData);
+		InitBuffers(rockBuffer, rockData);
 
 		InitComputeData();
 	}
@@ -200,7 +122,6 @@ namespace EWE {
 			previouslySubmitted = true;
 		}
 		EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, compPipeline);
-
 		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_COMPUTE,
 			compPipeLayout,
@@ -224,7 +145,7 @@ namespace EWE {
 		);
 	}
 	void FloatingRock::InitComputeData(){
-		RigidRenderingSystem::AddInstancedMaterialObject(rockTexture, rockModel, rock_count, true);
+		RigidRenderingSystem::AddInstancedMaterialObject(rockMaterial, rockModel, rock_count, true);
 		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(rockModel);
 
 		bufferBarrier[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -252,24 +173,17 @@ namespace EWE {
 
 		//descriptor set
 		EWEDescriptorSetLayout::Builder dslBuilder{};
-		dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-		dslBuilder.AddBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-		dslBuilder.AddBinding(2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-		auto tempDSL = dslBuilder.Build();
+		dslBuilder.AddGlobalBindingForCompute();
+		dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+		dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+		compDSL = dslBuilder.Build();
 
-		{
-			EWEDescriptorWriter descWriter{ tempDSL, DescriptorPool_Global };
-			descWriter.WriteBuffer(0, rockBuffer->DescriptorInfo());
-			descWriter.WriteBuffer(1, trackBuffer->DescriptorInfo());
-			descWriter.WriteBuffer(2, transformBuffers[0]->DescriptorInfo());
-			compDescriptorSet[0] = descWriter.Build();
-		}
-		{
-			EWEDescriptorWriter descWriter{ tempDSL, DescriptorPool_Global };
-			descWriter.WriteBuffer(0, rockBuffer->DescriptorInfo());
-			descWriter.WriteBuffer(1, trackBuffer->DescriptorInfo());
-			descWriter.WriteBuffer(2, transformBuffers[1]->DescriptorInfo());
-			compDescriptorSet[1] = descWriter.Build();
+		for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			EWEDescriptorWriter descWriter{ compDSL, DescriptorPool_Global };
+			DescriptorHandler::AddCameraDataToDescriptor(descWriter, i);
+			descWriter.WriteBuffer(1, rockBuffer->DescriptorInfo());
+			descWriter.WriteBuffer(2, transformBuffers[i]->DescriptorInfo());
+			compDescriptorSet[i] = descWriter.Build();
 		}
 
 		//layout
@@ -285,10 +199,9 @@ namespace EWE {
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 
-		VkDescriptorSetLayout tempVkDSL = tempDSL->GetDescriptorSetLayout();
 
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &tempVkDSL;
+		pipelineLayoutInfo.pSetLayouts = compDSL->GetDescriptorSetLayout();
 
 		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &compPipeLayout);
 

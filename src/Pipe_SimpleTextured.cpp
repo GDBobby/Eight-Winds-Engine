@@ -1,5 +1,4 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Pipe_SimpleTextured.h"
-#include "EWEngine/Graphics/Texture/TextureDSL.h"
 
 namespace EWE {
 	Pipe_SimpleTextured::Pipe_SimpleTextured()
@@ -28,14 +27,15 @@ namespace EWE {
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
 		//pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		std::vector<VkDescriptorSetLayout> tempDSL = {
-			DescriptorHandler::GetDescSetLayout(LDSL_global),
-			TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->GetDescriptorSetLayout()
-		};
+		
+		EWEDescriptorSetLayout::Builder builder{};
+		builder.AddGlobalBindings();
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+		eDSL = builder.Build();
 
 		//printf("tempDSL size : %d \n", tempDSL->size());
-		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
-		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = eDSL->GetDescriptorSetLayout();
 
 		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}

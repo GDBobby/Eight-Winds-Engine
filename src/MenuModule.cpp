@@ -1,24 +1,18 @@
 #include "EWEngine/GUI/MenuModule.h"
 
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 namespace EWE {
 
 	EWEModel* MenuModule::model2D;
 	EWEModel* MenuModule::nineUIModel;
 
-	TextureDesc MenuModule::textureArray{ VK_NULL_HANDLE };
-
 	std::queue<uint16_t> MenuModule::clickReturns{};
 
 	void (*MenuModule::changeMenuStateFromMM)(uint8_t, unsigned char);
 
 	void MenuModule::initTextures() {
-		//these textures are deleted in EWETexture, when the program is cleaning itself up on close
-		printf("before ui texture\n");
-		textureArray = Texture_Manager::CreateUITexture();
-		printf("after ui texture\n");
 
 		model2D = Basic_Model::Quad2D(Queue::transfer);
 		nineUIModel = Basic_Model::NineUIQuad(Queue::transfer);
@@ -27,7 +21,9 @@ namespace EWE {
 	std::pair<UIComponentTypes, int16_t> MenuModule::checkClick(double xpos, double ypos) {
 		std::pair<UIComponentTypes, int16_t> returnVal = { UIT_none, -1 };
 		if (selectedComboBox >= 0) {
+#if EWE_DEBUG
 			printf("checking click for selected combobox : %d \n", selectedComboBox);
+#endif
 			//one combo box is unraveled
 			for (int i = 0; i < comboBoxes[selectedComboBox].comboOptions.size(); i++) {
 				if (comboBoxes[selectedComboBox].comboOptions[i].Clicked(xpos, ypos)) {
@@ -44,7 +40,9 @@ namespace EWE {
 			//int16_t comboClick = comboBoxes[i]; //not finished yet
 			//return comboClick + sliders.size() * 3;
 			if (comboBoxes[i].Clicked(xpos, ypos)) {
+#if EWE_DEBUG
 				printf("clicked a combo box? :%d - xpos:ypos %.1f:%.1f \n", i, xpos, ypos);
+#endif
 
 				selectedComboBox = i;
 				return { UIT_Combobox, -1 };
@@ -53,7 +51,9 @@ namespace EWE {
 		for (int i = 0; i < dropBoxes.size(); i++) {
 			int8_t clickBuffer = dropBoxes[i].Clicked(xpos, ypos);
 			if (clickBuffer > -2) {
+#if EWE_DEBUG
 				printf("clicked a drop box? :%d:%d - xpos:ypos %.1f:%.1f \n", i, clickBuffer, xpos, ypos);
+#endif
 				selectedDropBox = i;
 				return { UIT_Dropbox, -1 };
 			}
@@ -96,20 +96,24 @@ namespace EWE {
 			}
 		}
 
+#if EWE_DEBUG
 		printf("before checking menu bar click \n");
+#endif
 		for (int i = 0; i < menuBars.size(); i++) {
 			int16_t ret = menuBars[i].Clicked(xpos, ypos);
 			if (ret > -1) {
 				return { UIT_MenuBar, ret };
 			}
 		}
+#if EWE_DEBUG
 		printf("after checking menu bar click \n");
+#endif
 
 		return returnVal;
 	}
 
 	void MenuModule::drawNewObjects() {
-		Dimension2::BindTexture2DUI(textureArray);
+		Dimension2::BindDefaultDesc();
 		Simple2DPushConstantData push{};
 		if (checkBoxes.size() > 0) {
 			push.color = glm::vec3{ 1.f };
@@ -159,7 +163,8 @@ namespace EWE {
 			//not considering for texture ordering
 			push.color = glm::vec3(1.f);
 			for (int i = 0; i < images.size(); i++) {
-				Dimension2::BindTexture2DUI(images[i].texture);
+				assert(false && "need to figure out this function, replace BindTexture2DUI");
+				//Dimension2::BindTexture2DUI(images[i].texture);
 				push.scaleOffset = glm::vec4(images[i].transform.scale, images[i].transform.translation);
 				Dimension2::PushAndDraw(push);
 			}
@@ -167,7 +172,7 @@ namespace EWE {
 	}
 	void MenuModule::drawNewNine() {
 
-		Dimension2::BindTexture2DUI(textureArray);
+		Dimension2::BindDefaultDesc();
 		Simple2DPushConstantData push{};
 		push.textureID = MT_NineUI;
 		if (comboBoxes.size() > 0) {

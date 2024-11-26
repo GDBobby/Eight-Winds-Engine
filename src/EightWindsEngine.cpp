@@ -64,7 +64,7 @@ namespace EWE {
 		/*2000 is ballparked, if its not set high enough then all textures will be moved, and invalidate the data*/
 		uiHandler{ SettingsJSON::settingsData.getDimensions(), mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
 		advancedRS{ objectManager, menuManager },
-		textureManager{ },
+		imageManager{ },
 		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), mainWindow.getGLFWwindow(), uiHandler.getTextOverlay() },
 		skinnedRS{ }
 	{
@@ -74,10 +74,17 @@ namespace EWE {
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
 		camera.SetPerspectiveProjection(glm::radians(70.0f), eweRenderer.GetAspectRatio(), 0.1f, 100000.0f);
 
-		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
-		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f });
+		viewerTransform.translation = { -20.f, 21.f, -20.f };
+		camera.NewViewTarget(viewerTransform.translation, { 0.f, 19.5f, 0.f });
+
+		//prettify this later
+		lbo.ambientColor = { 0.1f, 0.1f, 0.1f, 0.1f }; //w is alignment only?
+		lbo.sunlightDirection = { 1.f, 3.f, 1.f, 0.f };
+		lbo.sunlightDirection = glm::normalize(lbo.sunlightDirection);
+		lbo.sunlightColor = { 0.8f,0.8f, 0.8f, 0.5f };
+
+		DescriptorHandler::InitGlobalDescriptors(lbo);
 		InitGlobalBuffers();
-		DescriptorHandler::InitGlobalDescriptors(bufferMap);
 		//printf("back to ui handler? \n");
 		advancedRS.takeUIHandlerPtr(&uiHandler);
 		//advancedRS.updateLoadingPipeline();
@@ -121,18 +128,8 @@ namespace EWE {
 		RigidRenderingSystem::Destruct();
 		MaterialPipelines::CleanupStaticVariables();
 
-		for (auto& dsl : TextureDSLInfo::descSetLayouts) {
-			Deconstruct(dsl.second);
-		}
-		TextureDSLInfo::descSetLayouts.clear();
-		Texture_Manager::GetTextureManagerPtr()->Cleanup();
+		imageManager.Cleanup();
 
-		for (auto& bufferType : bufferMap) {
-			for (auto& buffer : bufferType.second) {
-				Deconstruct(buffer);
-			}
-		}
-		bufferMap.clear();
 		MenuModule::cleanup();
 
 #if DECONSTRUCTION_DEBUG
@@ -141,26 +138,10 @@ namespace EWE {
 	}
 
 	void EightWindsEngine::InitGlobalBuffers() {
-		lbo.ambientColor = { 0.1f, 0.1f, 0.1f, 0.1f }; //w is alignment only?
-		lbo.sunlightDirection = { 1.f, 3.f, 1.f, 0.f };
-		lbo.sunlightDirection = glm::normalize(lbo.sunlightDirection);
-		lbo.sunlightColor = { 0.8f,0.8f, 0.8f, 0.5f };
 
-		bufferMap.try_emplace(Buff_ubo, std::vector<EWEBuffer*>{MAX_FRAMES_IN_FLIGHT});
-		bufferMap.try_emplace(Buff_gpu, std::vector<EWEBuffer*>{MAX_FRAMES_IN_FLIGHT});
+		DescriptorHandler::WriteToLightBuffer(lbo);
 
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			//allocate buffer memory
-			bufferMap.at(Buff_ubo)[i] = Construct<EWEBuffer>({ sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
-			bufferMap.at(Buff_ubo)[i]->Map();
-
-			bufferMap.at(Buff_gpu)[i] = EWEBuffer::CreateAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-
-
-		}
-		camera.SetBuffers(&bufferMap.at(Buff_ubo));
-
-		lbo.sunlightColor = { 0.8f,0.8f, 0.8f, 0.5f };
+		camera.SetBuffers();
 	}
 
 	void EightWindsEngine::LoadingScreen() {
@@ -168,8 +149,8 @@ namespace EWE {
 		//printf("beginning of leaf loading screen, thread ID : %d \n", std::this_thread::get_id());
 		//QueryPerformanceCounter(&QPCstart);
 
-		viewerObject.transform.translation = { -20.f, 21.f, -20.f };
-		camera.NewViewTarget(viewerObject.transform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
+		viewerTransform.translation = { -20.f, 21.f, -20.f };
+		camera.NewViewTarget(viewerTransform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
 		camera.BindBothUBOs();
 		
 		//LARGE_INTEGER averageStart;
@@ -186,15 +167,6 @@ namespace EWE {
 		printf("after init leaf data\n");
 #endif
 
-		leafSystem->LoadLeafModel();
-#if EWE_DEBUG
-		printf("after leaf mesh\n");
-#endif
-		
-		leafSystem->LoadLeafTexture();
-#if EWE_DEBUG
-		printf("after leaf texture\n");
-#endif
 
 		//EWE_VK(vmaCheckCorruption(EWEDevice::GetAllocator(), UINT32_MAX));
 
@@ -298,8 +270,9 @@ namespace EWE {
 				lbo.pointLights[i].color = glm::vec4(objectManager.pointLights[i].color, objectManager.pointLights[i].lightIntensity);
 			}
 			lbo.numLights = static_cast<uint8_t>(objectManager.pointLights.size());
-			bufferMap.at(Buff_gpu)[VK::Object->frameIndex]->WriteToBuffer(&lbo);
-			bufferMap.at(Buff_gpu)[VK::Object->frameIndex]->Flush();
+
+			DescriptorHandler::WriteToLightBuffer(lbo);
+
 		}
 
 		camera.ViewTargetDirect();

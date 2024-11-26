@@ -215,6 +215,7 @@ namespace Recasting {
 }
 #endif
 
+
 //if having difficulty with template errors related to this function, define the vulkan function by itself before using this function to ensure its correct
 template<typename F, typename... Args>
 struct EWE_VK {
@@ -222,6 +223,14 @@ struct EWE_VK {
 #if WRAPPING_VULKAN_FUNCTIONS
         //call a preliminary function
 #endif
+        if constexpr (std::is_same_v<std::decay_t<F>, PFN_vkCmdBindDescriptorSets>) {
+            const auto descriptorSetCount = std::get<4>(std::forward_as_tuple(args...));
+            const auto pDescriptorSets = std::get<5>(std::forward_as_tuple(args...));
+            for (uint32_t i = 0; i < descriptorSetCount; i++) {
+                assert((pDescriptorSets[i] != VK_NULL_HANDLE) && (reinterpret_cast<std::size_t>(pDescriptorSets[i]) != 0xCDCDCDCDCDCDCDCD));
+            }
+        }
+
 
 #if COMMAND_BUFFER_TRACING
         const std::string funcName = typeid(func).name();

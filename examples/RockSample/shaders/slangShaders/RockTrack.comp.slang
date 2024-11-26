@@ -4,49 +4,40 @@ static const float M_PI = 3.1415926535897932384626433832795;
 static const uint MAX_TRACK_COUNT = 32;
 
 struct RockData {
-    uint32_t trackID;
-    uint32_t trackPosition;
-    float tilt;
-    float RPS; // revolutions per second
     vec3 scale;
-};
-struct TrackData {
-    uint32_t rockCount;
-    float RPS; // revolutions per second
-    float tilt;
-    float radius;
+    //x is 1 azimuthal rotation, y is radius, z is speed. the object rotates around the zenith 
+    vec3 translationSpherical; // https://en.wikipedia.org/wiki/Spherical_coordinate_system
 };
 
 struct Transform {
     vec4 translation;
     vec3 scale;
-    vec3 rotation;
+    vec3 forwardDir;
 
     mat4 CalculateTransform() {
-        const float cz = cos(rotation.z);
-        const float sz = sin(rotation.z);
-        const float cx = cos(rotation.x);
-        const float sx = sin(rotation.x);
-        const float cy = cos(rotation.y);
-        const float sy = sin(rotation.y);
+        const float3 upWorld = { 0.0, 1.0, 0.0 };
+        const float3 right = normalize(cross(upWorld, forwardDir));
+        const float3 upDir = cross(forwardDir, right);
+
+
 
         return {
             {
-                scale.x * (cy * cz + sy * sx * sz),
-                scale.x * (cx * sz),
-                scale.x * (cy * sx * sz - cz * sy),
+                scale.x * right.x,
+                scale.x * right.y,
+                scale.x * right.z,
                 0.0f,
             },
             {
-                scale.y * (cz * sy * sx - cy * sz),
-                scale.y * (cx * cz),
-                scale.y * (cy * cz * sx + sy * sz),
+                scale.y * upDir.x,
+                scale.y * upDir.y,
+                scale.y * upDir.z,
                 0.0f,
             },
             {
-                scale.z * (cx * sy),
-                scale.z * (-sx),
-                scale.z * (cy * cx),
+                scale.z * forwardDir.x,
+                scale.z * forwardDir.y,
+                scale.z * forwardDir.z,
                 0.0f,
             },
             translation 
@@ -54,14 +45,16 @@ struct Transform {
     }
 };
 
-layout(set = 0, binding = 0) uniform RockBuffer {
+layout(set = 0, binding = 1) uniform RockBuffer {
     RockData rockInput[1024];
-};
-layout(set = 0, binding = 1) uniform TrackBuffer {
-    TrackData trackInput[MAX_TRACK_COUNT];
 };
 layout(set = 0, binding = 2) buffer OutputBuffer {
     (layout row_major) mat4 rockOutput[];
+};
+
+layout(set = 0, binding = 0) cbuffer GlobalUbo {
+    float4x4 projView;
+    float4 cameraPos;
 };
 
 layout(push_constant) uniform Push {
@@ -73,34 +66,28 @@ layout(push_constant) uniform Push {
 void computeMain(uint3 id: SV_DispatchThreadID) {
     const uint rockIndex = id.x * 32 + id.y;
     const RockData rock = rockInput[rockIndex];
-    const TrackData track = trackInput[rock.trackID];
 
-    const float offsetInTrack = float(rock.trackPosition) / float(track.rockCount) * M_2_PI;
-    const float trackRotation = push.secondsSinceBeginning * track.RPS * M_2_PI;
+    const float zenithAngle = push.secondsSinceBeginning * rock.translationSpherical.z * M_2_PI;
 
-    const float firstDimensionPosition = trackRotation + offsetInTrack;
+    const float cZenith = cos(zenithAngle);
+    const float sZenith = sin(zenithAngle);
 
-    const float cFDP = cos(firstDimensionPosition);
-    const float sFDP = sin(firstDimensionPosition);
-
-    const float cTilt = cos(track.tilt);
-    const float sTilt = sin(track.tilt);
+    const float cAzimuthal = cos(rock.translationSpherical.x);
+    const float sAzimuthal = sin(rock.translationSpherical.x);
 
     Transform transform;
     transform.translation = vec4(
-                                sFDP * cTilt * track.radius,
-                                sFDP * sTilt * track.radius,
-                                cFDP * track.radius,
+                                sZenith * cAzimuthal * rock.translationSpherical.y,
+                                sZenith * sAzimuthal * rock.translationSpherical.y,
+                                cZenith * rock.translationSpherical.y,
                                 1.0 //this goes into the mat4 later as the final 1.0
                             );
 
     transform.scale = rock.scale;
 
-    const float rockRotation = rock.RPS * push.secondsSinceBeginning;
+    transform.forwardDir = cameraPos.xyz - transform.translation.xyz;
 
-    transform.rotation.x = sin(rockRotation) * cos(rock.tilt);
-    transform.rotation.y = sin(rockRotation) * sin(rock.tilt);
-    transform.rotation.z = cos(rockRotation);
+
 
     rockOutput[rockIndex] = transpose(transform.CalculateTransform());
 }

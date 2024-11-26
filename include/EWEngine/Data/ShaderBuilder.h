@@ -1,6 +1,7 @@
 #pragma once
 //#include <glslang/SPIRV/GlslangToSpv.h>
 
+#include "EWEngine/Data/EngineDataTypes.h"
 
 #include <notvulkan/glslang/glslang/Public/ShaderLang.h>
 #include <notvulkan/glslang/glslang/Include/intermediate.h>
@@ -16,7 +17,6 @@
 
 #include <EWEngine/Graphics/Preprocessor.h>
 
-#include "EngineDataTypes.h"
 
 
 

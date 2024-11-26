@@ -8,9 +8,9 @@
 
 namespace EWE {
 	typedef uint8_t MaterialFlags;
-	typedef VkDescriptorSet TextureDesc;
-#ifndef TEXTURE_UNBINDED_DESC
-#define TEXTURE_UNBINDED_DESC VK_NULL_HANDLE
+	//typedef VkDescriptorSet TextureDesc;
+#ifndef IMAGE_INVALID
+#define IMAGE_INVALID UINT64_MAX
 #endif
 #ifndef MAX_MATERIAL_TEXTURE_COUNT
 #define MAX_MATERIAL_TEXTURE_COUNT 6
@@ -21,32 +21,19 @@ namespace EWE {
 	typedef uint32_t SkeletonID;
 	typedef uint32_t PipelineID;
 	typedef uint64_t ModelID;
-
-	//struct MappedStagingBuffer {
-	//	VkBuffer buffer{ VK_NULL_HANDLE };
-	//	VkDeviceMemory memory{ VK_NULL_HANDLE };
-	//	void Free(VkDevice device) {
-	//#if EWE_DEBUG
-	//		assert(buffer != VK_NULL_HANDLE);
-	//#endif
-	//		vkUnmapMemory(device, memory);
-	//		vkDestroyBuffer(device, buffer, nullptr);
-	//		vkFreeMemory(device, memory, nullptr);
-	//	}
-	//};
+	typedef uint64_t ImageID;
+	typedef uint8_t MaterialCount;
 
 
-
-	struct MaterialTextureInfo {
+	struct MaterialInfo {
 		MaterialFlags materialFlags;
-		TextureDesc texture;
-		//MaterialTextureInfo() {}
-		MaterialTextureInfo() {}
-		MaterialTextureInfo(MaterialFlags flags, TextureDesc texID) : materialFlags{ flags }, texture{ texID } {}
+		ImageID imageID;
+		MaterialInfo() {}
+		MaterialInfo(MaterialFlags flags, ImageID imageID) : materialFlags{ flags }, imageID{ imageID } {}
 	};
 
 	namespace Material {
-		enum Flags : uint8_t {
+		enum Flags : MaterialCount {
 			AO = 1,
 			Metal = 1 << 1,
 			Rough = 1 << 2,
@@ -58,7 +45,7 @@ namespace EWE {
 		};
 	}
 	//replacing MaterialAttrributes with Material::Flags
-	enum MaterialAttributes : uint8_t {
+	enum MaterialAttributes : MaterialCount {
 		MaterialF_hasAO = 1,
 		MaterialF_hasMetal = 2,
 		MaterialF_hasRough = 4,

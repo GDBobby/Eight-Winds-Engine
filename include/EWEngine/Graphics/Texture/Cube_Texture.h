@@ -1,10 +1,9 @@
 #pragma once
-
-#include <EWEngine/Graphics/Texture/Texture_Manager.h>
+#include "EWEngine/Graphics/VulkanHeader.h"
 
 namespace EWE {
 	namespace Cube_Texture {
-		TextureDesc CreateCubeImage(std::string texPath, Queue::Enum queue, std::string extension = ".png");
+		ImageID CreateCubeImage(std::string texPath, Queue::Enum queue, std::string extension = ".png");
 	};
 }
 

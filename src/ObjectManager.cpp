@@ -1,7 +1,7 @@
 #include "EWEngine/ObjectManager.h"
 
 #include <iostream>
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 
 namespace EWE {
@@ -30,24 +30,22 @@ namespace EWE {
 		grassField.clear();
 		printf("clearing ewe objects \n");
 
-
-		for (int i = 0; i < materialGameObjects.size(); i++) {
-			RigidRenderingSystem::RemoveByTransform(materialGameObjects[i].textureID, &materialGameObjects[i].transform);
-		}
-		materialGameObjects.clear();
 		eweObjects.clear();
 		printf("after clearing ewe \n");
+		assert(false && " need to fix this bakc up");
+		/* need to come back here
 		auto clearTextures = RigidRenderingSystem::CheckAndClearTextures();
 		printf("afterr clear texutres \n");
-		Texture_Manager* tmPtr = Texture_Manager::GetTextureManagerPtr();
+		Image_Manager* imPtr = Image_Manager::GetTextureManagerPtr();
 		for (auto& texture : clearTextures) {
 			//printf("each texture : %zu \n", texture);
-			tmPtr->RemoveMaterialTexture(texture);
+			//imPtr->RemoveMaterialTexture(texture);
 		}
 		for (int i = 0; i < clearTextures.size(); i++) {
 			//printf("each smart texture : %d \n", clearTextures[i]);
-			tmPtr->ClearSceneTextures();
+			//imPtr->ClearSceneTextures();
 		}
 		printf("after removing play objects \n");
+		*/
 	}
 }

@@ -30,7 +30,7 @@ namespace EWE {
 	private:
 
 		EWEModel* rockModel;
-		MaterialTextureInfo rockTexture;
+		MaterialInfo rockMaterial;
 
 		struct RockTrack {
 			std::vector<uint32_t> currentPosition{};
@@ -52,7 +52,7 @@ namespace EWE {
 		//compute data
 		VkPipeline compPipeline{ VK_NULL_HANDLE };
 		VkPipelineLayout compPipeLayout{ VK_NULL_HANDLE };
-		VkDescriptorSet compDescriptorSet[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> compDescriptorSet = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		VkShaderModule compShaderModule{ VK_NULL_HANDLE };
 		struct RockCompPushData {
 			float secondsSinceBeginning{0.f};
@@ -61,7 +61,6 @@ namespace EWE {
 		EWEDescriptorSetLayout* compDSL{ nullptr };
 
 		EWEBuffer* rockBuffer{ nullptr };
-		EWEBuffer* trackBuffer{ nullptr };
 
 		VkBufferMemoryBarrier bufferBarrier[MAX_FRAMES_IN_FLIGHT * 2];
 		bool previouslySubmitted = false;

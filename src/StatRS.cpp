@@ -25,7 +25,7 @@ namespace EWE {
 
 		Deconstruct(statMainObject);
 	}
-	bool StaticRenderSystem::AddStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureDesc texture, TransformComponent& transform) {
+	bool StaticRenderSystem::AddStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, ImageID imgID, TransformComponent& transform) {
 
 		return false;
 	}

@@ -1,4 +1,7 @@
 #include "EWEngine/Graphics/Texture/Cube_Texture.h"
+
+
+#include <EWEngine/Graphics/Texture/Image_Manager.h>
 #include "EWEngine/Graphics/Texture/Sampler.h"
 #include "EWEngine/Graphics/TransferCommandManager.h"
 
@@ -20,10 +23,10 @@ namespace EWE {
             void* data;
 #if USING_VMA
 
-            StagingBuffer* stagingBuffer = new StagingBuffer(imageSize, EWEDevice::GetAllocator());
+            StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize, EWEDevice::GetAllocator() });
             EWE_VK(vmaMapMemory, EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
 #else
-            StagingBuffer* stagingBuffer = new StagingBuffer(imageSize);
+            StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize });
             EWE_VK(vkMapMemory, VK::Object->vkDevice, stagingBuffer->memory, 0, imageSize, 0, &data);
 #endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
@@ -123,14 +126,11 @@ namespace EWE {
             cubeImage.sampler = Sampler::GetSampler(samplerInfo);
         }
 
-        TextureDesc CreateCubeImage(std::string texPath, Queue::Enum queue, std::string extension) {
+        ImageID CreateCubeImage(std::string texPath, Queue::Enum queue, std::string extension) {
             {
-                ImageTracker* foundImage = Texture_Manager::FindByPath(texPath);
-                if (foundImage != nullptr) {
-#if EWE_DEBUG
-                    assert(foundImage->usedInTexture.size() == 1 && "cube image used in multiple descriptors");
-#endif
-                    return *foundImage->usedInTexture.begin();
+                ImageID foundImage = Image_Manager::FindByPath(texPath);
+                if (foundImage != IMAGE_INVALID) {
+                    return foundImage;
                 }
             }
             const std::array<std::string, 6> cubeNames = {
@@ -149,9 +149,9 @@ namespace EWE {
 
                 assert(!((i > 0) && ((pixelPeeks[i].width != pixelPeeks[i - 1].width) || (pixelPeeks[i].height != pixelPeeks[i - 1].height))) && "failed to load cube texture, bad dimensions");
             }
-
-            ImageTracker* cubeTracker = Texture_Manager::ConstructEmptyImageTracker(texPath);
-            ImageInfo& cubeImage = cubeTracker->imageInfo;
+            
+            Image_Manager::ImageReturn cubeTracker = Image_Manager::ConstructEmptyImageTracker(texPath);
+            ImageInfo& cubeImage = cubeTracker.imgTracker->imageInfo;
 
             CreateCubeImage(cubeImage, pixelPeeks, queue);
             CreateCubeImageView(cubeImage);
@@ -161,7 +161,7 @@ namespace EWE {
             cubeImage.descriptorImageInfo.imageView = cubeImage.imageView;
             cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-            return Texture_Manager::EmplaceSkyboxImageTracker(cubeTracker, texPath);
+            return cubeTracker.imgID;
         }
     }//namespace Cube_Texture
 }//namespace EWE

@@ -74,7 +74,7 @@ namespace EWE {
 
 		AdvancedRenderSystem advancedRS;
 
-		Texture_Manager textureManager;
+		Image_Manager imageManager;
 		MenuManager menuManager;
 		SkinRenderSystem skinnedRS;
 
@@ -82,9 +82,7 @@ namespace EWE {
 
 		uint32_t beginRoundFrames = 0; //move this out
 
-		std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>> bufferMap;
-
-		EWEGameObject viewerObject{ EWEGameObject::createGameObject() };
+		TransformComponent viewerTransform{};
 		LightBufferObject lbo;
 
 		//std::chrono::high_resolution_clock::time_point currentTime;// = std::chrono::high_resolution_clock::now();

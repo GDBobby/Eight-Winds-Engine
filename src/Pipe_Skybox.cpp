@@ -1,6 +1,5 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Pipe_Skybox.h"
 #include "EWEngine/Graphics/DescriptorHandler.h"
-#include "EWEngine/Graphics/Texture/TextureDSL.h"
 
 namespace EWE {
 	Pipe_Skybox::Pipe_Skybox()
@@ -21,13 +20,14 @@ namespace EWE {
 
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
-		std::vector<VkDescriptorSetLayout> tempDSL = {
-			DescriptorHandler::GetDescSetLayout(LDSL_global),
-			TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->GetDescriptorSetLayout()
-		};
+
+		EWEDescriptorSetLayout::Builder builder{};
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+		eDSL = builder.Build();
 			
-		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
-		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = eDSL->GetDescriptorSetLayout();
 
 		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}

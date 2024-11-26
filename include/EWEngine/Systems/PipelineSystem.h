@@ -34,21 +34,25 @@ namespace EWE {
 
 		void BindModel(EWEModel* model);
 		void BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet);
-		void BindTextureDescriptor(uint8_t descSlot, TextureDesc texID);
 
 		void Push(void* push);
 		virtual void PushAndDraw(void* push);
 		void DrawModel();
 		virtual void DrawInstanced(EWEModel* model);
+		
+		[[nodiscard]] EWEDescriptorSetLayout* GetDSL() {
+			return eDSL;
+		}
 
 	protected:
 		std::unique_ptr<EWEPipeline> pipe{nullptr};
 		VkPipelineLayout pipeLayout{};
-		TextureDesc bindedTexture = TEXTURE_UNBINDED_DESC;
+		VkDescriptorSet bindedTexture = VK_NULL_HANDLE;
 		//VkPipelineCache cache{VK_NULL_HANDLE};
 		EWEModel* bindedModel = nullptr;
 		VkShaderStageFlags pushStageFlags;
-		uint32_t pushSize;
+		uint32_t pushSize; 
+		EWEDescriptorSetLayout* eDSL{};
 #if EWE_DEBUG
 		PipelineID myID;
 #endif

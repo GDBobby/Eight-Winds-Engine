@@ -1,11 +1,11 @@
 #pragma once
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 
 namespace EWE {
-	class Material_Texture {
+	class Material_Image {
 	private:
-		enum MaterialTexType : MaterialFlags {
+		enum MaterialImgType : MaterialFlags {
 			MT_bump,
 			MT_albedo,
 			MT_normal,
@@ -15,7 +15,7 @@ namespace EWE {
 		};
 
 	public:
-		static MaterialTextureInfo CreateMaterialTexture(std::string texPath, bool global);
+		static MaterialInfo CreateMaterialImage(std::string texPath, bool global);
 	protected:
 
 	};

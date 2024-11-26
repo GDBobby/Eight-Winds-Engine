@@ -7,10 +7,11 @@
 namespace EWE {
 	namespace SkinRS {
 		struct TextureMeshStruct {
-			TextureDesc texture;
+			std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets;
+			ImageID imageID;
 			std::vector<EWEModel*> meshes;
-			TextureMeshStruct(TextureDesc texture) : texture{ texture }, meshes{} {}
-			TextureMeshStruct(TextureDesc texture, std::vector<EWEModel*> meshes) : texture{ texture }, meshes{ meshes } {}
+			TextureMeshStruct(std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets, ImageID imgID) : descriptorSets{ descriptorSets }, imageID{ imgID }, meshes {} {}
+			TextureMeshStruct(std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets, std::vector<EWEModel*> meshes, ImageID imgID) : descriptorSets{ descriptorSets }, imageID{ imgID }, meshes{ meshes } {}
 		};
 		struct PushConstantStruct {
 			std::vector<void*> data{};
@@ -19,14 +20,14 @@ namespace EWE {
 			PushConstantStruct(void* data, uint8_t size) : data{ data }, size{ size } {
 				count++;
 			}
-			void addData(void* data, uint8_t pushSize) {
+			void AddData(void* data, uint8_t pushSize) {
 #if EWE_DEBUG
 				assert(pushSize == size && "misaligned push size");
 #endif
 				count++;
 				this->data.emplace_back(data);
 			}
-			void remove(void* removalData) {
+			void Remove(void* removalData) {
 
 				auto findVal = std::find(data.cbegin(), data.cend(), removalData);
 				if (findVal != data.cend()) {

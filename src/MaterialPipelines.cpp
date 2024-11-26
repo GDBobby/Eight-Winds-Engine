@@ -1,6 +1,6 @@
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 #include "EWEngine/Graphics/PushConstants.h"
 
@@ -20,7 +20,56 @@ namespace EWE {
 	VkPipelineCache instanceMaterialPipelineCache{ VK_NULL_HANDLE };
 	VkPipelineCache skinPipelineCache{ VK_NULL_HANDLE };
 	VkPipelineCache instanceSkinPipelineCache{ VK_NULL_HANDLE };
-	MaterialPipeLayoutInfo materialPipeLayout[DYNAMIC_PIPE_LAYOUT_COUNT];
+	std::array<MaterialPipeLayoutInfo, MATERIAL_PIPE_LAYOUT_COUNT> materialPipeLayout;
+	std::array<EWEDescriptorSetLayout*, MATERIAL_PIPE_LAYOUT_COUNT> eDSLs;
+
+	EWEDescriptorSetLayout* MaterialPipelines::GetDSL(uint16_t pipeLayoutIndex) {
+#if EWE_DEBUG
+		assert(eDSLs[pipeLayoutIndex] != VK_NULL_HANDLE);
+#endif
+		return eDSLs[pipeLayoutIndex];
+	}
+	EWEDescriptorSetLayout* MaterialPipelines::GetDSLFromFlags(MaterialFlags flags) {
+		return GetDSL(MaterialPipelines::GetPipeLayoutIndex(flags));
+	}
+
+	void InitPipeDSL(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
+		//printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
+
+		//might be relevant to only build these once, not sure if its a big deal
+		if (eDSLs[pipeLayoutIndex] != VK_NULL_HANDLE) {
+			return;
+		}
+
+		EWEDescriptorSetLayout::Builder builder{};
+		builder.AddGlobalBindings();
+#if EWE_DEBUG
+		printf("getting material PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
+#endif
+		if (hasBones && instanced) {
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+		}
+		else if (hasBones) {
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+		}
+		else if (instanced) {
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+		}
+		if (hasBump) {
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+		}
+		else {
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+		}
+
+		eDSLs[pipeLayoutIndex] = builder.Build();
+#if DEBUG_NAMING
+		std::string materialDSLName = "material DSL[" + std::to_string(pipeLayoutIndex) + ']';
+		printf("materialDSLName : %s\n", materialDSLName.c_str());
+		DebugNaming::SetObjectName(*eDSLs[pipeLayoutIndex]->GetDescriptorSetLayout(), VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, materialDSLName.c_str());
+#endif
+	}
 
 	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilepath, std::string const& fragFilepath, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertFilepath, fragFilepath, configInfo } {}
 
@@ -77,25 +126,6 @@ namespace EWE {
 		return;
 	}
 
-	constexpr uint16_t GetPipeLayoutIndex(MaterialFlags flags) {
-		const bool hasBones = flags & MaterialF_hasBones;
-		const bool instanced = flags & MaterialF_instanced;
-		const bool hasBumps = flags & MaterialF_hasBump;
-		const bool hasNormal = flags & MaterialF_hasNormal;
-		const bool hasRough = flags & MaterialF_hasRough;
-		const bool hasMetal = flags & MaterialF_hasMetal;
-		const bool hasAO = flags & MaterialF_hasAO;
-		if (hasBones && hasBumps) {
-			printf("ERROR: HAS BONES AND BUMP, NOT CURRENTLY SUPPORTED \n");
-		}
-
-		const uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-		const uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced)));
-#if EWE_DEBUG
-		printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
-#endif
-		return pipeLayoutIndex;
-	}
 
 	void InitMaterialPipelineConfig(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags) {
 		bool hasBones = flags & MaterialF_hasBones;
@@ -118,9 +148,9 @@ namespace EWE {
 
 		uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
 		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + 2 * instanced));
-		printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
 
 #if EWE_DEBUG
+		printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
 		if (textureCount == 0) {
 			//undesirable, but not quite a bug. only passing in an albedo texture is valid
 			printf("material pipeline, flags textureCount is 0 \n");
@@ -141,7 +171,6 @@ namespace EWE {
 
 	void MaterialPipelines::BindPipeline() {
 		pipeline.Bind();
-		bindedTexture = TEXTURE_UNBINDED_DESC;
 		bindedModel = nullptr;
 	}
 	void MaterialPipelines::BindModel(EWEModel* model) {
@@ -165,13 +194,6 @@ namespace EWE {
 			descSet,
 			0, nullptr
 		);
-	}
-
-	void MaterialPipelines::BindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
-		if (bindedTexture != texID) {
-			BindDescriptor(descSlot, &texID);
-			bindedTexture = texID;
-		}
 	}
 	void MaterialPipelines::Push(void* push) {
 		materialPipeLayout[pipeLayoutIndex].Push(push);
@@ -259,9 +281,9 @@ namespace EWE {
 				pipelineLayoutInfo.pushConstantRangeCount = 1;
 			}
 
-			std::vector<VkDescriptorSetLayout> tempDSL{ GetPipeDSL(textureCount, hasBones, instanced, hasBump) };
-			pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
-			pipelineLayoutInfo.pSetLayouts = tempDSL.data();
+			InitPipeDSL(pipeLayoutIndex, textureCount, hasBones, instanced, hasBump);
+			pipelineLayoutInfo.setLayoutCount = 1;
+			pipelineLayoutInfo.pSetLayouts = eDSLs[pipeLayoutIndex]->GetDescriptorSetLayout();
 
 #if EWE_DEBUG
 			printf("creating material pipe layout with index : %d \n", pipeLayoutIndex);
@@ -351,8 +373,9 @@ namespace EWE {
 	}
 
 	void MaterialPipelines::InitStaticVariables() {
-		for (int i = 0; i < DYNAMIC_PIPE_LAYOUT_COUNT; i++) {
+		for (int i = 0; i < MATERIAL_PIPE_LAYOUT_COUNT; i++) {
 			materialPipeLayout[i].pipeLayout = VK_NULL_HANDLE;
+			eDSLs[i] = VK_NULL_HANDLE;
 		}
 	}
 
@@ -371,9 +394,12 @@ namespace EWE {
 		}
 		instancedBonePipelines.clear();
 
-		for (auto& plInfo : materialPipeLayout) {
-			if (plInfo.pipeLayout != VK_NULL_HANDLE) {
-				EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, plInfo.pipeLayout, nullptr);
+		for (uint8_t i = 0; i < MATERIAL_PIPE_LAYOUT_COUNT; i++) {
+			if (materialPipeLayout[i].pipeLayout != VK_NULL_HANDLE) {
+				EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, materialPipeLayout[i].pipeLayout, nullptr);
+			}
+			if (eDSLs[i] != VK_NULL_HANDLE) {
+				Deconstruct(eDSLs[i]);
 			}
 		}
 
@@ -395,39 +421,6 @@ namespace EWE {
 #endif
 	}
 
-	std::vector<VkDescriptorSetLayout> MaterialPipelines::GetPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
-		//printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
-
-		std::vector<VkDescriptorSetLayout> returnLayouts{};
-
-		returnLayouts.push_back(DescriptorHandler::GetDescSetLayout(LDSL_global));
-#if EWE_DEBUG
-		printf("getting dynamic PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
-#endif
-		if (hasBones && instanced) {
-			returnLayouts.push_back(DescriptorHandler::GetDescSetLayout(LDSL_largeInstance));
-
-		}
-		else if (hasBones) {
-			returnLayouts.push_back(DescriptorHandler::GetDescSetLayout(LDSL_boned));
-		}
-		else if (instanced) {
-			auto tempDSL = EWEDescriptorSetLayout::Builder()
-				.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-				.Build();
-			returnLayouts.push_back(tempDSL->GetDescriptorSetLayout());
-		}
-		TextureDSLInfo dslInfo{};
-		if (hasBump) {
-			dslInfo.SetStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT, 1);
-		}
-		dslInfo.SetStageTextureCount(VK_SHADER_STAGE_FRAGMENT_BIT, textureCount - hasBump + 1); //+1 for the albedo, which isnt incldued in textureCount
-		returnLayouts.push_back(dslInfo.GetDescSetLayout()->GetDescriptorSetLayout());
-		//if (instanced) {
-			//printf("returning instanced PDSL size : %d \n", dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].size());
-		//}
-		return returnLayouts;
-	}
 
 	MaterialPipelines* MaterialPipelines::CreatePipe(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags) {
 
@@ -490,8 +483,8 @@ namespace EWE {
 				}
 			}
 		}
-
-		assert(false && "investigate this");
+		//in a release build, tag this unreachable
+		assert(false);
 		return nullptr;
 	}
 }

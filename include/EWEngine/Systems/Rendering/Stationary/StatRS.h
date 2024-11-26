@@ -7,7 +7,7 @@ namespace EWE {
 	private:
 		struct GPUStruct {
 			std::unique_ptr<EWEModel> modelData;
-			TextureDesc texture;
+			ImageID img;
 			std::vector<TransformID> transformIDs{};
 		};
 		struct PipelineStruct {
@@ -27,7 +27,7 @@ namespace EWE {
 		static void InitStaticRS(uint32_t pipelineCount, uint32_t modelLimit);
 		static void DestructStaticRS();
 
-		static bool AddStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, TextureDesc texture, TransformComponent& transform);
+		static bool AddStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, ImageID imgID, TransformComponent& transform);
 		static bool AddStaticToBack();
 
 

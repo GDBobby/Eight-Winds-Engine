@@ -23,11 +23,11 @@ namespace EWE {
 #endif
         std::vector<EWEModel*> meshes{}; //this will hold the vertex/index buffers
         std::vector<EWEModel*> meshesNT{};
-        std::vector<TextureDesc> textureIDs{};
-        std::vector<TextureDesc> textureNTIDs{};
+        std::vector<ImageID> textureIDs{};
+        std::vector<ImageID> textureNTIDs{};
 
         std::vector<std::pair<MaterialFlags, //pipeline flags
-            std::vector<std::pair<TextureDesc, //texture
+            std::vector<std::pair<ImageID, //texture
             std::vector<EWEModel* //meshPtr
             >>>>> pipePairs{};
 
@@ -65,6 +65,6 @@ namespace EWE {
         int32_t handBone = -1;
 
         void ReadAnimData(std::string filePath, bool partial, bool endian);
-        void LoadTextures(std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath);
+        void LoadTextures(std::string filePath, std::pair<std::vector<MaterialInfo>, std::vector<MaterialInfo>>& textureTracker, std::string texturePath);
     };
 }

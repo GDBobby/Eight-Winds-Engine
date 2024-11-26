@@ -5,7 +5,7 @@
 namespace EWE {
 	class RigidInstancedBufferHandler {
 	public:
-		RigidInstancedBufferHandler(uint32_t entityCount, bool computedTransforms);
+		RigidInstancedBufferHandler(uint32_t entityCount, bool computedTransforms, EWEDescriptorSetLayout* eDSL, ImageID imgID);
 		~RigidInstancedBufferHandler();
 
 		void WritePartialData(glm::mat4* transform, std::size_t offset);
@@ -15,14 +15,8 @@ namespace EWE {
 		void ChangeEntityCount(uint32_t entity_count);
 		void Flush();
 
-		void SetFrameIndex(uint8_t frameIndex);
-
-		const VkDescriptorSet* GetDescriptor() const {
-			return &descriptorSet[VK::Object->frameIndex];
-		}
-
-		VkDescriptorBufferInfo* GetDescriptorInfo() {
-			return transformBuffer[frameIndex]->DescriptorInfo();
+		VkDescriptorBufferInfo* GetDescriptorBufferInfo(uint8_t whichFrame) {
+			return transformBuffer[whichFrame]->DescriptorInfo();
 		}
 		uint32_t GetCurrentEntityCount() const {
 			return currentEntityCount;
@@ -31,22 +25,20 @@ namespace EWE {
 			return transformBuffer;
 		}
 		const EWEBuffer* GetBuffer() const {
-			return transformBuffer[frameIndex];
+			return transformBuffer[VK::Object->frameIndex];
 		}
 		bool GetComputing() const {
 			return computedTransforms;
 		}
 
 	private:
-		std::array<EWEBuffer*, 2> transformBuffer = { nullptr, nullptr };
+		std::array<EWEBuffer*, 2> transformBuffer{ nullptr, nullptr };
 
 		std::size_t currentMemOffset{ 0 };
 
 		uint32_t maxEntityCount;
 		uint32_t currentEntityCount;
-		uint8_t frameIndex; 
 		bool computedTransforms;
-		VkDescriptorSet descriptorSet[2];
 	};
 }//namespace EWE
 

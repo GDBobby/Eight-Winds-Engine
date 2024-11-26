@@ -1,7 +1,9 @@
 #include "EWEngine/Systems/Rendering/Rigid/RigidBufferHandler.h"
 
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
+
 namespace EWE {
-	RigidInstancedBufferHandler::RigidInstancedBufferHandler(uint32_t entityCount, bool computedTransforms) : computedTransforms{ computedTransforms } {
+	RigidInstancedBufferHandler::RigidInstancedBufferHandler(uint32_t entityCount, bool computedTransforms, EWEDescriptorSetLayout* eDSL, ImageID imgID) : computedTransforms{ computedTransforms } {
 		VkMemoryPropertyFlagBits memoryFlags;
 		if (computedTransforms) {
 			memoryFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -15,22 +17,6 @@ namespace EWE {
 
 		transformBuffer[0] = Construct<EWEBuffer>({ maxEntityCount * sizeof(glm::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, memoryFlags });
 		transformBuffer[1] = Construct<EWEBuffer>({ maxEntityCount * sizeof(glm::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, memoryFlags });
-
-		EWEDescriptorSetLayout* descLayout;
-
-		EWEDescriptorSetLayout::Builder dslBuilder{};
-		dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 1);
-		descLayout = dslBuilder.Build();
-		{
-			EWEDescriptorWriter descWriter{ descLayout, DescriptorPool_Global };
-			descWriter.WriteBuffer(0, transformBuffer[0]->DescriptorInfo());
-			descriptorSet[0] = descWriter.Build();
-		} 
-		{
-			EWEDescriptorWriter descWriter{ descLayout, DescriptorPool_Global };
-			descWriter.WriteBuffer(0, transformBuffer[1]->DescriptorInfo());
-			descriptorSet[1] = descWriter.Build();
-		}
 	}
 
 	RigidInstancedBufferHandler::~RigidInstancedBufferHandler() {
@@ -39,14 +25,14 @@ namespace EWE {
 	}
 
 	void RigidInstancedBufferHandler::WritePartialData(glm::mat4* transform, std::size_t offset) {
-		transformBuffer[frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4), offset);
+		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4), offset);
 	}
 	void RigidInstancedBufferHandler::WritePartialData(glm::mat4* transform) {
-		transformBuffer[frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4), currentMemOffset);
+		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4), currentMemOffset);
 		currentMemOffset += sizeof(glm::mat4);
 	}
 	void RigidInstancedBufferHandler::WriteFullData(glm::mat4* transform) {
-		transformBuffer[frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4) * currentEntityCount, 0);
+		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4) * currentEntityCount, 0);
 	}
 
 	void RigidInstancedBufferHandler::ChangeEntityCount(uint32_t entityCount) {
@@ -67,18 +53,12 @@ namespace EWE {
 #endif
 		currentEntityCount = entityCount;
 	}
-	void RigidInstancedBufferHandler::SetFrameIndex(uint8_t frameIndex) {
-		this->frameIndex = frameIndex;
-		if (!computedTransforms) {
-			transformBuffer[frameIndex]->Map();
-		}
-	}
 	void RigidInstancedBufferHandler::Flush() {
 #if EWE_DEBUG
 		assert(!computedTransforms && "this buffer is not writeable from CPU");
 #endif
-		transformBuffer[frameIndex]->Flush();
+		transformBuffer[VK::Object->frameIndex]->Flush();
 		currentMemOffset = 0;
-		transformBuffer[frameIndex]->Unmap();
+		transformBuffer[VK::Object->frameIndex]->Unmap();
 	}
 }

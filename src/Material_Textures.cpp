@@ -1,5 +1,6 @@
 #include "EWEngine/Graphics/Texture/Material_Textures.h"
 
+#include <filesystem>
 
 #ifndef TEXTURE_DIR
 #define TEXTURE_DIR "textures/"
@@ -8,11 +9,22 @@
 
 namespace EWE {
 
-    MaterialTextureInfo Material_Texture::CreateMaterialTexture(std::string texPath, bool global) {
+    MaterialInfo Material_Image::CreateMaterialImage(std::string texPath, bool global) {
 
-        const std::array<std::vector<std::string>, MAX_MATERIAL_TEXTURE_COUNT> smartTextureTypes = {
+        auto imPtr = Image_Manager::GetImageManagerPtr();
+        {
+            ImageID imgID = imPtr->FindByPath(texPath);
+            if (imgID != IMAGE_INVALID) {
+                auto findRet = imPtr->existingMaterialsByID.find(imgID);
+                if (findRet != imPtr->existingMaterialsByID.end()) {
+                    return findRet->second;
+                }
+            }
+        }
+
+        const std::array<std::vector<std::string>, MAX_MATERIAL_TEXTURE_COUNT> matImgTypes = {
             //ordering it like this is necessary, the engine is set up so that vertex textures are always binded lower than fragment textures.
-            // this needs to be in sync with MaterialTexType
+            // this needs to be in sync with MaterialImgType
             std::vector<std::string>{ "bump", "height"},
 
             std::vector<std::string>{"Diffuse", "albedo", "diffuse", "Albedo", "BaseColor", "Base_Color"},
@@ -21,76 +33,46 @@ namespace EWE {
             std::vector<std::string>{ "metallic", "metal", "Metallic", "Metal"},
             std::vector<std::string>{ "ao", "ambientOcclusion", "AO", "AmbientOcclusion", "Ao"},
         };
+        std::vector<std::string> matPaths{};
+        std::array<bool, MAX_MATERIAL_TEXTURE_COUNT> foundTypes{false};
 
-        //printf("creating new MRO Texture : %s \n", texPath.c_str());
-        auto tmPtr = Texture_Manager::GetTextureManagerPtr();
-
-        if (tmPtr->existingMaterials.contains(texPath)) {
-            return tmPtr->existingMaterials.at(texPath);
-        }
-
-        std::vector<bool> foundTypes{};
-        foundTypes.resize(smartTextureTypes.size(), false);
-
-
-        //std::vector<EWETexture::PixelPeek> pixelPeek{};
-        std::vector<std::string> materialPaths{};
-        //cycling thru extensions, currently png and jpg
-
-        Texture_Builder tBuilder{ global };
-        for (int i = 0; i < smartTextureTypes.size(); i++) {
+        for (int i = 0; i < matImgTypes.size(); i++) {
             //foundTypes[i] = true;
-            for (int j = 0; j < smartTextureTypes[i].size(); j++) {
-                materialPaths.emplace_back(TEXTURE_DIR);
-                materialPaths.back() += texPath + smartTextureTypes[i][j];
+            for (int j = 0; j < matImgTypes[i].size(); j++) {
+                auto& empRet = matPaths.emplace_back(TEXTURE_DIR);
+                empRet += texPath + matImgTypes[i][j];
 
                 //printf("smart material path : %s \n", materialPath.c_str());
 
-                if (std::filesystem::exists(materialPaths.back() + ".png")) {
-                    materialPaths.back() += ".png";
+                if (std::filesystem::exists(matPaths.back() + ".png")) {
+                    empRet += ".png";
                     //pixelPeek.emplace_back(materialPath);
                     foundTypes[i] = true;
-                    if (i == 0) {
-                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
-                    }
-                    else {
-                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
-                    }
 
                     break;
-                    
+
                 }
-                else if (std::filesystem::exists(materialPaths.back() + ".jpg")) {
-                    materialPaths.back() += ".jpg";
+                else if (std::filesystem::exists(matPaths.back() + ".jpg")) {
+                    empRet += ".jpg";
                     //pixelPeek.emplace_back(materialPath);
                     foundTypes[i] = true;
-                    if (i == 0) {
-                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
-                    }
-                    else {
-                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
-                    }
                     break;
                 }
-                else if (std::filesystem::exists(materialPaths.back() + ".tga")) {
-                    materialPaths.back() += ".tga";
+                else if (std::filesystem::exists(matPaths.back() + ".tga")) {
+                    empRet += ".tga";
                     //pixelPeek.emplace_back(materialPaths.back());
                     foundTypes[i] = true;
-                    if (i == 0) {
-                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_VERTEX_BIT, false);
-                    }
-                    else {
-                        tBuilder.AddComponent(materialPaths.back(), VK_SHADER_STAGE_FRAGMENT_BIT, true);
-                    }
                     break;
                 }
-                materialPaths.pop_back();
+                matPaths.pop_back();
             }
         }
+        std::vector<PixelPeek> pixelPeeks{};
+        for (int i = 0; i < matPaths.size(); i++) {
+            pixelPeeks.emplace_back(matPaths[i]);
+        }
 
-        //flag it up
-        //albedo only -> throw an error -> idk why but albedo only no longer throws an error. had some good reason for removing it when i did
-        //no albedo -> throw an error
+        ImageID imgID = imPtr->CreateImageArray(pixelPeeks);
 
         //flags = normal, metal, rough, ao
         MaterialFlags flags = (foundTypes[MT_bump] * MaterialF_hasBump) + (foundTypes[MT_metal] * MaterialF_hasMetal) + (foundTypes[MT_rough] * MaterialF_hasRough) + (foundTypes[MT_ao] * MaterialF_hasAO) + ((foundTypes[MT_normal] * MaterialF_hasNormal));
@@ -105,15 +87,10 @@ namespace EWE {
             printf("found a height map \n");
         }
 #endif
-        //printf("constructng texture from smart \n");
-        //textureMap.emplace(returnID, EWETexture{ texPath, device, pixelPeek, tType_material, flags });
-
-        TextureDesc retID = tBuilder.Build();
-
-        tmPtr->existingMaterials.try_emplace(texPath, flags, retID);
+        imPtr->existingMaterialsByID.try_emplace(imgID, flags, imgID);
         //existingMaterialIDs[texPath] = std::pair<MaterialFlags, int32_t>{ flags, returnID };
 
         //printf("returning from smart creation \n");
-        return { flags, retID };
+        return { flags, imgID };
     }
 }

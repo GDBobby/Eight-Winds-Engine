@@ -18,10 +18,10 @@ namespace EWE {
 	class MenuModule {
 	public:
 		struct UIImageStruct {
-			TextureDesc texture{TEXTURE_UNBINDED_DESC};
+			ImageID texture{IMAGE_INVALID};
 			Transform2dComponent transform{};
 			UIImageStruct() {}
-			UIImageStruct(TextureDesc texture, Transform2dComponent& transform) : texture{ texture }, transform{ transform } {}
+			UIImageStruct(ImageID texture, Transform2dComponent& transform) : texture{ texture }, transform{ transform } {}
 		};
 		static EWEModel* model2D;
 		static EWEModel* nineUIModel;
@@ -31,8 +31,6 @@ namespace EWE {
 		static void changeMenuState(uint8_t menuStates, unsigned char gameState = 255) {
 			changeMenuStateFromMM(menuStates, gameState);
 		}
-
-		static TextureDesc textureArray;
 
 		static std::queue<uint16_t> clickReturns;
 

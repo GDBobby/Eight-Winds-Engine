@@ -62,21 +62,18 @@ namespace FragmentShaderText {
 
 	//first index is no bones, second index is with bones
 
-	const std::string firstHalfBinding[2] = {
-		{"layout (set = 1, binding = "},
-		{"layout (set = 2, binding = "},
-	};
-	const std::string secondHalfBinding = { ") uniform sampler2D " };
+	const std::string firstHalfBinding{ "layout (set = 0, binding = " };
+	const std::string secondHalfBinding = { ") uniform sampler2DArray materialTextures;" };
 
 	const std::vector<std::string> calcNormalFunction = {
 		"vec3 calculateNormal() {",
-		"vec3 tangentNormal = texture(normalSampler, fragTexCoord).rgb * 2.0 - 1.0;",
+		"vec3 tangentNormal = texture(materialTextures, vec3(fragTexCoord, normalIndex)).rgb * 2.0 - 1.0;",
 		"const vec3 N = normalize(fragNormalWorld);const vec3 T = normalize(fragTangentWorld.xyz);const vec3 B = normalize(cross(N, T));const mat3 TBN = mat3(T, B, N);",
 		"return normalize(TBN * tangentNormal);}"
 	};
 	const std::vector<std::string> parallaxMapping = {
 		"vec2 parallaxMapping(vec2 uv, vec3 viewDir) {",
-		"float height = 1.0 - textureLod(bumpSampler, uv, 0.0).a;",
+		"float height = 1.0 - textureLod(materialTextures, vec3(uv, bumpIndex), 0.0).a;",
 		"vec2 p = viewDir.xy * ((height * 0.005) - .01f) / viewDir.z;", //height * ubo.heightScale * .5
 		"return uv - p;}",
 	};
@@ -85,16 +82,13 @@ namespace FragmentShaderText {
 	const std::vector<std::string> mainEntryBlock[2] = {
 		{
 			"void main(){",
-			"vec3 albedo = texture(albedoSampler, fragTexCoord).rgb;",
+			"vec3 albedo = texture(materialTextures, vec3(fragTexCoord, albedoIndex)).rgb;",
 		},
 		{
 			"void main(){",
 			"vec3 viewDirection = normalize(tangentViewPos - tangentFragPos);"
-			//"vec2 parallaxUV = parallaxMapping(fragTexCoord, viewDirection);",
-			//"if (parallaxUV.x < 0.0 || parallaxUV.x > 1.0 || parallaxUV.y < 0.0 || parallaxUV.y > 1.0) { discard; }",
-			//"vec3 normal = nromalize(textureLod(normalSampler, parallaxUV, 0.0).rgb * 2.0 - 1.0);
-			"vec3 normal = normalize(textureLod(normalSampler, fragTexCoord, 0.0).rgb * 2.0 - 1.0);"
-			"vec3 albedo = texture(albedoSampler, fragTexCoord).rgb;",
+			"vec3 normal = normalize(textureLod(materialTextures, vec3(fragTexCoord, normalIndex), 0.0).rgb * 2.0 - 1.0);"
+			"vec3 albedo = texture(materialTextures, vec3(fragTexCoord, albedoIndex)).rgb;",
 		}
 	};
 

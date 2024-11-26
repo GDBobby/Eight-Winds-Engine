@@ -174,7 +174,7 @@ namespace EWE {
         struct OceanGraphicsGPUData {
             std::unique_ptr<EWEPipeline> pipe;
             VkPipelineLayout pipeLayout = VK_NULL_HANDLE;
-            VkDescriptorSet descriptorSet[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+            std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSet = { VK_NULL_HANDLE, VK_NULL_HANDLE };
             EWEModel* oceanModel{ nullptr };
             EWEBuffer* renderData[2] = { nullptr, nullptr };
             EWEDescriptorSetLayout* eweDSL{ nullptr };

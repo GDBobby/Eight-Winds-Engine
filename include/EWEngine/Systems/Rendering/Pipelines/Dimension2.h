@@ -20,11 +20,15 @@ namespace EWE {
 		//EWEPipeline* pipe9;
 		VkPipelineLayout PL_2d;
 		//VkPipelineLayout PL_9;
-		TextureDesc bindedTexture;
+		ImageID bindedTexture;
 		VkPipelineCache cache;
 		EWEModel* model2D;
+		VkDescriptorSet defaultDesc;
+		EWEDescriptorSetLayout* eDSL{ nullptr };
 		//EWEModel* nineUIModel;
 
+		ImageID uiArrayID;
+		void CreateDefaultDesc();
 
 	public:
 		~Dimension2() {}
@@ -34,8 +38,9 @@ namespace EWE {
 		//static void BindNineUI(CommandBuffer cmdBuffer, uint8_t frameIndex);
 		static void Bind2D();
 
-		static void BindTexture2DUI(TextureDesc texture);
-		static void BindTexture2D(TextureDesc texture);
+		static void BindDefaultDesc();
+		//static void BindTexture2DUI(ImageID texture);
+		//static void BindTexture2D(ImageID texture);
 		//static void BindTexture9(TextureDesc texture);
 
 		static void PushAndDraw(Simple2DPushConstantData& push);

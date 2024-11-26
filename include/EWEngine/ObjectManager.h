@@ -12,14 +12,15 @@ namespace EWE {
 	class ObjectManager {
 	public:
 		~ObjectManager() {
+#if DECONSTRUCTION_DEBUG
 			printf("object manager deconstructor \n");
+#endif
 		}
 
 		//FOR A DAY IN THE FUTURE
 		//std::map<Pipeline_Enum, std::vector<EWEGameObject>> objectMap;
 
 		std::vector<EWEGameObject> texturedGameObjects{};
-		std::vector<EWEGameObject> materialGameObjects{};
 		std::vector<EWEGameObject> transparentGameObjects{};
 		std::vector<EWEGameObject> grassField{};
 
@@ -30,17 +31,10 @@ namespace EWE {
 
 		std::vector<PointLight> pointLights{};
 
-		// not currently active
-		//std::vector<SpotLight> spotLights;
-
-		//global right now because i only have 1, need to make it scene based
-		std::pair<EWEModel*, TextureDesc> skybox{}; //model and textureID
-
 
 		void InitCollision() {
 			Collision::collisionObjects.clear();
 			Collision::collisionObjects.push_back(&texturedGameObjects);
-			Collision::collisionObjects.push_back(&materialGameObjects);
 		}
 
 #if LEVEL_BUILDER
@@ -55,7 +49,6 @@ namespace EWE {
 		//std::pair<MaterialFlags, TextureID> targetTexturePair{0,0};
 		//uint32_t maxTargets = 0;
 		//uint32_t currentActiveTargets = 0;
-		TextureDesc grassTextureID{TEXTURE_UNBINDED_DESC};
 #if LEVEL_BUILDER
 		void ClearBuilders();
 		void ResetBuilders();

@@ -267,22 +267,6 @@ namespace EWE {
 
 		sampler = Sampler::GetSampler(samplerInfo);
 
-		// Descriptor
-		// Font uses a separate descriptor pool
-		//std::vector<VkDescriptorPoolSize> poolSizes(1);
-		//poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		//poolSizes[0].descriptorCount = 1;
-
-
-		//VkDescriptorPoolCreateInfo descriptorPoolInfo{};
-		//descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		//descriptorPoolInfo.pNext = nullptr;
-		//descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-		//descriptorPoolInfo.pPoolSizes = poolSizes.data();
-		//descriptorPoolInfo.maxSets = 1;
-
-		//EWE_VK(vkCreateDescriptorPool, eweDevice->Device(), &descriptorPoolInfo, nullptr, &descriptorPool);
-
 		// Descriptor set layout
 		std::array<VkDescriptorSetLayoutBinding, 2> setLayoutBindings{};
 		setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

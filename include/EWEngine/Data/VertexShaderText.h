@@ -53,14 +53,14 @@ namespace VertexShaderText {
 	};
 	//when ready to swap out pipelines for smaller actor counts
 	const std::vector<std::string> vertexSmallInstanceBuffersFirstHalf = {
-		"layout(set = 1, binding = 0) uniform ModelMatrices { mat4 modelMatrix[]; }; ",
-		"layout (set = 1, binding = 1) readonly buffer JointMatrices {mat4 finalBonesMatrices[];};"
+		"layout(set = 0, binding = 2) uniform ModelMatrices { mat4 modelMatrix[]; }; ",
+		"layout (set = 0, binding = 3) readonly buffer JointMatrices {mat4 finalBonesMatrices[];};"
 		"void main(){int boneIndex = gl_InstanceIndex *",
 	};
 
 	const std::vector<std::string> vertexInstanceBuffersFirstHalf = {
-		"layout(set = 1, binding = 0) readonly buffer ModelMatrices { mat4 modelMatrix[]; }; ",
-		"layout (set = 1, binding = 1) readonly buffer JointMatrices {mat4 finalBonesMatrices[];};"
+		"layout(set = 0, binding = 2) readonly buffer ModelMatrices { mat4 modelMatrix[]; }; ",
+		"layout (set = 0, binding = 3) readonly buffer JointMatrices {mat4 finalBonesMatrices[];};"
 		"void main(){int boneIndex = gl_InstanceIndex *",
 	};
 	const std::vector<std::string> vertexInstanceBuffersSecondHalf = {
@@ -71,7 +71,7 @@ namespace VertexShaderText {
 	};
 
 	const std::vector<std::string> vertexNoInstanceBuffers = {
-		"layout (set = 1, binding = 0) uniform JointMatrices {mat4 finalBonesMatrices[];};"
+		"layout (set = 0, binding = 2) uniform JointMatrices {mat4 finalBonesMatrices[];};"
 		"layout(push_constant) uniform Push {mat4 modelMatrix;int index_boneCount;} push; ",
 		"void main(){"
 		"mat4 skinMat = finalBonesMatrices[boneIds[0] + push.index_boneCount] * weights[0] + finalBonesMatrices[boneIds[1] + push.index_boneCount] * weights[1]",

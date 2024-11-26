@@ -1,5 +1,4 @@
 #pragma once
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
 
 #include "EWEngine/Systems/PipelineSystem.h"
 
@@ -58,13 +57,13 @@ namespace EWE {
 		void InitData();
 
 		void LoadLeafModel();
-
 		void LoadLeafTexture();
+		void CreateDescriptor();
 
 		void Render();
 
 		EWEModel* leafModel;
-		TextureDesc leafTextureID = 0;
+		ImageID leafTextureID = 0;
 
 	protected:
 		void CreatePipeline() final;
@@ -96,12 +95,16 @@ namespace EWE {
 
 		std::vector<LeafStruct> leafs{};
 
-		std::vector<float*> leafBufferData{};
-		std::vector<EWEBuffer*> leafBuffer{};
-		std::vector<VkDescriptorSet> transformDescriptor{};
+		std::array<float*, MAX_FRAMES_IN_FLIGHT> leafBufferData{};
+		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> leafBuffer{};
+
+		ImageInfo leafImageInfo{};
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> leafDescriptor{};
 
 		VkShaderModule vertexShaderModule{VK_NULL_HANDLE};
 		VkShaderModule fragmentShaderModule{VK_NULL_HANDLE};
+
+		EWEDescriptorSetLayout* leafEDSL{};
 
 		/*
 		//POSITION:

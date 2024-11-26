@@ -12,7 +12,7 @@ namespace EWE {
 		std::shared_ptr<SoundEngine> soundEngine;
 
 	public:
-		OceanScene(EightWindsEngine& ewEngine, VkDescriptorImageInfo* skyboxImage);
+		OceanScene(EightWindsEngine& ewEngine, ImageID skyboxImgID);
 		~OceanScene();
 
 		void load() override;

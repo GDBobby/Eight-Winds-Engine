@@ -3,7 +3,7 @@
 #include "EWEngine/Systems/PipelineSystem.h"
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -28,10 +28,14 @@ namespace EWE {
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
 
 	AdvancedRenderSystem::AdvancedRenderSystem(ObjectManager& objectManager, MenuManager& menuManager) : objectManager{ objectManager }, menuManager{ menuManager } {
+#if EWE_DEBUG
 		printf("ARS constructor \n");
+#endif
 
 		model2D = Basic_Model::Quad2D(Queue::transfer);
+#if EWE_DEBUG
 		printf("after ARS constructor finished \n");
+#endif
 	}
 
 	AdvancedRenderSystem::~AdvancedRenderSystem() {
@@ -48,6 +52,28 @@ namespace EWE {
 #endif
 	}
 
+	void AdvancedRenderSystem::CreateSkyboxDescriptor(ImageID skyboxImgID) {
+		if (skyboxDescriptors[0] != VK_NULL_HANDLE) {
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &skyboxDescriptors[0]);
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &skyboxDescriptors[1]);
+		}
+		if (skyboxEDSL == nullptr) {
+			skyboxEDSL = PipelineSystem::At(Pipe::skybox)->GetDSL();
+		}
+
+		assert(skyboxEDSL != nullptr);
+		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			EWEDescriptorWriter descWriter{ skyboxEDSL, DescriptorPool_Global };
+			DescriptorHandler::AddCameraDataToDescriptor(descWriter, i);
+			descWriter.WriteImage(1, Image_Manager::GetDescriptorImageInfo(skyboxImgID));
+			skyboxDescriptors[i] = descWriter.Build();
+		}
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(skyboxDescriptors[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "skybox desc[0]");
+		DebugNaming::SetObjectName(skyboxDescriptors[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "skybox desc[1]");
+#endif
+	}
+
 	void AdvancedRenderSystem::renderGameObjects(float time) {
 #if DEBUGGING_PIPELINES
 		printf("getting into render game objects \n");
@@ -55,14 +81,10 @@ namespace EWE {
 		if (drawSkybox) {
 			renderSkybox();
 		}
-		//renderSimpleGameObjects();
-		//renderBonedWeapons();
 		
-		renderTexturedGameObjects();
+		//renderTexturedGameObjects();
 
 		//RenderDynamicMaterials();
-
-		RigidRenderingSystem::Render();
 #if DEBUGGING_PIPELINES
 		printf("after rendering dynamic \n");
 #endif
@@ -132,62 +154,62 @@ namespace EWE {
 	}
 
 	void AdvancedRenderSystem::renderSkybox() {
-		assert(objectManager.skybox.first != nullptr);
+		assert(skyboxModel != nullptr);
 #if DEBUGGING_PIPELINES
 		printf("drawing skybox \n");
 #endif
 		auto pipe = PipelineSystem::At(Pipe::skybox);
 		pipe->BindPipeline();
-		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
-		pipe->BindDescriptor(1, &objectManager.skybox.second);
+		//objectManager.grassTextureID
+		pipe->BindDescriptor(0, &skyboxDescriptors[VK::Object->frameIndex]);
 
-		pipe->BindModel(objectManager.skybox.first);
+		pipe->BindModel(skyboxModel);
 		pipe->DrawModel();
 		
 	}
-
-	inline void AdvancedRenderSystem::renderTexturedGameObjects() {
-		if ((objectManager.texturedGameObjects.size() > 0)) {
-			auto pipe = PipelineSystem::At(Pipe::textured);
-#if DEBUGGING_PIPELINES
-			printf("Drawing texutered game objects \n");
-#endif
-			pipe->BindPipeline();
-			pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
-
-
-			//std::cout << "post-bind textured" << std::endl;
-			TextureDesc currentBindedTextureID = TEXTURE_UNBINDED_DESC;
-
-			SimplePushConstantData push{};
-			//std::cout << "textured game o bject size : " << objectManager.texturedGameObjects.size() << std::endl;
-			for(auto& textureGameObject : objectManager.texturedGameObjects){
-
-				if (textureGameObject.isTarget && (!textureGameObject.activeTarget)) {
-					continue;
-				}
-				if ((textureGameObject.textureID == TEXTURE_UNBINDED_DESC) || (textureGameObject.model == nullptr)) {
-					std::cout << "why does a textured game object have no texture, or no model?? " << std::endl;
-					continue;
-				}
-				else if (textureGameObject.textureID != currentBindedTextureID) {
-
-					pipe->BindDescriptor(0, &textureGameObject.textureID);
-
-					currentBindedTextureID = textureGameObject.textureID;
-				}
-				//printf("drawing now : %d \n", i);
-				push.modelMatrix = textureGameObject.transform.mat4();
-				push.normalMatrix = textureGameObject.transform.normalMatrix();
-				//std::cout << "pre-bind/draw : " << i;
-
-				pipe->BindModel(textureGameObject.model.get());
-				pipe->PushAndDraw(&push);
-				//std::cout << " ~ post-bind/draw : " << i << std::endl;
-			}
-		}
-		
-	}
+//
+//	inline void AdvancedRenderSystem::renderTexturedGameObjects() {
+//		if ((objectManager.texturedGameObjects.size() > 0)) {
+//			auto pipe = PipelineSystem::At(Pipe::textured);
+//#if DEBUGGING_PIPELINES
+//			printf("Drawing texutered game objects \n");
+//#endif
+//			pipe->BindPipeline();
+//			//pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
+//
+//
+//			//std::cout << "post-bind textured" << std::endl;
+//			TextureDesc currentBindedTextureID = IMAGE_INVALID;
+//
+//			SimplePushConstantData push{};
+//			//std::cout << "textured game o bject size : " << objectManager.texturedGameObjects.size() << std::endl;
+//			for(auto& textureGameObject : objectManager.texturedGameObjects){
+//
+//				if (textureGameObject.isTarget && (!textureGameObject.activeTarget)) {
+//					continue;
+//				}
+//				if ((textureGameObject.textureID == TEXTURE_UNBINDED_DESC) || (textureGameObject.model == nullptr)) {
+//					std::cout << "why does a textured game object have no texture, or no model?? " << std::endl;
+//					continue;
+//				}
+//				else if (textureGameObject.textureID != currentBindedTextureID) {
+//
+//					//pipe->BindDescriptor(0, &textureGameObject.textureID);
+//
+//					currentBindedTextureID = textureGameObject.textureID;
+//				}
+//				//printf("drawing now : %d \n", i);
+//				push.modelMatrix = textureGameObject.transform.mat4();
+//				push.normalMatrix = textureGameObject.transform.normalMatrix();
+//				//std::cout << "pre-bind/draw : " << i;
+//
+//				pipe->BindModel(textureGameObject.model.get());
+//				pipe->PushAndDraw(&push);
+//				//std::cout << " ~ post-bind/draw : " << i << std::endl;
+//			}
+//		}
+//		
+//	}
 
 	void AdvancedRenderSystem::renderVisualEffects() {
 
@@ -205,8 +227,8 @@ namespace EWE {
 #endif
 		PipelineSystem* pipe = PipelineSystem::At(Pipe::grass);
 		pipe->BindPipeline();
-		pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
-		pipe->BindDescriptor(1, &objectManager.grassTextureID);
+		//objectManager.grassTextureID
+		pipe->BindDescriptor(0, &grassDescriptors[VK::Object->frameIndex]);
 
 
 		UVScrollingPushData push{ glm::vec2{glm::mod(time / 6.f, 1.f), glm::mod(time / 9.f, 1.f)} };

@@ -11,9 +11,6 @@ namespace EWE {
 	class EWEGameObject {
 	public:
 		EWEGameObject() {}
-		static EWEGameObject createGameObject() {
-			return EWEGameObject{};
-		}
 
 		//static EWEGameObject makeTextBilboard(float size, std::string text, int xPos, int yPos);
 
@@ -38,7 +35,7 @@ namespace EWE {
 
 		TransformComponent transform{};
 
-		TextureDesc textureID{ TEXTURE_UNBINDED_DESC };
+		VkDescriptorSet descriptor{ VK_NULL_HANDLE };
 		//int16_t textureFlags = -1;
 
 		//optional pointer components

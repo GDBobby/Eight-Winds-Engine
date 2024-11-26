@@ -62,6 +62,28 @@ T* Construct(ConstructHelper<T> construct
 }
 
 template<typename T>
+struct ConstructAddrHelper {
+    T* ptr;
+    template <typename ... Args>
+    ConstructAddrHelper(void* address, Args&&... args) :
+        ptr{ new(address) T(std::forward<Args>(args)...) }
+    {
+    }
+};
+
+template<typename T>
+T* Construct(void* address, ConstructAddrHelper<T> construct
+#if CALL_TRACING
+    , std::source_location srcLoc = std::source_location::current()) {
+    ewe_alloc_mem_track(reinterpret_cast<void*>(construct.ptr), srcLoc);
+#else
+) {
+) {
+#endif
+    return construct.ptr;
+}
+
+template<typename T>
 void Deconstruct(T* object) {
 #if USING_MALLOC
     object->~T();

@@ -39,10 +39,10 @@ namespace EWE {
 			return skinnedMainObject->skinID++;
 		}
 
-		static void AddSkeleton(MaterialTextureInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced);
-		static void AddSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, TextureDesc texID, EWEModel* modelPtr, SkeletonID skeletonID);
+		static void AddSkeleton(MaterialInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced);
+		static void AddSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, MaterialInfo const& materialInfo, EWEModel* modelPtr, SkeletonID skeletonID);
 
-		static void AddWeapon(MaterialTextureInfo& materialInfo, EWEModel* meshes, SkeletonID skeletonID, SkeletonID ownerID);
+		static void AddWeapon(MaterialInfo& materialInfo, EWEModel* meshes, SkeletonID skeletonID, SkeletonID ownerID);
 
 		static void RemoveSkeleton(SkeletonID skeletonID);
 
@@ -51,38 +51,37 @@ namespace EWE {
 
 		std::unordered_map<SkeletonID, SkinRS::PipelineStruct> instancedData{};
 		std::unordered_map<MaterialFlags, SkinRS::PipelineStruct> boneData{};
-		//uint8_t frameIndex = 0;
 
-		//changes memory size allocated to buffers
-		void ChangeActorCount(SkeletonID skeletonID, uint8_t maxActorCount);
 
 		static void SetPushData(SkeletonID skeletonID, void* pushData, uint8_t pushSize);
 		static void RemovePushData(SkeletonID skeletonID, void* pushRemoval);
 
 	private:
 
-		void CreateInstancedBuffer(SkeletonID skeletonID, uint16_t boneCount) {
+		[[nodiscard]] InstancedSkinBufferHandler* CreateInstancedBuffer(SkeletonID skeletonID, uint16_t boneCount) {
 #if EWE_DEBUG
 			assert(!instancedBuffers.contains(skeletonID));
 #endif
 			//instancedBuffersCreated += 2;
-			instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ boneCount, 2000});
+			return &instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ boneCount, 2000}).first->second;
 		}
-		void CreateBoneBuffer(SkeletonID skeletonID, uint16_t boneCount) {
+		[[nodiscard]] SkinBufferHandler* CreateBoneBuffer(SkeletonID skeletonID, uint16_t boneCount) {
 #if EWE_DEBUG
 			assert(!buffers.contains(skeletonID));
 #endif
 			//buffersCreated += 2;
-			buffers.emplace(skeletonID, SkinBufferHandler{ boneCount, 1});
+			return &buffers.emplace(skeletonID, SkinBufferHandler{ boneCount, 1}).first->second;
 		}
-		void CreateReferenceBuffer(SkeletonID skeletonID, SkeletonID referenceID) {
-			if (buffers.contains(skeletonID)) {
-				return;
-				//printf("creating a buffer that already exist \n");
-				//throw std::runtime_error("creating a buffer that already exist ");
-			}
-			buffers.emplace(skeletonID, SkinBufferHandler{ 1, buffers.at(referenceID).GetInnerPtr() });
-		}
+
+		static std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> CreateDescriptorSets(MaterialInfo materialInfo, SkeletonID skeletonID);
+		//void CreateReferenceBuffer(SkeletonID skeletonID, SkeletonID referenceID) {
+		//	if (buffers.contains(skeletonID)) {
+		//		return;
+		//		//printf("creating a buffer that already exist \n");
+		//		//throw std::runtime_error("creating a buffer that already exist ");
+		//	}
+		//	buffers.emplace(skeletonID, SkinBufferHandler{ 1, buffers.at(referenceID).GetInnerPtr() });
+		//}
 
 		SkinRS::PipelineStruct& CreateInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, MaterialFlags textureFlags) {
 			return instancedData.try_emplace(instancedFlags, boneCount, textureFlags).first->second;

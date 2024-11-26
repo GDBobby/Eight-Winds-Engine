@@ -1,6 +1,6 @@
 #include "EWEngine/Systems/PipelineSystem.h"
 
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 namespace EWE {
 	std::unordered_map<PipelineID, PipelineSystem*> PipelineSystem::pipelineSystem{};
@@ -25,12 +25,15 @@ namespace EWE {
 		pipelineSystem.clear();
 	}
 	void PipelineSystem::DestructAt(PipelineID pipeID) {
-		auto foundPipe = pipelineSystem.find(pipeID);
+
 #if EWE_DEBUG
+		auto foundPipe = pipelineSystem.find(pipeID);
 		assert(foundPipe != pipelineSystem.end() && "destructing invalid pipe \n");
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, foundPipe->second->pipeLayout, nullptr);
+#else
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipelineSystem.at(pipeID)->pipeLayout, nullptr);
 #endif
 
-		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, foundPipe->second->pipeLayout, nullptr);
 		Deconstruct(foundPipe->second);
 	}
 
@@ -49,7 +52,7 @@ namespace EWE {
 		assert(currentPipe == myID && "pipe id mismatch on model bind");
 #endif
 		pipe->Bind();
-		bindedTexture = TEXTURE_UNBINDED_DESC;
+		bindedTexture = VK_NULL_HANDLE;
 	}
 	void PipelineSystem::BindModel(EWEModel* model) {
 		bindedModel = model;
@@ -71,14 +74,6 @@ namespace EWE {
 		);
 		
 	}
-	//EWETexture::getDescriptorSets(tileSet.tileSetTexture, frameIndex)
-	void PipelineSystem::BindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
-		if (bindedTexture != texID) {
-			BindDescriptor(descSlot, &texID);
-			bindedTexture = texID;
-		}
-	}
-
 
 	void PipelineSystem::Push(void* push) {
 		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, pushStageFlags, 0, pushSize, push);

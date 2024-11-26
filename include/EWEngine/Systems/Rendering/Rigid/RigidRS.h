@@ -23,7 +23,9 @@ namespace EWE {
             meshPtr{ nullptr },
             drawable{ nullptr } 
         {
+#if EWE_DEBUG
             printf("Default construction of material info??? \n");
+#endif
         }
         MaterialObjectInfo(TransformComponent* tComp, EWEModel* meshP, bool* drawable) : 
             ownerTransform{ tComp },
@@ -31,29 +33,30 @@ namespace EWE {
             drawable{ drawable } 
         {}
     };
+    struct MaterialObjectByDesc {
+        std::array<VkDescriptorSet, 2> desc{VK_NULL_HANDLE, VK_NULL_HANDLE};
+        std::vector<MaterialObjectInfo> objectVec{};
+    };
 
     struct MaterialRenderInfo {
         MaterialPipelines* pipe;
-        std::unordered_map<TextureDesc, std::vector<MaterialObjectInfo>> materialMap{};
+        std::vector<MaterialObjectByDesc> materialVec{};
         MaterialRenderInfo(MaterialFlags flags) : pipe{MaterialPipelines::GetMaterialPipe(flags)} {}
         void Render();
     };
 
     struct InstancedMaterialObjectInfo {
-        TextureDesc texture;
         EWEModel* meshPtr;
         RigidInstancedBufferHandler buffer;
+        std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets;
         //i need to combine the texture and bfufer descriptor into 1
-        InstancedMaterialObjectInfo(TextureDesc texture, EWEModel* meshPtr, uint32_t entityCount, bool computedTransforms) : 
-            texture{ texture },
-            meshPtr{ meshPtr }, 
-            buffer{ entityCount, computedTransforms } 
-        {}
+        InstancedMaterialObjectInfo(EWEModel* meshPtr, uint32_t entityCount, bool computedTransforms, EWEDescriptorSetLayout* eDSL, ImageID imageID);
     };
     struct InstancedMaterialRenderInfo {
         MaterialPipelines* pipe;
         std::vector<InstancedMaterialObjectInfo> instancedInfo{};
-        InstancedMaterialRenderInfo(MaterialFlags flags, uint32_t entityCount) : pipe{ MaterialPipelines::GetMaterialPipe(flags, entityCount)} {}
+        InstancedMaterialRenderInfo(MaterialFlags flags, uint32_t entityCount) : pipe{ MaterialPipelines::GetMaterialPipe(flags, entityCount)} {
+        }
         void Render();
     };
 
@@ -67,16 +70,12 @@ namespace EWE {
         }
         */
         //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& cleanAndGetMaterialMap();
-        void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo);
-        void AddMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
-        void AddInstancedMaterialObject(MaterialTextureInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms);
+        void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo);
+        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
+        void AddInstancedMaterialObject(MaterialInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms);
 
-        void AddMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr);
-
-        void RemoveByTransform(TextureDesc textureID, TransformComponent* ownerTransform);
+        void RemoveByTransform(TransformComponent* ownerTransform);
         void RemoveInstancedMaterialObject(EWEModel* modelPtr);
-
-        std::vector<TextureDesc> CheckAndClearTextures();
 
         void Render();
 

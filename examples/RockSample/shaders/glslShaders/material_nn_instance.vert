@@ -26,7 +26,7 @@ layout(set = 0, binding = 1) uniform GPUSceneData{
 	int numLights;
 } gpuScene;
 
-layout(set = 1, binding = 0) buffer TransformData{
+layout(set = 0, binding = 2) buffer TransformData{
 	mat4 transformMatrices[];
 };
 

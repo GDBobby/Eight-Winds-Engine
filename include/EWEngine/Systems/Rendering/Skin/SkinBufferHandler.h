@@ -4,12 +4,28 @@
 
 namespace EWE {
 	class InstancedSkinBufferHandler {
+	private:
+		struct InnerBufferStruct {
+			EWEBuffer* model;
+			EWEBuffer* bone;
+
+			InnerBufferStruct(uint16_t maxActorCount, uint32_t boneBlockSize);
+			~InnerBufferStruct() {
+				Deconstruct(model);
+				Deconstruct(bone);
+			}
+
+			void AddDescriptorBindings(uint16_t maxActorCount, EWEDescriptorWriter& descWriter, uint8_t& currentBinding);
+
+			void Flush();
+		private:
+			bool updated = false;
+		};
 	public:
 
 		InstancedSkinBufferHandler(uint16_t boneCount, uint16_t maxActorCount);
 
 		void WriteData(glm::mat4* modelMatrix, void* finalBoneMatrices);
-		void ChangeMaxActorCount(uint16_t actorCount);
 		void Flush();
 
 		void ResetInstanceCount() {
@@ -18,37 +34,15 @@ namespace EWE {
 		uint16_t GetMaxActorCount() {
 			return maxActorCount;
 		}
-		VkDescriptorSet* GetDescriptor() {
-			return &gpuData[VK::Object->frameIndex].descriptor;
-		}
 		uint32_t GetInstanceCount() {
 			return currentInstanceCount;
 		}
-		void FreeDescriptors() {
-			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &gpuData[0].descriptor);
-			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &gpuData[1].descriptor);
+		void AddDescriptorBindings(uint8_t whichFrame, EWEDescriptorWriter& descWriter, uint8_t& currentBinding) {
+			gpuData[whichFrame].AddDescriptorBindings(maxActorCount, descWriter, currentBinding);
 		}
 
 	private:
-		struct InnerBufferStruct {
-			EWEBuffer* model;
-			EWEBuffer* bone;
-			VkDescriptorSet descriptor{};
-
-			InnerBufferStruct(uint16_t maxActorCount, uint32_t boneBlockSize);
-			~InnerBufferStruct() {
-				Deconstruct(model);
-				Deconstruct(bone);
-			}
-
-			void ChangeActorCount(uint16_t maxActorCount, uint32_t boneBlockSize);
-			void BuildDescriptor(uint16_t maxActorCount);
-
-			void Flush();
-		private:
-			bool updated = false;
-		};
-		std::vector<InnerBufferStruct> gpuData{};
+		std::array<InnerBufferStruct, MAX_FRAMES_IN_FLIGHT> gpuData;
 		const uint32_t boneBlockSize;
 		uint16_t maxActorCount{ 0 };
 
@@ -62,7 +56,6 @@ namespace EWE {
 	protected:
 		struct InnerBufferStruct {
 			EWEBuffer* bone;
-			VkDescriptorSet descriptor;
 			uint16_t currentActorCount = 0;
 
 			InnerBufferStruct(uint8_t maxActorCount, uint32_t boneBlockSize);
@@ -70,8 +63,7 @@ namespace EWE {
 				Deconstruct(bone);
 			}
 
-			void ChangeActorCount(uint8_t maxActorCount, uint32_t boneBlockSize);
-			void BuildDescriptor();
+			void AddDescriptorBindings(EWEDescriptorWriter& descWriter, uint8_t& currentBinding);
 
 			void Flush();
 		private:
@@ -81,7 +73,6 @@ namespace EWE {
 	public:
 
 		SkinBufferHandler(uint16_t boneCount, uint8_t maxActorCount);
-		SkinBufferHandler(uint8_t maxActorCount, std::vector<InnerBufferStruct>* referencedData);
 
 		void WriteData(void* finalBoneMatrices);
 
@@ -90,29 +81,18 @@ namespace EWE {
 		//	if a frequent change from 1-2 or 1 through 3 is required, maybe, MAYBE, MAYBE, 
 		//	allocate the higher number and adjust this to ignore the additional memory when not necessary.
 		//	i don't know if additional adjustments would be required or not, benchmarking against instancing is recommended
-		void ChangeMaxActorCount(uint8_t actorCount);
 		void Flush();
-		bool CheckReference() {
-			return gpuReference != nullptr;
-		}
-		void SetFrameIndex(uint8_t frameIndex);
 		uint16_t GetMaxActorCount() {
 			return maxActorCount;
 		}
-		VkDescriptorSet* GetDescriptor();
-		std::vector<InnerBufferStruct>* GetInnerPtr() {
-			return &gpuData;
-		}
-		void FreeDescriptors() {
-			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &gpuData[0].descriptor);
-			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &gpuData[1].descriptor);
+		void AddDescriptorBindings(uint8_t whichFrame, EWEDescriptorWriter& descWriter, uint8_t& currentBinding) {
+			gpuData[whichFrame].AddDescriptorBindings(descWriter, currentBinding);
 		}
 	private:
 
-		std::vector<InnerBufferStruct>* gpuReference{nullptr};
-		std::vector<InnerBufferStruct> gpuData{};
 		const uint32_t boneBlockSize;
 		uint8_t maxActorCount{ 1 };
+		std::array<InnerBufferStruct, MAX_FRAMES_IN_FLIGHT> gpuData;
 
 		uint64_t boneMemOffset = 0;
 	};

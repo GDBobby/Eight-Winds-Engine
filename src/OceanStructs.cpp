@@ -70,14 +70,12 @@ namespace EWE {
             pipelineLayoutInfo.pushConstantRangeCount = 1;
 
             EWEDescriptorSetLayout::Builder dslBuilder{};
-            dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-            dslBuilder.AddBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
             eweDSL = dslBuilder.Build();
 
-            VkDescriptorSetLayout dsLayout = eweDSL->GetDescriptorSetLayout();
-
             pipelineLayoutInfo.setLayoutCount = 1;
-            pipelineLayoutInfo.pSetLayouts = &dsLayout;
+            pipelineLayoutInfo.pSetLayouts = eweDSL->GetDescriptorSetLayout();
 
             EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
         }
@@ -157,14 +155,13 @@ namespace EWE {
             pipelineLayoutInfo.pushConstantRangeCount = 1;
 
             EWEDescriptorSetLayout::Builder dslBuilder{};
-            dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-            dslBuilder.AddBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
             eweDSL = dslBuilder.Build();
 
-            VkDescriptorSetLayout dsLayout = eweDSL->GetDescriptorSetLayout();
 
             pipelineLayoutInfo.setLayoutCount = 1;
-            pipelineLayoutInfo.pSetLayouts = &dsLayout;
+            pipelineLayoutInfo.pSetLayouts = eweDSL->GetDescriptorSetLayout();
 
             EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
         }
@@ -241,13 +238,12 @@ namespace EWE {
             pipelineLayoutInfo.pushConstantRangeCount = 1;
 
             EWEDescriptorSetLayout::Builder dslBuilder{};
-            dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+            dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
             eweDSL = dslBuilder.Build();
 
-            VkDescriptorSetLayout dsLayout = eweDSL->GetDescriptorSetLayout();
 
             pipelineLayoutInfo.setLayoutCount = 1;
-            pipelineLayoutInfo.pSetLayouts = &dsLayout;
+            pipelineLayoutInfo.pSetLayouts = eweDSL->GetDescriptorSetLayout();
 
             EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
         }
@@ -317,15 +313,15 @@ namespace EWE {
             renderData[1]->WriteToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
             renderData[1]->Flush();
 
-            EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
-            descWriter.WriteBuffer(0, renderData[0]->DescriptorInfo());
-            descWriter.WriteImage(1, outputImage);
-            descWriter.WriteImage(2, skyboxImage);
-            descriptorSet[0] = descWriter.Build();
 
-            descWriter.WriteBuffer(0, renderData[1]->DescriptorInfo());
-            descriptorSet[1] = descWriter.Build();
-
+            for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
+                DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
+                descWriter.WriteBuffer(2, renderData[i]->DescriptorInfo());
+                descWriter.WriteImage(3, outputImage);
+                descWriter.WriteImage(4, skyboxImage);
+                descriptorSet[i] = descWriter.Build();
+            }
         }
         void OceanGraphicsGPUData::CreatePipeLayout() {
 
@@ -334,19 +330,16 @@ namespace EWE {
             pipelineLayoutInfo.pushConstantRangeCount = 0;
             pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-            std::vector<VkDescriptorSetLayout> tempDSL;
-            tempDSL.push_back(DescriptorHandler::GetDescSetLayout(LDSL_global));
-
-            EWEDescriptorSetLayout::Builder dslBuilder{};
-            dslBuilder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
-            dslBuilder.AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
-            dslBuilder.AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
-            eweDSL = dslBuilder.Build();
-
-            tempDSL.push_back(eweDSL->GetDescriptorSetLayout());	
             
-            pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
-            pipelineLayoutInfo.pSetLayouts = tempDSL.data();
+            EWEDescriptorSetLayout::Builder dslBuilder{};
+            dslBuilder.AddGlobalBindings();
+            dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
+            dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
+            dslBuilder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1);
+            eweDSL = dslBuilder.Build();	
+            
+            pipelineLayoutInfo.setLayoutCount = 1;
+            pipelineLayoutInfo.pSetLayouts = eweDSL->GetDescriptorSetLayout();
             EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
         }
         void OceanGraphicsGPUData::CreatePipeline(){
@@ -417,12 +410,6 @@ namespace EWE {
 
         void OceanGraphicsGPUData::Render() {
             pipe->Bind();
-
-            EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout,
-                0, 1,
-                DescriptorHandler::GetDescSet(DS_global),
-                0, nullptr
-            );
             EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout,
                 1, 1,
                 &descriptorSet[VK::Object->frameIndex],

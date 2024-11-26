@@ -41,7 +41,7 @@ namespace EWE {
 
         //printf("before removing textures \n");
         for (auto iter = ownedTextures.begin(); iter != ownedTextures.end(); iter++) {
-            RigidRenderingSystem::RemoveByTransform(*iter, &transform);
+            RigidRenderingSystem::RemoveByTransform(&transform);
         }
         for (auto& mesh : meshes) {
             Deconstruct(mesh);
@@ -116,7 +116,7 @@ namespace EWE {
         //this should be put in a separate function but im too lazy rn
         //printf("before loading ewe textures \n");
 
-        MaterialTextureInfo returnPair;
+        MaterialInfo returnPair;
         for (int i = 0; i < importData.meshNames.size(); i++) {
             importData.meshNames[i] = importData.meshNames[i].substr(0, importData.meshNames[i].find_first_of("."));
             if (importData.meshNames[i].find("lethear") != importData.meshNames[i].npos) {
@@ -129,7 +129,7 @@ namespace EWE {
                         else {
                             returnPair = textureTracker.meshNames[j];
                             textureTracker.meshNames.push_back(returnPair);
-                            ownedTextures.emplace(returnPair.texture);
+                            ownedTextures.emplace(returnPair.imageID);
                             break;
                         }
                     }
@@ -138,11 +138,11 @@ namespace EWE {
             }
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNames[i];
-            returnPair = Material_Texture::CreateMaterialTexture(finalDir, globalTextures);
+            returnPair = Material_Image::CreateMaterialImage(finalDir, globalTextures);
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNames.push_back(returnPair);
-            ownedTextures.emplace(returnPair.texture);
+            ownedTextures.emplace(returnPair.imageID);
             
         }
         //printf("after mesh texutres \n");
@@ -150,11 +150,11 @@ namespace EWE {
             importData.meshNTNames[i] = importData.meshNTNames[i].substr(0, importData.meshNTNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNTNames[i];
-            Material_Texture::CreateMaterialTexture(finalDir, globalTextures);
+            Material_Image::CreateMaterialImage(finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTNames.push_back(returnPair);
-            ownedTextures.emplace(returnPair.texture);
+            ownedTextures.emplace(returnPair.imageID);
             
         }
         //printf("after mesh nt texutres \n");
@@ -165,11 +165,11 @@ namespace EWE {
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshSimpleNames[i];
             //printf("simple names final Dir : %s \n", finalDir.c_str());
-            Material_Texture::CreateMaterialTexture(finalDir, globalTextures);
+            Material_Image::CreateMaterialImage(finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshSimpleNames.push_back(returnPair);
-            ownedTextures.emplace(returnPair.texture);
+            ownedTextures.emplace(returnPair.imageID);
             
         }
 
@@ -177,11 +177,11 @@ namespace EWE {
             importData.meshNTSimpleNames[i] = importData.meshNTSimpleNames[i].substr(0, importData.meshNTSimpleNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNTSimpleNames[i];
-            Material_Texture::CreateMaterialTexture(finalDir, globalTextures);
+            Material_Image::CreateMaterialImage(finalDir, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTSimpleNames.push_back(returnPair);
-            ownedTextures.emplace(returnPair.texture);
+            ownedTextures.emplace(returnPair.imageID);
         }
     }
 }//namespace EWE

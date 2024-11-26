@@ -1,11 +1,17 @@
 #include "EWEngine/Graphics/Camera.h"
 
+#include "EWEngine/Graphics/DescriptorHandler.h"
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <limits>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace EWE {
+	void EWECamera::SetBuffers() {
+		DescriptorHandler::SetCameraBuffers(uniformBuffers);
+	}
+
 	void EWECamera::SetOrthographicProjection(float left, float right, float top, float bottom, float near, float far) {
 		//projection = glm::mat4{ 1.0f };
 		projection = glm::identity<glm::mat4>();

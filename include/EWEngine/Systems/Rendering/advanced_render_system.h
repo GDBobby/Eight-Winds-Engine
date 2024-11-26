@@ -46,6 +46,10 @@ namespace EWE {
 		}
 
 		bool drawSkybox = true;
+		EWEModel* skyboxModel{ nullptr };
+
+		void CreateSkyboxDescriptor(ImageID skyboxImgID);
+
 	private:
 		UIHandler* uiHandler;
 
@@ -54,7 +58,7 @@ namespace EWE {
 		EWEModel* model2D;
 
 		void renderSkybox();
-		void renderTexturedGameObjects();
+		//void renderTexturedGameObjects();
 		void renderVisualEffects();
 		
 		void renderSprites();
@@ -65,6 +69,10 @@ namespace EWE {
 		void RenderLightning();
 
 		void RenderGrass(float time);
+
+		EWEDescriptorSetLayout* skyboxEDSL{ nullptr };
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> skyboxDescriptors{VK_NULL_HANDLE, VK_NULL_HANDLE};
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> grassDescriptors{ VK_NULL_HANDLE, VK_NULL_HANDLE };
 
 	};
 }

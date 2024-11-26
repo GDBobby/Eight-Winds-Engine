@@ -1,6 +1,6 @@
 #include "EWEngine/SkeletonHandlerBase.h"
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 #include "EWEngine/Graphics/Texture/Material_Textures.h"
 
 #include <thread>
@@ -93,7 +93,7 @@ namespace EWE {
         }
     }
 
-    void SkeletonBase::LoadTextures(std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath) {
+    void SkeletonBase::LoadTextures(std::string filePath, std::pair<std::vector<MaterialInfo>, std::vector<MaterialInfo>>& textureTracker, std::string texturePath) {
         //printf("failed to open : %s \n", filePath.c_str());
         std::ifstream inFile(filePath, std::ifstream::binary);
         if (!inFile.is_open()) {
@@ -113,7 +113,7 @@ namespace EWE {
             std::string finalDir = texturePath;
             finalDir += importData.meshNames[i];
             
-            textureTracker.first.emplace_back(Material_Texture::CreateMaterialTexture(finalDir, true));
+            textureTracker.first.emplace_back(Material_Image::CreateMaterialImage(finalDir, true));
             
         }
         //printf("after mesh texutres \n");
@@ -122,7 +122,7 @@ namespace EWE {
             std::string finalDir = texturePath;
             finalDir += importData.meshNTNames[i];
 
-            textureTracker.second.emplace_back(Material_Texture::CreateMaterialTexture(finalDir, true));
+            textureTracker.second.emplace_back(Material_Image::CreateMaterialImage(finalDir, true));
         }
         //printf("after mesh nt texutres \n");
     }
@@ -171,7 +171,7 @@ namespace EWE {
             assert(std::filesystem::exists(meshPath) && "couldn't find either anim path for skeleton");
         }
 
-        std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>> textureMappingTracker;
+        std::pair<std::vector<MaterialInfo>, std::vector<MaterialInfo>> textureMappingTracker;
         ReadAnimData(meshPath, partial, endian);
 
         LoadTextures(importPath + "_Names.ewe", textureMappingTracker, texturePath);

@@ -1,26 +1,81 @@
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
 
 #include "EWEngine/Graphics/PushConstants.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 namespace EWE {
+    std::unordered_map<ImageID, std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>> descriptorsByImageInfo{};
+
+    std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> GetDescriptor(MaterialInfo materialInfo) {
+        auto find = descriptorsByImageInfo.find(materialInfo.imageID);
+        if (find != descriptorsByImageInfo.end()) {
+            return find->second;
+        }
+        else {
+            EWEDescriptorSetLayout* eDSL = MaterialPipelines::GetDSLFromFlags(materialInfo.materialFlags);
+            std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> ret;
+            for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                EWEDescriptorWriter descWriter{ eDSL, DescriptorPool_Global };
+                DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
+                descWriter.WriteImage(2, Image_Manager::GetDescriptorImageInfo(materialInfo.imageID));
+                ret[i] = descWriter.Build();
+            }
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(ret[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "rigid buffer desc[0]");
+            DebugNaming::SetObjectName(ret[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "rigid buffer desc[1]");
+#endif
+
+
+            auto empRet = descriptorsByImageInfo.try_emplace(materialInfo.imageID, ret);
+            return ret;
+        }
+    }
+    InstancedMaterialObjectInfo::InstancedMaterialObjectInfo(EWEModel* meshPtr, uint32_t entityCount, bool computedTransforms, EWEDescriptorSetLayout* eDSL, ImageID imageID) :
+        meshPtr{ meshPtr },
+        buffer{ entityCount, computedTransforms, eDSL, imageID },
+        descriptorSets{
+                EWEDescriptorWriter(eDSL, DescriptorPool_Global)
+                .WriteBuffer(0, DescriptorHandler::GetCameraDescriptorBufferInfo(0))
+                .WriteBuffer(1, DescriptorHandler::GetLightingDescriptorBufferInfo(0))
+                .WriteBuffer(2, buffer.GetDescriptorBufferInfo(0))
+                .WriteImage(3, Image_Manager::GetDescriptorImageInfo(imageID))
+                .Build()
+            ,
+                EWEDescriptorWriter(eDSL, DescriptorPool_Global)
+                .WriteBuffer(0, DescriptorHandler::GetCameraDescriptorBufferInfo(1))
+                .WriteBuffer(1, DescriptorHandler::GetLightingDescriptorBufferInfo(1))
+                .WriteBuffer(2, buffer.GetDescriptorBufferInfo(1))
+                .WriteImage(3, Image_Manager::GetDescriptorImageInfo(imageID))
+                .Build()
+
+        }
+    {
+#if DEBUG_NAMING
+        DebugNaming::SetObjectName(descriptorSets[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "rigid instanced descriptor[0]");
+        DebugNaming::SetObjectName(descriptorSets[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "rigid instanced descriptor[1]");
+#endif
+    }
+
     void MaterialRenderInfo::Render() {
-        if (materialMap.size() == 0) {
+        if (materialVec.size() == 0) {
             return;
         }
         pipe->BindPipeline();
-        pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
-        for (auto iterTexID = materialMap.begin(); iterTexID != materialMap.end(); iterTexID++) {
-
-            pipe->BindTextureDescriptor(1, iterTexID->first);
-
-            for (auto& renderInfo : iterTexID->second) {
-                if (!renderInfo.drawable) {
+        for (auto& material : materialVec) {
+            if (material.objectVec.size() == 0) {
+                continue;
+            }
+#if EWE_DEBUG
+            assert(material.desc[VK::Object->frameIndex] != VK_NULL_HANDLE);
+#endif
+            pipe->BindDescriptor(0, &material.desc[VK::Object->frameIndex]);
+            for (auto& obj : material.objectVec) {
+                if (!obj.drawable) {
                     continue;
                 }
+                SimplePushConstantData push{ obj.ownerTransform->mat4(), obj.ownerTransform->normalMatrix() };
 
-                SimplePushConstantData push{ renderInfo.ownerTransform->mat4(), renderInfo.ownerTransform->normalMatrix() };
-
-                pipe->BindModel(renderInfo.meshPtr);
+                pipe->BindModel(obj.meshPtr);
                 pipe->PushAndDraw(&push);
             }
         }
@@ -29,10 +84,11 @@ namespace EWE {
         if (instancedInfo.size() == 0) { return; }
         pipe->BindPipeline();
 
-        pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
+        //pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
         for (auto const& instanceInfo : instancedInfo) {
-            pipe->BindDescriptor(1, instanceInfo.buffer.GetDescriptor());
-            pipe->BindTextureDescriptor(2, instanceInfo.texture);
+           // pipe->BindDescriptor(1, instanceInfo.buffer.GetDescriptor());
+            //pipe->BindTextureDescriptor(2, instanceInfo.texture);
+            pipe->BindDescriptor(0, &instanceInfo.descriptorSets[VK::Object->frameIndex]);
             const uint32_t instanceCount = instanceInfo.buffer.GetCurrentEntityCount();
             if (instanceCount == 0) {
                 continue;
@@ -50,7 +106,7 @@ namespace EWE {
 
         void Initialize() {
             materialMap = Construct<std::unordered_map<MaterialFlags, MaterialRenderInfo>>({});
-            instancedMaterialMap = Construct< std::unordered_map<MaterialFlags, InstancedMaterialRenderInfo>>({});
+            instancedMaterialMap = Construct<std::unordered_map<MaterialFlags, InstancedMaterialRenderInfo>>({});
         }
         void Destruct() {
             materialMap->clear();
@@ -58,85 +114,61 @@ namespace EWE {
             Deconstruct(materialMap);
             Deconstruct(instancedMaterialMap);
         }
-        void AddInstancedMaterialObject(MaterialTextureInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms) {
+        void AddInstancedMaterialObject(MaterialInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms) {
+
             assert(modelPtr != nullptr);
+            const uint16_t pipeLayoutIndex = MaterialPipelines::GetPipeLayoutIndex(materialInfo.materialFlags);
             auto findRet = instancedMaterialMap->find(materialInfo.materialFlags);
             if (findRet == instancedMaterialMap->end()) {
                 auto empRet = instancedMaterialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags, entityCount);
-                empRet.first->second.instancedInfo.emplace_back(materialInfo.texture, modelPtr, entityCount, computedTransforms);
+                empRet.first->second.instancedInfo.emplace_back(modelPtr, entityCount, computedTransforms, MaterialPipelines::GetDSL(pipeLayoutIndex), materialInfo.imageID);
             }
             else {
-#if EWE_DEBUG
-                //texture shouldn't be used in two separate models. unless it's like a ubertexture or texturearray i guess
-                //if this becomes an issue, I'll need an unordered map of textures paired with vectors of the rest of the InstancedMaterialRenderInfo struct
-                for (auto const& instance : findRet->second.instancedInfo) {
-                    assert(instance.texture != materialInfo.texture && "duplicating textures");
-                }
-#endif
-                findRet->second.instancedInfo.emplace_back(materialInfo.texture, modelPtr, entityCount, computedTransforms);
+                findRet->second.instancedInfo.emplace_back(modelPtr, entityCount, computedTransforms, MaterialPipelines::GetDSL(pipeLayoutIndex), materialInfo.imageID);
             }
         }
 
-        void AddMaterialObject(MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo) {
+        void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo) {
         #if EWE_DEBUG
             assert(renderInfo.meshPtr != nullptr);
         #endif
             auto findRet = materialMap->find(materialInfo.materialFlags);
             if (findRet == materialMap->end()) {
                 auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
-                empRet.first->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
+
+                //need to create the descriptor here
+                std::array<VkDescriptorSet, 2> desc = GetDescriptor(materialInfo);
+                for (auto& material : empRet.first->second.materialVec) {
+                    if (material.desc == desc) {
+                        material.objectVec.push_back(renderInfo);
+                        break;
+                    }
+                }
             }
             else {
-                auto textureFindRet = findRet->second.materialMap.find(materialInfo.texture);
-                if (textureFindRet == findRet->second.materialMap.end()) {
-                    findRet->second.materialMap.try_emplace(materialInfo.texture, std::vector<MaterialObjectInfo>{renderInfo});
+                std::array<VkDescriptorSet, 2> desc = GetDescriptor(materialInfo);
+                for (auto& material : findRet->second.materialVec) {
+                    if (material.desc == desc) {
+                        material.objectVec.push_back(renderInfo);
+                        break;
+                    }
                 }
-                else {
-                    textureFindRet->second.push_back(renderInfo);
-                }
-                
             }
         }
-        void AddMaterialObject(MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
+        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
             MaterialObjectInfo paramPass{ ownerTransform, modelPtr, drawable };
             AddMaterialObject(materialInfo, paramPass);
         }
-        void AddMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr) {
-            //this should probably 
-
+        void RemoveByTransform(TransformComponent* ownerTransform) {
             for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
-                for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
-                    if (iterTexID->first == copyID) {
-#if EWE_DEBUG
-                        assert(iterTexID->second.size() == 0 || iterTexID->second[0].meshPtr == nullptr);
-#endif
-                        iterTexID->second.push_back(iterTexID->second[0]);
-                        iterTexID->second.back().ownerTransform = ownerTransform;
-                        iterTexID->second.back().meshPtr = iterTexID->second[0].meshPtr;
-                        iterTexID->second.back().drawable = drawablePtr;
-                        return;
-                    }
-                }
-            }
-#if EWE_DEBUG
-            assert(false && "failed to find matching texture");
-#else
-            //unreachable
-#endif
-        }
-        void RemoveByTransform(TextureDesc textureID, TransformComponent* ownerTransform) {
-            for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
-                for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end(); iterTexID++) {
-                    if (iterTexID->first == textureID) {
-                        for (int i = 0; i < iterTexID->second.size(); i++) {
-                            if (iterTexID->second[i].ownerTransform == ownerTransform) {
-                                iterTexID->second.erase(iterTexID->second.begin() + i);
-                                i--;
-                            }
+                for (auto& material : iter->second.materialVec) {
+                    for (auto iter = material.objectVec.begin(); iter != material.objectVec.end(); iter++) {
+                        if (iter->ownerTransform == ownerTransform) {
+                            material.objectVec.erase(iter);
+                            return;
                         }
                     }
                 }
-
             }
 #if EWE_DEBUG
             assert(false && "failed to find matching texture");
@@ -163,33 +195,6 @@ namespace EWE {
 #endif
         }
 
-
-        std::vector<TextureDesc> CheckAndClearTextures() {
-            std::vector<TextureDesc> returnVector;
-            for (auto iter = materialMap->begin(); iter != materialMap->end(); iter++) {
-
-                //bool removedTexID = false;
-                for (auto iterTexID = iter->second.materialMap.begin(); iterTexID != iter->second.materialMap.end();) {
-                    if (iterTexID->second.size() == 0) {
-                        returnVector.push_back(iterTexID->first);
-                        iterTexID = iter->second.materialMap.erase(iterTexID);
-                        //removedTexID = true;
-                    }
-                    else {
-                        iterTexID++;
-                    }
-                }
-                //if (!removedTexID) {
-                //    iter++;
-                //}
-            }
-#if EWE_DEBUG
-            if (returnVector.size() == 0) {
-                printf("WARNING : failed to remove textures\n");
-            }
-#endif
-            return returnVector;
-        }
         void RemoveInstancedObject(EWEModel* modelPtr){
             for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
                 for (auto instanceIter = iter->second.instancedInfo.begin(); instanceIter != iter->second.instancedInfo.end(); instanceIter++) {
@@ -265,6 +270,7 @@ namespace EWE {
             }
 #if EWE_DEBUG
             assert(false && "failed to find buffer");
+            return nullptr; // error silencing
 #else
             //unreachable
 #endif

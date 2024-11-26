@@ -1,7 +1,7 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 
 #include "EWEngine/Graphics/Model/Basic_Model.h"
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 #define RENDER_DEBUG false
 
@@ -20,9 +20,13 @@ namespace EWE {
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-		VkDescriptorSetLayout tempDSL = TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->GetDescriptorSetLayout();
+		{
+			EWEDescriptorSetLayout::Builder eDSLBuilder{};
+			eDSLBuilder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+			eDSL = eDSLBuilder.Build();
+		}
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &tempDSL;
+		pipelineLayoutInfo.pSetLayouts = eDSL->GetDescriptorSetLayout();
 
 		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &PL_2d);
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
@@ -47,6 +51,7 @@ namespace EWE {
 		pipe2d->SetDebugName("UI 2d pipeline");
 		DebugNaming::SetObjectName(PL_2d, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "2d pipe layout");
 #endif
+		CreateDefaultDesc();
 
 		/*
 		pushConstantRange.size = sizeof(NineUIPushConstantData);
@@ -73,6 +78,7 @@ namespace EWE {
 		EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, dimension2Ptr->cache, nullptr);
 
 		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, dimension2Ptr->PL_2d, nullptr);
+		Deconstruct(dimension2Ptr->eDSL);
 		Deconstruct(dimension2Ptr->model2D);
 		Deconstruct(dimension2Ptr->pipe2d);
 		Deconstruct(dimension2Ptr);
@@ -85,55 +91,54 @@ namespace EWE {
 
 		dimension2Ptr->pipe2d->Bind();
 		dimension2Ptr->model2D->Bind();
-		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED_DESC;
+		dimension2Ptr->bindedTexture = IMAGE_INVALID;
 	}
-//	void Dimension2::BindNineUI(CommandBuffer cmdBuffer, uint8_t frameIndex) {
-//#if RENDER_DEBUG
-//		printf("binding 9ui in dimension 2 \n");
-//#endif
-//		dimension2Ptr->pipe9->bind(cmdBuffer);
-//		dimension2Ptr->nineUIModel->Bind(cmdBuffer);
-//		dimension2Ptr->bindedTexture = TEXTURE_UNBINDED_DESC;
-//		dimension2Ptr->frameIndex = frameIndex;
-//		dimension2Ptr->cmdBuffer = cmdBuffer;
-//	}
+	void Dimension2::CreateDefaultDesc() {
+		uiArrayID = Image_Manager::CreateUIImage();
 
-	void Dimension2::BindTexture2DUI(TextureDesc texture) {
+		EWEDescriptorWriter descWriter(eDSL, DescriptorPool_Global);
+		descWriter.WriteImage(0, Image_Manager::GetDescriptorImageInfo(uiArrayID));
+		defaultDesc = descWriter.Build();
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(defaultDesc, VK_OBJECT_TYPE_DESCRIPTOR_SET, "ui array desc");
+#endif
+	}
+	void Dimension2::BindDefaultDesc() {
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			dimension2Ptr->PL_2d,
+			0, 1,
+			&dimension2Ptr->defaultDesc,
+			0, nullptr
+		);
+	}
+
+	/*
+	void Dimension2::BindTexture2DUI(ImageID texture) {
 		if (texture != dimension2Ptr->bindedTexture) {
 			EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
-				&texture,
+				&dimension2Ptr->desc2D,
 				0, nullptr
 			);
 			dimension2Ptr->bindedTexture = texture;
 		}
 	}
-	void Dimension2::BindTexture2D(TextureDesc texture) {
+	void Dimension2::BindTexture2D(ImageID texture) {
 		if (texture != dimension2Ptr->bindedTexture) {
 			EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				dimension2Ptr->PL_2d,
 				0, 1,
-				&texture,
+				&dimension2Ptr->descNine,
 				0, nullptr
 			);
 			dimension2Ptr->bindedTexture = texture;
 		}
 	}
-	//void Dimension2::BindTexture9(TextureDesc texture) {
-	//	if (texture != dimension2Ptr->bindedTexture) {
-	//		vkCmdBindDescriptorSets(dimension2Ptr->cmdBuffer,
-	//			VK_PIPELINE_BIND_POINT_GRAPHICS,
-	//			dimension2Ptr->PL_9,
-	//			0, 1,
-	//			&texture,
-	//			0, nullptr
-	//		);
-	//		dimension2Ptr->bindedTexture = texture;
-	//	}
-	//}
+	*/
 
 	void Dimension2::PushAndDraw(Simple2DPushConstantData& push) {
 		//possibly do a check here, to ensure the pipeline and descriptors are properly binded

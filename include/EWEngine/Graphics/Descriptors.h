@@ -17,27 +17,26 @@ namespace EWE {
         public:
             Builder() {}
 
-            Builder& AddBinding(
-                uint32_t binding,
-                VkDescriptorType descriptorType,
-                VkShaderStageFlags stageFlags,
-                uint32_t count = 1);
-            EWEDescriptorSetLayout* Build() const;
+            Builder& AddBinding(VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count = 1);
+            Builder& AddGlobalBindingForCompute();
+            Builder& AddGlobalBindings();
+            EWEDescriptorSetLayout* Build();
 
         private:
-            std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
+            std::vector<VkDescriptorSetLayoutBinding> bindings{};
+            uint8_t currentBindingCount = 0;
         };
 
-        EWEDescriptorSetLayout(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings);
+        EWEDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>& bindings);
         ~EWEDescriptorSetLayout();
         EWEDescriptorSetLayout(const EWEDescriptorSetLayout&) = delete;
         EWEDescriptorSetLayout& operator=(const EWEDescriptorSetLayout&) = delete;
 
-        VkDescriptorSetLayout GetDescriptorSetLayout() const { return descriptorSetLayout; }
+        [[nodiscard]] VkDescriptorSetLayout* GetDescriptorSetLayout() { return &descriptorSetLayout; }
 
     private:
         VkDescriptorSetLayout descriptorSetLayout;
-        std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
+        std::vector<VkDescriptorSetLayoutBinding> bindings;
 
         friend class EWEDescriptorWriter;
     };

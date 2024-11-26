@@ -10,41 +10,66 @@ namespace EWE {
 
     // *************** Descriptor Set Layout Builder *********************
 
-    EWEDescriptorSetLayout::Builder& EWEDescriptorSetLayout::Builder::AddBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count) {
-        assert(!bindings.contains(binding) && "Binding already in use");
+    EWEDescriptorSetLayout::Builder& EWEDescriptorSetLayout::Builder::AddBinding(VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count) {
         VkDescriptorSetLayoutBinding layoutBinding{};
-        layoutBinding.binding = binding;
+        layoutBinding.binding = currentBindingCount;
         layoutBinding.descriptorType = descriptorType;
         layoutBinding.descriptorCount = count;
         layoutBinding.stageFlags = stageFlags;
-        bindings.emplace(binding, layoutBinding);
+        bindings.push_back(layoutBinding);
+
+        currentBindingCount++;
+        return *this;
+    }
+    EWEDescriptorSetLayout::Builder& EWEDescriptorSetLayout::Builder::AddGlobalBindingForCompute() {
+        VkDescriptorSetLayoutBinding globalBindings{};
+        globalBindings.binding = 0;
+        globalBindings.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        globalBindings.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        globalBindings.descriptorCount = 1;
+        bindings.push_back(globalBindings);
+        currentBindingCount = 1;
         return *this;
     }
 
-    EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::Build() const {
+    EWEDescriptorSetLayout::Builder& EWEDescriptorSetLayout::Builder::AddGlobalBindings() {
+#if EWE_DEBUG
+        assert(currentBindingCount == 0);
+#endif
+        VkDescriptorSetLayoutBinding globalBindings{};
+        globalBindings.binding = 0;
+        globalBindings.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        globalBindings.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        globalBindings.descriptorCount = 1;
+        bindings.push_back(globalBindings);
+
+        globalBindings.binding = 1;
+        bindings.push_back(globalBindings);
+
+        currentBindingCount = 2;
+
+        return *this;
+    }
+
+    EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::Build() {
         return Construct<EWEDescriptorSetLayout>({ bindings });
     }
 
     // *************** Descriptor Set Layout *********************
 
-    EWEDescriptorSetLayout::EWEDescriptorSetLayout(std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings)
-        : bindings{ bindings } {
-        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
-        setLayoutBindings.reserve(bindings.size());
-        for (auto& kv : bindings) {
-            setLayoutBindings.push_back(kv.second);
-        }
+    EWEDescriptorSetLayout::EWEDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>& bindings)
+        : bindings{ std::move(bindings) } {
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
-        descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
+        descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(this->bindings.size());
+        descriptorSetLayoutInfo.pBindings = this->bindings.data();
 
         EWE_VK(vkCreateDescriptorSetLayout, VK::Object->vkDevice, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
     }
 
     EWEDescriptorSetLayout::~EWEDescriptorSetLayout() {
-        vkDestroyDescriptorSetLayout(VK::Object->vkDevice, descriptorSetLayout, nullptr);
+        EWE_VK(vkDestroyDescriptorSetLayout, VK::Object->vkDevice, descriptorSetLayout, nullptr);
 #if EWE_DEBUG
         printf("probably have memory leaks currently, address this ASAP \n");
         //the reason i have this print statement (feb 2024)
@@ -211,10 +236,10 @@ namespace EWE {
 
     EWEDescriptorWriter& EWEDescriptorWriter::WriteBuffer( uint32_t binding, VkDescriptorBufferInfo* bufferInfo) {
 #if EWE_DEBUG
-        assert(setLayout->bindings.contains(binding) && "Layout does not contain specified binding");
+        assert((setLayout->bindings.size() > binding) && "Layout does not contain specified binding");
 #endif
 
-        auto& bindingDescription = setLayout->bindings.at(binding);
+        auto& bindingDescription = setLayout->bindings[binding];
 
 #if EWE_DEBUG
         assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
@@ -233,13 +258,13 @@ namespace EWE {
     }
 
     EWEDescriptorWriter& EWEDescriptorWriter::WriteImage(uint32_t binding, VkDescriptorImageInfo* imageInfo) {
-        assert(setLayout->bindings.count(binding) == 1 && "Layout does not contain specified binding");
+#if EWE_DEBUG
+        assert((setLayout->bindings.size() > binding) && "Layout does not contain specified binding");
+#endif
 
-        auto& bindingDescription = setLayout->bindings.at(binding);
+        auto& bindingDescription = setLayout->bindings[binding];
 
-        assert(
-            bindingDescription.descriptorCount == 1 &&
-            "Binding single descriptor info, but binding expects multiple");
+        assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
 
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -270,14 +295,14 @@ namespace EWE {
     }
     VkDescriptorSet EWEDescriptorWriter::BuildPrint() {
         VkDescriptorSet set;
-        pool.AllocateDescriptor(setLayout->GetDescriptorSetLayout(), set);
+        pool.AllocateDescriptor(*setLayout->GetDescriptorSetLayout(), set);
 
         activeDescriptors++;
         for (int i = 0; i < setLayout->bindings.size(); i++) {
-            if (setLayout->bindings.at(i).descriptorCount != 1) {
+            //if (setLayout->bindings[i].descriptorCount != 1) {
                 //printf("\t count:%d\n", setLayout.bindings.at(i).descriptorCount);
-            }
-            pool.AddDescriptorToTrackers(setLayout->bindings.at(i).descriptorType, setLayout->bindings.at(i).descriptorCount);
+            //}
+            pool.AddDescriptorToTrackers(setLayout->bindings.at(i).descriptorType, setLayout->bindings[i].descriptorCount);
         }
         //printf("active descriptors after addition : %d \n", activeDescriptors);
         Overwrite(set);
@@ -288,6 +313,7 @@ namespace EWE {
         for (auto& write : writes) {
             write.dstSet = set;
         }
+
         EWE_VK(vkUpdateDescriptorSets, VK::Object->vkDevice, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
     }
 }  // namespace EWE

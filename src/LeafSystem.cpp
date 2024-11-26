@@ -1,5 +1,6 @@
 #include "EWEngine/LoadingScreen/LeafSystem.h"
 #include "EWEngine/Data/EWE_Import.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 namespace EWE {
 	//id like to move some of the random generation components to local scope on leaf generation, not sure which ones yet
@@ -34,8 +35,6 @@ namespace EWE {
 
 		for (auto& buffer : leafBuffer) {
 			Deconstruct(buffer);
-			//buffer->~EWEBuffer();
-			//ewe_free(buffer);
 		}
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstructing leaf system \n");
@@ -43,17 +42,24 @@ namespace EWE {
 	}
 
 	void LeafSystem::InitData() {
-		leafBuffer.reserve(MAX_FRAMES_IN_FLIGHT);
-		leafBufferData.reserve(MAX_FRAMES_IN_FLIGHT);
-		transformDescriptor.reserve(MAX_FRAMES_IN_FLIGHT);
 
+		LoadLeafModel();
+#if EWE_DEBUG
+		printf("after leaf mesh\n");
+#endif
+
+		LoadLeafTexture();
+
+#if EWE_DEBUG
+		printf("after leaf texture\n");
+#endif
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			leafBuffer.push_back(Construct<EWEBuffer>({ sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT }));
+			leafBuffer[i] = Construct<EWEBuffer>({ sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
 
 			leafBuffer[i]->Map();
 
-			leafBufferData.push_back(reinterpret_cast<float*>(leafBuffer[i]->GetMappedMemory()));
+			leafBufferData[i] = reinterpret_cast<float*>(leafBuffer[i]->GetMappedMemory());
 		}
 #if DEBUG_NAMING
 		leafBuffer[0]->SetName("leaf instance[0]");
@@ -61,19 +67,7 @@ namespace EWE {
 #endif
 
 		LeafPhysicsInitialization();
-
-		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-
-			transformDescriptor.emplace_back(
-				EWEDescriptorWriter(DescriptorHandler::GetLDSL(LDSL_boned), DescriptorPool_Global)
-				.WriteBuffer(0, leafBuffer[i]->DescriptorInfo())
-				.Build()
-			);
-		}
-#if DEBUG_NAMING
-		DebugNaming::SetObjectName(transformDescriptor[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf transform descriptor[0]");
-		DebugNaming::SetObjectName(transformDescriptor[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf transform descriptor[1]");
-#endif
+		CreateDescriptor();
 	}
 
 	void LeafSystem::LeafPhysicsInitialization(){
@@ -354,26 +348,33 @@ namespace EWE {
 	}
 	void LeafSystem::LoadLeafTexture() {
 		const std::string fullLeafTexturePath = "textures/leaf.jpg";
-		ImageInfo imageInfo = Image::CreateImage(fullLeafTexturePath, false, Queue::graphics);
+		leafImageInfo = Image::CreateImage(fullLeafTexturePath, false, Queue::graphics);
 
 		const std::string leafTexturePath = "leaf.jpg";
-		leafTextureID = Texture_Manager::AddImageInfo(leafTexturePath, imageInfo, VK_SHADER_STAGE_FRAGMENT_BIT, false);
-#if DEBUG_NAMING
-		DebugNaming::SetObjectName(leafTextureID, VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf texture descriptor");
-#endif
 		//printf("leaf model loaded \n");
 	}
+
+	void LeafSystem::CreateDescriptor() {
+		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			EWEDescriptorWriter descWriter{leafEDSL, DescriptorPool_Global};
+			DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
+			descWriter.WriteImage(2, leafImageInfo.GetDescriptorImageInfo());
+			descWriter.WriteBuffer(3, leafBuffer[i]->DescriptorInfo());
+			leafDescriptor[i] = descWriter.Build();
+		}
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(leafDescriptor[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf descriptor[0]");
+		DebugNaming::SetObjectName(leafDescriptor[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "leaf descriptor[1]");
+#endif
+	}
+
+
 	void LeafSystem::Render() {
 #if EWE_DEBUG
 		currentPipe = myID;
 #endif
 		BindPipeline();
-		BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
-
-		//printf("after binding descriptor set 0 \n");
-		BindDescriptor(1, &leafTextureID);
-
-		BindDescriptor(2, &transformDescriptor[VK::Object->frameIndex]);
+		BindDescriptor(0, &leafDescriptor[VK::Object->frameIndex]);
 
 		leafModel->BindAndDrawInstanceNoBuffer(LEAF_COUNT);
 	}
@@ -388,11 +389,8 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
-		ShaderBlock::InitializeGlslang();
-		Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetLoadingVertShader(), &vertexShaderModule);
-
-		Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetLoadingFragShader(), &fragmentShaderModule);
-		ShaderBlock::FinalizeGlslang();
+		Pipeline_Helper_Functions::CreateShaderModule("leaf.vert.spv", &vertexShaderModule);
+		Pipeline_Helper_Functions::CreateShaderModule("leaf.frag.spv", &fragmentShaderModule);
 
 		pipe = std::make_unique<EWEPipeline>(vertexShaderModule, fragmentShaderModule, pipelineConfig);
 	}
@@ -403,14 +401,15 @@ namespace EWE {
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-		std::vector<VkDescriptorSetLayout> setLayouts = {
-			DescriptorHandler::GetDescSetLayout(LDSL_global),
-			TextureDSLInfo::GetSimpleDSL(VK_SHADER_STAGE_FRAGMENT_BIT)->GetDescriptorSetLayout(),
-			DescriptorHandler::GetDescSetLayout(LDSL_boned)
-		};
+		EWEDescriptorSetLayout::Builder dslBuilder{};
+		leafEDSL = dslBuilder
+		.AddGlobalBindings()
+		.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.Build();
 
-		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
-		pipelineLayoutInfo.pSetLayouts = setLayouts.data();
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = leafEDSL->GetDescriptorSetLayout();
 
 		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}

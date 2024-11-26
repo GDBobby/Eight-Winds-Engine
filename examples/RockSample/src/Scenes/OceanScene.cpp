@@ -2,7 +2,7 @@
 
 
 namespace EWE {
-	OceanScene::OceanScene(EightWindsEngine& ewEngine, VkDescriptorImageInfo* skyboxImage)
+	OceanScene::OceanScene(EightWindsEngine& ewEngine, ImageID skyboxImgID)
 		: ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
 		soundEngine{ SoundEngine::GetSoundEngineInstance() },
@@ -10,10 +10,12 @@ namespace EWE {
 	{
 		transform.rotation.x = 0.001f;
 		transform.rotation.y = 0.001f;
-		ocean = Construct<Ocean::Ocean>({ skyboxImage });
+		ocean = Construct<Ocean::Ocean>({ Image_Manager::GetDescriptorImageInfo(skyboxImgID)});
 	}
 	OceanScene::~OceanScene() {
-		printf("deconstructing main menu \n");
+#if DECONSTRUCTION_DEBUG
+		printf("deconstructing ocean scene \n");
+#endif
 	}
 
 

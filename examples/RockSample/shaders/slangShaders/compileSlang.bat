@@ -21,4 +21,4 @@ C:\Programming\slang-2024.14\bin\slangc.exe RockTrack.comp.slang -profile glsl_4
 
 
 C:\Programming\slang-2024.14\bin\slangc.exe UI.vert.slang -profile glsl_460 -target spirv -o ../UI.vert.spv -O3 -emit-spirv-directly -entry vertexMain
-C:\Programming\slang-2024.14\bin\slangc.exe UI.frag.slang -profile glsl_460 -target spirv -o ../UI.frag.spv -O3 -emit-spirv-directly -entry fragmentMain
+REM C:\Programming\slang-2024.14\bin\slangc.exe UI.frag.slang -profile glsl_460 -target spirv -o ../UI.frag.spv -O3 -emit-spirv-directly -entry fragmentMain

@@ -13,32 +13,11 @@ namespace EWE {
 	class EweObject {
 	public:
 
-        EweObject(const EweObject& other) : transform{}, ownedTextures{ other.ownedTextures } {
-            printf("ewe copy construction \n");
-            for (auto iter = ownedTextures.begin(); iter != ownedTextures.end(); iter++) {
-                //printf("adding material from tex id %d \n", *iter);
-                RigidRenderingSystem::AddMaterialObjectFromTexID(*iter, &transform, &drawable);
-            }
-        }
+        EweObject(const EweObject& other) = delete;
+        EweObject(EweObject&& other) noexcept = delete;
+        EweObject& operator=(const EweObject&& other) = delete;
+        EweObject& operator=(const EweObject& other) = delete;
 
-        EweObject& operator=(const EweObject&& other) noexcept {
-			printf("ewe copy operator \n");
-            if (this != &other) {
-                this->transform = other.transform;
-                this->ownedTextures = other.ownedTextures;
-                this->meshes = other.meshes;
-                this->drawable = other.drawable;
-			}
-			return *this;
-		}
-
-        EweObject(EweObject&& other) noexcept {
-            printf("move operation \n");
-            this->transform = other.transform;
-            this->ownedTextures = other.ownedTextures;
-            this->meshes = other.meshes;
-            this->drawable = other.drawable;
-        }
 
         EweObject(std::string objectPath, bool globalTextures, Queue::Enum queue);
         EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, Queue::Enum queue);
@@ -47,7 +26,7 @@ namespace EWE {
 		TransformComponent transform{};
         std::vector<EWEModel*> meshes{};
         bool drawable = true;
-        std::unordered_set<TextureDesc> ownedTextures{};
+        std::unordered_set<ImageID> ownedTextures{};
 
 
         //void deTexturize();
@@ -56,10 +35,10 @@ namespace EWE {
         }
 	private:
         struct TextureMapping {
-            std::vector<MaterialTextureInfo> meshNames;
-            std::vector<MaterialTextureInfo> meshNTNames;
-            std::vector<MaterialTextureInfo> meshSimpleNames;
-            std::vector<MaterialTextureInfo> meshNTSimpleNames;
+            std::vector<MaterialInfo> meshNames;
+            std::vector<MaterialInfo> meshNTNames;
+            std::vector<MaterialInfo> meshSimpleNames;
+            std::vector<MaterialInfo> meshNTSimpleNames;
         };
 
         uint32_t mySkinID = 0;

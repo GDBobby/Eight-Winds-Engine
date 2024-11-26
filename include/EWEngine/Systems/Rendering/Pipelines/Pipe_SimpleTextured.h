@@ -15,7 +15,6 @@ namespace EWE {
 	protected:
 		void CreatePipeLayout() final;
 		void CreatePipeline() final;
-
 	};
 }
 

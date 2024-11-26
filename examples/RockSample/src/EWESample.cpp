@@ -5,6 +5,7 @@
 //#include "GUI/ControlsMM.h"
 #include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
 #include <EWEngine/Graphics/Texture/Cube_Texture.h>
+#include <EWEngine/Systems/PipelineSystem.h>
 
 #include "GUI/MenuEnums.h"
 #include <EWEngine/Systems/ThreadPool.h>
@@ -77,7 +78,7 @@ namespace EWE {
 		};
 		auto sceneLoadFunc3 = [&]() {
 			printf("loading ocean scene : %u\n", std::this_thread::get_id());
-			scenes.at(scene_ocean) = Construct<OceanScene>({ ewEngine, skyboxInfo });
+			scenes.at(scene_ocean) = Construct<OceanScene>({ ewEngine, skyboxImgID });
 			LoadSceneIfMatching(scene_ocean);
 			loadingThreadTracker.oceanSceneThread = true;
 		};
@@ -163,11 +164,11 @@ namespace EWE {
 
 	void EWESample::loadGlobalObjects() {
 		std::string skyboxLoc = "nasa/";
-		TextureDesc skyboxID = Cube_Texture::CreateCubeImage(skyboxLoc, Queue::transfer);
-		skyboxInfo = Texture_Manager::GetDescriptorImageInfo(skyboxLoc);
+		skyboxImgID = Cube_Texture::CreateCubeImage(skyboxLoc, Queue::transfer);
 
 		//i dont even know if the engine will work if this isnt constructed
-		ewEngine.objectManager.skybox = { Basic_Model::SkyBox(Queue::transfer, 10000.f), skyboxID };
+		ewEngine.advancedRS.skyboxModel = Basic_Model::SkyBox(Queue::transfer, 10000.f);
+		ewEngine.advancedRS.CreateSkyboxDescriptor(skyboxImgID);
 
 		//point lights are off by default
 		std::vector<glm::vec3> lightColors{
@@ -284,7 +285,7 @@ namespace EWE {
 			}
 			case MCR_none: {
 				printf("returned MCR_Return \n");
-				throw std::runtime_error("this should nto be returned");
+				assert(false && "this should nto be returned");
 				break;
 			}
 			default: {
@@ -300,7 +301,7 @@ namespace EWE {
 		vkDeviceWaitIdle(VK::Object->vkDevice);
 		currentScenePtr->exit();
 		ewEngine.objectManager.ClearSceneObjects();
-		Texture_Manager::GetTextureManagerPtr()->ClearSceneTextures();
+		//Image_Manager::GetImageManagerPtr()->ClearSceneTextures();
 		//loading entry?
 		if (currentScene != scene_exitting) {
 			currentScenePtr = scenes.at(currentScene);

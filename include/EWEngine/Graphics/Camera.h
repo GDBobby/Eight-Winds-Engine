@@ -1,18 +1,13 @@
 #pragma once
 
+#include "EWEngine/Graphics/LightBufferObject.h"
+#include "EWEngine/Graphics/Device_Buffer.h"
+
 #include <glm/glm.hpp>
 #include <vector>
-#include "Device_Buffer.h"
+
 
 namespace EWE {
-	struct GlobalUbo {
-		glm::mat4 projView;
-		//glm::mat4 inverseView{ 1.f };
-		glm::vec3 cameraPos{ 1.f }; //4 just for alignment
-
-		//alignas(16) glm::vec3 lightDirection = glm::normalize(glm::vec3{ 1.f, 3.f, -1.f });
-		//glm::vec4 ambientLightColor{ 1.f, 0.7f, 0.7f, .02f };  // w is intensity
-	};
 	class EWECamera {
 	public:
 
@@ -36,15 +31,12 @@ namespace EWE {
 		void BindBothUBOs();
 		void BindUBO();
 
-		void SetBuffers(std::vector<EWEBuffer*>* buffers) {
-			assert(buffers->size() > 0);
-			uniformBuffers = buffers;
-		}
+		void SetBuffers();
 		void UpdateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp = glm::vec3{ 0.f,1.f,0.f });
 		void PrintCameraPos();
 		
 	private:
-		std::vector<EWEBuffer*>* uniformBuffers{};
+		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT>* uniformBuffers;
 		GlobalUbo ubo{};
 
 		glm::mat4 projection{ 0.f };
