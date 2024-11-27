@@ -6,6 +6,8 @@
 
 #include <EWEngine/Data/MemoryTypeBucket.h>
 
+#include <EWEngine/Graphics/Descriptors.h>
+
 
 #include <vector>
 #include <unordered_map>
@@ -35,6 +37,7 @@ namespace EWE {
 		std::unordered_map<ImageID, ImageTracker*> imageTrackerIDMap{};
 		std::unordered_map<std::string, ImageID> imageStringToIDMap{};
 		std::unordered_map<ImageID, MaterialInfo> existingMaterialsByID{};
+		std::unordered_map<VkShaderStageFlags, EWEDescriptorSetLayout*> simpleTextureLayouts{};
 		
 		//ImageInfo* skybox_image;
 		//ImageInfo* UI_image;
@@ -67,8 +70,33 @@ namespace EWE {
 				return findRet->second;
 			}
 		}
+		static VkDescriptorSet CreateSimpleTexture(std::string const& imagePath, bool mipMap, VkShaderStageFlags stageFlags, bool zeroUsageDelete = false) {
+			ImageID imgID = GetCreateImageID(imagePath, mipMap, zeroUsageDelete);
+			EWEDescriptorSetLayout* simpleTextureDSL;
+
+			{
+				auto findRet = imgMgrPtr->simpleTextureLayouts.find(stageFlags);
+				if (findRet == imgMgrPtr->simpleTextureLayouts.end()) {
+					EWEDescriptorSetLayout::Builder builder{};
+					builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlags);
+					simpleTextureDSL = builder.Build();
+					imgMgrPtr->simpleTextureLayouts.emplace(stageFlags, simpleTextureDSL);
+				}
+				else {
+					simpleTextureDSL = findRet->second;
+				}
+			}
+
+			EWEDescriptorWriter descWriter{ simpleTextureDSL, DescriptorPool_Global };
+			descWriter.WriteImage(0, GetDescriptorImageInfo(imgID));
+			return descWriter.Build();
+			
+		}
 
 		static VkDescriptorImageInfo* GetDescriptorImageInfo(ImageID imgID) {
+#if EWE_DEBUG
+			assert(imgID != IMAGE_INVALID);
+#endif
 			return imgMgrPtr->imageTrackerIDMap.at(imgID)->imageInfo.GetDescriptorImageInfo();
 		}
 		static ImageID FindByPath(std::string const& path);

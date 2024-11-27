@@ -2,7 +2,7 @@
 
 #include "../MenuEnums.h"
 #include <EWEngine/imgui/imgui.h>
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 namespace EWE {
     LevelCreationIMGUI::LevelCreationIMGUI(std::queue<uint16_t>& clickReturns, float screenWidth, float screenHeight) : clickReturns{ clickReturns }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
@@ -159,7 +159,7 @@ namespace EWE {
         ImGui::SliderScalar("tileSet ratio", ImGuiDataType_Float, &tileSetRatio, &scaleLow, &scaleHigh);
 
         ImGui::Text("Selected Tile %u", selectedTile);
-        ImGui::Image(tileSetID, ImVec2(64, 64), selectedTileUVTL, selectedTileUVBR);
+        ImGui::Image(tileSetDescriptor, ImVec2(64, 64), selectedTileUVTL, selectedTileUVBR);
 
         ImGui::SameLine();
         ShowToolControls();
@@ -172,7 +172,7 @@ namespace EWE {
 
         ImVec2 pos = ImGui::GetCursorScreenPos();
         ImGuiIO& io = ImGui::GetIO();
-            ImGui::Image(tileSetID, ImVec2(texW, texH));
+            ImGui::Image(tileSetDescriptor, ImVec2(texW, texH));
             if (ImGui::BeginItemTooltip()) {
                 hoveringTileSet = true;
 
@@ -200,7 +200,7 @@ namespace EWE {
                 ImGui::Text("Selected Tile tool: (%d)", toolSelectedTile);
                 ImVec2 uv0 = ImVec2((region_x) / texW, (region_y) / texH);
                 ImVec2 uv1 = ImVec2((region_x + region_sz) / texW, (region_y + region_sz) / texH);
-                ImGui::Image(tileSetID, ImVec2(64.f, 64.f), toolUV, toolUVBR);
+                ImGui::Image(tileSetDescriptor, ImVec2(64.f, 64.f), toolUV, toolUVBR);
                 ImGui::EndTooltip();
             }
             else {
@@ -309,8 +309,6 @@ namespace EWE {
             ImVec2 uv1{ 1.f,1.f };
             ImVec4 tint_col{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-            
-
             if (ImGui::ImageButton("", tools[i].texture, size, uv0, uv1, tools[i].bgColor, tint_col)) {
                 tools[i].bgColor = selectedColor;
                 for (int j = 0; j < tools.size(); j++) {
@@ -332,13 +330,40 @@ namespace EWE {
 
     void LevelCreationIMGUI::loadTextures(EWEDevice& device) {
 
-        tileSetID = Texture_Builder::createSimpleTexture( "tileSet.png", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        //tileSetDescriptor = Texture_Builder::CreateSimpleTexture( "tileSet.png", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
+        tileSetDescriptor = Image_Manager::CreateSimpleTexture("textures/tileSet.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        tools[Tool_pencil].texture = Texture_Builder::createSimpleTexture( "tileCreation/pencil.png", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
-        tools[Tool_eraser].texture = Texture_Builder::createSimpleTexture( "tileCreation/eraser.png", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
-        tools[Tool_colorSelection].texture = Texture_Builder::createSimpleTexture( "tileCreation/colorSelection.png", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
-        tools[Tool_bucketFill].texture = Texture_Builder::createSimpleTexture( "tileCreation/bucketFill.png", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        //issue here, the descriptor is being immediately written to. it needs to wait for the graphics callbacks to be complete. How do I fix this?
+        tools[Tool_pencil].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/pencil.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        tools[Tool_eraser].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/eraser.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        tools[Tool_colorSelection].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/colorSelection.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        tools[Tool_bucketFill].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/bucketFill.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        //temporary solution to the above... NOT A GOOD SOLUTION, BUT IM PRESSED FOR TIME
+
+        std::vector<ImageID> imageIDs{
+            Image_Manager::GetCreateImageID("textures/tileCreation/pencil.png", false),
+            Image_Manager::GetCreateImageID("textures/tileCreation/eraser.png", false),
+            Image_Manager::GetCreateImageID("textures/tileCreation/colorSelection.png", false),
+            Image_Manager::GetCreateImageID("textures/tileCreation/bucketFill.png", false)
+        };
+
+        bool allCompleted = false;
+        while (!allCompleted) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+            for (auto& imgIter = imageIDs.begin(); imgIter != imageIDs.end();) {
+                auto* descInfo = Image_Manager::GetDescriptorImageInfo(*imgIter);
+                if (descInfo->imageLayout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+                    imageIDs.erase(imgIter);
+                    break;
+                }
+            }
+            if (imageIDs.size() == 0) {
+                allCompleted = true;
+            }
+        }
     }
 
     void LevelCreationIMGUI::toolLeft(uint32_t clickedTilePosition, bool shiftKey, bool ctrlKey) {

@@ -187,6 +187,6 @@ namespace EWE {
 		this->position = position;
 		this->target = target;
 		this->cameraUp = cameraUp;
-		dataHasBeenUpdated = 2;
+		dataHasBeenUpdated = MAX_FRAMES_IN_FLIGHT;
 	};
 }

@@ -19,10 +19,10 @@ namespace EWE {
 	}
 
 
-	void MainMenuScene::load() {
+	void MainMenuScene::Load() {
 		menuManager.giveMenuFocus();
 	}
-	void MainMenuScene::entry() {
+	void MainMenuScene::Entry() {
 		soundEngine->StopMusic();
 		//soundEngine->playMusic(Music_Menu);
 
@@ -30,17 +30,18 @@ namespace EWE {
 		ewEngine.camera.SetPerspectiveProjection(glm::radians(70.0f), ewEngine.eweRenderer.GetAspectRatio(), 0.1f, 1000000.0f);
 
 		//old method
-		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		//why is this done twice?
+		//for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f });
-		}
+		//}
 		
 
 		//handle threads in this scene, or a game specific class
 	}
-	void MainMenuScene::exit() {
+	void MainMenuScene::Exit() {
 		ewEngine.objectManager.eweObjects.clear();
 	}
-	bool MainMenuScene::render(double dt) {
+	bool MainMenuScene::Render(double dt) {
 		//printf("render main menu scene \n");
 		if (!paused && (glfwGetKey(windowPtr, GLFW_KEY_P) == GLFW_PRESS)) {
 			paused = true;

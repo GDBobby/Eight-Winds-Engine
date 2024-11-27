@@ -23,6 +23,9 @@ namespace EWE {
 		float screenWidth = ewEngine.uiHandler.getScreenWidth();
 		float screenHeight = ewEngine.uiHandler.getScreenHeight();
 
+		AddPipelinesToSystem();
+
+
 		//ThreadPool::EnqueueVoid(soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect));
 		{
 			auto loadFunc = [&]() {
@@ -62,6 +65,7 @@ namespace EWE {
 		scenes.emplace(scene_mainmenu, nullptr);
 		scenes.emplace(scene_shaderGen, nullptr);
 		scenes.emplace(scene_ocean, nullptr);
+		scenes.emplace(scene_LevelCreation, nullptr);
 		auto sceneLoadFunc = [&]() {
 			printf("loading main menu scene : %u\n", std::this_thread::get_id());
 
@@ -69,7 +73,18 @@ namespace EWE {
 			LoadSceneIfMatching(scene_mainmenu);
 			loadingThreadTracker.mainSceneThread = true;
 
+		}; 
+		
+		auto sceneLoadFuncLevelCreation = [&]() {
+
+			LevelCreationScene* levelScene = Construct<LevelCreationScene>({ ewEngine });
+			levelScene->giveGLFWCallbackReturns(menuManager.staticMouseCallback, menuManager.staticKeyCallback);
+
+			scenes.at(scene_LevelCreation) = levelScene;
+			LoadSceneIfMatching(scene_LevelCreation);
+			loadingThreadTracker.levelCreationSceneThread = true;
 		};
+		
 		auto sceneLoadFunc2 = [&]() {
 			printf("loading shader gen scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_shaderGen) = Construct<ShaderGenerationScene>({ ewEngine });
@@ -83,6 +98,7 @@ namespace EWE {
 			loadingThreadTracker.oceanSceneThread = true;
 		};
 		ThreadPool::EnqueueVoidFunction(sceneLoadFunc);
+		ThreadPool::EnqueueVoidFunction(sceneLoadFuncLevelCreation);
 		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc2);
 		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc3);
 
@@ -118,7 +134,7 @@ namespace EWE {
 			EWE_VK(vkDeviceWaitIdle, VK::Object->vkDevice);
 		} while (ewEngine.GetLoadingScreenProgress());
 
-		currentScenePtr->entry();
+		currentScenePtr->Entry();
 
 		while (gameRunning) {
 			glfwPollEvents();
@@ -138,7 +154,7 @@ namespace EWE {
 
 				//std::cout << "currentScene at render : " << currentScene << std::endl;
 				//ewEngine.camera.PrintCameraPos();
-				currentScenePtr->render(mainThreadTimeTracker);
+				currentScenePtr->Render(mainThreadTimeTracker);
 
 				if (mainThreadTimeTracker > ewEngine.peakRenderTime) {
 					printf("peak render time : % .5f \n", mainThreadTimeTracker);
@@ -298,15 +314,15 @@ namespace EWE {
 	void EWESample::SwapScenes() {
 
 		//loading entry?
-		vkDeviceWaitIdle(VK::Object->vkDevice);
-		currentScenePtr->exit();
+		EWE_VK(vkDeviceWaitIdle, VK::Object->vkDevice);
+		currentScenePtr->Exit();
 		ewEngine.objectManager.ClearSceneObjects();
 		//Image_Manager::GetImageManagerPtr()->ClearSceneTextures();
 		//loading entry?
 		if (currentScene != scene_exitting) {
 			currentScenePtr = scenes.at(currentScene);
-			currentScenePtr->load();
-			currentScenePtr->entry();
+			currentScenePtr->Load();
+			currentScenePtr->Entry();
 			lastScene = currentScene;
 			//printf("swapping scenes end \n");
 			swappingScenes = false;
@@ -319,7 +335,14 @@ namespace EWE {
 		if (scene == currentScene) {
 			currentScenePtr = scenes.at(currentScene);
 
-			currentScenePtr->load();
+			currentScenePtr->Load();
 		}
+	}
+
+	void EWESample::AddPipelinesToSystem() {
+		PipelineSystem::Emplace(Pipe::background, Construct<BackgroundPipe>({}));
+		//PipelineSystem::Emplace(Pipe_grass2, new GrassPipe(ewEngine.eweDevice));
+		//PipelineSystem::Emplace(Pipe_billboard, new BillboardPipe(ewEngine.eweDevice));
+		PipelineSystem::Emplace(Pipe::Grid2d, Construct<GridPipe>({}));
 	}
 }

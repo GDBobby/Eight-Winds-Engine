@@ -8,8 +8,8 @@ namespace EWE {
 		indexBuffer{ indexBufferPtr, sizeof(uint32_t) * 4}, 
 		uvBuffer{uvBufferPtr, sizeof(glm::vec2) * 4}, 
 		tileSet{tileSet},
-		tileData{ reinterpret_cast<TileID*>(malloc(size * sizeof(TileID))) },
-		posData{ reinterpret_cast<uint32_t*>(malloc(size * sizeof(uint32_t))) }
+		tileData{ new TileID[size] },
+		posData{ new uint32_t[size]}
 	{
 
 		for (uint32_t i = 0; i < size; i++) {
@@ -18,8 +18,8 @@ namespace EWE {
 	}
 
 	TileContainer::~TileContainer() {
-		free(tileData);
-		free(posData);
+		delete[] tileData;
+		delete[] posData;
 	}
 	void TileContainer::reset() {
 		//memBlockCount = 0;
@@ -137,9 +137,8 @@ namespace EWE {
 			}
 		}
 		printf("failed to find tile \n");
-		throw std::runtime_error("failed to find element that is not TILE_VOID_FLAG");
+		assert(false && "failed to find element that is not TILE_VOID_FLAG");
 		return -1;
-		//if error checking, put a throw statement here to ensure it was found
 	}
 
 	void TileContainer::removeTileFromBuffers(uint32_t memPos) {

@@ -13,10 +13,10 @@ namespace EWE {
 			EWEBuffer* bufferPtr;
 			char* memory;
 			uint64_t blockSize;
-			BufferInterface(EWEBuffer* bufferPtr, uint64_t blockSize) : bufferPtr{ bufferPtr }, memory{ reinterpret_cast<char*>(bufferPtr->getMappedMemory()) }, blockSize{blockSize} {}
+			BufferInterface(EWEBuffer* bufferPtr, uint64_t blockSize) : bufferPtr{ bufferPtr }, memory{ reinterpret_cast<char*>(bufferPtr->GetMappedMemory()) }, blockSize{blockSize} {}
 			
 			void flush() {
-				bufferPtr->flush();
+				bufferPtr->Flush();
 			}/*
 			void flushMin(uint32_t memIndex) {
 				bufferPtr->flushMin(memIndex * blockSize);

@@ -1,6 +1,6 @@
 #include "LevelCreationScene.h"
 
-#include "../pipelines/PipelineEnum.h"
+#include "../Pipelines/PipelineEnum.h"
 
 namespace EWE {
 	LevelCreationScene* LevelCreationScene::lcPtr{nullptr};
@@ -142,7 +142,7 @@ namespace EWE {
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
 		}
-		imguiHandler = std::make_unique<ImGUIHandler>(ewEngine.mainWindow.getGLFWwindow(), ewEngine.eweDevice, MAX_FRAMES_IN_FLIGHT);
+		imguiHandler = std::make_unique<ImGUIHandler>(ewEngine.mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT);
 		//handle threads in this scene, or a game specific class
 		ewEngine.advancedRS.drawSkybox = false;
 		levelCreationIMGUI.gridZoom = &pushScale;
@@ -160,12 +160,12 @@ namespace EWE {
 		glfwSetMouseButtonCallback(windowPtr, LevelCreationScene::mouseCallback);
 		glfwSetKeyCallback(windowPtr, LevelCreationScene::keyCallback);
 		glfwSetScrollCallback(windowPtr, LevelCreationScene::scrollCallback);
-		printf("tileSetID : %d \n", levelCreationIMGUI.tileSetID);
+		printf("tileSetID : %zu \n", reinterpret_cast<uint64_t>(levelCreationIMGUI.tileSetDescriptor));
 		levelCreationIMGUI.createButtonPtr = createLevel;
 
-		gridModel = Basic_Model::Generate2DGrid(ewEngine.eweDevice);
+		gridModel = Basic_Model::Grid2D(Queue::transfer);
 
-		tileMapD = std::make_unique<TileMapDevelopment>(ewEngine.eweDevice, 1, 1);
+		tileMapD = std::make_unique<TileMapDevelopment>(1, 1);
 		levelCreationIMGUI.tileMapD = tileMapD.get();
 
 		
@@ -176,7 +176,7 @@ namespace EWE {
 		ewEngine.advancedRS.drawSkybox = true;
 		glfwSetMouseButtonCallback(ewEngine.mainWindow.getGLFWwindow(), mouseReturnFunction);
 		glfwSetKeyCallback(ewEngine.mainWindow.getGLFWwindow(), keyReturnFunction);
-		gridModel.reset();
+		Deconstruct(gridModel);
 		//i need to give callback control back to whatever needs it after exiting the scene, something is missing
 	}
 	bool LevelCreationScene::Render(double dt) {
@@ -203,6 +203,7 @@ namespace EWE {
 
 			imguiHandler->endRender();
 			ewEngine.EndRender();
+			ewEngine.EndFrame();
 			//std::cout << "after ending render \n";
 			return false;
 		}
@@ -210,8 +211,8 @@ namespace EWE {
 	}
 
 	void LevelCreationScene::renderBackgroundGrid() {
-
-		PipelineSystem::At(Pipe_Grid2d)->BindPipeline();
+		PipelineSystem* pipe = PipelineSystem::At(Pipe::Grid2d);
+		pipe->BindPipeline();
 		Grid2DPushConstantData push;
 		push.scaleOffset = { pushScale, pushTrans };
 		push.color.r = 0.f;
@@ -219,14 +220,16 @@ namespace EWE {
 		push.color.b = 90.f / 255.f;
 		push.gridScale = pushGridScale;
 
-		PipelineSystem::At(Pipe_Grid2d)->BindModel(gridModel.get());
-		PipelineSystem::At(Pipe_Grid2d)->PushAndDraw(&push);
+		//pipe->BindModel(gridModel);
+		gridModel->BindNoIndex();
+		pipe->PushAndDraw(&push);
+
 	}
 
 	void LevelCreationScene::createLevel(uint16_t width, uint16_t height) {
 		printf("creating level, waiting for idle \n");
 
-		vkQueueWaitIdle(VK::Object->queues[Queue::graphics]);
+		EWE_VK(vkQueueWaitIdle, VK::Object->queues[Queue::graphics]);
 		lcPtr->tileMapD->refreshMap(width, height);
 		lcPtr->fitToScreen();
 		//lcPtr->gridModel.reset();

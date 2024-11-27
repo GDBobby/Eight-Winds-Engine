@@ -37,6 +37,7 @@ namespace EWE {
 		std::string imageName{};
 #endif
 
+
 	public:
 		VkDescriptorImageInfo* GetDescriptorImageInfo() {
 			return &descriptorImageInfo;

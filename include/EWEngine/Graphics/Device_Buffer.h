@@ -46,8 +46,11 @@ namespace EWE {
         VkDeviceSize GetBufferSize() const { return bufferSize; }
 
         //allocated with new, up to the user to delete, or put it in a unique_ptr
-
+#if CALL_TRACING
+        static EWEBuffer* CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, std::source_location = std::source_location::current());
+#else
         static EWEBuffer* CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+#endif
 
         static VkDeviceSize GetAlignment(VkDeviceSize instanceSize, VkBufferUsageFlags usageFlags);
     private:

@@ -15,10 +15,10 @@ namespace EWE {
 		OceanScene(EightWindsEngine& ewEngine, ImageID skyboxImgID);
 		~OceanScene();
 
-		void load() override;
-		void entry() override;
-		void exit() override;
-		bool render(double dt) override;
+		void Load() final;
+		void Entry() final;
+		void Exit() final;
+		bool Render(double dt) final;
 
 	protected:
 		Ocean::Ocean* ocean;

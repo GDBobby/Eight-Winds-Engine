@@ -12,22 +12,22 @@ namespace EWE {
 		uint16_t width;
 		uint16_t height;
 		TileSet tileSet;
-		TextureDesc texture;
+		//VkDescriptorSet texture;
 		std::vector<TileFlag> tileFlags;
 
-		TileMap(EWEDevice& device, std::string fileLocation, TileSet::TileSet_Enum tileSetID);
-		TileMap(EWEDevice& device, std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices, std::vector<glm::vec2>& tileUVs, TileSet::TileSet_Enum tileSetID);
-		TileMap(EWEDevice& device, TileSet::TileSet_Enum tileSetID);
+		TileMap(std::string fileLocation, TileSet::TileSet_Enum tileSetID);
+		TileMap(std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices, std::vector<glm::vec2>& tileUVs, TileSet::TileSet_Enum tileSetID);
+		TileMap(TileSet::TileSet_Enum tileSetID);
 
-		virtual void buildTileMap(EWEDevice& device, std::string const& fileLocation,
+		virtual void buildTileMap(std::string const& fileLocation,
 			std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices);
-		virtual void buildTileMapByVertex(EWEDevice& device, std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices, std::vector<glm::vec2>& tileUVs);
+		virtual void buildTileMapByVertex(std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices, std::vector<glm::vec2>& tileUVs);
 
-		void renderTiles(FrameInfo const& frameInfo);
+		void renderTiles();
 	protected:
-		std::unique_ptr<EWEBuffer> tileVertexBuffer{ nullptr };
-		std::unique_ptr<EWEBuffer> tileIndexBuffer{ nullptr };
-		std::unique_ptr<EWEBuffer> tileUVBuffer{ nullptr };
+		EWEBuffer* tileVertexBuffer{ nullptr };
+		EWEBuffer* tileIndexBuffer{ nullptr };
+		EWEBuffer* tileUVBuffer{ nullptr };
 		VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
 		//virtual void buildTileSquare(uint32_t& tileID, TransformComponent& transform, glm::mat4& ret, glm::vec2& uvOffset);

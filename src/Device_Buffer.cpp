@@ -384,6 +384,16 @@ namespace EWE {
         Invalidate(alignmentSize, index * alignmentSize);
     }
 
+#if CALL_TRACING
+    EWEBuffer* EWEBuffer::CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, std::source_location srcLoc) {
+        EWEBuffer* retBuffer = Construct<EWEBuffer>({ dataSize * dataCount, 1, usageFlags, memoryPropertyFlags }, srcLoc);
+
+        retBuffer->Map();
+        retBuffer->WriteToBuffer(data, dataSize * dataCount);
+        retBuffer->Flush();
+        return retBuffer;
+    }
+#else
     EWEBuffer* EWEBuffer::CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
         EWEBuffer* retBuffer = Construct<EWEBuffer>({dataSize * dataCount, 1, usageFlags, memoryPropertyFlags });
         
@@ -392,6 +402,7 @@ namespace EWE {
         retBuffer->Flush();
         return retBuffer;
     }
+#endif
 
 #if DEBUG_NAMING
     void EWEBuffer::SetName(std::string const& name) {

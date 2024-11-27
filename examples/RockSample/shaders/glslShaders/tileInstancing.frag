@@ -16,7 +16,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo{
 	//vec4 ambientLightColor;
 } ubo;
 
-layout(set = 2, binding = 0) uniform sampler2D texSampler;
+layout(set = 0, binding = 5) uniform sampler2D texSampler;
 
 void main(){
 	ivec2 texelCoords;

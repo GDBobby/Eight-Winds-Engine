@@ -13,10 +13,10 @@ namespace EWE {
 		ShaderGenerationScene(EightWindsEngine& ewEngine);
 		~ShaderGenerationScene();
 
-		void load() override;
-		void entry() override;
-		void exit() override;
-		bool render(double dt) override;
+		void Load() final;
+		void Entry() final;
+		void Exit() final;
+		bool Render(double dt) final;
 
 	protected:
 		double currentTime = 0.0;

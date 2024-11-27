@@ -47,7 +47,8 @@ namespace EWE {
 		float tileScale;
 		//std::string fileLocation;
 
-		TileSet(EWEDevice& device, TileSet_Enum map_id);
+		TileSet(TileSet_Enum map_id);
+		~TileSet();
 
 		std::array<glm::vec2, 4> getUVOffset(TileID tileID);
 
@@ -57,7 +58,7 @@ namespace EWE {
 		std::vector<uint32_t> solidTiles{};
 		std::vector<uint32_t> exitTiles{};
 
-		std::unique_ptr<EWEModel> tileModel{ nullptr };
-		VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
+		EWEModel* tileModel{ nullptr };
+		ImageID tileSetImage = IMAGE_INVALID;
 	};
 }

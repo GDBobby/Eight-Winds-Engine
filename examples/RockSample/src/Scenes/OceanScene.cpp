@@ -19,10 +19,10 @@ namespace EWE {
 	}
 
 
-	void OceanScene::load() {
+	void OceanScene::Load() {
 		menuManager.giveMenuFocus();
 	}
-	void OceanScene::entry() {
+	void OceanScene::Entry() {
 		soundEngine->StopMusic();
 		//soundEngine->playMusic(Music_Menu);
 
@@ -40,10 +40,10 @@ namespace EWE {
 
 		//handle threads in this scene, or a game specific class
 	}
-	void OceanScene::exit() {
+	void OceanScene::Exit() {
 		ewEngine.objectManager.eweObjects.clear();
 	}
-	bool OceanScene::render(double dt) {
+	bool OceanScene::Render(double dt) {
 		//printf("render main menu scene \n");
 
 

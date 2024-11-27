@@ -11,12 +11,12 @@ namespace EWE {
 		printf("deconstructing shader scene \n");
 	}
 
-	void ShaderGenerationScene::load() {
+	void ShaderGenerationScene::Load() {
 		menuManager.giveMenuFocus();
 
 		printf("after updating pipelines load menu objects, returning \n");
 	}
-	void ShaderGenerationScene::entry() {
+	void ShaderGenerationScene::Entry() {
 		soundEngine->StopMusic();
 		//soundEngine->playMusic(Music_Menu);
 
@@ -27,10 +27,10 @@ namespace EWE {
 			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
 		}
 	}
-	void ShaderGenerationScene::exit() {
+	void ShaderGenerationScene::Exit() {
 	}
 
-	bool ShaderGenerationScene::render(double dt) {
+	bool ShaderGenerationScene::Render(double dt) {
 		//printf("render main menu scene \n");
 
 

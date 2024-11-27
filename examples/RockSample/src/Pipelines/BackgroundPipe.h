@@ -4,23 +4,15 @@
 namespace EWE {
 	class BackgroundPipe : public PipelineSystem {
 	public:
-		BackgroundPipe(EWEDevice& device);
-		~BackgroundPipe() {
-			if (vertexIndexBufferLayout) {
-				delete vertexIndexBufferLayout;
-			}
-		}
+		BackgroundPipe();
+		~BackgroundPipe() {}
 
-		EWEDescriptorSetLayout& getVertexIndexBufferLayout() {
-			return *vertexIndexBufferLayout;
-		}
-
-		void drawInstanced(EWEModel* model) override;
+		void DrawInstanced(EWEModel* model) final;
 	private:
-		void createPipeLayout(EWEDevice& device) override;
-		void createPipeline(EWEDevice& device) override;
+		void CreatePipeLayout() final;
+		void CreatePipeline() final;
 
-		EWEDescriptorSetLayout* vertexIndexBufferLayout{ nullptr };
+		//EWEDescriptorSetLayout* vertexIndexBufferLayout{ nullptr };
 
 
 	};

@@ -1,11 +1,10 @@
 #include "TileMap.h"
 
 #include <EWEngine/Graphics/Model/Vertex.h>
-#include <EWEngine/Graphics/Texture/Texture_Manager.h>
+#include <EWEngine/Graphics/Texture/Image_Manager.h>
 #include <EWEngine/Systems/PipelineSystem.h>
 
-#include "../pipelines/PipelineEnum.h"
-#include "../pipelines/BackgroundPipe.h"
+#include "../Pipelines/PipelineHeaderWrapper.h"
 
 #include <fstream>
 #include <filesystem>
@@ -35,30 +34,32 @@ namespace EWE {
 		return TileMap::getIndices(x, y, width, height);
 	}
 
-	TileMap::TileMap(EWEDevice& device, std::string fileLocation, TileSet::TileSet_Enum tileSetID) : tileSet{device, tileSetID } {
+	TileMap::TileMap(std::string fileLocation, TileSet::TileSet_Enum tileSetID) : tileSet{tileSetID } {
 
 		std::vector<glm::vec4> outVertices{};
 		std::vector<uint32_t> indices{};
-		buildTileMap(device, fileLocation, outVertices, indices);
+		buildTileMap(fileLocation, outVertices, indices);
 
 		
 	}
-	TileMap::TileMap(EWEDevice& device, std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices, std::vector<glm::vec2>& tileUVs, TileSet::TileSet_Enum tileSetID) : tileSet{ device, tileSetID } {
+	TileMap::TileMap(std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices, std::vector<glm::vec2>& tileUVs, TileSet::TileSet_Enum tileSetID) : tileSet{ tileSetID } {
 		//buildTileMapByVertex(device, outVertices, indices, tileUVs);
 	}
-	TileMap::TileMap(EWEDevice& device, TileSet::TileSet_Enum tileSetID) : tileSet{ device, tileSetID } {
+	TileMap::TileMap(TileSet::TileSet_Enum tileSetID) : tileSet{ tileSetID } {
 
 	}
 
-	void TileMap::renderTiles(FrameInfo const& frameInfo) {
-		auto pipe = PipelineSystem::at(Pipe_background);
+	void TileMap::renderTiles() {
+		auto pipe = PipelineSystem::At(Pipe::background);
 
-		pipe->bindPipeline();
+		pipe->BindPipeline();
 		//pipe->bindModel(tileSet.tileModel.get());
 
-		pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
-		pipe->bindDescriptor(1, &descriptorSet);
-		pipe->bindTextureDescriptor(2, tileSet.tileSetTexture);
+		//pipe->bindDescriptor(0, DescriptorHandler::getDescSet(DS_global, frameInfo.index));
+		//pipe->bindDescriptor(1, &descriptorSet);
+		//pipe->bindTextureDescriptor(2, tileSet.tileSetTexture);
+
+		pipe->BindDescriptor(0, &descriptorSet);
 
 		//ModelPushData push;
 		//push.modelMatrix = floorTransform.mat4();
@@ -68,12 +69,12 @@ namespace EWE {
 		
 		//push.uvScroll.x = 1.f / static_cast<float>(tileSet.width);
 		//push.uvScroll.y = 1.f / static_cast<float>(tileSet.height);
-		pipe->push(&push);
+		pipe->Push(&push);
 
-		pipe->drawInstanced(tileSet.tileModel.get()); 
-		vkCmdDraw(frameInfo.cmdBuf, 6, width * height, 0, 0);
+		pipe->DrawInstanced(tileSet.tileModel); 
+		EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), 6, width * height, 0, 0);
 	}
-	void TileMap::buildTileMap(EWEDevice& device, std::string const& fileLocation,
+	void TileMap::buildTileMap(std::string const& fileLocation,
 		std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices) {
 		std::string fileReal = "models/";
 		fileReal += fileLocation;
@@ -81,19 +82,19 @@ namespace EWE {
 		if (!inStream.is_open()) {
 			if (!std::filesystem::exists(fileLocation)) {
 				printf("loaded map doesn't exist : %s \n", fileLocation.c_str());
-				throw std::runtime_error("inexistant file \n");
+				assert(false);
 			}
 			inStream.open(fileLocation);
 			if (!inStream.is_open()) {
 				printf("failed to load map twice : %s \n", fileLocation.c_str());
-				throw std::runtime_error("failed to loadm ap twice");
+				assert(false);
 			}
 		}
 		inStream >> width;
 		inStream >> height;
 		if ((width == 0) || (height == 0)) {
 			printf("invalid map size \n");
-			throw std::runtime_error("invalid map size");
+			assert(false);
 		}
 
 		uint32_t tileCount = width * height;
@@ -206,34 +207,43 @@ namespace EWE {
 		}
 
 
-		tileVertexBuffer = std::make_unique<EWEBuffer>(device, sizeof(glm::vec4) * outVertices.size(), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		tileVertexBuffer->map();
+		tileVertexBuffer = Construct<EWEBuffer>({ sizeof(glm::vec4) * outVertices.size(), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
+		tileVertexBuffer->Map();
 
-		printf("storage buffer alignment : %lu \n", device.getProperties().limits.minStorageBufferOffsetAlignment);
+		printf("storage buffer alignment : %lu \n", VK::Object->properties.limits.minStorageBufferOffsetAlignment);
 		printf("tile vertex 1 : %.2f:%.2f:%.2f:%.2f \n", outVertices[0].x, outVertices[1].y, outVertices[2].z, outVertices[3].w);
 		//for (int i = 0; i < outVertices.size(); i++) {
 		//	tileVertexBuffer->writeToBufferAligned(&outVertices[i], sizeof(outVertices[0]), i);
 		//}
-		tileVertexBuffer->writeToBuffer(outVertices.data(), outVertices.size() * sizeof(outVertices[0]));
-		tileVertexBuffer->flush();
-		tileSet.tileModel->AddInstancing(tileUVOffset.size(), sizeof(glm::vec2), tileUVOffset.data());
+		tileVertexBuffer->WriteToBuffer(outVertices.data(), outVertices.size() * sizeof(outVertices[0]));
+		tileVertexBuffer->Flush();
+		tileSet.tileModel->AddInstancing(tileUVOffset.size(), sizeof(glm::vec2), tileUVOffset.data(), Queue::transfer);
 
-		tileIndexBuffer = std::make_unique<EWEBuffer>(device, sizeof(uint32_t) * indices.size(), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		tileIndexBuffer->map();
+		tileIndexBuffer = Construct<EWEBuffer>({ sizeof(uint32_t) * indices.size(), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
+		tileIndexBuffer->Map();
 		//for (int i = 0; i < indices.size(); i++) {
 		//	tileIndexBuffer->writeToBufferAligned(&indices[i], sizeof(uint32_t), i);
 		//}
 
-		tileIndexBuffer->writeToBuffer(indices.data(), indices.size() * sizeof(indices[0]));
-		tileVertexBuffer->flush();
+		tileIndexBuffer->WriteToBuffer(indices.data(), indices.size() * sizeof(indices[0]));
+		tileVertexBuffer->Flush();
 		//just need to create the storage buffer for the index and vertices now
-		descriptorSet = EWEDescriptorWriter(((BackgroundPipe*)PipelineSystem::at(Pipe_background))->getVertexIndexBufferLayout(), DescriptorPool_Global)
-			.writeBuffer(0, tileVertexBuffer->descriptorInfo())
-			.writeBuffer(1, tileIndexBuffer->descriptorInfo())
-			.build();
+		//descriptorSet = EWEDescriptorWriter(PipelineSystem::At(Pipe_background)->GetDSL(), DescriptorPool_Global)
+		//	.WriteBuffer(0, tileVertexBuffer->DescriptorInfo())
+		//	.WriteBuffer(1, tileIndexBuffer->DescriptorInfo())
+		//	.Build();
+
+
+		EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::background)->GetDSL(), DescriptorPool_Global);
+		DescriptorHandler::AddGlobalsToDescriptor(descWriter, 0);
+		descWriter.WriteBuffer(2, tileVertexBuffer->DescriptorInfo());
+		descWriter.WriteBuffer(3, tileIndexBuffer->DescriptorInfo());
+		descWriter.WriteBuffer(4, tileUVBuffer->DescriptorInfo());
+		descWriter.WriteImage(5, Image_Manager::GetDescriptorImageInfo(tileSet.tileSetImage));
+		descriptorSet = descWriter.Build();
 	}
 
-	void TileMap::buildTileMapByVertex(EWEDevice& device, std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices, std::vector<glm::vec2>& tileUVs) {
+	void TileMap::buildTileMapByVertex(std::vector<glm::vec4>& outVertices, std::vector<uint32_t>& indices, std::vector<glm::vec2>& tileUVs) {
 
 
 
@@ -243,20 +253,28 @@ namespace EWE {
 		createTileUVs(tileUVs, width, height, tileSet.tileSize, tileSet.tileSize);
 
 
-		tileVertexBuffer.reset(EWEBuffer::createAndInitBuffer(device, outVertices.data(), sizeof(outVertices[0]), outVertices.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+		tileVertexBuffer = EWEBuffer::CreateAndInitBuffer(outVertices.data(), sizeof(outVertices[0]), outVertices.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 		//tileSet.tileModel->AddInstancing(tileUVOffset.size(), sizeof(glm::vec2), tileUVOffset.data());
 
-		tileIndexBuffer.reset(EWEBuffer::createAndInitBuffer(device, indices.data(), sizeof(indices[0]), indices.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+		tileIndexBuffer = EWEBuffer::CreateAndInitBuffer(indices.data(), sizeof(indices[0]), indices.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 		//just need to create the storage buffer for the index and vertices now
 
-		tileUVBuffer.reset(EWEBuffer::createAndInitBuffer(device, tileUVs.data(), sizeof(tileUVs[0]), tileUVs.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+		tileUVBuffer = EWEBuffer::CreateAndInitBuffer(tileUVs.data(), sizeof(tileUVs[0]), tileUVs.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-		descriptorSet = EWEDescriptorWriter(((BackgroundPipe*)PipelineSystem::at(Pipe_background))->getVertexIndexBufferLayout(), DescriptorPool_Global)
-			.writeBuffer(0, tileVertexBuffer->descriptorInfo())
-			.writeBuffer(1, tileIndexBuffer->descriptorInfo())
-			.writeBuffer(2, tileUVBuffer->descriptorInfo())
-			.build();
+		//descriptorSet = EWEDescriptorWriter(&((BackgroundPipe*)PipelineSystem::At(Pipe_background))->getVertexIndexBufferLayout(), DescriptorPool_Global)
+		//	.WriteBuffer(0, tileVertexBuffer->DescriptorInfo())
+		//	.WriteBuffer(1, tileIndexBuffer->DescriptorInfo())
+		//	.WriteBuffer(2, tileUVBuffer->DescriptorInfo())
+		//	.Build();
+
+		EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::background)->GetDSL(), DescriptorPool_Global);
+		DescriptorHandler::AddGlobalsToDescriptor(descWriter, 0);
+		descWriter.WriteBuffer(2, tileVertexBuffer->DescriptorInfo());
+		descWriter.WriteBuffer(3, tileIndexBuffer->DescriptorInfo());
+		descWriter.WriteBuffer(4, tileUVBuffer->DescriptorInfo());
+		descWriter.WriteImage(5, Image_Manager::GetDescriptorImageInfo(tileSet.tileSetImage));
+		descriptorSet = descWriter.Build();
 	}
 
 	void TileMap::createTileVertices(std::vector<glm::vec4>& outVertices, int width, int height, float tileScale) {

@@ -3,14 +3,14 @@
 layout(location = 0) out vec2 fragUV;
 
 
-layout(set = 1, binding = 0) readonly buffer tileVertices {
+layout(set = 0, binding = 2) readonly buffer tileVertices {
 	vec4 tileVertex[]; //its already in world space 
 };
 
-layout(set = 1, binding = 1) readonly buffer tileIndices {
+layout(set = 0, binding = 3) readonly buffer tileIndices {
 	int tileIndex[];
 };
-layout(set = 1, binding = 2) readonly buffer tileUVs{
+layout(set = 0, binding = 4) readonly buffer tileUVs{
 	vec2 tileUV[];
 };
 

@@ -81,8 +81,8 @@ namespace EWE {
                 {{uvScale.x,0.f}},
                 {{uvScale.x,uvScale.y}},
             };
-            std::vector<uint32_t> indices{};// 0, 1, 2, 2, 3, 0 };
-            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue }, srcLoc);
+            //std::vector<uint32_t> indices{};// 0, 1, 2, 2, 3, 0 };
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), queue }, srcLoc);
         }
 
         EWEModel* Grid2D(Queue::Enum queue, glm::vec2 scale, std::source_location srcLoc) {
@@ -99,8 +99,8 @@ namespace EWE {
                 {leftX, botY},
                 {rightX, botY}
             };
-            std::vector<uint32_t> indices{};
-            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices, queue }, srcLoc);
+            //std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), queue }, srcLoc);
         }
 
         EWEModel* Quad2D(Queue::Enum queue, glm::vec2 scale, std::source_location srcLoc) {

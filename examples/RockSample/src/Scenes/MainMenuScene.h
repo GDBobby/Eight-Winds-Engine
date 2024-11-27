@@ -15,10 +15,10 @@ namespace EWE {
 		MainMenuScene(EightWindsEngine& ewEngine);
 		~MainMenuScene();
 
-		void load() override;
-		void entry() override;
-		void exit() override;
-		bool render(double dt) override;
+		void Load() final;
+		void Entry() final;
+		void Exit() final;
+		bool Render(double dt) final;
 
 	protected:
 		FloatingRock rockSystem; //this should be loaded in entry() and deleted on exit() but it requires a decent amount of computation so im just gonna keep it alive with the scene

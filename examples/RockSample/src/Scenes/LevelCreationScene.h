@@ -2,7 +2,7 @@
 #include <EWEngine/EightWindsEngine.h>
 #include <EWEngine/Scene.h>
 #include <EWEngine/imgui/imGuiHandler.h>
-#include "../GUI/imGUI/LevelCreationIMGUI.h"
+#include "../GUI/IMGUI/LevelCreationIMGUI.h"
 
 #include "../Systems/TileMap.h"
 #include "../Systems/TileMapDevelopment.h"
@@ -40,7 +40,7 @@ namespace EWE {
 		LevelCreationIMGUI levelCreationIMGUI;
 
 		void renderBackgroundGrid();
-		void renderTiles(uint8_t frameIndex);
+		void renderTiles();
 		glm::vec2 pushScale;
 		glm::vec2 pushTrans;
 		glm::vec2 pushGridScale{1.f};
@@ -64,7 +64,7 @@ namespace EWE {
 
 		void fitToScreen();
 
-		std::unique_ptr<EWEModel> gridModel{ nullptr };
+		EWEModel* gridModel{ nullptr };
 
 		std::unique_ptr<TileMapDevelopment> tileMapD{nullptr};
 	};

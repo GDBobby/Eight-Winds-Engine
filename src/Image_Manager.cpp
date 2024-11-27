@@ -30,8 +30,10 @@ namespace EWE {
             Deconstruct(image.second);
             //imageTrackerBucket.FreeDataChunk(image.second);
         }
-
-
+        for (auto& texDSL : simpleTextureLayouts) {
+            Deconstruct(texDSL.second);
+        }
+        simpleTextureLayouts.clear();
 
         //globalPool.reset();
 #if DECONSTRUCTION_DEBUG
@@ -125,7 +127,6 @@ namespace EWE {
         //ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(imgMgrPtr->imageTrackerBucket.GetDataChunk());
         //new(imageTracker) ImageTracker(imageInfo, zeroUsageDelete);
         ImageTracker* imageTracker = Construct<ImageTracker>({imageInfo, zeroUsageDelete });
-
 
         imgMgrPtr->imageTrackerIDMap.try_emplace(imgMgrPtr->currentImageCount, imageTracker);
         return imgMgrPtr->currentImageCount++;

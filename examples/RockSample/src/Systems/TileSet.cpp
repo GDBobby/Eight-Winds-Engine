@@ -1,18 +1,18 @@
 #include "TileSet.h"
 
 #include <EWEngine/Graphics/Model/Basic_Model.h>
-#include <EWEngine/Graphics/Texture/Texture_Manager.h>
+#include <EWEngine/Graphics/Texture/Image_Manager.h>
 
 
 namespace EWE {
-	TileSet::TileSet(EWEDevice& device, TileSet_Enum map_id) : setID{ map_id } {
+	TileSet::TileSet(TileSet_Enum map_id) : setID{ map_id } {
 		switch (map_id) {
 			case TS_First: {
 				tileSize = 32;
 				width = 64;
 				height = 19;
 				tileScale = 0.5f;
-				tileSetTexture = Texture_Builder::createSimpleTexture( "tileSet.png", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
+				tileSetImage = Image_Manager::GetCreateImageID("textures/tileSet.png", false);
 				grassTiles.push_back(476);
 				break;
 			}
@@ -21,17 +21,20 @@ namespace EWE {
 				width = 4;
 				height = 4;
 				tileScale = 0.5f;
-				tileSetTexture = Texture_Builder::createSimpleTexture( "tileCreation/borders.png", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
+				tileSetImage = Image_Manager::GetCreateImageID( "textures/tileCreation/borders.png", false);
 				break;
 			}
 			default: {
 				printf("trying to get variables for a map that doesn't exist \n");
-				throw std::runtime_error("invalid map id");
+				assert(false && "invalid map id");
 				break;
 			}
 		}
-		tileModel = Basic_Model::generate3DTileQuad(device, glm::vec2{ 1.f / width, 1.f / height });
+		tileModel = Basic_Model::TileQuad3D(Queue::transfer, glm::vec2{ 1.f / width, 1.f / height });
 
+	}
+	TileSet::~TileSet() {
+		Deconstruct(tileModel);
 	}
 
 	std::array<glm::vec2, 4> TileSet::getUVOffset(TileID tileID) {
@@ -39,8 +42,8 @@ namespace EWE {
 
 		std::array<glm::vec2, 4> offsets;
 
-		uint32_t pixelWidth = tileSize * width;
-		uint32_t pixelHeight = tileSize * height;
+		//uint32_t pixelWidth = tileSize * width;
+		//uint32_t pixelHeight = tileSize * height;
 		uint32_t pixelLeft = tileSize * (tileID % width);
 		uint32_t pixelRight = pixelLeft + tileSize;
 		uint32_t pixelTop = tileSize * ((tileID - (tileID % width))) / width;
@@ -73,7 +76,7 @@ namespace EWE {
 			std::swap(offsets[1], offsets[2]);
 		}
 
-		printf("uv offsets : (%d:%d)(%d:%d)(%d:%d)(%d:%d) \n", offsets[0].x, offsets[0].y, offsets[1].x, offsets[1].y, offsets[2].x, offsets[2].y, offsets[3].x, offsets[3].y);
+		printf("uv offsets : (%.2f:%.2f)(%.2f:%.2f)(%.2f:%.2f)(%.2f:%.2f) \n", offsets[0].x, offsets[0].y, offsets[1].x, offsets[1].y, offsets[2].x, offsets[2].y, offsets[3].x, offsets[3].y);
 
 		return offsets;
 	}

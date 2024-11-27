@@ -1,21 +1,27 @@
 #include "BackgroundPipe.h"
 
+#include "PipelineEnum.h"
+
 #include <EWEngine/Graphics/Model/Basic_Model.h>
-#include <EWEngine/Graphics/Texture/Texture_Manager.h>
+#include <EWEngine/Graphics/Texture/Image_Manager.h>
 
 #include <functional>
 #include <typeinfo>
 #include <unordered_map>
 
 namespace EWE {
-	BackgroundPipe::BackgroundPipe(EWEDevice& device) {
+	BackgroundPipe::BackgroundPipe()
+#if EWE_DEBUG
+		: PipelineSystem{Pipe::background} //i need to fix this up later
+#endif
+	{
 		//createPipeline();
 
-		createPipeLayout(device);
-		createPipeline(device);
+		CreatePipeLayout();
+		CreatePipeline();
 	}
 
-	void BackgroundPipe::createPipeLayout(EWEDevice& device) {
+	void BackgroundPipe::CreatePipeLayout() {
 		pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		//pushSize = sizeof(ModelPushData);
 		pushSize = sizeof(PushTileConstantData);
@@ -33,32 +39,39 @@ namespace EWE {
 		//pipelineLayoutInfo.pushConstantRangeCount = 0;
 		//pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-		vertexIndexBufferLayout = EWEDescriptorSetLayout::Builder(device)
-			.addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			.addBinding(2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			.build();
+		//vertexIndexBufferLayout = EWEDescriptorSetLayout::Builder()
+		//	.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		//	.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		//	.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		//	.Build();
 
 
-		std::vector<VkDescriptorSetLayout> tempDSL = {
-			DescriptorHandler::getDescSetLayout(LDSL_global, device),
-			vertexIndexBufferLayout->getDescriptorSetLayout(),
-			TextureDSLInfo::getSimpleDSL(device, VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout()
-		};
+		//std::vector<VkDescriptorSetLayout> tempDSL = {
+		//	DescriptorHandler::getDescSetLayout(LDSL_global, device),
+		//	vertexIndexBufferLayout->getDescriptorSetLayout(),
+		//	TextureDSLInfo::getSimpleDSL(device, VK_SHADER_STAGE_FRAGMENT_BIT)->getDescriptorSetLayout()
+		//};
+		EWEDescriptorSetLayout::Builder builder{};
+		builder.AddGlobalBindings()
+			
+			.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+			.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+			.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+			.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
-		pipelineLayoutInfo.pSetLayouts = tempDSL.data();
 
-		if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipeLayout) != VK_SUCCESS) {
-			printf("failed to create background pipe layout \n");
-			throw std::runtime_error("Failed to create pipe layout \n");
-		}
+		eDSL = builder.Build();
+
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = eDSL->GetDescriptorSetLayout();
+
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}
-	void BackgroundPipe::createPipeline(EWEDevice& device) {
+	void BackgroundPipe::CreatePipeline() {
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
-		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
-		EWEPipeline::enable2DConfig(pipelineConfig);
-		EWEPipeline::enableAlphaBlending(pipelineConfig);
+		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
+		EWEPipeline::Enable2DConfig(pipelineConfig);
+		EWEPipeline::EnableAlphaBlending(pipelineConfig);
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 		//pipelineConfig.bindingDescriptions = EffectVertex::getBindingDescriptions();
@@ -67,12 +80,12 @@ namespace EWE {
 		std::string vertString = "tileInstancing.vert.spv";
 		std::string fragString = "tileInstancing.frag.spv";
 
-		pipe = std::make_unique<EWEPipeline>(device, vertString, fragString, pipelineConfig);
+		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
 	}
 
-	void BackgroundPipe::drawInstanced(EWEModel* model) {
-		printf("incorrect clal \n");
-		throw std::runtime_error("just draw on location without calling this function");
+	void BackgroundPipe::DrawInstanced(EWEModel* model) {
+		printf("just draw on location without calling this function \n");
+		assert(false);
 		//model->BindAndDrawInstanceNoIndex(cmdBuf);
 		//vkCmdDraw(commandBuffer, 6, instanceCount, 0, 0);
 	}

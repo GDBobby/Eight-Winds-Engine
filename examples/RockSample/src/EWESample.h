@@ -6,6 +6,9 @@
 #include "Scenes/MainMenuScene.h"
 #include "Scenes/ShaderGenerationScene.h"
 #include "Scenes/OceanScene.h"
+#include "Scenes/LevelCreationScene.h"
+
+#include "Pipelines/PipelineHeaderWrapper.h"
 
 //#include "Scenes/FreeCameraScene.h"
 #include <functional>
@@ -18,9 +21,10 @@ namespace EWE {
 		bool oceanSceneThread = false;
 		bool menuModuleThread = false;
 		bool globalObjectThread = false;
+		bool levelCreationSceneThread = false;
 
 		bool Finished() const {
-			return soundMapThread && mainSceneThread && menuModuleThread && globalObjectThread;
+			return soundMapThread && mainSceneThread && menuModuleThread && globalObjectThread && levelCreationSceneThread;
 		}
 	};
 
@@ -32,8 +36,8 @@ namespace EWE {
 		GLFWwindow* windowPtr;
 		MenuManager& menuManager;
 
-		Scene_Enum lastScene = scene_mainmenu;
-		Scene_Enum currentScene = scene_mainmenu;
+		Scene_Enum lastScene = scene_LevelCreation;
+		Scene_Enum currentScene = scene_LevelCreation;
 		std::unordered_map<Scene_Enum, Scene*> scenes;
 		Scene* currentScenePtr{ nullptr };
 		bool swappingScenes = false;
@@ -53,5 +57,7 @@ namespace EWE {
 		void SwapScenes();
 
 		void LoadSceneIfMatching(Scene_Enum scene);
+
+		void AddPipelinesToSystem();
 	};
 }

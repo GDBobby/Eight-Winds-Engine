@@ -8,6 +8,7 @@ enum Scene_Enum { //need less than 256 scenes
 	scene_ocean,
 	scene_freeCamera, //this is specifically for capturing footage, maybe repurposed later
 	scene_shaderGen,
+	scene_LevelCreation,
 
 	loop_tester, //for quick testing
 };

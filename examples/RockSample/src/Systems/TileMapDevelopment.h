@@ -1,29 +1,33 @@
 #pragma once
 #include "TileMap.h"
-#include "../pipelines/PipelineEnum.h"
+#include "../Pipelines/PipelineEnum.h"
 #include "TileContainer.h"
+
+#include <EWEngine/Graphics/PushConstants.h>
 
 #include <queue>
 
 namespace EWE {
 	class TileMapDevelopment {
 	public:
-		TileMapDevelopment(EWEDevice& device, uint16_t width, uint16_t height);
+		TileMapDevelopment(uint16_t width, uint16_t height);
 		~TileMapDevelopment();
 
 		void refreshMap(uint16_t width, uint16_t height);
 		void renderTiles();
 
-		std::array<float, 6> const& getScreenCoordinates(float screenWidth, float screenHeight) {
+		std::array<float, 6> const& GetScreenCoordinates(float screenWidth, float screenHeight) {
 			if (refreshedMap) {
 				refreshedMap = false;
 				return updateScreenCoordinates(screenWidth, screenHeight);
 			}
+#if EWE_DEBUG
 			printf("screenCoordinates : \n\t");
 			for (int i = 0; i < screenCoordinates.size(); i++) {
 				printf("(%.2f)", screenCoordinates[i]);
 			}
 			printf("\n");
+#endif
 			return screenCoordinates;
 		}
 
@@ -76,20 +80,17 @@ namespace EWE {
 		VkDescriptorSet selectionDescSet{ VK_NULL_HANDLE };
 
 
-		void init(EWEDevice& device);
-		void constructVertices(EWEDevice& device, float tileScale);
-		void constructUVsAndIndices(EWEDevice& device);
+		void init();
+		void constructVertices(float tileScale);
+		void constructUVsAndIndices();
 		void deconstructMap();
 		void constructDescriptor();
 
 		std::array<float, 6> const& updateScreenCoordinates(float screenWidth, float screenHeight);
 
-		std::unique_ptr<EWEBuffer> modelIndexBuffer;
+		EWEBuffer* modelIndexBuffer;
 
 		uint32_t borders = 0;
-
-
-		EWEDevice& device;
 
 	};
 }
