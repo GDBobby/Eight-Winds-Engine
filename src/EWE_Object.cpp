@@ -68,12 +68,12 @@ namespace EWE {
 
         auto const& meshSimple = tempData.meshSimpleExport.meshes;
         for (int i = 0; i < tempData.meshSimpleExport.meshes.size(); i++) {
-            meshes.emplace_back(EWEModel::CreateMesh(meshSimple[i].vertices.data(), meshSimple[i].vertices.size(), tempData.meshSimpleExport.vertex_size, meshSimple[i].indices, queue));
+            meshes.emplace_back(Construct<EWEModel>({ meshSimple[i].vertices.data(), meshSimple[i].vertices.size(), tempData.meshSimpleExport.vertex_size, meshSimple[i].indices, queue }));
             RigidRenderingSystem::AddMaterialObject(textureTracker.meshSimpleNames[i], &transform, meshes.back(), &drawable);
         }
         auto const& meshNTSimple = tempData.meshNTSimpleExport.meshes;
         for (int i = 0; i < tempData.meshNTSimpleExport.meshes.size(); i++) {
-            meshes.emplace_back(EWEModel::CreateMesh(meshNTSimple[i].vertices.data(), meshNTSimple[i].vertices.size(), tempData.meshNTSimpleExport.vertex_size, meshNTSimple[i].indices, queue));
+            meshes.emplace_back(Construct<EWEModel>({ meshNTSimple[i].vertices.data(), meshNTSimple[i].vertices.size(), tempData.meshNTSimpleExport.vertex_size, meshNTSimple[i].indices, queue }));
             RigidRenderingSystem::AddMaterialObject(textureTracker.meshNTSimpleNames[i], &transform, meshes.back(), &drawable);
         }
 
@@ -92,7 +92,7 @@ namespace EWE {
             meshes.reserve(tempData.meshExport.meshes.size());
             auto const& mesh = tempData.meshExport.meshes;
             for (uint16_t i = 0; i < tempData.meshExport.meshes.size(); i++) {
-                meshes.push_back(EWEModel::CreateMesh(mesh[i].vertices.data(), mesh[i].vertices.size(), tempData.meshExport.vertex_size, mesh[i].indices, queue));
+                meshes.push_back(Construct<EWEModel>({ mesh[i].vertices.data(), mesh[i].vertices.size(), tempData.meshExport.vertex_size, mesh[i].indices, queue }));
                 SkinRenderSystem::AddWeapon(textureTracker.meshNames[i], meshes[i], mySkinID, skeletonOwner);
             }
         }
@@ -101,7 +101,7 @@ namespace EWE {
             auto const& meshNT = tempData.meshNTExport.meshes;
             
             for (uint16_t i = 0; i < tempData.meshNTExport.meshes.size(); i++) {
-                meshes.push_back(EWEModel::CreateMesh(meshNT[i].vertices.data(), meshNT[i].vertices.size(), tempData.meshNTExport.vertex_size, tempData.meshNTExport.meshes[i].indices, queue));
+                meshes.push_back(Construct<EWEModel>({ meshNT[i].vertices.data(), meshNT[i].vertices.size(), tempData.meshNTExport.vertex_size, tempData.meshNTExport.meshes[i].indices, queue }));
                 SkinRenderSystem::AddWeapon(textureTracker.meshNTNames[i], meshes[i], mySkinID, skeletonOwner);
             }
         }

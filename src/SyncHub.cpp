@@ -12,12 +12,15 @@ namespace EWE {
 		main_thread{ std::this_thread::get_id() }
 	{
 #if EWE_DEBUG
+
 		printf("CONSTRUCTING SYNCHUB\n");
 #endif
 	}
 #if EWE_DEBUG
 	SyncHub::~SyncHub() {
+#if DECONSTRUCTION_DEBUG
 		printf("DECONSTRUCTING SYNCHUB\n");
+#endif
 	}
 #endif
 
@@ -50,6 +53,8 @@ namespace EWE {
 		}
 
 		Deconstruct(syncHubSingleton);
+		syncHubSingleton = nullptr;
+
 #if DECONSTRUCTION_DEBUG
 		printf("end synchub destroy \n");
 #endif

@@ -113,7 +113,7 @@ class EWESwapChain {
     std::shared_ptr<EWESwapChain> oldSwapChain{};
 
 
-    std::shared_ptr<SyncHub> syncHub;
+    SyncHub* syncHub;
 
 
     //VkSurfaceFullScreenExclusiveWin32InfoEXT surfaceFullScreenExclusiveWin32InfoEXT{};

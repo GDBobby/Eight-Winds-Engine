@@ -339,7 +339,7 @@ namespace EWE {
 		inFile.close();
 		//printf("file read successfully \n");
 
-		leafModel = EWEModel::CreateMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::graphics);
+		leafModel = Construct<EWEModel>({ importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::graphics });
 
 #if DEBUG_NAMING
 		leafModel->SetDebugNames("leafModel");

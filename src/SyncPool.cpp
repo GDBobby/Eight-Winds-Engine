@@ -428,7 +428,10 @@ namespace EWE {
                         VK::Object->STGMutex.unlock();
                     }
                     else {
+                        //i dont know if transfer begin needs a mutex? but i guess so
+                        VK::Object->poolMutex[queue].lock();
                         cmdBufs[queue][i].BeginSingleTime();
+                        VK::Object->poolMutex[queue].unlock();
                     }
                     cmdBufAcqMut.unlock();
                     return cmdBufs[queue][i];
@@ -448,7 +451,9 @@ namespace EWE {
                     VK::Object->STGMutex.unlock();
                 }
                 else {
+                    VK::Object->poolMutex[queue].lock();
                     cmdBufs[queue][i].Reset();
+                    VK::Object->poolMutex[queue].unlock();
                 }
                 return;
             }
@@ -465,7 +470,9 @@ namespace EWE {
                         VK::Object->STGMutex.unlock();
                     }
                     else{
+                        VK::Object->poolMutex[queue].lock();
                         cmdBufs[queue][i].Reset();
+                        VK::Object->poolMutex[queue].unlock();
                     }
                     return;
                 }
@@ -486,7 +493,9 @@ namespace EWE {
                         VK::Object->STGMutex.unlock();
                     }
                     else{
+                        VK::Object->poolMutex[queue].lock();
                         cmdBufs[queue][i].Reset();
+                        VK::Object->poolMutex[queue].unlock();
                     }
                     found = true;
                     break;
@@ -511,7 +520,9 @@ namespace EWE {
                             VK::Object->STGMutex.unlock();
                         }
                         else{
+                            VK::Object->poolMutex[queue].lock();
                             cmdBufs[queue][i].Reset();
+                            VK::Object->poolMutex[queue].unlock();
                         }
                         found = true;
                         break;

@@ -63,30 +63,39 @@ namespace EWE {
         assert(vertexCount >= 3 && "vertex count must be at least 3");
         VertexBuffers(vertexCount, sizeOfVertex, verticesData, queue);
     }
-
-
-    EWEModel* EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices, Queue::Enum queue) {
-        return Construct<EWEModel>({ verticesData, vertexCount, sizeOfVertex, indices, queue });
+#if CALL_TRACING
+    EWEModel* EWEModel::CreateModelFromObj(const std::string& filepath, Queue::Enum queue, std::source_location srcLoc) {
+        Builder builder{};
+        builder.LoadModel(filepath);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue }, srcLoc);
     }
-    EWEModel* EWEModel::CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue) {
-        return Construct<EWEModel>({ verticesData, vertexCount, sizeOfVertex, queue });
+    EWEModel* EWEModel::CreateSimpleModelFromObj(const std::string& filePath, Queue::Enum queue, std::source_location srcLoc) {
+        SimpleBuilder builder{};
+        builder.LoadModel(filePath);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue }, srcLoc);
     }
-
-    EWEModel* EWEModel::CreateModelFromFile(const std::string& filepath, Queue::Enum queue) {
+    EWEModel* EWEModel::CreateGrassModelFromObj(const std::string& filePath, Queue::Enum queue, std::source_location srcLoc) {
+        GrassBuilder builder{};
+        builder.LoadModel(filePath);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue }, srcLoc);
+    }
+#else
+    EWEModel* EWEModel::CreateModelFromObj(const std::string& filepath, Queue::Enum queue) {
         Builder builder{};
         builder.LoadModel(filepath);
         return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue });
     }
-    EWEModel* EWEModel::CreateSimpleModelFromFile(const std::string& filePath, Queue::Enum queue) {
+    EWEModel* EWEModel::CreateSimpleModelFromObj(const std::string& filePath, Queue::Enum queue) {
         SimpleBuilder builder{};
         builder.LoadModel(filePath);
         return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue });
     }
-    EWEModel* EWEModel::CreateGrassModelFromFile(const std::string& filePath, Queue::Enum queue) {
+    EWEModel* EWEModel::CreateGrassModelFromObj(const std::string& filePath, Queue::Enum queue) {
         GrassBuilder builder{};
         builder.LoadModel(filePath);
         return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices, queue });
     }
+#endif
     
     inline void CopyModelBuffer(StagingBuffer* stagingBuffer, VkBuffer dstBuffer, const VkDeviceSize bufferSize, const Queue::Enum queue) {
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
@@ -169,19 +178,19 @@ namespace EWE {
         StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, data });
 #endif
 #if DEBUGGING_MEMORY_WITH_VMA
-        vertexBuffer = new EWEBuffer(
+        vertexBuffer = Construct<EWEBuffer>({
             vertexSize,
             vertexCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-        );
+        });
 #else
-        vertexBuffer = new EWEBuffer(
+        vertexBuffer = Construct<EWEBuffer>({
             vertexSize,
             vertexCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-        );
+        });
 #endif
 
         CopyModelBuffer(stagingBuffer, vertexBuffer->GetBuffer(), bufferSize, queue);

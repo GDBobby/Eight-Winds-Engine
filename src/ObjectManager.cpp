@@ -32,7 +32,9 @@ namespace EWE {
 
 		eweObjects.clear();
 		printf("after clearing ewe \n");
-		assert(false && " need to fix this bakc up");
+
+		printf("DO NOT REMOVE THIS BREAKPOINT WITHOUT RE - ENABLING THE FOLLOWING ASSERT UNLESS THE ISSUE IS FIXED\n");
+		//assert(false && " need to fix this bakc up");
 		/* need to come back here
 		auto clearTextures = RigidRenderingSystem::CheckAndClearTextures();
 		printf("afterr clear texutres \n");

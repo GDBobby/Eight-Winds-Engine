@@ -14,7 +14,7 @@ namespace EWE {
 
 	MainMenuScene::~MainMenuScene() {
 #if DECONSTRUCTION_DEBUG
-		printf("deconstructing main menu \n");
+		printf("deconstructing main menu scene \n");
 #endif
 	}
 
@@ -38,7 +38,6 @@ namespace EWE {
 		//handle threads in this scene, or a game specific class
 	}
 	void MainMenuScene::exit() {
-		PipelineSystem::DestructAt(Pipe::textured);
 		ewEngine.objectManager.eweObjects.clear();
 	}
 	bool MainMenuScene::render(double dt) {
@@ -56,8 +55,9 @@ namespace EWE {
 		
 		if (ewEngine.BeginRenderWithoutPass()) {
 			//printf("drawing \n");
-			rockSystem.Dispatch(dt * !paused);
-			
+			if (!paused) {
+				rockSystem.Dispatch(dt);
+			}
 			ewEngine.camera.BindUBO();
 			ewEngine.eweRenderer.BeginSwapChainRenderPass();
 			ewEngine.DrawObjects(dt);

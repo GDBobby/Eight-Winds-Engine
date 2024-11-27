@@ -105,6 +105,7 @@ namespace EWE {
 		double renderFPS = 1.0 / 144.0;
 		bool pointLightsEnabled = false;
 		bool displayingRenderInfo = false;
+		bool timestampsAvailable = false;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		void InitGlobalBuffers();
@@ -141,7 +142,12 @@ namespace EWE {
 		void QueryTimestampEnd();
 		void CreateQueryPool();
 		bool previouslySubmitted[MAX_FRAMES_IN_FLIGHT] = { false, false };
-		uint64_t timestamps[4];
+
+		struct TimestampData {
+			uint64_t result;
+			uint64_t availability;
+		};
+		TimestampData timestamps[4];
 #endif
 	};
 }

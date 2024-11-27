@@ -66,7 +66,12 @@ namespace EWE{
 #else
     typedef CommandBuffer = VkCommandBuffer;
 #endif
-
+    namespace Sampler { //defined in Sampler.cpp, testing a split cpp/header file
+        VkSampler GetSampler(VkSamplerCreateInfo const& samplerInfo);
+        void RemoveSampler(VkSampler sampler);
+        void Initialize();
+        void Deconstruct();
+    } //namespace Sampler
 
     struct VK {
         static VK* Object;

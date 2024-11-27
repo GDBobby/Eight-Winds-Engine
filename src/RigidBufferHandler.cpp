@@ -17,6 +17,11 @@ namespace EWE {
 
 		transformBuffer[0] = Construct<EWEBuffer>({ maxEntityCount * sizeof(glm::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, memoryFlags });
 		transformBuffer[1] = Construct<EWEBuffer>({ maxEntityCount * sizeof(glm::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, memoryFlags });
+
+#if DEBUG_NAMING
+		transformBuffer[0]->SetName("rigid buffer 0");
+		transformBuffer[1]->SetName("rigid buffer 1");
+#endif
 	}
 
 	RigidInstancedBufferHandler::~RigidInstancedBufferHandler() {

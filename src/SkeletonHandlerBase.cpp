@@ -187,7 +187,7 @@ namespace EWE {
             //printf("mesh thread 1 finished \n");
 
             for (auto const& mesh : importMesh.meshes) {
-                meshes.push_back(EWEModel::CreateMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMesh.vertex_size, mesh.indices, queue));
+                meshes.push_back(Construct<EWEModel>({ reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMesh.vertex_size, mesh.indices, queue }));
             }
         }
         if (meshThread2Exist) {
@@ -195,7 +195,7 @@ namespace EWE {
             meshThread2.join();
 
             for (auto const& mesh : importMeshNT.meshes) {
-                meshes.push_back(EWEModel::CreateMesh(reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMeshNT.vertex_size, mesh.indices, queue));
+                meshes.push_back(Construct<EWEModel>({ reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMeshNT.vertex_size, mesh.indices, queue }));
             }
             //printf("mesh thread 2 finished \n");
         }
@@ -212,32 +212,6 @@ namespace EWE {
         for (int i = 0; i < meshesNT.size(); i++) {
             SkinRenderSystem::AddSkeleton(textureMappingTracker.second[i], boneCount, meshesNT[i], mySkeletonID, instanced);
         }
-
-        // printf("mesh sizes - %d:%d \n", meshes.size(), meshesNT.size());
-
-         //printf("found anim size, expected ~ %d:%d \n", animationData.size(), anim_undefined);
-        /* anim testing
-        if (partial) {
-            printf("actor, bone count - %d:%d \n", actorType, defaultMatrix.size());
-            //if (actorType == Monster_Skeleton) {
-            printf("bone count of each animation - actorType:%d \n ~~~~~~~~~~~~ \n", actorType);
-            for (int i = 0; i < partialAnimationData.size(); i++) {
-                printf("frame coutn of animations : //%d \n", partialAnimationData[i].size());
-                printf("\t animDuration[%d] : %d \n", i, partialAnimationData[i][0].size());
-                int position = 0;
-                for (auto iter = partialAnimationData[i][0].begin(); iter != partialAnimationData[i][0].end(); iter++) {
-                    printf("bone value, map position : %d:%d \n", iter->first, position++);
-                }
-            }
-        }
-        else {
-            printf("full animation, actorType:boneCount - %d:%d ~~~~~~~~~~~~~ \n", actorType, fullAnimationData[0].size());
-            for (int i = 0; i < fullAnimationData.size(); i++) {
-                printf("\t animDuration[%d] : %d \n", i, fullAnimationData[i].size());
-                printf("\t anim bone count :%d \n", fullAnimationData[i][0].size());
-            }
-        }
-        */
 
     }
 

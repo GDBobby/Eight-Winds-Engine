@@ -16,16 +16,18 @@ namespace EWE {
 	//GLFWwindow* UIHandler::windowPtr:
 
 	UIHandler::UIHandler(std::pair<uint32_t, uint32_t> dimensions, GLFWwindow* window, TextOverlay* txtOverlay)
-		: windowPtr{ window }, screenWidth{ static_cast<float>(dimensions.first) }, screenHeight{ static_cast<float>(dimensions.second) }, textOverlay{ std::shared_ptr<TextOverlay>(txtOverlay) } {
+		: windowPtr{ window }, screenWidth{ static_cast<float>(dimensions.first) }, screenHeight{ static_cast<float>(dimensions.second) }, textOverlay{ txtOverlay } {
+#if EWE_DEBUG
 		printf("beg uiHandler construction, dimensions - %.1f:%.1f \n", screenWidth, screenHeight);
+#endif
 
 		//textOverlay = std::make_unique<TextOverlay>(eweDevice, EWESwapChain->getFrameBuffers(), EWESwapChain->width(), EWESwapChain->height(), EWESwapChain->getRenderPass(), 1.f);
 
 
 		//MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
-		printf("before sound engine \n");
+		//printf("before sound engine \n");
 		soundEngine = SoundEngine::GetSoundEngineInstance();
-		printf("after sound engine \n");
+		//printf("after sound engine \n");
 
 		//printf("after imagers in ui handler \n");
 
@@ -35,8 +37,9 @@ namespace EWE {
 		backgroundObject.transform2d.scale = glm::vec2{ 2.f };
 		backgroundObject.color = { 0.01f, 0.01f, 0.01f };
 
-	
+#if EWE_DEBUG
 		printf("end of ui construction \n");
+#endif
 	}
 
 #if BENCHMARKING

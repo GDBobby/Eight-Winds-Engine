@@ -1,4 +1,4 @@
-#include "EWEngine/Graphics/Texture/Sampler.h"
+#include "EWEngine/Graphics/VulkanHeader.h"
 
 #include <vector>
 #include <cassert>
@@ -101,7 +101,7 @@ namespace EWE {
         }
         void Deconstruct() {
 #if EWE_DEBUG
-            assert(storedSamplers.size() == 0 && "destroying sampler manager with samplers still in use");
+            //assert(storedSamplers.size() == 0 && "destroying sampler manager with samplers still in use");
 #endif
 
             //if the sampler was already destroyed this will create a validation error

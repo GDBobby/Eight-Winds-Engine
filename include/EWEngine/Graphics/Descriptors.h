@@ -20,7 +20,11 @@ namespace EWE {
             Builder& AddBinding(VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count = 1);
             Builder& AddGlobalBindingForCompute();
             Builder& AddGlobalBindings();
+#if DEBUG_NAMING
+            EWEDescriptorSetLayout* Build(std::source_location = std::source_location::current());
+#else
             EWEDescriptorSetLayout* Build();
+#endif
 
         private:
             std::vector<VkDescriptorSetLayoutBinding> bindings{};
@@ -56,8 +60,11 @@ namespace EWE {
             Builder& AddPoolSize(VkDescriptorType descriptorType, uint32_t count);
             Builder& SetPoolFlags(VkDescriptorPoolCreateFlags flags);
             Builder& SetMaxSets(uint32_t count);
-            std::shared_ptr<EWEDescriptorPool> Build() const;
-
+#if DEBUG_NAMING
+            EWEDescriptorPool* Build(std::source_location srcLoc= std::source_location::current()) const;
+#else
+            EWEDescriptorPool* Build() const;
+#endif
 
         private:
             std::vector<VkDescriptorPoolSize> poolSizes{};

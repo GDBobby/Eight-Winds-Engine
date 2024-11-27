@@ -83,7 +83,7 @@ namespace EWE {
 			loadingThreadTracker.oceanSceneThread = true;
 		};
 		ThreadPool::EnqueueVoidFunction(sceneLoadFunc);
-		ThreadPool::EnqueueVoidFunction(sceneLoadFunc2);
+		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc2);
 		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc3);
 
 		//scenes.emplace(scene_)

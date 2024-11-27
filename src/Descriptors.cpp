@@ -50,11 +50,15 @@ namespace EWE {
 
         return *this;
     }
-
+#if DEBUG_NAMING
+    EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::Build(std::source_location srcLoc) {
+        return Construct<EWEDescriptorSetLayout>({ bindings }, srcLoc);
+    }
+#else
     EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::Build() {
         return Construct<EWEDescriptorSetLayout>({ bindings });
     }
-
+#endif
     // *************** Descriptor Set Layout *********************
 
     EWEDescriptorSetLayout::EWEDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>& bindings)
@@ -96,10 +100,15 @@ namespace EWE {
         maxSets = count;
         return *this;
     }
-
-    std::shared_ptr<EWEDescriptorPool> EWEDescriptorPool::Builder::Build() const {
-        return std::make_shared<EWEDescriptorPool>(maxSets, poolFlags, poolSizes);
+#if DEBUG_NAMING
+    EWEDescriptorPool* EWEDescriptorPool::Builder::Build(std::source_location srcLoc) const {
+        return Construct<EWEDescriptorPool>({ maxSets, poolFlags, poolSizes }, srcLoc);
     }
+#else
+    EWEDescriptorPool* EWEDescriptorPool::Builder::Build() const {
+        return Construct<EWEDescriptorPool>({ maxSets, poolFlags, poolSizes });
+    }
+#endif
 
     // *************** Descriptor Pool *********************
 

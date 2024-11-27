@@ -38,6 +38,9 @@ namespace EWE {
 	{
 		bone = Construct<EWEBuffer>({ boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
 		bone->Map();
+#if DEBUG_NAMING
+		bone->SetName("Instanced skin buffer bone");
+#endif
 	}
 	void SkinBufferHandler::InnerBufferStruct::AddDescriptorBindings(EWEDescriptorWriter& descWriter, uint8_t& currentBinding) {
 		//printf("building skin buffer \n");
@@ -54,13 +57,15 @@ namespace EWE {
 
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ INSTANCING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstancedSkinBufferHandler::InstancedSkinBufferHandler(uint16_t boneCount, uint16_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount }, gpuData{ InnerBufferStruct{maxActorCount, boneBlockSize},InnerBufferStruct{maxActorCount, boneBlockSize} } {
-		//for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-		//	EWEDescriptorWriter descWriter{ eDSL, DescriptorPool_Global };
-		//	DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
-		//	descWriter.WriteImage(2, Image_Manager::GetDescriptorImageInfo(imgID));
-		//	gpuData[i].AddDescriptorBindings(maxActorCount, descWriter, 3);
-		//}
+	InstancedSkinBufferHandler::InstancedSkinBufferHandler(uint16_t boneCount, uint16_t maxActorCount) : 
+		boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, 
+		maxActorCount{ maxActorCount }, 
+		gpuData{ 
+			InnerBufferStruct{maxActorCount, boneBlockSize},
+			InnerBufferStruct{maxActorCount, boneBlockSize} 
+		} 
+	{
+
 	}
 	void InstancedSkinBufferHandler::WriteData(glm::mat4* modelMatrix, void* finalBoneMatrices) {
 
@@ -87,6 +92,11 @@ namespace EWE {
 
 		model->Map();
 		bone->Map();
+
+#if DEBUG_NAMING
+		model->SetName("Instanced skin buffer model");
+		bone->SetName("Instanced skin buffer bone");
+#endif
 	}
 	void InstancedSkinBufferHandler::InnerBufferStruct::AddDescriptorBindings(uint16_t maxActorCount, EWEDescriptorWriter& descWriter, uint8_t& currentBinding) {
 		//if (maxActorCount > 1000) {

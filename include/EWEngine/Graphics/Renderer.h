@@ -76,8 +76,6 @@ namespace EWE {
 		uint32_t currentImageIndex;
 		bool isFrameStarted{false};
 
-		std::shared_ptr<SyncHub> syncHub;
-
 	};
 }
 

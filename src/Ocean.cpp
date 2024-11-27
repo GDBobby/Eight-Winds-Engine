@@ -15,13 +15,13 @@ namespace EWE {
 			tdfsGPUData.pushData.CopyFromIFS(ifsGPUData.pushData);
 		}
 		Ocean::~Ocean() {
-			EWE_VK(vkDestroySampler, VK::Object->vkDevice, oceanOutputImageInfoDescriptorCompute.sampler, nullptr);
+			Sampler::RemoveSampler(oceanOutputImageInfoDescriptorCompute.sampler);
 			EWE_VK(vkDestroyImageView, VK::Object->vkDevice, oceanOutputImageInfoDescriptorCompute.imageView, nullptr);
 			//vkDestroySampler(EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.sampler, nullptr); //this is a copy
 			//vkDestroyImageView(EWEDevice::GetVkDevice(), oceanOutputImageInfoDescriptorCompute.imageView, nullptr); //this is a copy
 			EWE_VK(vkDestroyImage, VK::Object->vkDevice, oceanOutputImages, nullptr);
 
-			EWE_VK(vkDestroySampler, VK::Object->vkDevice, oceanFreqImageInfoDescriptor.sampler, nullptr);
+			Sampler::RemoveSampler(oceanFreqImageInfoDescriptor.sampler);
 			EWE_VK(vkDestroyImage, VK::Object->vkDevice, oceanFreqImages, nullptr);
 			EWE_VK(vkDestroyImageView, VK::Object->vkDevice, oceanFreqImageInfoDescriptor.imageView, nullptr);
 		}
@@ -132,7 +132,7 @@ namespace EWE {
 			samplerInfo.minLod = 0.0f;
 			samplerInfo.maxLod = 1.0f;
 			samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-			EWE_VK(vkCreateSampler, VK::Object->vkDevice, &samplerInfo, nullptr, &oceanOutputImageInfoDescriptorCompute.sampler);
+			Sampler::GetSampler(samplerInfo);
 			oceanOutputImageInfoDescriptorGraphics.sampler = oceanOutputImageInfoDescriptorCompute.sampler;
 
 			// Create image view

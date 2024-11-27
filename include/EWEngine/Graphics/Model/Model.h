@@ -71,9 +71,6 @@ namespace EWE {
         }
 
 
-        static EWEModel* CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t>const& indices, Queue::Enum queue);
-        static EWEModel* CreateMesh(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue);
-
         EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices, Queue::Enum queue);
         EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue);
 
@@ -83,10 +80,15 @@ namespace EWE {
 
         EWEModel(const EWEModel&) = delete;
         EWEModel& operator=(const EWEModel&) = delete;
-
-        static EWEModel* CreateModelFromFile(const std::string& filepath, Queue::Enum queue);
-        static EWEModel* CreateSimpleModelFromFile(const std::string& filePath, Queue::Enum queue);
-        static EWEModel* CreateGrassModelFromFile(const std::string& filePath, Queue::Enum queue);
+#if CALL_TRACING
+        static EWEModel* CreateModelFromObj(const std::string& filepath, Queue::Enum queue, std::source_location = std::source_location::current());
+        static EWEModel* CreateSimpleModelFromObj(const std::string& filePath, Queue::Enum queue, std::source_location = std::source_location::current());
+        static EWEModel* CreateGrassModelFromObj(const std::string& filePath, Queue::Enum queue, std::source_location = std::source_location::current());
+#else
+        static EWEModel* CreateModelFromObj(const std::string& filepath, Queue::Enum queue);
+        static EWEModel* CreateSimpleModelFromObj(const std::string& filePath, Queue::Enum queue);
+        static EWEModel* CreateGrassModelFromObj(const std::string& filePath, Queue::Enum queue);
+#endif
 
         void BindAndDraw();
         void BindAndDrawNoIndex();

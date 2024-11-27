@@ -11,6 +11,7 @@ namespace EWE {
 		float azimuthalRotation;
 		float radius;
 		float speed;
+		//float trackRatio;
 	};
 #pragma pop
 
@@ -21,6 +22,7 @@ namespace EWE {
 		std::uniform_real_distribution<float> aziDist(0.f, glm::two_pi<float>());
 		std::uniform_real_distribution<float> speedDist(0.01f, 0.1f);
 		std::uniform_real_distribution<float> radiusDist(30.f, 35.f);
+		//std::uniform_real_distribution<float> trackRatioDist(0.0f, 1.0f);
 
 		for (auto& rock : rockData) {
 			rock.scale = scaleDist(randomGen);
@@ -28,6 +30,7 @@ namespace EWE {
 			rock.azimuthalRotation = aziDist(randomGen);
 			rock.radius = radiusDist(randomGen);
 			rock.speed = speedDist(randomGen);
+			//rock.trackRatio = trackRatioDist(randomGen);
 		}
 	}
 
@@ -37,7 +40,6 @@ namespace EWE {
 		rockBuffer = Construct<EWEBuffer>({rockBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT});
 
 		StagingBuffer* rockStagingBuffer = Construct<StagingBuffer>({ rockBufferSize });
-
 
 		rockStagingBuffer->Stage(rockData.data(), rockBufferSize);
 
@@ -49,7 +51,6 @@ namespace EWE {
 		TransferCommandManager::AddCommand(cmdBuf);
 		TransferCommandManager::AddPropertyToCommand(rockStagingBuffer);
 		syncHub->EndSingleTimeCommandTransfer();
-		
 	}
 
 
@@ -74,7 +75,7 @@ namespace EWE {
 		inFile.close();
 		//printf("file read successfully \n");
 
-		rockModel = EWEModel::CreateMesh(importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::transfer);
+		rockModel = Construct<EWEModel>({ importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::transfer });
 
 #if DEBUG_NAMING
 		rockModel->SetDebugNames("eyeModel");

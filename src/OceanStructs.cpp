@@ -405,7 +405,7 @@ namespace EWE {
                 }
             }
 
-            oceanModel = EWEModel::CreateMesh(gridVertices.data(), gridVertices.size(), sizeof(gridVertices[0]), gridIndices, Queue::graphics);
+            oceanModel = Construct<EWEModel>({ gridVertices.data(), gridVertices.size(), sizeof(gridVertices[0]), gridIndices, Queue::graphics });
         }
 
         void OceanGraphicsGPUData::Render() {

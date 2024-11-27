@@ -19,7 +19,7 @@ namespace EWE{
 #if DECONSTRUCTION_DEBUG
 			printf("beg of uihandler deconstructor \n");
 #endif
-			textOverlay.reset();
+			Deconstruct(textOverlay);
 #if DECONSTRUCTION_DEBUG
 			printf("uihandler deconstructor \n");
 #endif
@@ -65,28 +65,17 @@ namespace EWE{
 			return screenHeight;
 		}
 
-		std::shared_ptr<TextOverlay> getTextOverlay() {
-			//static uint8_t returnCount = 0;
-			//returnCount++;
-			//if (returnCount > 1) {
-				//im sure there's a better way to do this?
-				//throw std::exception("only copy this once, to MenuManager");
-			//}
+		TextOverlay* GetTextOverlay() {
+			//throw std::exception("only copy this once, to MenuManager");
 			return textOverlay;
 		}
 
 	private:
-		std::shared_ptr<TextOverlay> textOverlay;
-		enum menu_objects {
-			combo_objects,
-			uiobjects,
-			slider_object,
-			sbracket_object,
-		};
-		//float timeElapsed = 0.0f;
-
 		float screenWidth;
 		float screenHeight;
+		TextOverlay* textOverlay;
+		//float timeElapsed = 0.0f;
+
 
 		std::shared_ptr<SoundEngine> soundEngine;
 

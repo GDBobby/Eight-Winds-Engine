@@ -3,22 +3,27 @@
 
 namespace EWE {
     namespace Basic_Model {
+#if CALL_TRACING
+        EWEModel* Quad(Queue::Enum queue, glm::vec2 uvScale = glm::vec2{ 1.f }, std::source_location = std::source_location::current());
+        EWEModel* QuadPNU(Queue::Enum queue, glm::vec2 uvScale = glm::vec2{ 1.f }, std::source_location = std::source_location::current());
+        EWEModel* Simple3DQuad(Queue::Enum queue, glm::vec2 uvScale = glm::vec2{ 1.f }, std::source_location = std::source_location::current());
+        EWEModel* TileQuad3D(Queue::Enum queue, glm::vec2 uvScale, std::source_location = std::source_location::current());
+
+
+        EWEModel* Grid2D(Queue::Enum queue, glm::vec2 scale = { 1.f,1.f }, std::source_location = std::source_location::current());
+        EWEModel* Quad2D(Queue::Enum queue, glm::vec2 scale = { 1.f,1.f }, std::source_location = std::source_location::current());
+
+        EWEModel* NineUIQuad(Queue::Enum queue, std::source_location = std::source_location::current());
+
+        EWEModel* Circle(Queue::Enum queue, uint16_t const points, float radius = 0.5f, std::source_location = std::source_location::current());
+
+        EWEModel* SkyBox(Queue::Enum queue, float scale, std::source_location = std::source_location::current());
+#else
         EWEModel* Quad(Queue::Enum queue, glm::vec2 uvScale = glm::vec2{ 1.f });
         EWEModel* QuadPNU(Queue::Enum queue, glm::vec2 uvScale = glm::vec2{ 1.f });
         EWEModel* Simple3DQuad(Queue::Enum queue, glm::vec2 uvScale = glm::vec2{ 1.f });
         EWEModel* TileQuad3D(Queue::Enum queue, glm::vec2 uvScale);
-        /*
-        EWEModel* generateSimpleZedQuad(glm::vec2 uvScale = glm::vec2{ 1.f }) {
-            std::vector<EffectVertex> vertices{
-                {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
-                {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},
-                {{-0.5f,0.0f, 0.5f}, {0.0f,0.f}},
-                {{0.5f,0.0f, 0.5f}, {uvScale.x,0.f}},
-            };
-            std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
-            return std::make_unique<EWEModel>(device, vertices, indices);
-        }
-        */
+
 
         EWEModel* Grid2D(Queue::Enum queue, glm::vec2 scale = { 1.f,1.f });
         EWEModel* Quad2D(Queue::Enum queue, glm::vec2 scale = { 1.f,1.f });
@@ -28,6 +33,7 @@ namespace EWE {
         EWEModel* Circle(Queue::Enum queue, uint16_t const points, float radius = 0.5f);
 
         EWEModel* SkyBox(Queue::Enum queue, float scale);
+#endif
     };
 }
 

@@ -8,7 +8,7 @@ namespace EWE {
 		soundEngine{ SoundEngine::GetSoundEngineInstance() }
 	{}
 	ShaderGenerationScene::~ShaderGenerationScene() {
-		printf("deconstructing main menu \n");
+		printf("deconstructing shader scene \n");
 	}
 
 	void ShaderGenerationScene::load() {

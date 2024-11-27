@@ -20,7 +20,7 @@ namespace EWE {
 		bool globalObjectThread = false;
 
 		bool Finished() const {
-			return soundMapThread && mainSceneThread && shaderGenSceneThread && menuModuleThread && globalObjectThread;
+			return soundMapThread && mainSceneThread && menuModuleThread && globalObjectThread;
 		}
 	};
 

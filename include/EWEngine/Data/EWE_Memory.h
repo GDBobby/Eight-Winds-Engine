@@ -85,13 +85,13 @@ T* Construct(void* address, ConstructAddrHelper<T> construct
 
 template<typename T>
 void Deconstruct(T* object) {
+    ewe_free_mem_track(object);
 #if USING_MALLOC
     object->~T();
     free(object);
 #else
     delete object;
 #endif
-    ewe_free_mem_track(object);
 }
 
 

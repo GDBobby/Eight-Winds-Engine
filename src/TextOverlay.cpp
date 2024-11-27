@@ -46,7 +46,7 @@ namespace EWE {
 		Deconstruct(vertexBuffer[0]);
 		Deconstruct(vertexBuffer[1]);
 
-		EWE_VK(vkDestroySampler, VK::Object->vkDevice, sampler, nullptr);
+		Sampler::RemoveSampler(sampler);
 		EWE_VK(vkDestroyImage, VK::Object->vkDevice, image, nullptr);
 		EWE_VK(vkDestroyImageView, VK::Object->vkDevice, view, nullptr);
 		EWE_VK(vkFreeMemory, VK::Object->vkDevice, imageMemory, nullptr);
@@ -131,6 +131,11 @@ namespace EWE {
 
 		vertexBuffer[0] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
 		vertexBuffer[1] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
+
+#if DEBUG_NAMING
+		vertexBuffer[0]->SetName("textoverlay vertex buffer 0");
+		vertexBuffer[1]->SetName("textoverlay vertex buffer 0");
+#endif
 
 		// Font texture
 		VkImageCreateInfo imageCreateInfo{};

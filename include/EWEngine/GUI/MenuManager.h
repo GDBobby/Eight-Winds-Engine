@@ -16,7 +16,7 @@ namespace EWE {
 		bool isActive = true;
 		bool escapePressed = false;
 		bool windowWasResized = false;
-		std::shared_ptr<TextOverlay> textOverlay;
+		TextOverlay* textOverlay;
 	public:
 
 		std::unordered_map<uint16_t, std::unique_ptr<MenuModule>> menuModules;
@@ -26,7 +26,7 @@ namespace EWE {
 		//std::queue<MenuClickReturn> clickReturns;
 		uint8_t currentMenuState = 0;
 
-		MenuManager(float screenWidth, float screenHeight, GLFWwindow* windowPtr, std::shared_ptr<TextOverlay> textOverlay);
+		MenuManager(float screenWidth, float screenHeight, GLFWwindow* windowPtr, TextOverlay* textOverlay);
 		int8_t whichScene = -1;
 		/*
 		static void DiscardReturnCallback() {
@@ -78,7 +78,7 @@ namespace EWE {
 
 		void drawText() {
 			if (isActive) {
-				menuModules.at(currentMenuState)->drawText(textOverlay.get());
+				menuModules.at(currentMenuState)->drawText(textOverlay);
 			}
 		}
 		bool drawingNineUI() { return menuModules.at(currentMenuState)->drawingNineUI(); }

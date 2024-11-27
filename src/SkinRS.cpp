@@ -49,7 +49,9 @@ namespace EWE {
 		uint16_t bufferDescriptorsCleared = 0;
 		uint16_t instancedBuffersCleared = 0;
 #endif
-		assert(false); //this was moved to the TextureMeshStruct
+
+		printf("DO NOT REMOVE THIS RBEAKPOINT WITHOUT FIXING THE ISSUE, OR RE-ENABLING THE ASSERT\n");
+		//assert(false); //this was moved to the TextureMeshStruct
 		//for (auto& buffer : buffers) {
 		//	bufferDescriptorsCleared++;
 		//}

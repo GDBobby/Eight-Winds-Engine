@@ -646,6 +646,10 @@ namespace EWE {
             poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
             EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::graphics]);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(VK::Object->commandPools[Queue::graphics], VK_OBJECT_TYPE_COMMAND_POOL, "graphics cmd pool");
+#endif
+
         }
         {
             VkCommandPoolCreateInfo poolInfo = {};
@@ -654,6 +658,9 @@ namespace EWE {
             poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
             EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->STGCmdPool);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(VK::Object->STGCmdPool, VK_OBJECT_TYPE_COMMAND_POOL, "graphics STG cmd pool");
+#endif
         }
         {
             VkCommandPoolCreateInfo poolInfo = {};
@@ -673,6 +680,9 @@ namespace EWE {
             poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
             EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::transfer]);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(VK::Object->commandPools[Queue::transfer], VK_OBJECT_TYPE_COMMAND_POOL, "transfer cmd pool");
+#endif
         }
         {
             VkCommandPoolCreateInfo poolInfo = {};
@@ -683,6 +693,9 @@ namespace EWE {
             poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
             EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::compute]);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(VK::Object->commandPools[Queue::compute], VK_OBJECT_TYPE_COMMAND_POOL, "compute cmd pool");
+#endif
         }
     }
     void EWEDevice::CreateSurface() { window.createWindowSurface(VK::Object->instance, &VK::Object->surface, GPU_LOGGING); }

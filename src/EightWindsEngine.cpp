@@ -65,7 +65,7 @@ namespace EWE {
 		uiHandler{ SettingsJSON::settingsData.getDimensions(), mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
 		advancedRS{ objectManager, menuManager },
 		imageManager{ },
-		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), mainWindow.getGLFWwindow(), uiHandler.getTextOverlay() },
+		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay() },
 		skinnedRS{ }
 	{
 		printf("after finishing construction of engine\n");
@@ -114,6 +114,8 @@ namespace EWE {
 	}
 
 	EightWindsEngine::~EightWindsEngine() {
+
+
 		Dimension2::Destruct();
 		PipelineSystem::Destruct();
 		Deconstruct(leafSystem);
@@ -330,13 +332,11 @@ namespace EWE {
 	}
 #if BENCHMARKING_GPU
 	void EightWindsEngine::CreateQueryPool() {
-		if (!displayingRenderInfo) {
-			return;
-		}
 		const VkPhysicalDeviceLimits devLimits = VK::Object->properties.limits;
 		const float timestampPeriod = devLimits.timestampPeriod;
 		if (timestampPeriod == 0.0f || !devLimits.timestampComputeAndGraphics) {
-			displayingRenderInfo = false;
+			timestampsAvailable = false;
+			return;
 		}
 		gpuTicksPerSecond = timestampPeriod / 1e6f; //1e6 converts it from seconds to milliseconds
 
@@ -354,18 +354,22 @@ namespace EWE {
 		queryPoolInfo.queryCount = 2;
 		EWE_VK(vkCreateQueryPool, VK::Object->vkDevice, &queryPoolInfo, nullptr, &queryPool[0]);
 		EWE_VK(vkCreateQueryPool, VK::Object->vkDevice, &queryPoolInfo, nullptr, &queryPool[1]);
+		timestampsAvailable = true;
 	}
 
 	void EightWindsEngine::QueryTimestampBegin() {
 
-		if (displayingRenderInfo) {
+		if (displayingRenderInfo && timestampsAvailable) {
 			//printf("before non-null \n");
 			//shouldnt be activated until after the command has already been submitted at least once
 			if (previouslySubmitted[VK::Object->frameIndex]) {
-				uint64_t& timestampStart = timestamps[VK::Object->frameIndex * 2];
-				uint64_t& timestampEnd = timestamps[VK::Object->frameIndex * 2 + 1];
-				EWE_VK(vkGetQueryPoolResults, VK::Object->vkDevice, queryPool[VK::Object->frameIndex], 0, 1, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t) * 2, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
-				elapsedGPUMS = static_cast<float>(timestampEnd - timestampStart) * gpuTicksPerSecond;
+				TimestampData& timestampStart = timestamps[VK::Object->frameIndex * 2];
+				TimestampData& timestampEnd = timestamps[VK::Object->frameIndex * 2 + 1];
+
+#if 0 //WAITING FOR TIMESTAMP
+				EWE_VK(vkGetQueryPoolResults, VK::Object->vkDevice, queryPool[VK::Object->frameIndex], 0, 2, sizeof(uint64_t) * 2, &timestampStart, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+
+				elapsedGPUMS = static_cast<float>(timestampEnd.result - timestampStart.result) * gpuTicksPerSecond;
 				totalElapsedGPUMS += elapsedGPUMS;
 				averageElapsedGPUCounter++;
 				if (averageElapsedGPUCounter == 100) {
@@ -373,6 +377,26 @@ namespace EWE {
 					averageElapsedGPUMS = totalElapsedGPUMS / 100.f;
 					totalElapsedGPUMS = 0.f;
 				}
+#else //get only if available
+				EWE_VK(vkGetQueryPoolResults, 
+					VK::Object->vkDevice, queryPool[VK::Object->frameIndex], 
+					0, 2, 
+					sizeof(uint64_t) * 4, 
+					&timestampStart, 
+					sizeof(uint64_t) * 2, 
+					VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT
+				);
+				if (timestampStart.result != 0) {
+					elapsedGPUMS = static_cast<float>(timestampEnd.result - timestampStart.result) * gpuTicksPerSecond;
+					totalElapsedGPUMS += elapsedGPUMS;
+					averageElapsedGPUCounter++;
+					if (averageElapsedGPUCounter == 100) {
+						averageElapsedGPUCounter = 0;
+						averageElapsedGPUMS = totalElapsedGPUMS / 100.f;
+						totalElapsedGPUMS = 0.f;
+					}
+				}
+#endif
 			}
 			else {
 				previouslySubmitted[VK::Object->frameIndex] = true;
@@ -384,7 +408,7 @@ namespace EWE {
 		}
 	}
 	void EightWindsEngine::QueryTimestampEnd() {
-		if (displayingRenderInfo) {
+		if (displayingRenderInfo && timestampsAvailable) {
 			EWE_VK(vkCmdWriteTimestamp, VK::Object->GetFrameBuffer(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool[VK::Object->frameIndex], 1);
 		}
 	}
