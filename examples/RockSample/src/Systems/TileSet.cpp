@@ -13,6 +13,23 @@ namespace EWE {
 				height = 19;
 				tileScale = 0.5f;
 				tileSetImage = Image_Manager::GetCreateImageID("textures/tileSet.png", false);
+				
+				bool notReady = true;
+
+#if EWE_DEBUG
+				uint64_t loopCount = 0;
+#endif
+				while (notReady) {
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+					auto* descInfo = Image_Manager::GetDescriptorImageInfo(tileSetImage);
+					if (descInfo->imageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+						notReady = false;
+					}
+#if EWE_DEBUG
+					printf("looping : %zu\n", loopCount++);
+#endif
+				}
+
 				grassTiles.push_back(476);
 				break;
 			}

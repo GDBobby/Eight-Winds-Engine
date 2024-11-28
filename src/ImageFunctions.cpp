@@ -74,16 +74,16 @@ namespace EWE {
                 1, &region
             );
         }
-        void GenerateMipMapsForMultipleImagesTransferQueue(CommandBuffer& cmdBuf, std::vector<ImageInfo>& imageInfos) {
+        void GenerateMipMapsForMultipleImagesTransferQueue(CommandBuffer& cmdBuf, std::vector<ImageInfo*>& imageInfos) {
             //printf("before mip map loop? size of image : %d \n", image.size());
 
             //printf("after beginning single time command \n");
             uint8_t maxMipLevels;
             for (auto const& imageInfo : imageInfos) {
-                if (imageInfo.mipLevels > maxMipLevels) {
-                    maxMipLevels = imageInfo.mipLevels;
+                if (imageInfo->mipLevels > maxMipLevels) {
+                    maxMipLevels = imageInfo->mipLevels;
 #if EWE_DEBUG
-                    assert(imageInfo.mipLevels >= 1);
+                    assert(imageInfo->mipLevels >= 1);
 #endif
                 }
             }
@@ -111,7 +111,7 @@ namespace EWE {
                     preBarriers.reserve(imageInfos.size());
                     for (auto const& imageInfo : imageInfos) {
 
-                        barrier.image = imageInfo.image;
+                        barrier.image = imageInfo->image;
                         preBarriers.push_back(barrier);
                     }
 
@@ -135,12 +135,12 @@ namespace EWE {
                     blit.dstSubresource.baseArrayLayer = 0;
                     blit.dstSubresource.layerCount = 1;
                     for (auto const& imageInfo : imageInfos) {
-                        blit.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(imageInfo.width), static_cast<int32_t>(imageInfo.height), 1 };
-                        blit.dstOffsets[1] = { imageInfo.width > 1 ? static_cast<int32_t>(imageInfo.width) / 2 : 1, imageInfo.height > 1 ? static_cast<int32_t>(imageInfo.height) / 2 : 1, 1 };
+                        blit.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(imageInfo->width), static_cast<int32_t>(imageInfo->height), 1 };
+                        blit.dstOffsets[1] = { imageInfo->width > 1 ? static_cast<int32_t>(imageInfo->width) / 2 : 1, imageInfo->height > 1 ? static_cast<int32_t>(imageInfo->height) / 2 : 1, 1 };
                         //printf("before blit image \n");
                         EWE_VK(vkCmdBlitImage, cmdBuf,
-                            imageInfo.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                            imageInfo.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            imageInfo->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                            imageInfo->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                             1, &blit,
                             VK_FILTER_LINEAR
                         );
@@ -159,10 +159,10 @@ namespace EWE {
                     std::vector<VkImageMemoryBarrier> postBarriers{};
                     postBarriers.reserve(imageInfos.size());
                     for (auto& imageInfo : imageInfos) {
-                        barrier.image = imageInfo.image;
+                        barrier.image = imageInfo->image;
                         postBarriers.push_back(barrier);
-                        if (imageInfo.width > 1) { imageInfo.width /= 2; }
-                        if (imageInfo.height > 1) { imageInfo.height /= 2; }
+                        if (imageInfo->width > 1) { imageInfo->width /= 2; }
+                        if (imageInfo->height > 1) { imageInfo->height /= 2; }
                     }
                     EWE_VK(vkCmdPipelineBarrier, cmdBuf,
                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
@@ -188,10 +188,10 @@ namespace EWE {
                     preBarriers.reserve(imageInfos.size());
                     for (auto const& imageInfo : imageInfos) {
 
-                        if (imageInfo.mipLevels <= mipLevel) {
+                        if (imageInfo->mipLevels <= mipLevel) {
                             continue;
                         }
-                        barrier.image = imageInfo.image;
+                        barrier.image = imageInfo->image;
                         preBarriers.push_back(barrier);
                         //printf("before cmd pipeline barrier \n");
                         //this barrier right here needs a transfer queue partner
@@ -218,16 +218,16 @@ namespace EWE {
                     blit.dstSubresource.baseArrayLayer = 0;
                     blit.dstSubresource.layerCount = 1;
                     for (auto const& imageInfo : imageInfos) {
-                        if (imageInfo.mipLevels <= mipLevel) {
+                        if (imageInfo->mipLevels <= mipLevel) {
                             continue;
                         }
 
-                        blit.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(imageInfo.width), static_cast<int32_t>(imageInfo.height), 1 };
-                        blit.dstOffsets[1] = { imageInfo.width > 1 ? static_cast<int32_t>(imageInfo.width) / 2 : 1, imageInfo.height > 1 ? static_cast<int32_t>(imageInfo.height) / 2 : 1, 1 };
+                        blit.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(imageInfo->width), static_cast<int32_t>(imageInfo->height), 1 };
+                        blit.dstOffsets[1] = { imageInfo->width > 1 ? static_cast<int32_t>(imageInfo->width) / 2 : 1, imageInfo->height > 1 ? static_cast<int32_t>(imageInfo->height) / 2 : 1, 1 };
                         //printf("before blit image \n");
                         EWE_VK(vkCmdBlitImage, cmdBuf,
-                            imageInfo.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                            imageInfo.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            imageInfo->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                            imageInfo->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                             1, &blit,
                             VK_FILTER_LINEAR
                         );
@@ -244,13 +244,13 @@ namespace EWE {
 
                     for (auto& imageInfo : imageInfos) {
 
-                        if (imageInfo.mipLevels <= mipLevel) {
+                        if (imageInfo->mipLevels <= mipLevel) {
                             continue;
                         }
-                        barrier.image = imageInfo.image;
+                        barrier.image = imageInfo->image;
                         postBarriers.push_back(barrier);
-                        if (imageInfo.width > 1) { imageInfo.width /= 2; }
-                        if (imageInfo.height > 1) { imageInfo.height /= 2; }
+                        if (imageInfo->width > 1) { imageInfo->width /= 2; }
+                        if (imageInfo->height > 1) { imageInfo->height /= 2; }
                     }
                     EWE_VK(vkCmdPipelineBarrier, cmdBuf,
                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
@@ -268,8 +268,8 @@ namespace EWE {
             { //transition of the final mip level, which was copied to but never copied from, to be readable by the fragment shader
                 std::vector<VkImageMemoryBarrier> finalBarriers{ imageInfos.size() };
                 for (uint8_t i = 0; i < imageInfos.size(); i++) {
-                    barrier.subresourceRange.baseMipLevel = imageInfos[i].mipLevels - 1;
-                    barrier.image = imageInfos[i].image;
+                    barrier.subresourceRange.baseMipLevel = imageInfos[i]->mipLevels - 1;
+                    barrier.image = imageInfos[i]->image;
                     finalBarriers[i] = barrier;
                 }
 
@@ -282,7 +282,7 @@ namespace EWE {
             }
         }
 
-        void GenerateMipmaps(CommandBuffer& cmdBuf, ImageInfo& imageInfo, Queue::Enum srcQueue) {
+        void GenerateMipmaps(CommandBuffer& cmdBuf, ImageInfo* imageInfo, Queue::Enum srcQueue) {
             //printf("before mip map loop? size of image : %d \n", image.size());
 
             //printf("after beginning single time command \n");
@@ -290,7 +290,7 @@ namespace EWE {
             VkImageMemoryBarrier barrier{};
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             barrier.pNext = nullptr;
-            barrier.image = imageInfo.image;
+            barrier.image = imageInfo->image;
             barrier.srcQueueFamilyIndex = VK::Object->queueIndex[srcQueue];
             barrier.dstQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics]; //graphics queue is the only queue that can support vkCmdBlitImage
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -308,7 +308,7 @@ namespace EWE {
             blit.dstSubresource.layerCount = 1;
             blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-            for (uint32_t i = 1; i < imageInfo.mipLevels; i++) {
+            for (uint32_t i = 1; i < imageInfo->mipLevels; i++) {
                 barrier.subresourceRange.baseMipLevel = i - 1;
                 barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -324,13 +324,13 @@ namespace EWE {
                 );
                 //printf("after cmd pipeline barreir \n");
                 blit.srcSubresource.mipLevel = i - 1;
-                blit.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(imageInfo.width), static_cast<int32_t>(imageInfo.height), 1 };
-                blit.dstOffsets[1] = { imageInfo.width > 1 ? static_cast<int32_t>(imageInfo.width) / 2 : 1, imageInfo.height > 1 ? static_cast<int32_t>(imageInfo.height) / 2 : 1, 1 };
+                blit.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(imageInfo->width), static_cast<int32_t>(imageInfo->height), 1 };
+                blit.dstOffsets[1] = { imageInfo->width > 1 ? static_cast<int32_t>(imageInfo->width) / 2 : 1, imageInfo->height > 1 ? static_cast<int32_t>(imageInfo->height) / 2 : 1, 1 };
                 blit.dstSubresource.mipLevel = i;
                 //printf("before blit image \n");
                 EWE_VK(vkCmdBlitImage, cmdBuf,
-                    imageInfo.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    imageInfo.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    imageInfo->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    imageInfo->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     1, &blit,
                     VK_FILTER_LINEAR
                 );
@@ -351,11 +351,11 @@ namespace EWE {
                     1, &barrier
                 );
                 //printf("after pipeline barrier 2 \n");
-                if (imageInfo.width > 1) { imageInfo.width /= 2; }
-                if (imageInfo.height > 1) { imageInfo.height /= 2; }
+                if (imageInfo->width > 1) { imageInfo->width /= 2; }
+                if (imageInfo->height > 1) { imageInfo->height /= 2; }
             }
 
-            barrier.subresourceRange.baseMipLevel = imageInfo.mipLevels - 1;
+            barrier.subresourceRange.baseMipLevel = imageInfo->mipLevels - 1;
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -409,7 +409,7 @@ namespace EWE {
                         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
                         CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
 
-                        GenerateMipmaps(cmdBuf, imageInfo, Queue::graphics);
+                        GenerateMipmaps(cmdBuf, &imageInfo, Queue::graphics);
 
                         syncHub->EndSingleTimeCommandGraphics(cmdBuf);
                     }
@@ -471,7 +471,8 @@ namespace EWE {
 
                         TransferCommandManager::AddCommand(cmdBuf);
                         TransferCommandManager::AddPropertyToCommand(stagingBuffer);
-                        TransferCommandManager::AddPropertyToCommand(imageInfo);
+                        TransferCommandManager::AddPropertyToCommand(&imageInfo.descriptorImageInfo.imageLayout);
+                        TransferCommandManager::AddPropertyToCommand(&imageInfo);
                         syncHub->EndSingleTimeCommandTransfer();
                     }
                     else {
@@ -484,6 +485,7 @@ namespace EWE {
 
                         TransferCommandManager::AddCommand(cmdBuf);
                         TransferCommandManager::AddPropertyToCommand(stagingBuffer);
+                        TransferCommandManager::AddPropertyToCommand(&imageInfo.descriptorImageInfo.imageLayout);
                         TransferCommandManager::AddPropertyToCommand(pipeBarrier);
                         syncHub->EndSingleTimeCommandTransfer();
 
@@ -646,23 +648,24 @@ namespace EWE {
             imageInfo.sampler = Sampler::GetSampler(samplerInfo);
         }
 
-        ImageInfo CreateImage(std::string const& path, bool mipmap, Queue::Enum queue) {
+        void CreateImage(ImageInfo* imageInfo, std::string const& path, bool mipmap, Queue::Enum queue) {
             PixelPeek pixelPeek{ path };
-            return CreateImage(pixelPeek, mipmap, queue);
+            return CreateImage(imageInfo, pixelPeek, mipmap, queue);
         }
-        ImageInfo CreateImage(PixelPeek& pixelPeek, bool mipmap, Queue::Enum queue) {
-            ImageInfo ret{};
-            ret.width = pixelPeek.width;
-            ret.height = pixelPeek.height;
-            CreateTextureImage(ret, queue, pixelPeek, mipmap);
-            CreateTextureImageView(ret);
-            CreateTextureSampler(ret);
-
-            ret.descriptorImageInfo.sampler = ret.sampler;
-            ret.descriptorImageInfo.imageView = ret.imageView;
-            ret.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-            return ret;
+        void CreateImage(ImageInfo* imageInfo, PixelPeek& pixelPeek, bool mipmap, Queue::Enum queue) {
+            if (queue == Queue::graphics) {
+                imageInfo->descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+            else {
+                imageInfo->descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            }
+            imageInfo->width = pixelPeek.width;
+            imageInfo->height = pixelPeek.height;
+            CreateTextureImage(*imageInfo, queue, pixelPeek, mipmap);
+            CreateTextureImageView(*imageInfo);
+            CreateTextureSampler(*imageInfo);
+            imageInfo->descriptorImageInfo.sampler = imageInfo->sampler;
+            imageInfo->descriptorImageInfo.imageView = imageInfo->imageView;
         }
         void Destroy(ImageInfo& imageInfo) {
             Sampler::RemoveSampler(imageInfo.sampler);

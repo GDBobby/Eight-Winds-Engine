@@ -1,5 +1,8 @@
 #include "EWEngine/SettingsJson.h"
 
+#include <include/rapidjson/document.h>
+#include <include/rapidjson/prettywriter.h>// for stringify JSON
+#include <include/rapidjson/error/en.h>
 
 SettingsJSON::SettingsData SettingsJSON::settingsData;
 SettingsJSON::SettingsData SettingsJSON::tempSettings;
@@ -321,14 +324,14 @@ void SettingsJSON::initializeSettings() {
 }
 
 void SettingsJSON::generateDefaultFile() {
-	SettingsData settingsDefault;
+	SettingsData settingsDefault{};
 	settingsData = settingsDefault;
 	tempSettings = settingsDefault;
 	printf("generating default file \n");
 	saveToJsonFile();
 }
 
-bool SettingsJSON::readFromJsonFile(rapidjson::Document& document) {
+bool readFromJsonFile(rapidjson::Document& document) {
 	if (!document["version"].IsInt()) {
 		printf("version not int \n");
 		return false;
@@ -381,50 +384,50 @@ bool SettingsJSON::readFromJsonFile(rapidjson::Document& document) {
 
 
 
-	settingsData.versionKey = CURRENT_VERSION;
+	SettingsJSON::settingsData.versionKey = CURRENT_VERSION;
 
 	int valueBuffer = document["windowMode"].GetInt();
 	if (valueBuffer != 0 && valueBuffer != 1) {
-		settingsData.windowMode = SettingsInfo::WT_borderless;
+		SettingsJSON::settingsData.windowMode = SettingsInfo::WT_borderless;
 	}
 	else {
-		settingsData.windowMode = (SettingsInfo::WindowMode_Enum)valueBuffer;
+		SettingsJSON::settingsData.windowMode = (SettingsInfo::WindowMode_Enum)valueBuffer;
 	}
 
 	valueBuffer = document["screenDimensions"].GetInt();
 	if (valueBuffer >= 0 && valueBuffer < SettingsInfo::SD_size) {
-		settingsData.screenDimensions = (SettingsInfo::ScreenDimension_Enum)valueBuffer;
+		SettingsJSON::settingsData.screenDimensions = (SettingsInfo::ScreenDimension_Enum)valueBuffer;
 	}
-	settingsData.masterVolume = document["masterVolume"].GetUint();
+	SettingsJSON::settingsData.masterVolume = document["masterVolume"].GetUint();
 
-	settingsData.effectsVolume = document["effectsVolume"].GetUint();
-	settingsData.musicVolume = document["musicVolume"].GetUint();
-	settingsData.voiceVolume = document["voiceVolume"].GetUint();
+	SettingsJSON::settingsData.effectsVolume = document["effectsVolume"].GetUint();
+	SettingsJSON::settingsData.musicVolume = document["musicVolume"].GetUint();
+	SettingsJSON::settingsData.voiceVolume = document["voiceVolume"].GetUint();
 
 	//holma
-	if (settingsData.masterVolume < 0 || settingsData.masterVolume > 100) {
-		settingsData.masterVolume = 50;
+	if (SettingsJSON::settingsData.masterVolume < 0 || SettingsJSON::settingsData.masterVolume > 100) {
+		SettingsJSON::settingsData.masterVolume = 50;
 	}
-	if (settingsData.effectsVolume < 0 || settingsData.effectsVolume > 100) {
-		settingsData.effectsVolume = 50;
+	if (SettingsJSON::settingsData.effectsVolume < 0 || SettingsJSON::settingsData.effectsVolume > 100) {
+		SettingsJSON::settingsData.effectsVolume = 50;
 	}
-	if (settingsData.musicVolume < 0 || settingsData.musicVolume > 100) {
-		settingsData.musicVolume = 50;
+	if (SettingsJSON::settingsData.musicVolume < 0 || SettingsJSON::settingsData.musicVolume > 100) {
+		SettingsJSON::settingsData.musicVolume = 50;
 	}
-	if (settingsData.voiceVolume < 0 || settingsData.voiceVolume > 100) {
-		settingsData.voiceVolume = 50;
-	}
-
-	settingsData.selectedDevice = document["selectedDevice"].GetString();
-	settingsData.FPS = document["FPS"].GetInt();
-	if (settingsData.FPS < 0) {
-		settingsData.FPS = 0;
+	if (SettingsJSON::settingsData.voiceVolume < 0 || SettingsJSON::settingsData.voiceVolume > 100) {
+		SettingsJSON::settingsData.voiceVolume = 50;
 	}
 
-	settingsData.pointLights = document["pointLights"].GetBool();
-	settingsData.renderInfo = document["renderInfo"].GetBool();
+	SettingsJSON::settingsData.selectedDevice = document["selectedDevice"].GetString();
+	SettingsJSON::settingsData.FPS = document["FPS"].GetInt();
+	if (SettingsJSON::settingsData.FPS < 0) {
+		SettingsJSON::settingsData.FPS = 0;
+	}
 
-	tempSettings = settingsData;
+	SettingsJSON::settingsData.pointLights = document["pointLights"].GetBool();
+	SettingsJSON::settingsData.renderInfo = document["renderInfo"].GetBool();
+
+	SettingsJSON::tempSettings = SettingsJSON::settingsData;
 
 	return true;
 }

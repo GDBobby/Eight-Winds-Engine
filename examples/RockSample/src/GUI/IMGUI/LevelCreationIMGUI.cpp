@@ -26,15 +26,15 @@ namespace EWE {
                 ShowMenuFile();
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Edit")) {
-                if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
-                if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
-                ImGui::Separator();
-                if (ImGui::MenuItem("Cut", "CTRL+X")) {}
-                if (ImGui::MenuItem("Copy", "CTRL+C")) {}
-                if (ImGui::MenuItem("Paste", "CTRL+V")) {}
-                ImGui::EndMenu();
-            }
+            //if (ImGui::BeginMenu("Edit")) {
+            //    if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
+            //    if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+            //    ImGui::Separator();
+            //    if (ImGui::MenuItem("Cut", "CTRL+X")) {}
+            //    if (ImGui::MenuItem("Copy", "CTRL+C")) {}
+            //    if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+            //    ImGui::EndMenu();
+            //}
             if (ImGui::BeginMenu("View")) {
                 ImGui::MenuItem("Show Grid", "", &showGrid);
                 ImGui::EndMenu();
@@ -139,10 +139,8 @@ namespace EWE {
         ImGui::SliderScalar("Push Y Zoom", ImGuiDataType_Float, &gridZoom->y, &scaleLow, &scaleHigh);
         ImGui::SliderScalar("Push X Trans", ImGuiDataType_Float, &gridTrans->x, &transLow, &transHigh);
         ImGui::SliderScalar("Push Y Trans", ImGuiDataType_Float, &gridTrans->y, &transLow, &transHigh);
-        if (ImGui::SliderScalar("Push X Grid Scale", ImGuiDataType_Float, &gridScale->x, &scaleLow, &scaleHigh)) {
-
-        }
-        ImGui::SliderScalar("Push Y Grid Scale", ImGuiDataType_Float, &gridScale->y, &scaleLow, &scaleHigh);
+        //ImGui::SliderScalar("Push X Grid Scale", ImGuiDataType_Float, &gridScale->x, &scaleLow, &scaleHigh);
+        //ImGui::SliderScalar("Push Y Grid Scale", ImGuiDataType_Float, &gridScale->y, &scaleLow, &scaleHigh);
 
 
 
@@ -159,6 +157,9 @@ namespace EWE {
         ImGui::SliderScalar("tileSet ratio", ImGuiDataType_Float, &tileSetRatio, &scaleLow, &scaleHigh);
 
         ImGui::Text("Selected Tile %u", selectedTile);
+#if EWE_DEBUG
+        assert((tileSetDescriptor != VK_NULL_HANDLE) && (reinterpret_cast<uint64_t>(tileSetDescriptor) != 0xcdcdcdcdcdcdcdcd));
+#endif
         ImGui::Image(tileSetDescriptor, ImVec2(64, 64), selectedTileUVTL, selectedTileUVBR);
 
         ImGui::SameLine();
@@ -172,42 +173,42 @@ namespace EWE {
 
         ImVec2 pos = ImGui::GetCursorScreenPos();
         ImGuiIO& io = ImGui::GetIO();
-            ImGui::Image(tileSetDescriptor, ImVec2(texW, texH));
-            if (ImGui::BeginItemTooltip()) {
-                hoveringTileSet = true;
+        ImGui::Image(tileSetDescriptor, ImVec2(texW, texH));
+        if (ImGui::BeginItemTooltip()) {
+            hoveringTileSet = true;
 
-                float region_sz = 32.0f;
-                float region_x = io.MousePos.x - pos.x;
-                float region_y = io.MousePos.y - pos.y;
-                ImGui::Text("mouse coords : (%.2f:%.2f)", region_x, region_y);
-                ImGui::Text("hovered Tile : (%.1f:%.1f)", std::floor(region_x / texW * 64.f), std::floor(region_y / texH * 19.f));
-                //region_y = region_y - glm::mod(region_y, 32.f);
-                //region_x = region_x - glm::mod(region_x, 32.f);
+            float region_sz = 32.0f;
+            float region_x = io.MousePos.x - pos.x;
+            float region_y = io.MousePos.y - pos.y;
+            ImGui::Text("mouse coords : (%.2f:%.2f)", region_x, region_y);
+            ImGui::Text("hovered Tile : (%.1f:%.1f)", std::floor(region_x / texW * 64.f), std::floor(region_y / texH * 19.f));
+            //region_y = region_y - glm::mod(region_y, 32.f);
+            //region_x = region_x - glm::mod(region_x, 32.f);
 
-                toolSelectedTile = static_cast<TileID>(std::floor(region_x / texW * 64.f) + std::floor(region_y / texH * 19.f) * 64.f);
+            toolSelectedTile = static_cast<TileID>(std::floor(region_x / texW * 64.f) + std::floor(region_y / texH * 19.f) * 64.f);
 
-                toolUV.x = std::floor(region_x / texW * 64.f) / 64.f;
-                toolUV.y = std::floor(region_y / texH * 19.f) / 19.f;
-                toolUVBR.x = toolUV.x + tileUVScaling.x;
-                toolUVBR.y = toolUV.y + tileUVScaling.y;
-                ImGui::Text("toolUV : (%.5f:%.5f)", toolUV.x, toolUV.y);
+            toolUV.x = std::floor(region_x / texW * 64.f) / 64.f;
+            toolUV.y = std::floor(region_y / texH * 19.f) / 19.f;
+            toolUVBR.x = toolUV.x + tileUVScaling.x;
+            toolUVBR.y = toolUV.y + tileUVScaling.y;
+            ImGui::Text("toolUV : (%.5f:%.5f)", toolUV.x, toolUV.y);
 
-                float zoom = 4.0f;
-                if (region_x < 0.0f) { region_x = 0.0f; }
-                else if (region_x > texW - region_sz) { region_x = texW - region_sz; }
-                if (region_y < 0.0f) { region_y = 0.0f; }
-                else if (region_y > texH - region_sz) { region_y = texH - region_sz; }
-                ImGui::Text("Selected Tile tool: (%d)", toolSelectedTile);
-                ImVec2 uv0 = ImVec2((region_x) / texW, (region_y) / texH);
-                ImVec2 uv1 = ImVec2((region_x + region_sz) / texW, (region_y + region_sz) / texH);
-                ImGui::Image(tileSetDescriptor, ImVec2(64.f, 64.f), toolUV, toolUVBR);
-                ImGui::EndTooltip();
-            }
-            else {
-                hoveringTileSet = false;
-            }
-            ImGui::EndChild();
-            ImGui::End();
+            float zoom = 4.0f;
+            if (region_x < 0.0f) { region_x = 0.0f; }
+            else if (region_x > texW - region_sz) { region_x = texW - region_sz; }
+            if (region_y < 0.0f) { region_y = 0.0f; }
+            else if (region_y > texH - region_sz) { region_y = texH - region_sz; }
+            ImGui::Text("Selected Tile tool: (%d)", toolSelectedTile);
+            ImVec2 uv0 = ImVec2((region_x) / texW, (region_y) / texH);
+            ImVec2 uv1 = ImVec2((region_x + region_sz) / texW, (region_y + region_sz) / texH);
+            ImGui::Image(tileSetDescriptor, ImVec2(64.f, 64.f), toolUV, toolUVBR);
+            ImGui::EndTooltip();
+        }
+        else {
+            hoveringTileSet = false;
+        }
+        ImGui::EndChild();
+        ImGui::End();
     }
     void LevelCreationIMGUI::mouseCallback(int button, int action) {
         //printf("level creation imgui getting the clalback \n");
@@ -309,6 +310,9 @@ namespace EWE {
             ImVec2 uv1{ 1.f,1.f };
             ImVec4 tint_col{ 1.0f, 1.0f, 1.0f, 1.0f };
 
+#if EWE_DEBUG
+            assert((tools[i].texture != VK_NULL_HANDLE) && (reinterpret_cast<uint64_t>(tools[i].texture) != 0xcdcdcdcdcdcdcdcd));
+#endif
             if (ImGui::ImageButton("", tools[i].texture, size, uv0, uv1, tools[i].bgColor, tint_col)) {
                 tools[i].bgColor = selectedColor;
                 for (int j = 0; j < tools.size(); j++) {
@@ -328,34 +332,44 @@ namespace EWE {
         ImGui::NewLine();
     }
 
-    void LevelCreationIMGUI::loadTextures(EWEDevice& device) {
+    void LevelCreationIMGUI::loadTextures() {
 
         //tileSetDescriptor = Texture_Builder::CreateSimpleTexture( "tileSet.png", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        tileSetDescriptor = Image_Manager::CreateSimpleTexture("textures/tileSet.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        //tileSetDescriptor = Image_Manager::CreateSimpleTexture("textures/tileSet.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         //issue here, the descriptor is being immediately written to. it needs to wait for the graphics callbacks to be complete. How do I fix this?
-        tools[Tool_pencil].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/pencil.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
-        tools[Tool_eraser].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/eraser.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
-        tools[Tool_colorSelection].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/colorSelection.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
-        tools[Tool_bucketFill].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/bucketFill.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        //tools[Tool_pencil].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/pencil.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        //tools[Tool_eraser].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/eraser.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        //tools[Tool_colorSelection].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/colorSelection.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
+        //tools[Tool_bucketFill].texture = Image_Manager::CreateSimpleTexture("textures/tileCreation/bucketFill.png", false, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         //temporary solution to the above... NOT A GOOD SOLUTION, BUT IM PRESSED FOR TIME
+        ImageID tileSetID = Image_Manager::GetCreateImageID("textures/tileSet.png", false);
+        ImageID pencilID = Image_Manager::GetCreateImageID("textures/tileCreation/pencil.png", false);
+        ImageID eraserID = Image_Manager::GetCreateImageID("textures/tileCreation/eraser.png", false);
+        ImageID colorSelectionID = Image_Manager::GetCreateImageID("textures/tileCreation/colorSelection.png", false);
+        ImageID bucketFillID = Image_Manager::GetCreateImageID("textures/tileCreation/bucketFill.png", false);
 
-        std::vector<ImageID> imageIDs{
-            Image_Manager::GetCreateImageID("textures/tileCreation/pencil.png", false),
-            Image_Manager::GetCreateImageID("textures/tileCreation/eraser.png", false),
-            Image_Manager::GetCreateImageID("textures/tileCreation/colorSelection.png", false),
-            Image_Manager::GetCreateImageID("textures/tileCreation/bucketFill.png", false)
+        std::vector<std::pair<VkDescriptorSet*, ImageID>> imageIDs{
+            std::pair<VkDescriptorSet*, ImageID>{&tileSetDescriptor, tileSetID},
+            std::pair<VkDescriptorSet*, ImageID>{&tools[Tool_pencil].texture, pencilID},
+            std::pair<VkDescriptorSet*, ImageID>{&tools[Tool_eraser].texture, eraserID},
+            std::pair<VkDescriptorSet*, ImageID>{&tools[Tool_colorSelection].texture, colorSelectionID},
+            std::pair<VkDescriptorSet*, ImageID>{&tools[Tool_bucketFill].texture, bucketFillID}
         };
 
         bool allCompleted = false;
+#if EWE_DEBUG
+        uint64_t loopCount = 0;
+#endif
         while (!allCompleted) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-            for (auto& imgIter = imageIDs.begin(); imgIter != imageIDs.end();) {
-                auto* descInfo = Image_Manager::GetDescriptorImageInfo(*imgIter);
-                if (descInfo->imageLayout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            for (auto imgIter = imageIDs.begin(); imgIter != imageIDs.end(); imgIter++) {
+                auto* descInfo = Image_Manager::GetDescriptorImageInfo(imgIter->second);
+                if (descInfo->imageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+                    *imgIter->first = Image_Manager::CreateSimpleTexture(descInfo, VK_SHADER_STAGE_FRAGMENT_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
                     imageIDs.erase(imgIter);
                     break;
                 }
@@ -363,7 +377,11 @@ namespace EWE {
             if (imageIDs.size() == 0) {
                 allCompleted = true;
             }
+#if EWE_DEBUG
+            printf("looping : %zu\n", loopCount++);  
+#endif
         }
+
     }
 
     void LevelCreationIMGUI::toolLeft(uint32_t clickedTilePosition, bool shiftKey, bool ctrlKey) {

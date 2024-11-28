@@ -12,6 +12,12 @@
 
 #include <chrono>
 
+#define THREAD_NAMING true
+#if THREAD_NAMING
+#if WIN32
+#include <windows.h>
+#endif
+#endif
 namespace EWE {
 	EWESample::EWESample(EightWindsEngine& ewEngine, LoadingThreadTracker& loadingThreadTracker) :
 		ewEngine{ ewEngine },
@@ -29,6 +35,7 @@ namespace EWE {
 		//ThreadPool::EnqueueVoid(soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect));
 		{
 			auto loadFunc = [&]() {
+				SetThreadDescription(GetCurrentThread(), L"load sound map thread");
 				printf("loading sound map : %u\n", std::this_thread::get_id());
 				std::unordered_map<uint16_t, std::string> effectsMap{};
 				effectsMap.emplace(0, "sounds/effects/click.mp3");
@@ -41,6 +48,7 @@ namespace EWE {
 		//addModulesToMenuManager(screenWidth, screenHeight);
 		{
 			auto loadFunc = [&, screenWidth, screenHeight]() {
+				SetThreadDescription(GetCurrentThread(), L"load menu modules thread");
 				printf("adding modules to menu manager : %u\n", std::this_thread::get_id());
 
 				addModulesToMenuManager(screenWidth, screenHeight);
@@ -51,6 +59,7 @@ namespace EWE {
 		//loadGlobalObjects();
 		{
 			auto loadFunc = [&]() {
+				SetThreadDescription(GetCurrentThread(), L"load global objects thread");
 				printf("loading global objects : %u\n", std::this_thread::get_id());
 				loadGlobalObjects();
 				loadingThreadTracker.globalObjectThread = true;
@@ -67,6 +76,7 @@ namespace EWE {
 		scenes.emplace(scene_ocean, nullptr);
 		scenes.emplace(scene_LevelCreation, nullptr);
 		auto sceneLoadFunc = [&]() {
+			SetThreadDescription(GetCurrentThread(), L"load main scene thread");
 			printf("loading main menu scene : %u\n", std::this_thread::get_id());
 
 			scenes.at(scene_mainmenu) = Construct<MainMenuScene>({ ewEngine});
@@ -76,7 +86,7 @@ namespace EWE {
 		}; 
 		
 		auto sceneLoadFuncLevelCreation = [&]() {
-
+			SetThreadDescription(GetCurrentThread(), L"load level creation scene thread");
 			LevelCreationScene* levelScene = Construct<LevelCreationScene>({ ewEngine });
 			levelScene->giveGLFWCallbackReturns(menuManager.staticMouseCallback, menuManager.staticKeyCallback);
 
@@ -86,12 +96,14 @@ namespace EWE {
 		};
 		
 		auto sceneLoadFunc2 = [&]() {
+			SetThreadDescription(GetCurrentThread(), L"load shader gen thread");
 			printf("loading shader gen scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_shaderGen) = Construct<ShaderGenerationScene>({ ewEngine });
 			LoadSceneIfMatching(scene_shaderGen);
 			loadingThreadTracker.shaderGenSceneThread = true;
 		};
 		auto sceneLoadFunc3 = [&]() {
+			SetThreadDescription(GetCurrentThread(), L"load ocean scene thread");
 			printf("loading ocean scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_ocean) = Construct<OceanScene>({ ewEngine, skyboxImgID });
 			LoadSceneIfMatching(scene_ocean);

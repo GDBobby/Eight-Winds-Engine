@@ -87,6 +87,8 @@ namespace EWE {
 		}
 		lcPtr->pushTrans.x += static_cast<float>(lcPtr->currentMouseXPos - xpos) / (100.f * lcPtr->pushScale.y);
 		lcPtr->pushTrans.y += static_cast<float>(lcPtr->currentMouseYPos - ypos) / (100.f * lcPtr->pushScale.y);
+		lcPtr->pushTrans = glm::clamp(lcPtr->pushTrans, -2.f, 2.f);
+
 		lcPtr->currentMouseXPos = xpos;
 		lcPtr->currentMouseYPos = ypos;
 		lcPtr->tileMapD->refreshedMap = true;
@@ -102,9 +104,13 @@ namespace EWE {
 		//printf("scroll call back - %.5f:%.5f \n", xoffset, yoffset);
 		float scaling = 1 + .25f * yoffset;
 		lcPtr->pushScale *= scaling;
+		lcPtr->pushScale = glm::max(lcPtr->pushScale, 1.f);
+		lcPtr->pushScale = glm::max(lcPtr->pushScale, 1.f);
 
 		lcPtr->tileMapD->pushTile.scale.x *= scaling;
 		lcPtr->tileMapD->pushTile.scale.y *= scaling;
+		lcPtr->tileMapD->pushTile.scale.x = glm::max(lcPtr->tileMapD->pushTile.scale.x, 1.f);
+		lcPtr->tileMapD->pushTile.scale.y = glm::max(lcPtr->tileMapD->pushTile.scale.y, 1.f);
 		//lcPtr->tileMapD->pushTile.scale.x *= scaling;
 
 		lcPtr->tileMapD->refreshedMap = true;
@@ -122,6 +128,9 @@ namespace EWE {
 
 	void LevelCreationScene::Load() {
 		menuManager.giveMenuFocus();
+
+		levelCreationIMGUI.loadTextures();
+		tileMapD = std::make_unique<TileMapDevelopment>(1, 1);
 
 		printf("after updating pipelines load menu objects, returning \n");
 	}
@@ -153,8 +162,6 @@ namespace EWE {
 		pushTrans.x = 0.f;
 		pushTrans.y = 0.f;
 
-		levelCreationIMGUI.loadTextures(ewEngine.eweDevice);
-
 		GLFWwindow* windowPtr = ewEngine.mainWindow.getGLFWwindow();
 		ImGui_ImplGlfw_RestoreCallbacks(windowPtr);
 		glfwSetMouseButtonCallback(windowPtr, LevelCreationScene::mouseCallback);
@@ -165,7 +172,6 @@ namespace EWE {
 
 		gridModel = Basic_Model::Grid2D(Queue::transfer);
 
-		tileMapD = std::make_unique<TileMapDevelopment>(1, 1);
 		levelCreationIMGUI.tileMapD = tileMapD.get();
 
 		

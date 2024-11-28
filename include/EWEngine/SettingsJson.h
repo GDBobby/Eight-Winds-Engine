@@ -1,9 +1,5 @@
 #pragma once
 
-#include <include/rapidjson/document.h>
-#include <include/rapidjson/prettywriter.h>// for stringify JSON
-#include <include/rapidjson/error/en.h>
-
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -128,6 +124,5 @@ public:
 	static void initializeSettings();
 
 	static void generateDefaultFile();
-	static bool readFromJsonFile(rapidjson::Document& document);
 	static void saveToJsonFile();
 };

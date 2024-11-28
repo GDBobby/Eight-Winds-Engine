@@ -15,8 +15,8 @@ namespace EWE {
 		//only for transfer -> graphics
 		//not for graphics -> graphics 
 		//not for transfer -> compute
-		void GenerateMipMapsForMultipleImagesTransferQueue(CommandBuffer& cmdBuf, std::vector<ImageInfo>& imageInfo);
-		void GenerateMipmaps(CommandBuffer& cmdBuf, ImageInfo& imageInfo, Queue::Enum srcQueue);
+		void GenerateMipMapsForMultipleImagesTransferQueue(CommandBuffer& cmdBuf, std::vector<ImageInfo*>& imageInfo);
+		void GenerateMipmaps(CommandBuffer& cmdBuf, ImageInfo* imageInfo, Queue::Enum srcQueue);
 
 #if IMAGE_DEBUGGING
 		void CreateImageCommands(ImageInfo& imageInfo, VkImageCreateInfo const& imageCreateInfo, StagingBuffer* stagingBuffer, Queue::Enum queue, bool mipmapping, std::string imageName);
@@ -34,8 +34,8 @@ namespace EWE {
 		VkImageSubresourceRange CreateSubresourceRange(ImageInfo const& imageInfo);
 
 
-		ImageInfo CreateImage(std::string const& path, bool mipmap, Queue::Enum queue = Queue::transfer);
-		ImageInfo CreateImage(PixelPeek& pixelPeek, bool mipmap, Queue::Enum queue = Queue::transfer);
+		void CreateImage(ImageInfo* imageInfo, std::string const& path, bool mipmap, Queue::Enum queue = Queue::transfer);
+		void CreateImage(ImageInfo* imageInfo, PixelPeek& pixelPeek, bool mipmap, Queue::Enum queue = Queue::transfer);
 
 		void Destroy(ImageInfo& imageInfo);
 	}

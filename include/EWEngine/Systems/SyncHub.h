@@ -42,10 +42,12 @@ namespace EWE {
 
 		struct SubmitGroup {
 			CommandBuffer* cmdBuf;
-			std::vector<SemaphoreData*> semaphoreData;
-			SubmitGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*>& semaphoreData) :
+			std::vector<SemaphoreData*> semaphoreData; 
+			std::vector<VkImageLayout*> imageLayouts;
+			SubmitGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*>& semaphoreData, std::vector<VkImageLayout*>& imageLayouts) :
 				cmdBuf{ &cmdBuf }, 
-				semaphoreData{ std::move(semaphoreData) } 
+				semaphoreData{ std::move(semaphoreData) },
+				imageLayouts{std::move(imageLayouts)}
 			{}
 		};
 		std::vector<SubmitGroup> graphicsSTCGroup{};
@@ -101,7 +103,7 @@ namespace EWE {
 		//void EndSingleTimeCommandGraphicsSignal(CommandBufferData& cmdBuf, VkSemaphore signalSemaphore);
 		//void EndSingleTimeCommandGraphicsWaitAndSignal(CommandBufferData& cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
 
-		static void EndSingleTimeCommandGraphicsGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*> waitSemaphores);
+		static void EndSingleTimeCommandGraphicsGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*> waitSemaphores, std::vector<VkImageLayout*> imageInfos);
 		//void SubmitGraphicsSTCGroup();
 
 		//void EndSingleTimeCommandTransfer(CommandBuffer cmdBuf);

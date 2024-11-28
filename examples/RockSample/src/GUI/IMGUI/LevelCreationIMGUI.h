@@ -25,7 +25,7 @@ namespace EWE {
 		LevelCreationIMGUI(std::queue<uint16_t>& clickReturns, float screenWidth, float screenHeight);
 
 		void render();
-		void loadTextures(EWEDevice& device);
+		void loadTextures();
 
         void ShowMainMenuBar();
 		void ShowMenuFile();
@@ -47,10 +47,10 @@ namespace EWE {
 		glm::vec2* gridZoom = nullptr;
 		glm::vec2* gridScale = nullptr;
 		glm::vec2* gridTrans = nullptr;
-		float scaleLow = 0.f;
-		float scaleHigh = 2.f;
-		float transLow = -100.f;
-		float transHigh = 100.f;
+		float scaleLow = 1.f;
+		float scaleHigh = 16.f;
+		float transLow = -2.f;
+		float transHigh = 2.f;
 		float tileSetScale = 128.f;
 		float tileSetRatio = 1.f;
 

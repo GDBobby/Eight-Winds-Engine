@@ -218,4 +218,39 @@ namespace EWE {
         }
         return foundImage->second;
     }
+
+    EWEDescriptorSetLayout* Image_Manager::GetSimpleTextureDSL(VkShaderStageFlags stageFlags) {
+        EWEDescriptorSetLayout* simpleTextureDSL;
+        auto findRet = imgMgrPtr->simpleTextureLayouts.find(stageFlags);
+        if (findRet == imgMgrPtr->simpleTextureLayouts.end()) {
+            EWEDescriptorSetLayout::Builder builder{};
+            builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlags);
+            simpleTextureDSL = builder.Build();
+            imgMgrPtr->simpleTextureLayouts.emplace(stageFlags, simpleTextureDSL);
+        }
+        else {
+            simpleTextureDSL = findRet->second;
+        }
+        return simpleTextureDSL;
+    }
+
+    VkDescriptorSet Image_Manager::CreateSimpleTexture(std::string const& imagePath, bool mipMap, VkShaderStageFlags stageFlags, bool zeroUsageDelete) {
+        assert(false && "this needs to be fixed up, it's not waiting for the transfer to graphics transition");
+
+        ImageID imgID = GetCreateImageID(imagePath, mipMap, zeroUsageDelete);
+
+        EWEDescriptorWriter descWriter{ GetSimpleTextureDSL(stageFlags), DescriptorPool_Global };
+        descWriter.WriteImage(0, GetDescriptorImageInfo(imgID));
+        return descWriter.Build();
+
+    }
+
+    VkDescriptorSet Image_Manager::CreateSimpleTexture(VkDescriptorImageInfo* imageInfo, VkShaderStageFlags stageFlags, VkImageLayout waitOnLayout) {
+
+        assert(imageInfo->imageLayout == waitOnLayout); //if using a compute simple stage, idk. i need to fix that later. crunched on time
+
+        EWEDescriptorWriter descWriter{ GetSimpleTextureDSL(stageFlags), DescriptorPool_Global };
+        descWriter.WriteImage(0, imageInfo);
+        return descWriter.Build();
+    }
 }

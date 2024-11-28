@@ -49,7 +49,8 @@ namespace EWE {
         std::vector<CommandBuffer*> commands;
         std::vector<StagingBuffer*> stagingBuffers;
         std::vector<PipelineBarrier> pipeBarriers;
-        std::vector<ImageInfo> images;
+        std::vector<ImageInfo*> images;
+        std::vector<VkImageLayout*> imageLayouts;
         SemaphoreData* semaphoreData;
 
         TransferCommandCallbacks() : commands{}, stagingBuffers{}, pipeBarriers{}, images{}, semaphoreData{ nullptr } {} //constructor

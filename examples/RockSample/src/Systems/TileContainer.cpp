@@ -192,7 +192,7 @@ namespace EWE {
 		int y = (selectedTilePosition - (selectedTilePosition % width)) / width;
 		floodFillScanlineStack(x, y, fillTile, oldTile);
 		//printf("after filling %d \n", amountChanged);
-		uint32_t memPos = 0;
+		//uint32_t memPos = 0;
 
 		if ((oldTile & TILE_VOID_FLAG) == 0) {
 
@@ -259,7 +259,7 @@ namespace EWE {
 
 
 				if (y > 0) {
-					if ((selectionData[(y - 1) * width + x1] == TILE_VOID_FLAG)) {
+					if (selectionData[(y - 1) * width + x1] == TILE_VOID_FLAG) {
 						if (tileData[(y - 1) * width + x1] == selectTile) {
 							if (!spanAbove) {
 								push(theStack, x1, y - 1);

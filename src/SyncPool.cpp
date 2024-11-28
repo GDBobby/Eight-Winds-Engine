@@ -35,6 +35,12 @@ namespace EWE {
 #if EWE_DEBUG
             assert(commands.size() > 0);
 #endif
+
+            for (auto& layout : imageLayouts) {
+
+                *layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+            imageLayouts.clear();
             output.insert(output.end(), commands.begin(), commands.end());
             commands.clear();
             fenceData.inUse = false;
@@ -155,7 +161,7 @@ namespace EWE {
     
 
 
-    void (*SyncPool::SubmitGraphicsAsync)(CommandBuffer&, std::vector<SemaphoreData*>) = nullptr;
+    void (*SyncPool::SubmitGraphicsAsync)(CommandBuffer&, std::vector<SemaphoreData*>, std::vector<VkImageLayout*>) = nullptr;
 
     SyncPool::SyncPool(uint8_t size) :
         size{ size },
@@ -294,11 +300,13 @@ namespace EWE {
             InsertSecondIntoFirst(callbacks[0].commands, callbacks[i].commands);
             InsertSecondIntoFirst(callbacks[0].pipeBarriers, callbacks[i].pipeBarriers);
             InsertSecondIntoFirst(callbacks[0].images, callbacks[i].images);
+            InsertSecondIntoFirst(callbacks[0].imageLayouts, callbacks[i].imageLayouts);
             if (callbacks[i].semaphoreData != nullptr) {
                 semaphoreData.push_back(callbacks[i].semaphoreData);
             }
 #if EWE_DEBUG
             if ((callbacks[i].images.size() > 0) || (callbacks[i].pipeBarriers.size() > 0)) {
+
                 assert(callbacks[i].semaphoreData != nullptr);
 #endif
             }
@@ -330,7 +338,7 @@ namespace EWE {
             for (auto& barrier : callbacks[0].pipeBarriers) {
                 barrier.Submit(cmdBuf);
             }
-            SubmitGraphicsAsync(cmdBuf, semaphoreData);
+            SubmitGraphicsAsync(cmdBuf, semaphoreData, callbacks[0].imageLayouts);
         }
         callbacks.clear();
     }

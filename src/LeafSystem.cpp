@@ -348,7 +348,7 @@ namespace EWE {
 	}
 	void LeafSystem::LoadLeafTexture() {
 		const std::string fullLeafTexturePath = "textures/leaf.jpg";
-		leafImageInfo = Image::CreateImage(fullLeafTexturePath, false, Queue::graphics);
+		Image::CreateImage(&leafImageInfo, fullLeafTexturePath, false, Queue::graphics);
 
 		const std::string leafTexturePath = "leaf.jpg";
 		//printf("leaf model loaded \n");

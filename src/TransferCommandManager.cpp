@@ -43,7 +43,10 @@ namespace EWE {
 		void AddPropertyToCommand(PipelineBarrier& pipeBarrier) {
 			commandCallbacks.pipeBarriers.push_back(std::move(pipeBarrier));
 		}
-		void AddPropertyToCommand(ImageInfo& imageInfo) {
+		void AddPropertyToCommand(VkImageLayout* imageLayout) {
+			commandCallbacks.imageLayouts.push_back(imageLayout);
+		}
+		void AddPropertyToCommand(ImageInfo* imageInfo) {
 			commandCallbacks.images.push_back(imageInfo);
 		}
 		void FinalizeCommand() {

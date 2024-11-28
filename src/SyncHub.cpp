@@ -146,10 +146,10 @@ namespace EWE {
 		syncPool.ResetCommandBuffer(cmdBuf, Queue::graphics);
 	}
 
-	void SyncHub::EndSingleTimeCommandGraphicsGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*> waitSemaphores) {
+	void SyncHub::EndSingleTimeCommandGraphicsGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*> waitSemaphores, std::vector<VkImageLayout*> imageInfos) {
 		EWE_VK(vkEndCommandBuffer, cmdBuf);
 		syncHubSingleton->graphicsAsyncMut.lock();
-		syncHubSingleton->graphicsSTCGroup.emplace_back(cmdBuf, waitSemaphores);
+		syncHubSingleton->graphicsSTCGroup.emplace_back(cmdBuf, waitSemaphores, imageInfos);
 		syncHubSingleton->graphicsAsyncMut.unlock();
 	}
 
@@ -165,10 +165,12 @@ namespace EWE {
 		}
 		std::vector<SemaphoreData*> semaphoreDatas{};
 		std::vector<CommandBuffer*> submittedAsyncBuffers{};
+		std::vector<VkImageLayout*> imageLayouts{};
 		for (int i = 0; i < graphicsSTCGroup.size(); i++) {
 			submittedAsyncBuffers.push_back(graphicsSTCGroup[i].cmdBuf);
 			if (graphicsSTCGroup[i].semaphoreData.size() > 0) {
 				semaphoreDatas.insert(semaphoreDatas.end(), graphicsSTCGroup[i].semaphoreData.begin(), graphicsSTCGroup[i].semaphoreData.end());
+				imageLayouts.insert(imageLayouts.end(), graphicsSTCGroup[i].imageLayouts.begin(), graphicsSTCGroup[i].imageLayouts.end());
 			}
 		}
 		graphicsSTCGroup.clear();
@@ -207,6 +209,7 @@ namespace EWE {
 		
 		GraphicsFenceData& fence = syncPool.GetGraphicsFence();
 		fence.fenceData.waitSemaphores = std::move(semaphoreDatas);
+		fence.imageLayouts = std::move(imageLayouts);
 		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, fence.fenceData.fence);
 
 

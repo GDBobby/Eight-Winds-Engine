@@ -62,6 +62,7 @@ namespace EWE {
         stagingBuffers{ std::move(copySource.stagingBuffers) },
         pipeBarriers{ std::move(copySource.pipeBarriers) },
         images{ std::move(copySource.images) },
+        imageLayouts{ std::move(copySource.imageLayouts) },
         semaphoreData{ copySource.semaphoreData }
     {
         printf("TransferCommandCallbacks:: copy constructor\n");
@@ -75,6 +76,7 @@ namespace EWE {
         images = std::move(copySource.images);
         semaphoreData = copySource.semaphoreData;
         copySource.semaphoreData = nullptr;
+        imageLayouts = std::move(copySource.imageLayouts);
         printf("TransferCommandCallbacks:: copy constructor\n");
 
         return *this;
@@ -107,6 +109,7 @@ namespace EWE {
         stagingBuffers{ std::move(moveSource.stagingBuffers) },
         pipeBarriers{ std::move(moveSource.pipeBarriers) },
         images{ std::move(moveSource.images) },
+        imageLayouts{ std::move(moveSource.imageLayouts) },
         semaphoreData{ moveSource.semaphoreData }
 
     {
@@ -122,6 +125,7 @@ namespace EWE {
         pipeBarriers = std::move(moveSource.pipeBarriers);
         images = std::move(moveSource.images);
         semaphoreData = moveSource.semaphoreData;
+        imageLayouts = std::move(moveSource.imageLayouts);
         moveSource.semaphoreData = nullptr;
 
         printf("TransferCommandCallbacks:: move assignment\n");

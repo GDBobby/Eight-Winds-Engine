@@ -38,6 +38,7 @@ namespace EWE{
     struct GraphicsFenceData {
         FenceData fenceData{};
         std::vector<CommandBuffer*> commands{};
+        std::vector<VkImageLayout*> imageLayouts{};
 
         void CheckReturn(std::vector<CommandBuffer*>& output, uint64_t time);
     };
@@ -157,6 +158,6 @@ namespace EWE{
         void ResetCommandBuffers(std::vector<CommandBuffer*>& cmdBufs, Queue::Enum queue);
         void ResetCommandBuffers(std::vector<CommandBuffer*>& cmdBufs);
 
-        static void (*SubmitGraphicsAsync)(CommandBuffer&, std::vector<SemaphoreData*>);
+        static void (*SubmitGraphicsAsync)(CommandBuffer&, std::vector<SemaphoreData*>, std::vector<VkImageLayout*>);
     };
 } //namespace EWE

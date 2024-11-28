@@ -21,8 +21,11 @@ namespace EWE {
 		ImageInfo imageInfo;
 		uint8_t usageCount;
 		bool zeroUsageDelete;
-		ImageTracker(std::string const& path, bool mipmap, bool zeroUsageDelete) : imageInfo{ Image::CreateImage(path, mipmap) }, usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {}
-		ImageTracker(ImageInfo& imageInfo, bool zeroUsageDelete) : imageInfo{ imageInfo }, usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {}
+		ImageTracker(std::string const& path, bool mipmap, bool zeroUsageDelete) : usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
+			Image::CreateImage(&imageInfo, path, mipmap);
+		}
+		ImageTracker(ImageInfo& imageInfo, bool zeroUsageDelete) : imageInfo{ imageInfo }, usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
+		}
 		ImageTracker(bool zeroUsageDelete = false) : imageInfo{}, usageCount{ 0 }, zeroUsageDelete { zeroUsageDelete} {}
 	};
 
@@ -49,6 +52,7 @@ namespace EWE {
 
 		static Image_Manager* imgMgrPtr;
 		static ImageID ConstructImageTracker(std::string const& imagePath, bool mipmap, bool zeroUsageDelete = false);
+		static EWEDescriptorSetLayout* GetSimpleTextureDSL(VkShaderStageFlags stageFlags);
 
 	public:
 		struct ImageReturn {
@@ -70,28 +74,8 @@ namespace EWE {
 				return findRet->second;
 			}
 		}
-		static VkDescriptorSet CreateSimpleTexture(std::string const& imagePath, bool mipMap, VkShaderStageFlags stageFlags, bool zeroUsageDelete = false) {
-			ImageID imgID = GetCreateImageID(imagePath, mipMap, zeroUsageDelete);
-			EWEDescriptorSetLayout* simpleTextureDSL;
-
-			{
-				auto findRet = imgMgrPtr->simpleTextureLayouts.find(stageFlags);
-				if (findRet == imgMgrPtr->simpleTextureLayouts.end()) {
-					EWEDescriptorSetLayout::Builder builder{};
-					builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stageFlags);
-					simpleTextureDSL = builder.Build();
-					imgMgrPtr->simpleTextureLayouts.emplace(stageFlags, simpleTextureDSL);
-				}
-				else {
-					simpleTextureDSL = findRet->second;
-				}
-			}
-
-			EWEDescriptorWriter descWriter{ simpleTextureDSL, DescriptorPool_Global };
-			descWriter.WriteImage(0, GetDescriptorImageInfo(imgID));
-			return descWriter.Build();
-			
-		}
+		static VkDescriptorSet CreateSimpleTexture(std::string const& imagePath, bool mipMap, VkShaderStageFlags stageFlags, bool zeroUsageDelete = false);
+		static VkDescriptorSet CreateSimpleTexture(VkDescriptorImageInfo* imageInfo, VkShaderStageFlags stageFlags, VkImageLayout waitOnLayout);
 
 		static VkDescriptorImageInfo* GetDescriptorImageInfo(ImageID imgID) {
 #if EWE_DEBUG
@@ -104,7 +88,7 @@ namespace EWE {
 		//void ClearSceneImages();
 		//void RemoveMaterialImage(TextureDesc removeID);
 		static void RemoveImage(ImageID imgID);
-		static void RemoveMaterialImage(ImageID imgID);
+		//static void RemoveMaterialImage(ImageID imgID);
 		void Cleanup();
 
 		static Image_Manager* GetImageManagerPtr() { return imgMgrPtr; }

@@ -43,29 +43,29 @@ namespace EWE {
 			ENGINE_MAX_COUNT,
 		};
 	} //namespace Pipe
-	namespace PL{
-	enum PipeLayout_Enum : uint32_t { //uint32_t is the same as PipelineID, but using uint32_t to avoid confusion
-		pointLight,
-		lightning,
-		spikyBall,
-		grass,
-		textured,
-		//PL_material,
-		twod,
-		boned,
-		//PL_fbx,
-		skybox,
-		sprite,
-		//PL_boneWeapon,
-		visualEffect,
-		//PL_metalRough,
-		loading,
+	//namespace PL{
+	//enum PipeLayout_Enum : uint32_t { //uint32_t is the same as PipelineID, but using uint32_t to avoid confusion
+	//	pointLight,
+	//	lightning,
+	//	spikyBall,
+	//	grass,
+	//	textured,
+	//	//PL_material,
+	//	twod,
+	//	boned,
+	//	//PL_fbx,
+	//	skybox,
+	//	sprite,
+	//	//PL_boneWeapon,
+	//	visualEffect,
+	//	//PL_metalRough,
+	//	loading,
 
-		nineUI,
+	//	nineUI,
 
-		MAX_COUNT,
-	};
-	} //namespace PL
+	//	MAX_COUNT,
+	//};
+	//} //namespace PL
 
 	//typedef uint8_t MaterialFlags; this in engine/data/enginedatatypes.h
 
