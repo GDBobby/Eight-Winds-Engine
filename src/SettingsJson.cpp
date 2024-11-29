@@ -304,14 +304,14 @@ void SettingsJSON::initializeSettings() {
 		if (document.HasParseError() || !document.IsObject()) {
 			printf("error parsing settings at : %s \n", SETTINGS_LOCATION);
 			printf("error at %d : %s \n", static_cast<int32_t>(document.GetErrorOffset()), rapidjson::GetParseError_En(document.GetParseError()));
-			throw std::runtime_error("failed to parse");
+			assert(false);
 			generateDefaultFile();
 		}
 		else {
 			if (!readFromJsonFile(document)) {
 				//failed to parse correctly
 				printf("failed to read settings correctly \n");
-				throw std::runtime_error("failed t o read settings correctly");
+				assert(false);
 				generateDefaultFile();
 			}
 		}
