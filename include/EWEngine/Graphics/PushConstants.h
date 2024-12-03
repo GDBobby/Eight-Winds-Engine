@@ -38,6 +38,10 @@ struct Simple2DPushConstantData {
 	alignas(16) int textureID;
 };
 
+struct LordDeliverMeFromThisEvilPushConstantData {
+	glm::vec4 scaleOffset;
+};
+
 //deprecated
 /*
 struct NineUIPushConstantData {

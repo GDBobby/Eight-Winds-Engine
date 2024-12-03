@@ -11,9 +11,9 @@ namespace EWE {
 			}
 		}
 	}
-	void OverlayBase::ResizeWindow(std::pair<uint32_t, uint32_t> nextDims) {
-		float nextWidth = static_cast<float>(nextDims.first);
-		float nextHeight = static_cast<float>(nextDims.second);
+	void OverlayBase::ResizeWindow() {
+		float nextWidth = VK::Object->screenWidth;
+		float nextHeight = VK::Object->screenHeight;
 		for (auto& textS : textStructs) {
 
 			printf("resizing overlay, before - %.1f:%.1f : %.1f\n", nextWidth, screenWidth, textS.x);

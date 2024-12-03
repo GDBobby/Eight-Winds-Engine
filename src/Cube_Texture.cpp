@@ -61,6 +61,9 @@ namespace EWE {
             imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
             imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
+            imageCreateInfo.queueFamilyIndexCount = 0;
+            imageCreateInfo.pQueueFamilyIndices = nullptr;
+
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, cubeImage.image, cubeImage.memory);
 #if DEBUG_NAMING
             DebugNaming::SetObjectName(cubeImage.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());

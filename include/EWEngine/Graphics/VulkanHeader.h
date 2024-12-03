@@ -64,7 +64,7 @@ namespace EWE{
         //void Begin();
     };
 #else
-    typedef CommandBuffer = VkCommandBuffer;
+    typedef VkCommandBuffer CommandBuffer;
 #endif
     namespace Sampler { //defined in Sampler.cpp, testing a split cpp/header file
         VkSampler GetSampler(VkSamplerCreateInfo const& samplerInfo);
@@ -97,6 +97,9 @@ namespace EWE{
         VkSurfaceKHR surface;
         VkPhysicalDeviceProperties properties;
 
+        float screenWidth;
+        float screenHeight;
+
         uint8_t frameIndex{0};
 
         std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> renderCommands{};
@@ -105,7 +108,7 @@ namespace EWE{
 #if COMMAND_BUFFER_TRACING
             return renderCommands[frameIndex].cmdBuf;
 #else
-            renderCommands[frameIndex];
+            return renderCommands[frameIndex];
 #endif
         }
 
@@ -228,6 +231,7 @@ struct EWE_VK {
 #if WRAPPING_VULKAN_FUNCTIONS
         //call a preliminary function
 #endif
+#if 0//EWE_DEBUG
         if constexpr (std::is_same_v<std::decay_t<F>, PFN_vkCmdBindDescriptorSets>) {
             const auto descriptorSetCount = std::get<4>(std::forward_as_tuple(args...));
             const auto pDescriptorSets = std::get<5>(std::forward_as_tuple(args...));
@@ -235,19 +239,19 @@ struct EWE_VK {
                 assert((pDescriptorSets[i] != VK_NULL_HANDLE) && (reinterpret_cast<std::size_t>(pDescriptorSets[i]) != 0xCDCDCDCDCDCDCDCD));
             }
         }
-
+#endif
 
 #if COMMAND_BUFFER_TRACING
         const std::string funcName = typeid(func).name();
         auto reinterpretedArgs = Recasting::ReinterpretArguments(funcName, sourceLocation, std::forward<Args>(args)...);
         Recasting::CallWithReinterpretedArguments(sourceLocation, func, std::move(reinterpretedArgs));
 #else
-        if constexpr (std::is_void_v<decltype(std::forward<F>(f)(std::forward<Args>(args)...))>) {
+        if constexpr (std::is_void_v<decltype(std::forward<F>(func)(std::forward<Args>(args)...))>) {
             //std::bind(std::forward<F>(f), std::forward<Args>(args)...)(); //std bind is constexpr, might be worth using
-            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+            std::invoke(std::forward<F>(func), std::forward<Args>(args)...);
         }
         else {
-            VkResult vkResult = std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+            VkResult vkResult = std::invoke(std::forward<F>(func), std::forward<Args>(args)...);
             EWE_VK_RESULT(vkResult, sourceLocation);
 
         }

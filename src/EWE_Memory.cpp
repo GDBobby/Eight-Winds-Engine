@@ -80,12 +80,12 @@ void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc) {
 #endif
 }
 
-#if EWE_DEBUG
 void ewe_free_mem_track(void* ptr){
+#if EWE_DEBUG
 	auto found = mallocMap.find(reinterpret_cast<uint64_t>(ptr));
 	assert((found != mallocMap.end()) && "freeing memory that wasn't allocated");
 	mallocMap.erase(found);
 
 	UpdateMemoryLogFile();
-}
 #endif
+}

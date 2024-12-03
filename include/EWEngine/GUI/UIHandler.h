@@ -57,22 +57,12 @@ namespace EWE{
 
 		GameObject2D backgroundObject{ GameObject2D::createGameObject() };
 
-
-		float getScreenWidth() {
-			return screenWidth;
-		}
-		float getScreenHeight() {
-			return screenHeight;
-		}
-
 		TextOverlay* GetTextOverlay() {
 			//throw std::exception("only copy this once, to MenuManager");
 			return textOverlay;
 		}
 
 	private:
-		float screenWidth;
-		float screenHeight;
 		TextOverlay* textOverlay;
 		//float timeElapsed = 0.0f;
 

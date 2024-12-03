@@ -1,8 +1,9 @@
 #include "MainMenuMM.h"
 
 namespace EWE {
-	MainMenuMM::MainMenuMM(float screenWidth, float screenHeight) {
-
+	MainMenuMM::MainMenuMM() {
+		float screenWidth = VK::Object->screenWidth;
+		float screenHeight = VK::Object->screenHeight;
 		//float widthRescaling = screenWidth / DEFAULT_WIDTH;
 		const float heightRescaling = screenHeight / DEFAULT_HEIGHT;
 

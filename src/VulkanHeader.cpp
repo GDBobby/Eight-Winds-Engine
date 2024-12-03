@@ -183,7 +183,7 @@ namespace EWE {
 
 
 
-
+#if COMMAND_BUFFER_TRACING
     void CommandBuffer::Reset() {
         //VkCommandBufferResetFlags flags = VkCommandBufferResetFlagBits::VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT;
         VkCommandBufferResetFlags flags = 0;
@@ -198,4 +198,5 @@ namespace EWE {
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         EWE_VK(vkBeginCommandBuffer, *this, &beginInfo);
     }
+#endif
 }

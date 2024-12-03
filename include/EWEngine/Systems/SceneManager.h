@@ -1,0 +1,50 @@
+#pragma once
+
+#include "EWEngine/Scene.h"
+#include "EWEngine/EightWindsEngine.h"
+
+#include <unordered_map>
+#include <future>
+#include <thread>
+
+namespace EWE {
+	typedef uint8_t SceneKey;
+
+	//this class does not handle destruction of scenes, left explicitly to user
+	class SceneManager {
+	public:
+		SceneManager(EightWindsEngine& ewEngine);
+		~SceneManager();
+
+		void RunSceneLoop();
+
+		void ChangeScene(SceneKey sceneKey);
+
+		SceneKey AddScene(Scene* scene);
+
+		void SetStartupScene(SceneKey sceneKey);
+
+		const SceneKey scene_exit = 255;
+
+	private:
+		EightWindsEngine& ewEngine;
+		SceneKey currentScene;
+
+		//SceneKey 0 is reserved for the loading_scene, which isn't technically a scene. 
+		//It just represents the transition from loading to the main scene
+		//this is necessary so that entry is called on the first scene from the game built on the engine
+		SceneKey lastScene = 0;
+		Scene* currentScenePtr{ nullptr };
+		bool swappingScenes = false;
+
+		bool gameRunning = true;
+		double renderRefreshRate = 0.0;
+
+		std::unordered_map<SceneKey, Scene*> scenes;
+
+		std::shared_ptr<SoundEngine> soundEngine;
+
+		void SwapScenes();
+	};
+}//namespace EWE
+

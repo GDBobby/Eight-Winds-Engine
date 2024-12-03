@@ -18,7 +18,7 @@ namespace EWE {
 		}
 
 		virtual void DrawObjects() = 0;
-		void ResizeWindow(std::pair<uint32_t, uint32_t> nextDims);
+		void ResizeWindow();
 		
 	protected:
 		bool isActive = false;

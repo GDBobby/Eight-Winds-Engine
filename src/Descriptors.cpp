@@ -130,7 +130,7 @@ namespace EWE {
         EWE_VK(vkCreateDescriptorPool, VK::Object->vkDevice, &descriptorPoolInfo, nullptr, &descriptorPool);
     }
     EWEDescriptorPool::EWEDescriptorPool(VkDescriptorPoolCreateInfo& pool_info) {
-        for (int i = 0; i < pool_info.poolSizeCount; i++) {
+        for (uint32_t i = 0; i < pool_info.poolSizeCount; i++) {
             trackers.emplace(pool_info.pPoolSizes[i].type, DescriptorTracker(pool_info.pPoolSizes[i].descriptorCount));
         }
 

@@ -663,10 +663,13 @@ namespace EWE {
             imageInfo->height = pixelPeek.height;
             CreateTextureImage(*imageInfo, queue, pixelPeek, mipmap);
             CreateTextureImageView(*imageInfo);
-            CreateTextureSampler(*imageInfo);
+            if (imageInfo->sampler == VK_NULL_HANDLE) {
+                CreateTextureSampler(*imageInfo);
+            }
             imageInfo->descriptorImageInfo.sampler = imageInfo->sampler;
             imageInfo->descriptorImageInfo.imageView = imageInfo->imageView;
         }
+
         void Destroy(ImageInfo& imageInfo) {
             Sampler::RemoveSampler(imageInfo.sampler);
 

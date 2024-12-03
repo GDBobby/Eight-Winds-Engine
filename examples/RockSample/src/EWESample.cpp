@@ -26,11 +26,6 @@ namespace EWE {
 		soundEngine{SoundEngine::GetSoundEngineInstance()}
  {
 
-		float screenWidth = ewEngine.uiHandler.getScreenWidth();
-		float screenHeight = ewEngine.uiHandler.getScreenHeight();
-
-		AddPipelinesToSystem();
-
 
 		//ThreadPool::EnqueueVoid(soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect));
 		{
@@ -47,11 +42,11 @@ namespace EWE {
 
 		//addModulesToMenuManager(screenWidth, screenHeight);
 		{
-			auto loadFunc = [&, screenWidth, screenHeight]() {
+			auto loadFunc = [&]() {
 				SetThreadDescription(GetCurrentThread(), L"load menu modules thread");
 				printf("adding modules to menu manager : %u\n", std::this_thread::get_id());
 
-				addModulesToMenuManager(screenWidth, screenHeight);
+				addModulesToMenuManager();
 				loadingThreadTracker.menuModuleThread = true;
 			};
 			ThreadPool::EnqueueVoidFunction(loadFunc);
@@ -67,10 +62,6 @@ namespace EWE {
 			ThreadPool::EnqueueVoidFunction(loadFunc);
 		}
 
-		//currentScene = scene_ocean;
-		//scenes.emplace(scene_mainmenu, new MainMenuScene(ewEngine));
-		//scenes.emplace(scene_ocean, std::make_unique<OceanScene>(ewEngine, skyboxInfo));
-		//scenes.emplace(scene_shaderGen, new ShaderGenerationScene(ewEngine));
 		scenes.emplace(scene_mainmenu, nullptr);
 		scenes.emplace(scene_shaderGen, nullptr);
 		scenes.emplace(scene_ocean, nullptr);
@@ -84,16 +75,6 @@ namespace EWE {
 			loadingThreadTracker.mainSceneThread = true;
 
 		}; 
-		
-		auto sceneLoadFuncLevelCreation = [&]() {
-			SetThreadDescription(GetCurrentThread(), L"load level creation scene thread");
-			LevelCreationScene* levelScene = Construct<LevelCreationScene>({ ewEngine });
-			levelScene->giveGLFWCallbackReturns(menuManager.staticMouseCallback, menuManager.staticKeyCallback);
-
-			scenes.at(scene_LevelCreation) = levelScene;
-			LoadSceneIfMatching(scene_LevelCreation);
-			loadingThreadTracker.levelCreationSceneThread = true;
-		};
 		
 		auto sceneLoadFunc2 = [&]() {
 			SetThreadDescription(GetCurrentThread(), L"load shader gen thread");
@@ -110,7 +91,6 @@ namespace EWE {
 			loadingThreadTracker.oceanSceneThread = true;
 		};
 		ThreadPool::EnqueueVoidFunction(sceneLoadFunc);
-		ThreadPool::EnqueueVoidFunction(sceneLoadFuncLevelCreation);
 		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc2);
 		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc3);
 
@@ -224,8 +204,8 @@ namespace EWE {
 			ewEngine.objectManager.pointLights[i].transform.translation.y += 1.f;
 		}
 	}
-	void EWESample::addModulesToMenuManager(float screenWidth, float screenHeight) {
-		menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>(screenWidth, screenHeight));
+	void EWESample::addModulesToMenuManager() {
+		menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>());
 		menuManager.menuModules.at(menu_main)->labels[1].string = "1.0.0";
 		//menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(windowPtr, screenWidth, screenHeight));
 		//Shader::InputBox::giveGLFWCallbacks(MenuManager::staticMouseCallback, MenuManager::staticKeyCallback);
@@ -349,12 +329,5 @@ namespace EWE {
 
 			currentScenePtr->Load();
 		}
-	}
-
-	void EWESample::AddPipelinesToSystem() {
-		PipelineSystem::Emplace(Pipe::background, Construct<BackgroundPipe>({}));
-		//PipelineSystem::Emplace(Pipe_grass2, new GrassPipe(ewEngine.eweDevice));
-		//PipelineSystem::Emplace(Pipe_billboard, new BillboardPipe(ewEngine.eweDevice));
-		PipelineSystem::Emplace(Pipe::Grid2d, Construct<GridPipe>({}));
 	}
 }

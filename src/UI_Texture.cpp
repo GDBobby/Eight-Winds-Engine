@@ -46,7 +46,7 @@ namespace EWE {
             EWE_VK(vkUnmapMemory, VK::Object->vkDevice, stagingBuffer->memory);
 #endif
 
-            VkImageCreateInfo imageCreateInfo;
+            VkImageCreateInfo imageCreateInfo{};
             imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
             imageCreateInfo.pNext = nullptr;
             imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -63,6 +63,9 @@ namespace EWE {
             imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
             imageCreateInfo.flags = 0;// VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+
+            imageCreateInfo.queueFamilyIndexCount = 0;
+            imageCreateInfo.pQueueFamilyIndices = nullptr;
 
             Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uiImageInfo.image, uiImageInfo.memory);
 #if DEBUG_NAMING

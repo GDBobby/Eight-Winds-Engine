@@ -47,7 +47,11 @@ namespace EWE {
 #endif
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+#if COMMAND_BUFFER_TRACING
 			if (VK::Object->renderCommands[i].cmdBuf != VK_NULL_HANDLE) {
+#else
+			if (VK::Object->renderCommands[i] != VK_NULL_HANDLE) {
+#endif
 				EWE_VK(vkFreeCommandBuffers, VK::Object->vkDevice, VK::Object->commandPools[Queue::graphics], 1, &VK::Object->renderCommands[i]);
 			}
 		}
@@ -73,7 +77,7 @@ namespace EWE {
 		VK::Object->renderCommands[0].cmdBuf = tempCmdBuf[0];
 		VK::Object->renderCommands[1].cmdBuf = tempCmdBuf[1];
 #else
-		EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &allocInfo, VK::Object->renderCommands);
+		EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &allocInfo, VK::Object->renderCommands.data());
 #endif
 	}
 
@@ -133,7 +137,11 @@ namespace EWE {
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.pNext = nullptr;
 		submitInfo.commandBufferCount = 1;
+#if COMMAND_BUFFER_TRACING
 		submitInfo.pCommandBuffers = &cmdBuf.cmdBuf;
+#else
+		submitInfo.pCommandBuffers = &cmdBuf;
+#endif
 		//std::cout << "before transfer submit \n";
 		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, singleTimeFenceGraphics);
 		//std::cout << "after transfer submit \n";
@@ -194,7 +202,11 @@ namespace EWE {
 		std::vector<VkCommandBuffer> cmds{};
 		cmds.reserve(submittedAsyncBuffers.size());
 		for (auto& command : submittedAsyncBuffers) {
+#if COMMAND_BUFFER_TRACING
 			cmds.push_back(command->cmdBuf);
+#else
+			cmds.push_back(*command);
+#endif
 		}
 		submitInfo.pCommandBuffers = cmds.data();
 
@@ -261,7 +273,11 @@ namespace EWE {
 			std::vector<VkCommandBuffer> cmds{};
 			cmds.reserve(fenceData.callbacks.commands.size());
 			for (auto& command : fenceData.callbacks.commands) {
+#if COMMAND_BUFFER_TRACING
 				cmds.push_back(command->cmdBuf);
+#else
+				cmds.push_back(*command);
+#endif
 			}
 			transferSubmitInfo.pCommandBuffers = cmds.data();
 

@@ -65,6 +65,15 @@ class EWESwapChain {
             //std::cout << "after vkCmdBeginRendering : " << std::endl;
         }
 
+        void ChangeClearValues(float r, float g, float b, float a) {
+            for(auto& dynStr : dynamicStructs){
+                dynStr.color_attachment_info.clearValue.color.float32[0] = r;
+                dynStr.color_attachment_info.clearValue.color.float32[1] = g;
+                dynStr.color_attachment_info.clearValue.color.float32[2] = b;
+                dynStr.color_attachment_info.clearValue.color.float32[3] = a;
+            }
+        }
+
  private:
     void Init(bool fullScreen);
     void CreateSwapChain();

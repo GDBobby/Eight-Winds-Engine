@@ -6,12 +6,8 @@
 #include "Scenes/MainMenuScene.h"
 #include "Scenes/ShaderGenerationScene.h"
 #include "Scenes/OceanScene.h"
-#include "Scenes/LevelCreationScene.h"
-
-#include "Pipelines/PipelineHeaderWrapper.h"
 
 //#include "Scenes/FreeCameraScene.h"
-#include <functional>
 
 namespace EWE {
 	struct LoadingThreadTracker {
@@ -21,10 +17,9 @@ namespace EWE {
 		bool oceanSceneThread = false;
 		bool menuModuleThread = false;
 		bool globalObjectThread = false;
-		bool levelCreationSceneThread = false;
 
 		bool Finished() const {
-			return soundMapThread && mainSceneThread && menuModuleThread && globalObjectThread && levelCreationSceneThread;
+			return soundMapThread && mainSceneThread && menuModuleThread && globalObjectThread;
 		}
 	};
 
@@ -35,13 +30,13 @@ namespace EWE {
 		EightWindsEngine& ewEngine;
 		GLFWwindow* windowPtr;
 		MenuManager& menuManager;
+		std::shared_ptr<SoundEngine> soundEngine;
 
-		Scene_Enum lastScene = scene_LevelCreation;
-		Scene_Enum currentScene = scene_LevelCreation;
+		Scene_Enum lastScene = scene_mainmenu;
+		Scene_Enum currentScene = scene_mainmenu;
 		std::unordered_map<Scene_Enum, Scene*> scenes;
 		Scene* currentScenePtr{ nullptr };
 		bool swappingScenes = false;
-		std::shared_ptr<SoundEngine> soundEngine;
 
 		bool gameRunning = true;
 		double renderRefreshRate = 0.0;
@@ -49,7 +44,7 @@ namespace EWE {
 		ImageID skyboxImgID{ IMAGE_INVALID };
 
 		void mainThread();
-		void addModulesToMenuManager(float screenWidth, float screenHeight);
+		void addModulesToMenuManager();
 		
 		void loadGlobalObjects();
 		bool processClick();
@@ -57,7 +52,5 @@ namespace EWE {
 		void SwapScenes();
 
 		void LoadSceneIfMatching(Scene_Enum scene);
-
-		void AddPipelinesToSystem();
 	};
 }

@@ -273,6 +273,7 @@ namespace EWE {
             return nullptr; // error silencing
 #else
             //unreachable
+            __assume(false);
 #endif
         }
         const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr) {
@@ -289,6 +290,7 @@ namespace EWE {
             assert(false && "failed to find buffer");
 #else
             //unreachable
+            __assume(false);
 #endif
         }
 
@@ -304,6 +306,7 @@ namespace EWE {
             assert(false && "failed to find buffer");
 #else
             //unreachable
+            __assume(false);
 #endif
         }
         std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr) {
@@ -320,6 +323,7 @@ namespace EWE {
             assert(false && "failed to find buffer");
 #else
             //unreachable
+            __assume(false);
 #endif
         }
     }//namespace RigidRenderingSystem

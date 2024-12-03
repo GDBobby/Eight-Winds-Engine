@@ -456,10 +456,17 @@ namespace EWE {
 
 		VkPipelineVertexInputStateCreateInfo vertexInputState{};
 		vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		/*
 		vertexInputState.vertexBindingDescriptionCount = 1;
 		vertexInputState.pVertexBindingDescriptions = &vertexInputBindings;
 		vertexInputState.vertexAttributeDescriptionCount = 1;
 		vertexInputState.pVertexAttributeDescriptions = &vertexInputAttributes;
+		*/
+		vertexInputState.vertexBindingDescriptionCount = 0;
+		vertexInputState.pVertexBindingDescriptions = nullptr;
+		vertexInputState.vertexAttributeDescriptionCount = 0;
+		vertexInputState.pVertexAttributeDescriptions = nullptr;
+
 
 		//printf("after vertex input state \n");
 		auto vertCode = Pipeline_Helper_Functions::ReadFile("textoverlay.vert.spv");

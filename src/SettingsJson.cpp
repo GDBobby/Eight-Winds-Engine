@@ -224,6 +224,108 @@ namespace SettingsInfo {
 	}
 } //namespace SettingsInfo
 
+bool readFromJsonFile(rapidjson::Document& document) {
+	if (!document["version"].IsInt()) {
+		printf("version not int \n");
+		return false;
+	}
+	else if (document["version"].GetInt() != CURRENT_VERSION) {
+		printf("icnorrect version \n");
+		return false;
+	}
+
+	if (!document["windowMode"].IsInt()) {
+		printf("wm not int \n");
+		return false;
+	}
+	if (!document["screenDimensions"].IsInt()) {
+		printf("SD not int \n");
+		return false;
+	}
+	if (!document["masterVolume"].IsInt()) {
+		printf("MaV not int \n");
+		return false;
+	}
+	if (!document["effectsVolume"].IsInt()) {
+		printf("EV not int \n");
+		return false;
+	}
+	if (!document["musicVolume"].IsInt()) {
+		printf("MuV not int \n");
+		return false;
+	}
+	if (!document["voiceVolume"].IsInt()) {
+		printf("VV not int \n");
+		return false;
+	}
+	if (!document["selectedDevice"].IsString()) {
+		printf("device not string \n");
+		return false;
+	}
+	if (!document["FPS"].IsInt()) {
+		printf("FPS not int \n");
+		return false;
+	}
+	if (!document["pointLights"].IsBool()) {
+		printf("PL not bool \n");
+		return false;
+	}
+	if (!document["renderInfo"].IsBool()) {
+		printf("render not bool \n");
+		return false;
+	}
+
+
+
+	SettingsJSON::settingsData.versionKey = CURRENT_VERSION;
+
+	int valueBuffer = document["windowMode"].GetInt();
+	if (valueBuffer != 0 && valueBuffer != 1) {
+		SettingsJSON::settingsData.windowMode = SettingsInfo::WT_borderless;
+	}
+	else {
+		SettingsJSON::settingsData.windowMode = (SettingsInfo::WindowMode_Enum)valueBuffer;
+	}
+
+	valueBuffer = document["screenDimensions"].GetInt();
+	if (valueBuffer >= 0 && valueBuffer < SettingsInfo::SD_size) {
+		SettingsJSON::settingsData.screenDimensions = (SettingsInfo::ScreenDimension_Enum)valueBuffer;
+	}
+	SettingsJSON::settingsData.masterVolume = document["masterVolume"].GetUint();
+
+	SettingsJSON::settingsData.effectsVolume = document["effectsVolume"].GetUint();
+	SettingsJSON::settingsData.musicVolume = document["musicVolume"].GetUint();
+	SettingsJSON::settingsData.voiceVolume = document["voiceVolume"].GetUint();
+
+	//holma
+	if (SettingsJSON::settingsData.masterVolume < 0 || SettingsJSON::settingsData.masterVolume > 100) {
+		SettingsJSON::settingsData.masterVolume = 50;
+	}
+	if (SettingsJSON::settingsData.effectsVolume < 0 || SettingsJSON::settingsData.effectsVolume > 100) {
+		SettingsJSON::settingsData.effectsVolume = 50;
+	}
+	if (SettingsJSON::settingsData.musicVolume < 0 || SettingsJSON::settingsData.musicVolume > 100) {
+		SettingsJSON::settingsData.musicVolume = 50;
+	}
+	if (SettingsJSON::settingsData.voiceVolume < 0 || SettingsJSON::settingsData.voiceVolume > 100) {
+		SettingsJSON::settingsData.voiceVolume = 50;
+	}
+
+	SettingsJSON::settingsData.selectedDevice = document["selectedDevice"].GetString();
+	SettingsJSON::settingsData.FPS = document["FPS"].GetInt();
+	if (SettingsJSON::settingsData.FPS < 0) {
+		SettingsJSON::settingsData.FPS = 0;
+	}
+
+	SettingsJSON::settingsData.pointLights = document["pointLights"].GetBool();
+	SettingsJSON::settingsData.renderInfo = document["renderInfo"].GetBool();
+
+	SettingsJSON::tempSettings = SettingsJSON::settingsData;
+
+	return true;
+}
+
+
 void SettingsJSON::SettingsData::setVolume(int8_t whichVolume, uint8_t value) {
 	//ma_device_set_SoundVolume::master(&device, volume[whichVolume]);
 	//printf("setting volume %d : %.2f \n", whichVolume, value);
@@ -331,106 +433,6 @@ void SettingsJSON::generateDefaultFile() {
 	saveToJsonFile();
 }
 
-bool readFromJsonFile(rapidjson::Document& document) {
-	if (!document["version"].IsInt()) {
-		printf("version not int \n");
-		return false;
-	}
-	else if (document["version"].GetInt() != CURRENT_VERSION) {
-		printf("icnorrect version \n");
-		return false;
-	}
-
-	if (!document["windowMode"].IsInt()) {
-		printf("wm not int \n");
-		return false;
-	}
-	if (!document["screenDimensions"].IsInt()) {
-		printf("SD not int \n");
-		return false;
-	}
-	if (!document["masterVolume"].IsInt()) {
-		printf("MaV not int \n");
-		return false;
-	}
-	if (!document["effectsVolume"].IsInt()) {
-		printf("EV not int \n");
-		return false;
-	}
-	if (!document["musicVolume"].IsInt()) {
-		printf("MuV not int \n");
-		return false;
-	}
-	if (!document["voiceVolume"].IsInt()) {
-		printf("VV not int \n");
-		return false;
-	}
-	if (!document["selectedDevice"].IsString()) {
-		printf("device not string \n");
-		return false;
-	}
-	if (!document["FPS"].IsInt()) {
-		printf("FPS not int \n");
-		return false;
-	}
-	if (!document["pointLights"].IsBool()) {
-		printf("PL not bool \n");
-		return false;
-	}
-	if (!document["renderInfo"].IsBool()) {
-		printf("render not bool \n");
-		return false;
-	}
-
-
-
-	SettingsJSON::settingsData.versionKey = CURRENT_VERSION;
-
-	int valueBuffer = document["windowMode"].GetInt();
-	if (valueBuffer != 0 && valueBuffer != 1) {
-		SettingsJSON::settingsData.windowMode = SettingsInfo::WT_borderless;
-	}
-	else {
-		SettingsJSON::settingsData.windowMode = (SettingsInfo::WindowMode_Enum)valueBuffer;
-	}
-
-	valueBuffer = document["screenDimensions"].GetInt();
-	if (valueBuffer >= 0 && valueBuffer < SettingsInfo::SD_size) {
-		SettingsJSON::settingsData.screenDimensions = (SettingsInfo::ScreenDimension_Enum)valueBuffer;
-	}
-	SettingsJSON::settingsData.masterVolume = document["masterVolume"].GetUint();
-
-	SettingsJSON::settingsData.effectsVolume = document["effectsVolume"].GetUint();
-	SettingsJSON::settingsData.musicVolume = document["musicVolume"].GetUint();
-	SettingsJSON::settingsData.voiceVolume = document["voiceVolume"].GetUint();
-
-	//holma
-	if (SettingsJSON::settingsData.masterVolume < 0 || SettingsJSON::settingsData.masterVolume > 100) {
-		SettingsJSON::settingsData.masterVolume = 50;
-	}
-	if (SettingsJSON::settingsData.effectsVolume < 0 || SettingsJSON::settingsData.effectsVolume > 100) {
-		SettingsJSON::settingsData.effectsVolume = 50;
-	}
-	if (SettingsJSON::settingsData.musicVolume < 0 || SettingsJSON::settingsData.musicVolume > 100) {
-		SettingsJSON::settingsData.musicVolume = 50;
-	}
-	if (SettingsJSON::settingsData.voiceVolume < 0 || SettingsJSON::settingsData.voiceVolume > 100) {
-		SettingsJSON::settingsData.voiceVolume = 50;
-	}
-
-	SettingsJSON::settingsData.selectedDevice = document["selectedDevice"].GetString();
-	SettingsJSON::settingsData.FPS = document["FPS"].GetInt();
-	if (SettingsJSON::settingsData.FPS < 0) {
-		SettingsJSON::settingsData.FPS = 0;
-	}
-
-	SettingsJSON::settingsData.pointLights = document["pointLights"].GetBool();
-	SettingsJSON::settingsData.renderInfo = document["renderInfo"].GetBool();
-
-	SettingsJSON::tempSettings = SettingsJSON::settingsData;
-
-	return true;
-}
 
 void SettingsJSON::saveToJsonFile() {
 	rapidjson::StringBuffer sb;

@@ -22,8 +22,8 @@ void main(){
 	ivec2 texelCoords;
 	texelCoords.x = int(tileUV.x);
 	texelCoords.y = int(tileUV.y);
-	vec4 texColor = texelFetch(texSampler, texelCoords, 0).rgba;
-	//vec4 texColor = texture(texSampler, tileUV, 0);
+	//vec4 texColor = texelFetch(texSampler, texelCoords, 0).rgba;
+	vec4 texColor = texture(texSampler, tileUV, 0);
 
 	//outColor = vec4(0);
 	//outColor.b = tileUV.x;

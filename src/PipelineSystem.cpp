@@ -30,11 +30,13 @@ namespace EWE {
 		auto foundPipe = pipelineSystem.find(pipeID);
 		assert(foundPipe != pipelineSystem.end() && "destructing invalid pipe \n");
 		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, foundPipe->second->pipeLayout, nullptr);
+		Deconstruct(foundPipe->second);
 #else
-		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipelineSystem.at(pipeID)->pipeLayout, nullptr);
+		auto& pipe = pipelineSystem.at(pipeID);
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipe->pipeLayout, nullptr);
+		Deconstruct(pipe);
 #endif
 
-		Deconstruct(foundPipe->second);
 	}
 
 	PipelineSystem* PipelineSystem::At(PipelineID pipeID) {

@@ -16,9 +16,12 @@ namespace EWE {
 	//GLFWwindow* UIHandler::windowPtr:
 
 	UIHandler::UIHandler(std::pair<uint32_t, uint32_t> dimensions, GLFWwindow* window, TextOverlay* txtOverlay)
-		: windowPtr{ window }, screenWidth{ static_cast<float>(dimensions.first) }, screenHeight{ static_cast<float>(dimensions.second) }, textOverlay{ txtOverlay } {
+		: windowPtr{ window }, textOverlay{ txtOverlay } {
+
+		VK::Object->screenWidth = static_cast<float>(dimensions.first);
+		VK::Object->screenHeight = static_cast<float>(dimensions.second);
 #if EWE_DEBUG
-		printf("beg uiHandler construction, dimensions - %.1f:%.1f \n", screenWidth, screenHeight);
+		printf("beg uiHandler construction, dimensions - %.1f:%.1f \n", VK::Object->screenWidth, VK::Object->screenHeight);
 #endif
 
 		//textOverlay = std::make_unique<TextOverlay>(eweDevice, EWESwapChain->getFrameBuffers(), EWESwapChain->width(), EWESwapChain->height(), EWESwapChain->getRenderPass(), 1.f);
@@ -50,7 +53,7 @@ namespace EWE {
 			ss.str("");
 			ss << std::fixed << std::setprecision(4);
 			ss << "average Logic Time: " << avgLogic;
-			TextStruct passer{ ss.str(), 0.f, screenHeight - (100.f * textOverlay->scale), TA_left, 1.f };
+			TextStruct passer{ ss.str(), 0.f, VK::Object->screenHeight - (100.f * textOverlay->scale), TA_left, 1.f };
 			textOverlay->AddText(passer);
 			//addText(TextStruct{ ss.str(), 0.f, frameBufferHeight - (100.f * scale), TA_left, 1.f });
 		}
@@ -59,7 +62,7 @@ namespace EWE {
 			ss.str("");
 			ss << std::fixed << std::setprecision(4);
 			ss << "last GPU Time: " << elapsedGPUMS;
-			TextStruct passer{ ss.str(), 0.f, screenHeight - (120.f * textOverlay->scale), TA_left, 1.f };
+			TextStruct passer{ ss.str(), 0.f, VK::Object->screenHeight - (120.f * textOverlay->scale), TA_left, 1.f };
 			textOverlay->AddText(passer);
 			//addText(TextStruct{ ss.str(), 0.f, frameBufferHeight - (100.f * scale), TA_left, 1.f });
 
@@ -68,7 +71,7 @@ namespace EWE {
 				ss.str("");
 				ss << std::fixed << std::setprecision(4);
 				ss << "average GPU Time: " << averageGPU;
-				TextStruct passer{ ss.str(), 0.f, screenHeight - (140.f * textOverlay->scale), TA_left, 1.f };
+				TextStruct passer{ ss.str(), 0.f, VK::Object->screenHeight - (140.f * textOverlay->scale), TA_left, 1.f };
 				textOverlay->AddText(passer);
 			}
 		}

@@ -57,6 +57,10 @@ namespace EWE {
 			return eweSwapChain->GetPipelineInfo();
 		}
 
+		void ChangeClearValues(float r, float g, float b, float a) {
+			eweSwapChain->ChangeClearValues(r, g, b, a);
+		}
+
 	private:
 		VkViewport viewport{};
 		VkRect2D scissor{};

@@ -5,6 +5,23 @@
 #include "EWEngine/Graphics/Texture/ImageFunctions.h"
 
 namespace EWE {
+#if !COMMAND_BUFFER_TRACING
+    void SyncPool::CommandBufferTracker::Reset() {
+        //VkCommandBufferResetFlags flags = VkCommandBufferResetFlagBits::VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT;
+        VkCommandBufferResetFlags flags = 0;
+        EWE_VK(vkResetCommandBuffer, cmdBuf, flags);
+        inUse = false;
+    }
+    void SyncPool::CommandBufferTracker::BeginSingleTime() {
+        inUse = true;
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.pNext = nullptr;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        EWE_VK(vkBeginCommandBuffer, cmdBuf, &beginInfo);
+    }
+#endif
+
     bool FenceData::CheckReturn(uint64_t time) {
         mut.lock();
         VkResult ret = vkWaitForFences(VK::Object->vkDevice, 1, &fence, true, time);
@@ -187,8 +204,10 @@ namespace EWE {
         semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         for (uint8_t i = 0; i < size * 2; i++) {
             EWE_VK(vkCreateSemaphore, VK::Object->vkDevice, &semInfo, nullptr, &semaphores[i].semaphore);
+#if DEBUG_NAMING
             std::string name = "syncpool semaphore[" + std::to_string(i) + ']';
             DebugNaming::SetObjectName(semaphores[i].semaphore, VK_OBJECT_TYPE_SEMAPHORE, name.c_str());
+#endif
         }
         std::vector<VkCommandBuffer> cmdBufVector{};
         //im assuming the input cmdBuf doesn't matter, and it's overwritten without being read
@@ -308,8 +327,8 @@ namespace EWE {
             if ((callbacks[i].images.size() > 0) || (callbacks[i].pipeBarriers.size() > 0)) {
 
                 assert(callbacks[i].semaphoreData != nullptr);
-#endif
             }
+#endif
         }
         if (callbacks[0].commands.size() > 0) {
             std::sort(callbacks[0].commands.begin(), callbacks[0].commands.end());
@@ -442,7 +461,11 @@ namespace EWE {
                         VK::Object->poolMutex[queue].unlock();
                     }
                     cmdBufAcqMut.unlock();
+#if COMMAND_BUFFER_TRACING
                     return cmdBufs[queue][i];
+#else
+                    return cmdBufs[queue][i].cmdBuf;
+#endif
                 }
             }
             //potentially add a resizing function here
@@ -452,7 +475,11 @@ namespace EWE {
     }
     void SyncPool::ResetCommandBuffer(CommandBuffer& cmdBuf, Queue::Enum queue) {
         for (uint8_t i = 0; i < size; i++) {
+#if COMMAND_BUFFER_TRACING
             if (&cmdBuf == &cmdBufs[queue][i]) {
+#else
+            if (&cmdBuf == &cmdBufs[queue][i].cmdBuf) {
+#endif
                 if (queue == Queue::graphics) {
                     VK::Object->STGMutex.lock();
                     cmdBufs[queue][i].Reset();
@@ -471,7 +498,11 @@ namespace EWE {
     void SyncPool::ResetCommandBuffer(CommandBuffer& cmdBuf) {
         for (uint8_t queue = 0; queue < Queue::_count; queue++) {
             for (uint8_t i = 0; i < size; i++) {
+#if COMMAND_BUFFER_TRACING
                 if (&cmdBuf == &cmdBufs[queue][i]) {
+#else
+                if (&cmdBuf == &cmdBufs[queue][i].cmdBuf) {
+#endif
                     if (queue == Queue::graphics) {
                         VK::Object->STGMutex.lock();
                         cmdBufs[queue][i].Reset();
@@ -494,7 +525,11 @@ namespace EWE {
         for (int j = 0; j < cmdBufVec.size(); j++) {
             bool found = false;
             for (; i < size; i++) {
-                if (cmdBufVec[j] == &cmdBufs[queue][i]) {
+#if COMMAND_BUFFER_TRACING
+                if(cmdBufVec[j] == &cmdBufs[queue][i]) {
+#else
+                if (cmdBufVec[j] == &cmdBufs[queue][i].cmdBuf) {
+#endif
                     if (queue == Queue::graphics) {
                         VK::Object->STGMutex.lock();
                         cmdBufs[queue][i].Reset();
@@ -521,7 +556,11 @@ namespace EWE {
                     break;
                 }
                 for (uint8_t i = 0; i < size; i++) {
+#if COMMAND_BUFFER_TRACING
                     if (cmdBufVec[j] == &cmdBufs[queue][i]) {
+#else
+                    if (cmdBufVec[j] == &cmdBufs[queue][i].cmdBuf) {
+#endif
                         if (queue == Queue::graphics) {
                             VK::Object->STGMutex.lock();
                             cmdBufs[queue][i].Reset();

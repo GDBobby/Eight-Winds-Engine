@@ -260,7 +260,7 @@ namespace EWE {
 		}
 
 		if (menuActive) {
-			Dimension2::Bind2D();
+			Dimension2::BindArrayPipeline();
 			if (menuManager.drawingNineUI()) {
 				menuManager.drawNewNine();
 			}
@@ -273,7 +273,7 @@ namespace EWE {
 		}
 		else {
 			if (uiHandler->overlay) {
-				Dimension2::Bind2D();
+				Dimension2::BindArrayPipeline();
 				uiHandler->overlay->DrawObjects();
 			}
 		}

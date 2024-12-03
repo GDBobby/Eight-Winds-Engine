@@ -71,14 +71,12 @@ namespace EWE{
 			const bool hasRough = flags & MaterialF_hasRough;
 			const bool hasMetal = flags & MaterialF_hasMetal;
 			const bool hasAO = flags & MaterialF_hasAO;
-			if (hasBones && hasBumps) {
-				printf("ERROR: HAS BONES AND BUMP, NOT CURRENTLY SUPPORTED \n");
-			}
+			//assert(!(hasBones && hasBumps));
 
 			const uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
 #if EWE_DEBUG
 			const uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced)));
-			printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
+			//printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
 			return pipeLayoutIndex;
 #else
 			return textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced)));

@@ -65,7 +65,7 @@ namespace EWE {
 		uiHandler{ SettingsJSON::settingsData.getDimensions(), mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
 		advancedRS{ objectManager, menuManager },
 		imageManager{ },
-		menuManager{ uiHandler.getScreenWidth(), uiHandler.getScreenHeight(), mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay() },
+		menuManager{ mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay() },
 		skinnedRS{ }
 	{
 		printf("after finishing construction of engine\n");

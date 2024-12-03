@@ -19,7 +19,8 @@ namespace EWE {
 
 	namespace Pipeline_Helper_Functions {
 		std::vector<char> ReadFile(const std::string& filepath) {
-			
+			printf("reading shader file\n");
+
 			//#define ENGINE_DIR "..//shaders//"
 
 			std::string enginePath = SHADER_DIR + filepath;
@@ -68,6 +69,7 @@ namespace EWE {
 		}
 		template <typename T>
 		void CreateShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule) {
+			printf("creating sahder module\n");
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.pNext = nullptr;
@@ -141,12 +143,14 @@ namespace EWE {
 	VkPipelineRenderingCreateInfo* EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic;
 
 	EWEPipeline::EWEPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo) {
+		printf("constructing ewe pipeline\n");
+
 
 		const auto vertFind = shaderModuleMap.find(vertFilepath);
 		if (vertFind == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::ReadFile(vertFilepath);
 			Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
-
+			printf("emplacing shader module vert to map\n");
 			shaderModuleMap.try_emplace(vertFilepath, vertShaderModule);
 		}
 		else {
@@ -157,11 +161,13 @@ namespace EWE {
 		if (fragFind == shaderModuleMap.end()) {
 			auto fragCode = Pipeline_Helper_Functions::ReadFile(fragFilepath);
 			Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
+			printf("emplacing shader module frag to map\n");
 			shaderModuleMap.try_emplace(fragFilepath, fragShaderModule);
 		}
 		else {
 			fragShaderModule = fragFind->second;
 		}
+		printf("creating graphics pipeline\n");
 		CreateGraphicsPipeline(configInfo);
 	}
 	EWEPipeline::EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo) : vertShaderModule{ vertShaderModu }, fragShaderModule{ fragShaderModu } {

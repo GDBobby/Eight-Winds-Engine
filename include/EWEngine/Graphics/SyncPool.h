@@ -94,10 +94,22 @@ namespace EWE{
     private:
         const uint8_t size;
 
+
         std::vector<TransferFenceData> transferFences;
         std::vector<GraphicsFenceData> graphicsFences;
         std::vector<SemaphoreData> semaphores;
+#if COMMAND_BUFFER_TRACING
         std::array<std::vector<CommandBuffer>, Queue::_count> cmdBufs;
+#else
+        struct CommandBufferTracker {
+            VkCommandBuffer cmdBuf;
+            bool inUse = false;
+
+            void Reset();
+            void BeginSingleTime();
+        };
+        std::array<std::vector<CommandBufferTracker>, Queue::_count> cmdBufs;
+#endif
 
         //acquisition mutexes to ensure multiple threads dont acquire a single object
         std::mutex graphicsFenceAcqMut{};

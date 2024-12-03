@@ -28,28 +28,46 @@ namespace EWE {
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = eDSL->GetDescriptorSetLayout();
 
-		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &PL_2d);
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &PL_array);
+
+		pushConstantRange.size = sizeof(glm::vec4);
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &PL_single);
+
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
 		EWEPipeline::EnableAlphaBlending(pipelineConfig);
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexUI>();
 		pipelineConfig.attributeDescriptions = VertexUI::GetAttributeDescriptions();
-		pipelineConfig.pipelineLayout = PL_2d;
+		pipelineConfig.pipelineLayout = PL_array;
 
 		VkPipelineCacheCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 		EWE_VK(vkCreatePipelineCache, VK::Object->vkDevice, &createInfo, nullptr, &cache);
 
 		pipelineConfig.cache = cache;
+		{
+			const std::string vertString = "texture2D_array.vert.spv";
+			const std::string fragString = "texture2D_array.frag.spv";
+#if EWE_DEBUG
+			printf("before constructing with ui shaders - %s - %s\n", vertString.c_str(), fragString.c_str());
+#endif
+			pipe_array = Construct<EWEPipeline>({ vertString, fragString, pipelineConfig });
+		}
+		pipelineConfig.pipelineLayout = PL_single;
+		pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+		{
+			const std::string vertString = "texture2d_singular.vert.spv";
+			const std::string fragString = "texture2d_singular.frag.spv";
+			pipe_single = Construct<EWEPipeline>({ vertString, fragString, pipelineConfig });
+		}
 
-		std::string vertString = "UI.vert.spv";
-		std::string fragString = "UI.frag.spv";
-		printf("before constructing with ui shaders\n");
-		pipe2d = Construct<EWEPipeline>({ vertString, fragString, pipelineConfig });
+
+#if EWE_DEBUG
 		printf("after constructing with UI shaders\n");
+#endif
 #if DEBUG_NAMING
-		pipe2d->SetDebugName("UI 2d pipeline");
-		DebugNaming::SetObjectName(PL_2d, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "2d pipe layout");
+		pipe_array->SetDebugName("UI 2d pipeline");
+		DebugNaming::SetObjectName(PL_array, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "2d pipe layout");
 #endif
 		CreateDefaultDesc();
 
@@ -77,19 +95,24 @@ namespace EWE {
 	void Dimension2::Destruct() {
 		EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, dimension2Ptr->cache, nullptr);
 
-		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, dimension2Ptr->PL_2d, nullptr);
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, dimension2Ptr->PL_array, nullptr);
 		Deconstruct(dimension2Ptr->eDSL);
 		Deconstruct(dimension2Ptr->model2D);
-		Deconstruct(dimension2Ptr->pipe2d);
+		Deconstruct(dimension2Ptr->pipe_array);
 		Deconstruct(dimension2Ptr);
 	}
 
-	void Dimension2::Bind2D() {
+	void Dimension2::BindArrayPipeline() {
 #if RENDER_DEBUG
 		printf("binding 2d pipeline in dimension 2 \n");
 #endif
 
-		dimension2Ptr->pipe2d->Bind();
+		dimension2Ptr->pipe_array->Bind();
+		dimension2Ptr->model2D->Bind();
+		dimension2Ptr->bindedTexture = IMAGE_INVALID;
+	}
+	void Dimension2::BindSingularPipeline() {
+		dimension2Ptr->pipe_single->Bind();
 		dimension2Ptr->model2D->Bind();
 		dimension2Ptr->bindedTexture = IMAGE_INVALID;
 	}
@@ -103,12 +126,22 @@ namespace EWE {
 		DebugNaming::SetObjectName(defaultDesc, VK_OBJECT_TYPE_DESCRIPTOR_SET, "ui array desc");
 #endif
 	}
+
 	void Dimension2::BindDefaultDesc() {
 		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			dimension2Ptr->PL_2d,
+			dimension2Ptr->PL_array,
 			0, 1,
 			&dimension2Ptr->defaultDesc,
+			0, nullptr
+		);
+	}
+	void Dimension2::BindDescriptor(VkDescriptorSet desc) {
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			dimension2Ptr->PL_single,
+			0, 1,
+			&desc,
 			0, nullptr
 		);
 	}
@@ -144,7 +177,12 @@ namespace EWE {
 		//possibly do a check here, to ensure the pipeline and descriptors are properly binded
 		//thats really just a feature to check bad programming, dont rely on the programmer being bad. (easy enough to debug)
 
-		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_2d, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_array, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+		dimension2Ptr->model2D->Draw();
+	}
+
+	void Dimension2::PushAndDraw(void* ptr) {
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_single, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(glm::vec4), ptr);
 		dimension2Ptr->model2D->Draw();
 	}
 }

@@ -3,7 +3,7 @@
 namespace EWE {
 	MenuManager* MenuManager::menuManagerPtr = nullptr;
 
-	MenuManager::MenuManager(float screenWidth, float screenHeight, GLFWwindow* windowPtr, TextOverlay* textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
+	MenuManager::MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ VK::Object->screenWidth }, screenHeight{ VK::Object->screenHeight } {
 		assert(menuManagerPtr == nullptr && "created two menu managers?");
 #if EWE_DEBUG
 		printf("beginning menu manager construction\n");
@@ -67,14 +67,14 @@ namespace EWE {
 			//return;
 		//}
 
-		if ((button == GLFW_MOUSE_BUTTON_1) && (action == GLFW_PRESS)) {
+		if ((menuManagerPtr->isActive) && (button == GLFW_MOUSE_BUTTON_1) && (action == GLFW_PRESS)) {
 			double xpos = 0;
 			double ypos = 0;
 			glfwGetCursorPos(window, &xpos, &ypos);
 			printf("%.0f, %.0f  ~ mouse coords \n", xpos, ypos);
 			//menuManagerPtr->lastClicked = menuManagerPtr->anythingClicked(xpos, ypos);
 			//printf("last clicked pair - %d:%d \n", menuManagerPtr->lastClicked.first, menuManagerPtr->lastClicked.second);
-
+			
 			menuManagerPtr->menuModules.at(menuManagerPtr->currentMenuState)->processClick(xpos, ypos);
 			 
 			if (MenuModule::clickReturns.size() > 0) {

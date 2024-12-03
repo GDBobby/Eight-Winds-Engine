@@ -4,10 +4,6 @@
 #include "EWEngine/Data/EngineDataTypes.h"
 #include "EWEngine/Data/CommandCallbacks.h"
 
-#define TRANSFER_COMMAND_DEPTH_MAXIMUM 10
-
-#define SYNC_QUEUES false
-
 namespace EWE {
 
 	namespace TransferCommandManager {

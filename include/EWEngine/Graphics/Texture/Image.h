@@ -27,7 +27,7 @@ namespace EWE {
 		VkDeviceMemory memory;
 #endif
 		VkImageView imageView;
-		VkSampler sampler;
+		VkSampler sampler{ VK_NULL_HANDLE };
 		uint8_t mipLevels{ 1 };
 		uint8_t arrayLayers{ 1 };
 		VkDescriptorImageInfo descriptorImageInfo;

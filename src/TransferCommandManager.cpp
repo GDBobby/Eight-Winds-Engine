@@ -32,7 +32,9 @@ namespace EWE {
 
 
 		void AddCommand(CommandBuffer& cmdBuf) {
+			VK::Object->poolMutex[Queue::transfer].lock();
 			EWE_VK(vkEndCommandBuffer, cmdBuf);
+			VK::Object->poolMutex[Queue::transfer].unlock();
 			callbackMutex.lock();
 
 			commandCallbacks.commands.push_back(&cmdBuf);

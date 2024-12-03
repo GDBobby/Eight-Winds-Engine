@@ -21,8 +21,12 @@ namespace EWE {
 		ImageInfo imageInfo;
 		uint8_t usageCount;
 		bool zeroUsageDelete;
-		ImageTracker(std::string const& path, bool mipmap, bool zeroUsageDelete) : usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
-			Image::CreateImage(&imageInfo, path, mipmap);
+		ImageTracker(std::string const& path, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete) : usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
+			Image::CreateImage(&imageInfo, path, mipmap, whichQueue);
+		}
+		ImageTracker(std::string const& path, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete) : usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
+			imageInfo.sampler = sampler;
+			Image::CreateImage(&imageInfo, path, mipmap, whichQueue);
 		}
 		ImageTracker(ImageInfo& imageInfo, bool zeroUsageDelete) : imageInfo{ imageInfo }, usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
 		}
@@ -44,14 +48,13 @@ namespace EWE {
 		
 		//ImageInfo* skybox_image;
 		//ImageInfo* UI_image;
-#if EWE_DEBUG
 		ImageID currentImageCount{ 0 };
-#endif
 
 		friend class Material_Image;
 
 		static Image_Manager* imgMgrPtr;
-		static ImageID ConstructImageTracker(std::string const& imagePath, bool mipmap, bool zeroUsageDelete = false);
+		static ImageID ConstructImageTracker(std::string const& imagePath, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false);
+		static ImageID ConstructImageTracker(std::string const& imagePath, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false);
 		static EWEDescriptorSetLayout* GetSimpleTextureDSL(VkShaderStageFlags stageFlags);
 
 	public:
@@ -65,16 +68,25 @@ namespace EWE {
 
 		Image_Manager();
 
-		static ImageID GetCreateImageID(std::string const& imagePath, bool mipmap, bool zeroUsageDelete = false) {
+		static ImageID GetCreateImageID(std::string const& imagePath, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false) {
 			auto findRet = imgMgrPtr->imageStringToIDMap.find(imagePath);
 			if (findRet == imgMgrPtr->imageStringToIDMap.end()) {
-				return ConstructImageTracker(imagePath, mipmap, zeroUsageDelete);
+				return ConstructImageTracker(imagePath, mipmap, whichQueue, zeroUsageDelete);
 			}
 			else {
 				return findRet->second;
 			}
 		}
-		static VkDescriptorSet CreateSimpleTexture(std::string const& imagePath, bool mipMap, VkShaderStageFlags stageFlags, bool zeroUsageDelete = false);
+		static ImageID GetCreateImageID(std::string const& imagePath, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false) {
+			auto findRet = imgMgrPtr->imageStringToIDMap.find(imagePath);
+			if (findRet == imgMgrPtr->imageStringToIDMap.end()) {
+				return ConstructImageTracker(imagePath, sampler, mipmap, whichQueue, zeroUsageDelete);
+			}
+			else {
+				return findRet->second;
+			}
+		}
+		static VkDescriptorSet CreateSimpleTexture(std::string const& imagePath, bool mipMap, Queue::Enum whichQueue, VkShaderStageFlags stageFlags, bool zeroUsageDelete = false);
 		static VkDescriptorSet CreateSimpleTexture(VkDescriptorImageInfo* imageInfo, VkShaderStageFlags stageFlags, VkImageLayout waitOnLayout);
 
 		static VkDescriptorImageInfo* GetDescriptorImageInfo(ImageID imgID) {

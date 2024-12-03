@@ -114,11 +114,20 @@ namespace EWE {
     }
 
 
-    ImageID Image_Manager::ConstructImageTracker(std::string const& path, bool mipmap, bool zeroUsageDelete) {
+    ImageID Image_Manager::ConstructImageTracker(std::string const& path, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete) {
         //ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(imgMgrPtr->imageTrackerBucket.GetDataChunk());
 
         //new(imageTracker) ImageTracker(path, mipmap, zeroUsageDelete);
-        ImageTracker* imageTracker = Construct<ImageTracker>({ path, mipmap, zeroUsageDelete });
+        ImageTracker* imageTracker = Construct<ImageTracker>({ path, mipmap, whichQueue, zeroUsageDelete });
+
+        imgMgrPtr->imageTrackerIDMap.try_emplace(imgMgrPtr->currentImageCount, imageTracker);
+        return imgMgrPtr->currentImageCount++;
+    }
+    ImageID Image_Manager::ConstructImageTracker(std::string const& path, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete) {
+        //ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(imgMgrPtr->imageTrackerBucket.GetDataChunk());
+
+        //new(imageTracker) ImageTracker(path, mipmap, zeroUsageDelete);
+        ImageTracker* imageTracker = Construct<ImageTracker>({ path, sampler, mipmap, whichQueue, zeroUsageDelete });
 
         imgMgrPtr->imageTrackerIDMap.try_emplace(imgMgrPtr->currentImageCount, imageTracker);
         return imgMgrPtr->currentImageCount++;
@@ -126,7 +135,7 @@ namespace EWE {
     ImageID Image_Manager::ConstructImageTracker(std::string const& path, ImageInfo& imageInfo, bool zeroUsageDelete) {
         //ImageTracker* imageTracker = reinterpret_cast<ImageTracker*>(imgMgrPtr->imageTrackerBucket.GetDataChunk());
         //new(imageTracker) ImageTracker(imageInfo, zeroUsageDelete);
-        ImageTracker* imageTracker = Construct<ImageTracker>({imageInfo, zeroUsageDelete });
+        ImageTracker* imageTracker = Construct<ImageTracker>({ imageInfo, zeroUsageDelete });
 
         imgMgrPtr->imageTrackerIDMap.try_emplace(imgMgrPtr->currentImageCount, imageTracker);
         return imgMgrPtr->currentImageCount++;
@@ -234,10 +243,10 @@ namespace EWE {
         return simpleTextureDSL;
     }
 
-    VkDescriptorSet Image_Manager::CreateSimpleTexture(std::string const& imagePath, bool mipMap, VkShaderStageFlags stageFlags, bool zeroUsageDelete) {
+    VkDescriptorSet Image_Manager::CreateSimpleTexture(std::string const& imagePath, bool mipMap, Queue::Enum whichQueue, VkShaderStageFlags stageFlags, bool zeroUsageDelete) {
         assert(false && "this needs to be fixed up, it's not waiting for the transfer to graphics transition");
 
-        ImageID imgID = GetCreateImageID(imagePath, mipMap, zeroUsageDelete);
+        ImageID imgID = GetCreateImageID(imagePath, mipMap, whichQueue, zeroUsageDelete);
 
         EWEDescriptorWriter descWriter{ GetSimpleTextureDSL(stageFlags), DescriptorPool_Global };
         descWriter.WriteImage(0, GetDescriptorImageInfo(imgID));
