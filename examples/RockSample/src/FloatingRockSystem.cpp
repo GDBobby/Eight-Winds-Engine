@@ -5,15 +5,14 @@
 
 namespace EWE {
 	static constexpr uint32_t rock_count = 32 * 32;
-#pragma pack(1)
+#pragma pack(push, 1)
 	struct RockData {
 		float scale;
 		float azimuthalRotation;
 		float radius;
 		float speed;
-		//float trackRatio;
 	};
-#pragma pop
+#pragma pack(pop)
 
 	static void InitRockData(std::vector<RockData>& rockData, std::default_random_engine& randomGen) {
 
