@@ -183,7 +183,7 @@ namespace EWE{
                 imageInfos{ std::move(imageInfos) }
             {}
         };
-        std::mutex graphicsAsyncMut{};
         std::vector<GraphicsSubmitData> graphicsSTCGroup{};
+        std::mutex graphicsAsyncMut{};
     };
 } //namespace EWE

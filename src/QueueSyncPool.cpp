@@ -1,7 +1,7 @@
 #include "EWEngine/Graphics/QueueSyncPool.h"
 
+#include "EWEngine/Data/EWE_Memory.h"
 #include "EWEngine/Systems/ThreadPool.h"
-
 #include "EWEngine/Graphics/Texture/ImageFunctions.h"
 
 namespace EWE {
@@ -359,6 +359,7 @@ namespace EWE {
         for (auto& callback : callbacks) {
             for (auto& sb : callback.stagingBuffers) {
                 sb->Free();
+                Deconstruct(sb);
             }
         }
         if ((callbacks[0].images.size() > 0) || (callbacks[0].pipeBarriers.size() > 0)) {

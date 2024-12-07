@@ -242,7 +242,6 @@ namespace EWE {
 		* Might be exceptionally rare for this function to attempt the transferSubmissionMut lock before SubmitTransferBuffer
 		* I'll worry about it when it becomes an issue, or I'll just fix it at some point later idk
 		*/
-
 		TransferCommandManager::FinalizeCommand();
 		if(transferSubmissionMut.try_lock()){
 				SubmitTransferBuffers();
@@ -251,7 +250,7 @@ namespace EWE {
 	}
 
 	void SyncHub::SubmitTransferBuffers() {
-
+		assert(!TransferCommandManager::Empty());
 		while (!TransferCommandManager::Empty()) {
 
 			TransferFence& transferFence = qSyncPool.GetTransferFence();
