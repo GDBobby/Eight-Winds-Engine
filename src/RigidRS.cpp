@@ -17,7 +17,7 @@ namespace EWE {
             for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
                 EWEDescriptorWriter descWriter{ eDSL, DescriptorPool_Global };
                 DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
-                descWriter.WriteImage(2, Image_Manager::GetDescriptorImageInfo(materialInfo.imageID));
+                descWriter.WriteImage(materialInfo.imageID);
                 ret[i] = descWriter.Build();
             }
 #if DEBUG_NAMING
@@ -35,17 +35,17 @@ namespace EWE {
         buffer{ entityCount, computedTransforms, eDSL, imageID },
         descriptorSets{
                 EWEDescriptorWriter(eDSL, DescriptorPool_Global)
-                .WriteBuffer(0, DescriptorHandler::GetCameraDescriptorBufferInfo(0))
-                .WriteBuffer(1, DescriptorHandler::GetLightingDescriptorBufferInfo(0))
-                .WriteBuffer(2, buffer.GetDescriptorBufferInfo(0))
-                .WriteImage(3, Image_Manager::GetDescriptorImageInfo(imageID))
+                .WriteBuffer(DescriptorHandler::GetCameraDescriptorBufferInfo(0))
+                .WriteBuffer(DescriptorHandler::GetLightingDescriptorBufferInfo(0))
+                .WriteBuffer(buffer.GetDescriptorBufferInfo(0))
+                .WriteImage(imageID)
                 .Build()
             ,
                 EWEDescriptorWriter(eDSL, DescriptorPool_Global)
-                .WriteBuffer(0, DescriptorHandler::GetCameraDescriptorBufferInfo(1))
-                .WriteBuffer(1, DescriptorHandler::GetLightingDescriptorBufferInfo(1))
-                .WriteBuffer(2, buffer.GetDescriptorBufferInfo(1))
-                .WriteImage(3, Image_Manager::GetDescriptorImageInfo(imageID))
+                .WriteBuffer(DescriptorHandler::GetCameraDescriptorBufferInfo(1))
+                .WriteBuffer(DescriptorHandler::GetLightingDescriptorBufferInfo(1))
+                .WriteBuffer(buffer.GetDescriptorBufferInfo(1))
+                .WriteImage(imageID)
                 .Build()
 
         }
@@ -84,10 +84,7 @@ namespace EWE {
         if (instancedInfo.size() == 0) { return; }
         pipe->BindPipeline();
 
-        //pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
         for (auto const& instanceInfo : instancedInfo) {
-           // pipe->BindDescriptor(1, instanceInfo.buffer.GetDescriptor());
-            //pipe->BindTextureDescriptor(2, instanceInfo.texture);
             pipe->BindDescriptor(0, &instanceInfo.descriptorSets[VK::Object->frameIndex]);
             const uint32_t instanceCount = instanceInfo.buffer.GetCurrentEntityCount();
             if (instanceCount == 0) {
@@ -288,10 +285,8 @@ namespace EWE {
             }
 #if EWE_DEBUG
             assert(false && "failed to find buffer");
-#else
-            //unreachable
-            __assume(false);
 #endif
+            __assume(false);
         }
 
         std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr) {
@@ -304,10 +299,8 @@ namespace EWE {
             }
 #if EWE_DEBUG
             assert(false && "failed to find buffer");
-#else
-            //unreachable
-            __assume(false);
 #endif
+            __assume(false);
         }
         std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr) {
 #if EWE_DEBUG
@@ -321,10 +314,8 @@ namespace EWE {
             }
 #if EWE_DEBUG
             assert(false && "failed to find buffer");
-#else
-            //unreachable
-            __assume(false);
 #endif
+            __assume(false);
         }
     }//namespace RigidRenderingSystem
 } //namespace EWE

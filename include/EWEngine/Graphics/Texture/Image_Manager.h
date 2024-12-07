@@ -38,6 +38,7 @@ namespace EWE {
 		//MemoryTypeBucket<1024> imageTrackerBucket;
 
 	protected:
+		std::mutex imageMutex{};
 
 		std::vector<ImageID> sceneIDs; //keeping track so i can remove them later
 
@@ -68,31 +69,22 @@ namespace EWE {
 
 		Image_Manager();
 
-		static ImageID GetCreateImageID(std::string const& imagePath, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false) {
-			auto findRet = imgMgrPtr->imageStringToIDMap.find(imagePath);
-			if (findRet == imgMgrPtr->imageStringToIDMap.end()) {
-				return ConstructImageTracker(imagePath, mipmap, whichQueue, zeroUsageDelete);
-			}
-			else {
-				return findRet->second;
-			}
-		}
-		static ImageID GetCreateImageID(std::string const& imagePath, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false) {
-			auto findRet = imgMgrPtr->imageStringToIDMap.find(imagePath);
-			if (findRet == imgMgrPtr->imageStringToIDMap.end()) {
-				return ConstructImageTracker(imagePath, sampler, mipmap, whichQueue, zeroUsageDelete);
-			}
-			else {
-				return findRet->second;
-			}
-		}
+		static ImageID GetCreateImageID(std::string const& imagePath, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false);
+		static ImageID GetCreateImageID(std::string const& imagePath, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false);
+
+
 		static VkDescriptorSet CreateSimpleTexture(std::string const& imagePath, bool mipMap, Queue::Enum whichQueue, VkShaderStageFlags stageFlags, bool zeroUsageDelete = false);
-		static VkDescriptorSet CreateSimpleTexture(VkDescriptorImageInfo* imageInfo, VkShaderStageFlags stageFlags, VkImageLayout waitOnLayout);
+#if DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION
+		static VkDescriptorSet CreateSimpleTexture(ImageID imageID, VkShaderStageFlags stageFlags);
+#else
+		static VkDescriptorSet CreateSimpleTexture(VkDescriptorImageInfo* imageInfo, VkShaderStageFlags stageFlags);
+#endif
 
 		static VkDescriptorImageInfo* GetDescriptorImageInfo(ImageID imgID) {
 #if EWE_DEBUG
 			assert(imgID != IMAGE_INVALID);
 #endif
+			std::unique_lock<std::mutex> uniq_lock(imgMgrPtr->imageMutex);
 			return imgMgrPtr->imageTrackerIDMap.at(imgID)->imageInfo.GetDescriptorImageInfo();
 		}
 		static ImageID FindByPath(std::string const& path);
@@ -105,7 +97,7 @@ namespace EWE {
 
 		static Image_Manager* GetImageManagerPtr() { return imgMgrPtr; }
 		static ImageID CreateUIImage();
-		static ImageID CreateImageArray(std::vector<PixelPeek> const& pixelPeeks);
+		static ImageID CreateImageArray(std::vector<PixelPeek> const& pixelPeeks, bool mipmapping, Queue::Enum whichQueue);
 		//static void AddImageInfo(std::string const& path, ImageInfo& imageTemp, bool global);
 	};
 }

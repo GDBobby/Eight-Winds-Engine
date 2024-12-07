@@ -26,7 +26,6 @@ namespace EWE {
 
 		TransferCommandCallbacks PrepareSubmit(){
 			std::lock_guard<std::mutex> guard{ callbackMutex };
-
 			return commandCallbacks;
 		}
 
@@ -44,9 +43,6 @@ namespace EWE {
 		}
 		void AddPropertyToCommand(PipelineBarrier& pipeBarrier) {
 			commandCallbacks.pipeBarriers.push_back(std::move(pipeBarrier));
-		}
-		void AddPropertyToCommand(VkImageLayout* imageLayout) {
-			commandCallbacks.imageLayouts.push_back(imageLayout);
 		}
 		void AddPropertyToCommand(ImageInfo* imageInfo) {
 			commandCallbacks.images.push_back(imageInfo);

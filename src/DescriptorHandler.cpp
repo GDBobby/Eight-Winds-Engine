@@ -3,9 +3,6 @@
 #include <stdexcept>
 
 namespace EWE {
-
-
-
     EWEDescriptorSetLayout* globalDSL;
     std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> globalDescSet;
 
@@ -65,11 +62,11 @@ namespace EWE {
         }
 
         void AddCameraDataToDescriptor(EWEDescriptorWriter& descWriter, uint8_t whichFrame) {
-            descWriter.WriteBuffer(0, globalBuffer[whichFrame]->DescriptorInfo());
+            descWriter.WriteBuffer(globalBuffer[whichFrame]->DescriptorInfo());
         }
         void AddGlobalsToDescriptor(EWEDescriptorWriter& descWriter, uint8_t whichFrame) {
-            descWriter.WriteBuffer(0, globalBuffer[whichFrame]->DescriptorInfo());
-            descWriter.WriteBuffer(1, lightBuffer[whichFrame]->DescriptorInfo());
+            descWriter.WriteBuffer(globalBuffer[whichFrame]->DescriptorInfo());
+            descWriter.WriteBuffer(lightBuffer[whichFrame]->DescriptorInfo());
         }
 
         VkDescriptorSet* GetGlobalDescSet() {

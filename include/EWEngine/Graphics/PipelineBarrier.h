@@ -54,14 +54,4 @@ namespace EWE {
 		void TransferImageStage(CommandBuffer& cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImage const& image);
 		void TransferImageStage(CommandBuffer& cmdBuf, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImage> const& images);
 	} //namespace Barrier
-
-	//indirectly tied to barriers
-	struct MipParamPack {
-		VkImage image;
-		uint8_t mipLevels;
-		uint32_t width;
-		uint32_t height;
-		//add depth and array layers here later if necessary
-		MipParamPack(VkImage image, uint8_t mipLevels, uint32_t width, uint32_t height) : image{ image }, mipLevels{ mipLevels }, width{ width }, height{ height } {}
-	};
 } //namespace EWE

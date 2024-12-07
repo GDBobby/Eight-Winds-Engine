@@ -15,7 +15,7 @@ namespace EWE {
 		};
 
 	public:
-		static MaterialInfo CreateMaterialImage(std::string texPath, bool global);
+		static MaterialInfo CreateMaterialImage(std::string texPath, bool mipmapping, bool global);
 	protected:
 
 	};

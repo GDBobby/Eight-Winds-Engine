@@ -70,11 +70,9 @@ namespace EWE {
 #endif
 
 #if IMAGE_DEBUGGING
-            Image::CreateImageCommands(cubeImage, imageCreateInfo, stagingBuffer, queue, false, pixelPeek[0].debugName);
-#else
-//            cubeImage.CreateImageCommands(imageCreateInfo, stagingBuffer, queue, false);
-            Image::CreateImageCommands(cubeImage, imageCreateInfo, stagingBuffer, queue, false);
+            cubeImage.imageName = pixelPeek[0].debugName;
 #endif
+            Image::CreateImageCommands(cubeImage, imageCreateInfo, stagingBuffer, queue, false);
         }
 
         void CreateCubeImageView(ImageInfo& cubeImage) {
@@ -155,6 +153,15 @@ namespace EWE {
             
             Image_Manager::ImageReturn cubeTracker = Image_Manager::ConstructEmptyImageTracker(texPath);
             ImageInfo& cubeImage = cubeTracker.imgTracker->imageInfo;
+
+            if (queue == Queue::graphics) {
+                cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                cubeImage.destinationImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+            else {
+                cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                cubeImage.destinationImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
 
             CreateCubeImage(cubeImage, pixelPeeks, queue);
             CreateCubeImageView(cubeImage);

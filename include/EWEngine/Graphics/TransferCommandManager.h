@@ -13,7 +13,6 @@ namespace EWE {
 		void AddCommand(CommandBuffer& cmdBuf);
 		void AddPropertyToCommand(PipelineBarrier& pipeBarrier);
 		void AddPropertyToCommand(StagingBuffer* stagingBuffer);
-		void AddPropertyToCommand(VkImageLayout* imageLayout);
 		void AddPropertyToCommand(ImageInfo* imageInfo);
 		void FinalizeCommand();
 		//this requires the pointer to be deleted

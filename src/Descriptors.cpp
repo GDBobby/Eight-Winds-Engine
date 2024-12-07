@@ -1,5 +1,7 @@
 #include "EWEngine/Graphics/Descriptors.h"
 
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
+
 // std
 #include <cassert>
 #include <stdexcept>
@@ -243,12 +245,12 @@ namespace EWE {
         : setLayout{ setLayout }, pool{ EWEDescriptorPool::pools.at(poolID) }
     {}
 
-    EWEDescriptorWriter& EWEDescriptorWriter::WriteBuffer( uint32_t binding, VkDescriptorBufferInfo* bufferInfo) {
+    EWEDescriptorWriter& EWEDescriptorWriter::WriteBuffer(VkDescriptorBufferInfo* bufferInfo) {
 #if EWE_DEBUG
-        assert((setLayout->bindings.size() > binding) && "Layout does not contain specified binding");
+        assert((setLayout->bindings.size() > writes.size()) && "Layout does not contain specified binding");
 #endif
 
-        auto& bindingDescription = setLayout->bindings[binding];
+        auto& bindingDescription = setLayout->bindings[writes.size()];
 
 #if EWE_DEBUG
         assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
@@ -258,34 +260,56 @@ namespace EWE {
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.pNext = nullptr;
         write.descriptorType = bindingDescription.descriptorType;
-        write.dstBinding = binding;
+        write.dstBinding = writes.size();
         write.pBufferInfo = bufferInfo;
         write.descriptorCount = 1;
 
         writes.push_back(write);
         return *this;
     }
-
-    EWEDescriptorWriter& EWEDescriptorWriter::WriteImage(uint32_t binding, VkDescriptorImageInfo* imageInfo) {
+    EWEDescriptorWriter& EWEDescriptorWriter::WriteImage(VkDescriptorImageInfo* imgInfo) {
 #if EWE_DEBUG
-        assert((setLayout->bindings.size() > binding) && "Layout does not contain specified binding");
+        assert((setLayout->bindings.size() > writes.size()) && "Layout does not contain specified binding");
 #endif
-
-        auto& bindingDescription = setLayout->bindings[binding];
-
-        assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
-
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.pNext = nullptr;
+        auto& bindingDescription = setLayout->bindings[writes.size()];
         write.descriptorType = bindingDescription.descriptorType;
-        write.dstBinding = binding;
-        write.pImageInfo = imageInfo;
+        write.dstBinding = writes.size();
+        write.pImageInfo = imgInfo;
         write.descriptorCount = 1;
         write.dstArrayElement = 0;
 
         writes.push_back(write);
         return *this;
+    }
+
+    EWEDescriptorWriter& EWEDescriptorWriter::WriteImage(ImageID imageID) {
+#if EWE_DEBUG
+        assert((setLayout->bindings.size() > writes.size()) && "Layout does not contain specified binding");
+#endif
+
+        VkDescriptorImageInfo* imgInfo = Image_Manager::GetDescriptorImageInfo(imageID);
+#if DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION
+        auto& bindingDescription = setLayout->bindings[writes.size()];
+
+        assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
+
+        if (bindingDescription.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+
+            while (imgInfo->imageLayout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+
+                //microsleep to give up thread control to other system processes
+                std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+            }
+        }
+        else {
+            assert(false && "descriptor type not yet supported");
+        }
+#endif
+        return WriteImage(imgInfo);
+
     }
 
     VkDescriptorSet EWEDescriptorWriter::Build() {

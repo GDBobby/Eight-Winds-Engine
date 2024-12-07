@@ -12,7 +12,7 @@ namespace EWE {
     namespace UI_Texture {
 
         //namespace internal {
-        void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek, Queue::Enum queue) {
+        void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek, bool mipmapping, Queue::Enum queue) {
             std::size_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
             uiImageInfo.arrayLayers = pixelPeek.size();
             const VkDeviceSize imageSize = layerSize * uiImageInfo.arrayLayers;
@@ -33,7 +33,9 @@ namespace EWE {
             EWE_VK(vkMapMemory, VK::Object->vkDevice, stagingBuffer->memory, 0, imageSize, 0, &data);
 #endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
-            uiImageInfo.mipLevels = 1;
+            if (MIPMAP_ENABLED && mipmapping) {
+                uiImageInfo.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(pixelPeek[0].width, pixelPeek[0].height))) + 1);
+            }
 
             for (uint16_t i = 0; i < pixelPeek.size(); i++) {
                 memcpy(reinterpret_cast<void*>(memAddress), pixelPeek[i].pixels, layerSize); //static_cast<void*> unnecessary>?
@@ -59,7 +61,10 @@ namespace EWE {
             imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
             imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
             imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            if (MIPMAP_ENABLED && mipmapping) {
+                imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            }
             imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
             imageCreateInfo.flags = 0;// VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
@@ -72,10 +77,9 @@ namespace EWE {
             DebugNaming::SetObjectName(uiImageInfo.image, VK_OBJECT_TYPE_IMAGE, pixelPeek[0].debugName.c_str());
 #endif
 #if IMAGE_DEBUGGING
-            Image::CreateImageCommands(uiImageInfo, imageCreateInfo, stagingBuffer, queue, false, pixelPeek[0].debugName);
-#else
-            Image::CreateImageCommands(uiImageInfo, imageCreateInfo, stagingBuffer, queue, false);
+            uiImageInfo.imageName = pixelPeek[0].debugName;
 #endif
+            Image::CreateImageCommands(uiImageInfo, imageCreateInfo, stagingBuffer, queue, mipmapping);
         }
 
         void CreateUIImageView(ImageInfo& uiImageInfo) {

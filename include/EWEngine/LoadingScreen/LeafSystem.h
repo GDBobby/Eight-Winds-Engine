@@ -62,8 +62,6 @@ namespace EWE {
 
 		void Render();
 
-		EWEModel* leafModel;
-		ImageID leafTextureID = 0;
 
 	protected:
 		void CreatePipeline() final;
@@ -98,7 +96,9 @@ namespace EWE {
 		std::array<float*, MAX_FRAMES_IN_FLIGHT> leafBufferData{};
 		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> leafBuffer{};
 
-		ImageInfo leafImageInfo{};
+		EWEModel* leafModel;
+		//ImageInfo leafImageInfo;
+		ImageID leafImgID{IMAGE_INVALID};
 		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> leafDescriptor{};
 
 		VkShaderModule vertexShaderModule{VK_NULL_HANDLE};

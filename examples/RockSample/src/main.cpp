@@ -11,6 +11,7 @@ int main() {
 	EWE::ThreadPool::Construct();
 	{
 		EWE::EightWindsEngine ewEngine{ "Eight Winds Engine Sample" };
+
 		EWE::EWESample* eweSample = nullptr;
 		auto begin = std::chrono::high_resolution_clock::now();
 		auto loadPart2 = [&]() {
@@ -23,8 +24,9 @@ int main() {
 			while (!loadingThreadTracker.Finished()) {
 				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
 			}
+
 			ewEngine.EndEngineLoadScreen();
-			};
+		};
 		EWE::ThreadPool::EnqueueVoid(loadPart2);
 
 		//these threads are in a weird order

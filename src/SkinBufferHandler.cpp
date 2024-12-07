@@ -42,9 +42,9 @@ namespace EWE {
 		bone->SetName("Instanced skin buffer bone");
 #endif
 	}
-	void SkinBufferHandler::InnerBufferStruct::AddDescriptorBindings(EWEDescriptorWriter& descWriter, uint8_t& currentBinding) {
+	void SkinBufferHandler::InnerBufferStruct::AddDescriptorBindings(EWEDescriptorWriter& descWriter) {
 		//printf("building skin buffer \n");
-		descWriter.WriteBuffer(currentBinding++, bone->DescriptorInfo());
+		descWriter.WriteBuffer(bone->DescriptorInfo());
 	}
 	void SkinBufferHandler::InnerBufferStruct::Flush() {
 		if (updated) {
@@ -98,13 +98,13 @@ namespace EWE {
 		bone->SetName("Instanced skin buffer bone");
 #endif
 	}
-	void InstancedSkinBufferHandler::InnerBufferStruct::AddDescriptorBindings(uint16_t maxActorCount, EWEDescriptorWriter& descWriter, uint8_t& currentBinding) {
+	void InstancedSkinBufferHandler::InnerBufferStruct::AddDescriptorBindings(uint16_t maxActorCount, EWEDescriptorWriter& descWriter) {
 		//if (maxActorCount > 1000) {
 #if EWE_DEBUG
 		//printf("building instanced skin buffer \n");
 #endif
-		descWriter.WriteBuffer(currentBinding++, model->DescriptorInfo());
-		descWriter.WriteBuffer(currentBinding++, bone->DescriptorInfo());
+		descWriter.WriteBuffer(model->DescriptorInfo());
+		descWriter.WriteBuffer(bone->DescriptorInfo());
 	}
 
 	void InstancedSkinBufferHandler::InnerBufferStruct::Flush() {

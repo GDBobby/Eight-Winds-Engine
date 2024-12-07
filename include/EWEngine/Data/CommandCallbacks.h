@@ -9,8 +9,8 @@
 namespace EWE {
 
 
-    struct SemaphoreData {
-        VkSemaphore semaphore{ VK_NULL_HANDLE };
+    struct Semaphore {
+        VkSemaphore vkSemaphore{ VK_NULL_HANDLE };
 #if SEMAPHORE_TRACKING
         struct Tracking{
             enum State {
@@ -50,10 +50,9 @@ namespace EWE {
         std::vector<StagingBuffer*> stagingBuffers;
         std::vector<PipelineBarrier> pipeBarriers;
         std::vector<ImageInfo*> images;
-        std::vector<VkImageLayout*> imageLayouts;
-        SemaphoreData* semaphoreData;
+        Semaphore* semaphore;
 
-        TransferCommandCallbacks() : commands{}, stagingBuffers{}, pipeBarriers{}, images{}, semaphoreData{ nullptr } {} //constructor
+        TransferCommandCallbacks() : commands{}, stagingBuffers{}, pipeBarriers{}, images{}, semaphore{ nullptr } {} //constructor
         TransferCommandCallbacks(TransferCommandCallbacks& copySource); //copy constructor
         TransferCommandCallbacks& operator=(TransferCommandCallbacks& copySource); //copy assignment
         TransferCommandCallbacks(TransferCommandCallbacks&& moveSource) noexcept;//move constructor

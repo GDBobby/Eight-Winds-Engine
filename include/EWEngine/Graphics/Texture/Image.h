@@ -33,6 +33,8 @@ namespace EWE {
 		VkDescriptorImageInfo descriptorImageInfo;
 		uint32_t width;
 		uint32_t height;
+
+		VkImageLayout destinationImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 #if IMAGE_DEBUGGING
 		std::string imageName{};
 #endif

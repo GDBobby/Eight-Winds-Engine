@@ -96,6 +96,7 @@ namespace EWE {
     */
 
     void Image_Manager::RemoveImage(ImageID imgID) {
+        std::unique_lock<std::mutex> uniq_lock(imgMgrPtr->imageMutex);
 #if EWE_DEBUG
         assert(imgMgrPtr->imageTrackerIDMap.contains(imgID));
 #endif
@@ -119,7 +120,7 @@ namespace EWE {
 
         //new(imageTracker) ImageTracker(path, mipmap, zeroUsageDelete);
         ImageTracker* imageTracker = Construct<ImageTracker>({ path, mipmap, whichQueue, zeroUsageDelete });
-
+        std::unique_lock<std::mutex> uniq_lock(imgMgrPtr->imageMutex);
         imgMgrPtr->imageTrackerIDMap.try_emplace(imgMgrPtr->currentImageCount, imageTracker);
         return imgMgrPtr->currentImageCount++;
     }
@@ -129,6 +130,7 @@ namespace EWE {
         //new(imageTracker) ImageTracker(path, mipmap, zeroUsageDelete);
         ImageTracker* imageTracker = Construct<ImageTracker>({ path, sampler, mipmap, whichQueue, zeroUsageDelete });
 
+        std::unique_lock<std::mutex> uniq_lock(imgMgrPtr->imageMutex);
         imgMgrPtr->imageTrackerIDMap.try_emplace(imgMgrPtr->currentImageCount, imageTracker);
         return imgMgrPtr->currentImageCount++;
     }
@@ -137,6 +139,7 @@ namespace EWE {
         //new(imageTracker) ImageTracker(imageInfo, zeroUsageDelete);
         ImageTracker* imageTracker = Construct<ImageTracker>({ imageInfo, zeroUsageDelete });
 
+        std::unique_lock<std::mutex> uniq_lock(imgMgrPtr->imageMutex);
         imgMgrPtr->imageTrackerIDMap.try_emplace(imgMgrPtr->currentImageCount, imageTracker);
         return imgMgrPtr->currentImageCount++;
     }
@@ -147,21 +150,32 @@ namespace EWE {
         //new(imageTracker) ImageTracker(zeroUsageDelete);
         ImageTracker* imageTracker = Construct<ImageTracker>({ zeroUsageDelete });
 
+        std::unique_lock<std::mutex> uniq_lock(imgMgrPtr->imageMutex);
         const ImageID tempID = imgMgrPtr->currentImageCount++;
-
         return ImageReturn{ tempID, imgMgrPtr->imageTrackerIDMap.try_emplace(tempID, imageTracker).first->second };
     }
 
 
-    ImageID Image_Manager::CreateImageArray(std::vector<PixelPeek> const& pixelPeeks) {
+    ImageID Image_Manager::CreateImageArray(std::vector<PixelPeek> const& pixelPeeks, bool mipmapping, Queue::Enum whichQueue) {
 
-        auto empRet = imgMgrPtr->imageTrackerIDMap.try_emplace(imgMgrPtr->currentImageCount, Construct<ImageTracker>({}));
-        ImageInfo* arrayImageInfo = &empRet.first->second->imageInfo;
+        ImageTracker* imageTracker = Construct<ImageTracker>({});
+        ImageInfo* arrayImageInfo = &imageTracker->imageInfo;
 #if EWE_DEBUG
         printf("before ui image\n");
 #endif
 
-        UI_Texture::CreateUIImage(*arrayImageInfo, pixelPeeks, Queue::transfer);
+        if (whichQueue == Queue::graphics) {
+            arrayImageInfo->descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            arrayImageInfo->destinationImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
+        else {
+            arrayImageInfo->descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            arrayImageInfo->destinationImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
+
+        arrayImageInfo->width = pixelPeeks[0].width;
+        arrayImageInfo->height = pixelPeeks[0].height;
+        UI_Texture::CreateUIImage(*arrayImageInfo, pixelPeeks, mipmapping, whichQueue);
 #if EWE_DEBUG
         printf("after ui image\n");
 #endif
@@ -170,13 +184,13 @@ namespace EWE {
 
         arrayImageInfo->descriptorImageInfo.sampler = arrayImageInfo->sampler;
         arrayImageInfo->descriptorImageInfo.imageView = arrayImageInfo->imageView;
-        arrayImageInfo->descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        //arrayImageInfo->descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-
-
-        //cubeVector.emplace_back(EWETexture(eweDevice, texPath, tType_cube));
-        //tmPtr->textureMap.emplace(tmPtr->currentImageCount, );
-        return imgMgrPtr->currentImageCount++;
+        std::unique_lock<std::mutex> uniq_lock(imgMgrPtr->imageMutex);
+        ImageID ret = imgMgrPtr->currentImageCount;
+        imgMgrPtr->imageTrackerIDMap.try_emplace(ret, imageTracker);
+        imgMgrPtr->currentImageCount++;
+        return ret;
         //return arrayImageInfo;
     }
     ImageID Image_Manager::CreateUIImage() {
@@ -202,25 +216,12 @@ namespace EWE {
             pixelPeeks.emplace_back(individualPath);
 
         }
-        return CreateImageArray(pixelPeeks);
+        return CreateImageArray(pixelPeeks, false, Queue::graphics);
         //GetimgMgrPtr()->UI_image = uiImageInfo;
     }
 
-//    void Image_Manager::AddImageInfo(std::string const& path, ImageInfo& imageTemp, bool global){
-//        Image_Manager* tmPtr = Image_Manager::GetImageManagerPtr();
-//
-//        ImageTracker* imageTracker;
-//
-//        std::string texPath{ TEXTURE_DIR };
-//        texPath += path;
-//
-//
-//#if EWE_DEBUG
-//        assert(!tmPtr->imageStringToIDMap.contains(path) && "image should not be constructed outside of the texture manager if it already exist");
-//#endif
-//        return Image_Manager::ConstructImageTracker(path, imageTemp, global);
-//    }
     ImageID Image_Manager::FindByPath(std::string const& path) {
+        std::unique_lock<std::mutex> uniq_lock(imgMgrPtr->imageMutex);
         auto foundImage = imgMgrPtr->imageStringToIDMap.find(path);
         if (foundImage == imgMgrPtr->imageStringToIDMap.end()) {
             return IMAGE_INVALID;
@@ -230,6 +231,7 @@ namespace EWE {
 
     EWEDescriptorSetLayout* Image_Manager::GetSimpleTextureDSL(VkShaderStageFlags stageFlags) {
         EWEDescriptorSetLayout* simpleTextureDSL;
+        std::unique_lock<std::mutex> uniq_lock(imgMgrPtr->imageMutex);
         auto findRet = imgMgrPtr->simpleTextureLayouts.find(stageFlags);
         if (findRet == imgMgrPtr->simpleTextureLayouts.end()) {
             EWEDescriptorSetLayout::Builder builder{};
@@ -249,17 +251,51 @@ namespace EWE {
         ImageID imgID = GetCreateImageID(imagePath, mipMap, whichQueue, zeroUsageDelete);
 
         EWEDescriptorWriter descWriter{ GetSimpleTextureDSL(stageFlags), DescriptorPool_Global };
+#if DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION
+        descWriter.WriteImage(imgID);
+#else
         descWriter.WriteImage(0, GetDescriptorImageInfo(imgID));
+#endif
         return descWriter.Build();
-
     }
 
-    VkDescriptorSet Image_Manager::CreateSimpleTexture(VkDescriptorImageInfo* imageInfo, VkShaderStageFlags stageFlags, VkImageLayout waitOnLayout) {
-
-        assert(imageInfo->imageLayout == waitOnLayout); //if using a compute simple stage, idk. i need to fix that later. crunched on time
+#if DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION
+    VkDescriptorSet Image_Manager::CreateSimpleTexture(ImageID imageID, VkShaderStageFlags stageFlags) {
+#else
+    VkDescriptorSet Image_Manager::CreateSimpleTexture(VkDescriptorImageInfo* imageInfo, VkShaderStageFlags stageFlags) {
+#endif
 
         EWEDescriptorWriter descWriter{ GetSimpleTextureDSL(stageFlags), DescriptorPool_Global };
+#if DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION
+        descWriter.WriteImage(imageID);
+#else
         descWriter.WriteImage(0, imageInfo);
+#endif
         return descWriter.Build();
+    }
+
+    ImageID Image_Manager::GetCreateImageID(std::string const& imagePath, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete) {
+        imgMgrPtr->imageMutex.lock();
+        auto findRet = imgMgrPtr->imageStringToIDMap.find(imagePath);
+        if (findRet == imgMgrPtr->imageStringToIDMap.end()) {
+            imgMgrPtr->imageMutex.unlock();
+            return ConstructImageTracker(imagePath, mipmap, whichQueue, zeroUsageDelete);
+        }
+        else {
+            imgMgrPtr->imageMutex.unlock();
+            return findRet->second;
+        }
+    }
+    ImageID Image_Manager::GetCreateImageID(std::string const& imagePath, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete) {
+        imgMgrPtr->imageMutex.lock();
+        auto findRet = imgMgrPtr->imageStringToIDMap.find(imagePath);
+        if (findRet == imgMgrPtr->imageStringToIDMap.end()) {
+            imgMgrPtr->imageMutex.unlock();
+            return ConstructImageTracker(imagePath, sampler, mipmap, whichQueue, zeroUsageDelete);
+        }
+        else {
+            imgMgrPtr->imageMutex.unlock();
+            return findRet->second;
+        }
     }
 }

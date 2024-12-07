@@ -54,7 +54,7 @@ namespace EWE {
 	}
 
 
-	FloatingRock::FloatingRock() :rockMaterial{ Material_Image::CreateMaterialImage("eye/", true) } {
+	FloatingRock::FloatingRock() :rockMaterial{ Material_Image::CreateMaterialImage("eye/", true, true) } {
 		//rockModel = EWEModel::CreateModelFromFile("rock1.obj", Queue::transfer);
 		rockMaterial.materialFlags |= MaterialF_instanced;
 
@@ -176,8 +176,8 @@ namespace EWE {
 		for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			EWEDescriptorWriter descWriter{ compDSL, DescriptorPool_Global };
 			DescriptorHandler::AddCameraDataToDescriptor(descWriter, i);
-			descWriter.WriteBuffer(1, rockBuffer->DescriptorInfo());
-			descWriter.WriteBuffer(2, transformBuffers[i]->DescriptorInfo());
+			descWriter.WriteBuffer(rockBuffer->DescriptorInfo());
+			descWriter.WriteBuffer(transformBuffers[i]->DescriptorInfo());
 			compDescriptorSet[i] = descWriter.Build();
 		}
 

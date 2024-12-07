@@ -138,7 +138,7 @@ namespace EWE {
             }
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNames[i];
-            returnPair = Material_Image::CreateMaterialImage(finalDir, globalTextures);
+            returnPair = Material_Image::CreateMaterialImage(finalDir, true, globalTextures);
             //printf("normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNames.push_back(returnPair);
@@ -150,7 +150,7 @@ namespace EWE {
             importData.meshNTNames[i] = importData.meshNTNames[i].substr(0, importData.meshNTNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNTNames[i];
-            Material_Image::CreateMaterialImage(finalDir, globalTextures);
+            Material_Image::CreateMaterialImage(finalDir, true, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTNames.push_back(returnPair);
@@ -165,7 +165,7 @@ namespace EWE {
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshSimpleNames[i];
             //printf("simple names final Dir : %s \n", finalDir.c_str());
-            Material_Image::CreateMaterialImage(finalDir, globalTextures);
+            Material_Image::CreateMaterialImage(finalDir, true, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshSimpleNames.push_back(returnPair);
@@ -177,7 +177,7 @@ namespace EWE {
             importData.meshNTSimpleNames[i] = importData.meshNTSimpleNames[i].substr(0, importData.meshNTSimpleNames[i].find_first_of("."));
             std::string finalDir = objectPath;
             finalDir += "/" + importData.meshNTSimpleNames[i];
-            Material_Image::CreateMaterialImage(finalDir, globalTextures);
+            Material_Image::CreateMaterialImage(finalDir, true, globalTextures);
             //printf("no normal map texture? - return pair.first, &8 - %d;%d \n", returnPair.first, returnPair.first & 8);
 
             textureTracker.meshNTSimpleNames.push_back(returnPair);

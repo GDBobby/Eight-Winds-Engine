@@ -124,8 +124,9 @@ namespace EWE {
         EWEDescriptorWriter(EWEDescriptorSetLayout* setLayout, EWEDescriptorPool& pool);
         EWEDescriptorWriter(EWEDescriptorSetLayout* setLayout, DescriptorPool_ID poolID);
 
-        EWEDescriptorWriter& WriteBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
-        EWEDescriptorWriter& WriteImage(uint32_t binding, VkDescriptorImageInfo* imageInfo);
+        EWEDescriptorWriter& WriteBuffer(VkDescriptorBufferInfo* bufferInfo);
+        EWEDescriptorWriter& WriteImage(VkDescriptorImageInfo* imgInfo);
+        EWEDescriptorWriter& WriteImage(ImageID imageID);
 
         VkDescriptorSet Build();
         void Overwrite(VkDescriptorSet& set);

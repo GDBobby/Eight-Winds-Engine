@@ -5,48 +5,48 @@ namespace EWE {
 
 
 #if SEMAPHORE_TRACKING
-    void SemaphoreData::FinishSignaling(std::source_location srcLoc) {
+    void Semaphore::FinishSignaling(std::source_location srcLoc) {
         tracking.emplace_back(Tracking::State::FinishSignaling, srcLoc);
         assert(signaling && "finishing a signal that wasn't signaled");
         signaling = false;
     }
-    void SemaphoreData::FinishWaiting(std::source_location srcLoc) {
+    void Semaphore::FinishWaiting(std::source_location srcLoc) {
         assert(waiting && "finished waiting when not waiting");
         waiting = false;
         tracking.emplace_back(Tracking::State::FinishWaiting, srcLoc);
     }
-    void SemaphoreData::BeginWaiting(std::source_location srcLoc) {
+    void Semaphore::BeginWaiting(std::source_location srcLoc) {
         assert(!waiting && "attempting to begin wait while waiting");
         waiting = true;
         tracking.emplace_back(Tracking::State::BeginWaiting, srcLoc);
     }
-    void SemaphoreData::BeginSignaling(std::source_location srcLoc) {
+    void Semaphore::BeginSignaling(std::source_location srcLoc) {
 
         assert(!signaling && "attempting to signal while signaled");
         signaling = true;
         tracking.emplace_back(Tracking::State::BeginSignaling, srcLoc);
     }
 #else     
-    void SemaphoreData::FinishSignaling() {
+    void Semaphore::FinishSignaling() {
 #if EWE_DEBUG
         assert(signaling == true && "finishing a signal that wasn't signaled");
 #endif
         signaling = false;
     }
-    void SemaphoreData::FinishWaiting() {
+    void Semaphore::FinishWaiting() {
 #if EWE_DEBUG
         assert(waiting == true && "finished waiting when not waiting");
 #endif
         waiting = false;
         signaling = false; //im not sure if this is good or not. currently its a bit rough to keep track of the graphics single time signaling
     }
-    void SemaphoreData::BeginWaiting() {
+    void Semaphore::BeginWaiting() {
 #if EWE_DEBUG
         assert(waiting == false && "attempting to begin wait while waiting");
 #endif
         waiting = true;
     }
-    void SemaphoreData::BeginSignaling() {
+    void Semaphore::BeginSignaling() {
 #if EWE_DEBUG
         assert(signaling == false && "attempting to signal while signaled");
 #endif
@@ -62,21 +62,19 @@ namespace EWE {
         stagingBuffers{ std::move(copySource.stagingBuffers) },
         pipeBarriers{ std::move(copySource.pipeBarriers) },
         images{ std::move(copySource.images) },
-        imageLayouts{ std::move(copySource.imageLayouts) },
-        semaphoreData{ copySource.semaphoreData }
+        semaphore{ copySource.semaphore }
     {
         printf("TransferCommandCallbacks:: copy constructor\n");
 
-        copySource.semaphoreData = nullptr;
+        copySource.semaphore = nullptr;
     }
     TransferCommandCallbacks& TransferCommandCallbacks::operator=(TransferCommandCallbacks& copySource) { //copy assignment
         commands = std::move(copySource.commands);
         stagingBuffers = std::move(copySource.stagingBuffers);
         pipeBarriers = std::move(copySource.pipeBarriers);
         images = std::move(copySource.images);
-        semaphoreData = copySource.semaphoreData;
-        copySource.semaphoreData = nullptr;
-        imageLayouts = std::move(copySource.imageLayouts);
+        semaphore = copySource.semaphore;
+        copySource.semaphore = nullptr;
         printf("TransferCommandCallbacks:: copy constructor\n");
 
         return *this;
@@ -100,8 +98,8 @@ namespace EWE {
     //        copySource.images.clear();
     //    }
 
-    //    semaphoreData = copySource.semaphoreData;
-    //    copySource.semaphoreData = nullptr;
+    //    Semaphore = copySource.Semaphore;
+    //    copySource.Semaphore = nullptr;
     //}
 
     TransferCommandCallbacks::TransferCommandCallbacks(TransferCommandCallbacks&& moveSource) noexcept ://move constructor
@@ -109,14 +107,13 @@ namespace EWE {
         stagingBuffers{ std::move(moveSource.stagingBuffers) },
         pipeBarriers{ std::move(moveSource.pipeBarriers) },
         images{ std::move(moveSource.images) },
-        imageLayouts{ std::move(moveSource.imageLayouts) },
-        semaphoreData{ moveSource.semaphoreData }
+        semaphore{ moveSource.semaphore }
 
     {
 
         printf("TransferCommandCallbacks:: move constructor\n");
 
-        moveSource.semaphoreData = nullptr;
+        moveSource.semaphore = nullptr;
     }
 
     TransferCommandCallbacks& TransferCommandCallbacks::operator=(TransferCommandCallbacks&& moveSource) noexcept { //move assignment
@@ -124,9 +121,8 @@ namespace EWE {
         stagingBuffers = std::move(moveSource.stagingBuffers);
         pipeBarriers = std::move(moveSource.pipeBarriers);
         images = std::move(moveSource.images);
-        semaphoreData = moveSource.semaphoreData;
-        imageLayouts = std::move(moveSource.imageLayouts);
-        moveSource.semaphoreData = nullptr;
+        semaphore = moveSource.semaphore;
+        moveSource.semaphore = nullptr;
 
         printf("TransferCommandCallbacks:: move assignment\n");
 

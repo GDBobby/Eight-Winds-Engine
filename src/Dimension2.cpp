@@ -120,7 +120,11 @@ namespace EWE {
 		uiArrayID = Image_Manager::CreateUIImage();
 
 		EWEDescriptorWriter descWriter(eDSL, DescriptorPool_Global);
-		descWriter.WriteImage(0, Image_Manager::GetDescriptorImageInfo(uiArrayID));
+#if DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION
+		descWriter.WriteImage(uiArrayID);
+#else
+		descWriter.WriteImage(Image_Manager::GetDescriptorImageInfo(uiArrayID));
+#endif
 		defaultDesc = descWriter.Build();
 #if DEBUG_NAMING
 		DebugNaming::SetObjectName(defaultDesc, VK_OBJECT_TYPE_DESCRIPTOR_SET, "ui array desc");

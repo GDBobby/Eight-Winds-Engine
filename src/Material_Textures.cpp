@@ -9,12 +9,13 @@
 
 namespace EWE {
 
-    MaterialInfo Material_Image::CreateMaterialImage(std::string texPath, bool global) {
+    MaterialInfo Material_Image::CreateMaterialImage(std::string texPath, bool mipmapping, bool global) {
 
         auto imPtr = Image_Manager::GetImageManagerPtr();
         {
             ImageID imgID = imPtr->FindByPath(texPath);
             if (imgID != IMAGE_INVALID) {
+                std::unique_lock<std::mutex> imgLock(imPtr->imageMutex);
                 auto findRet = imPtr->existingMaterialsByID.find(imgID);
                 if (findRet != imPtr->existingMaterialsByID.end()) {
                     return findRet->second;
@@ -72,7 +73,7 @@ namespace EWE {
             pixelPeeks.emplace_back(matPaths[i]);
         }
 
-        ImageID imgID = imPtr->CreateImageArray(pixelPeeks);
+        ImageID imgID = imPtr->CreateImageArray(pixelPeeks, mipmapping, Queue::transfer);
 
         //flags = normal, metal, rough, ao
         MaterialFlags flags = (foundTypes[MT_bump] * MaterialF_hasBump) + (foundTypes[MT_metal] * MaterialF_hasMetal) + (foundTypes[MT_rough] * MaterialF_hasRough) + (foundTypes[MT_ao] * MaterialF_hasAO) + ((foundTypes[MT_normal] * MaterialF_hasNormal));
@@ -87,6 +88,7 @@ namespace EWE {
             printf("found a height map \n");
         }
 #endif
+        std::unique_lock<std::mutex> imgLock(imPtr->imageMutex);
         imPtr->existingMaterialsByID.try_emplace(imgID, flags, imgID);
         //existingMaterialIDs[texPath] = std::pair<MaterialFlags, int32_t>{ flags, returnID };
 

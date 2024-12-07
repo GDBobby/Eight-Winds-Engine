@@ -113,7 +113,7 @@ namespace EWE {
             std::string finalDir = texturePath;
             finalDir += importData.meshNames[i];
             
-            textureTracker.first.emplace_back(Material_Image::CreateMaterialImage(finalDir, true));
+            textureTracker.first.emplace_back(Material_Image::CreateMaterialImage(finalDir, true, true));
             
         }
         //printf("after mesh texutres \n");
@@ -122,7 +122,7 @@ namespace EWE {
             std::string finalDir = texturePath;
             finalDir += importData.meshNTNames[i];
 
-            textureTracker.second.emplace_back(Material_Image::CreateMaterialImage(finalDir, true));
+            textureTracker.second.emplace_back(Material_Image::CreateMaterialImage(finalDir, true, true));
         }
         //printf("after mesh nt texutres \n");
     }

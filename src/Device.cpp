@@ -286,6 +286,9 @@ namespace EWE {
                 EWE_VK(vkDestroyCommandPool, VK::Object->vkDevice, VK::Object->commandPools[i], nullptr);
             }
         }
+        if (VK::Object->renderCmdPool != VK_NULL_HANDLE) {
+            EWE_VK(vkDestroyCommandPool, VK::Object->vkDevice, VK::Object->renderCmdPool, nullptr);
+        }
 #if USING_VMA
         vmaDestroyAllocator(allocator);
 #endif
@@ -645,11 +648,10 @@ namespace EWE {
             poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
             poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::graphics]);
+            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->renderCmdPool);
 #if DEBUG_NAMING
-            DebugNaming::SetObjectName(VK::Object->commandPools[Queue::graphics], VK_OBJECT_TYPE_COMMAND_POOL, "graphics cmd pool");
+            DebugNaming::SetObjectName(VK::Object->renderCmdPool, VK_OBJECT_TYPE_COMMAND_POOL, "render cmd pool");
 #endif
-
         }
         {
             VkCommandPoolCreateInfo poolInfo = {};
@@ -657,9 +659,9 @@ namespace EWE {
             poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
             poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->STGCmdPool);
+            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::graphics]);
 #if DEBUG_NAMING
-            DebugNaming::SetObjectName(VK::Object->STGCmdPool, VK_OBJECT_TYPE_COMMAND_POOL, "graphics STG cmd pool");
+            DebugNaming::SetObjectName(VK::Object->commandPools[Queue::graphics], VK_OBJECT_TYPE_COMMAND_POOL, "graphics STG cmd pool");
 #endif
         }
         {
@@ -813,7 +815,7 @@ namespace EWE {
                 logFile << "Extension is not available! : " << required << std::endl;
                 logFile.close();
 #endif
-                throw std::runtime_error("Missing required glfw extension");
+                assert(false && "Missing required glfw extension");
             }
         }
     }

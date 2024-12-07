@@ -65,7 +65,11 @@ namespace EWE {
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			EWEDescriptorWriter descWriter{ skyboxEDSL, DescriptorPool_Global };
 			DescriptorHandler::AddCameraDataToDescriptor(descWriter, i);
-			descWriter.WriteImage(1, Image_Manager::GetDescriptorImageInfo(skyboxImgID));
+#if DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION
+			descWriter.WriteImage(skyboxImgID);
+#else
+			descWriter.WriteImage(Image_Manager::GetDescriptorImageInfo(skyboxImgID));
+#endif
 			skyboxDescriptors[i] = descWriter.Build();
 		}
 #if DEBUG_NAMING

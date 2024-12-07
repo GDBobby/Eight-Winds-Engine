@@ -76,10 +76,12 @@ namespace EWE{
     struct VK {
         static VK* Object;
 
-        VK() {
+        VK() : mainThreadID{ std::this_thread::get_id() } {
             assert(Object == nullptr);
             Object = this;
         }
+        const std::thread::id mainThreadID;
+
         VK(VK& copySource) = delete;
         VK(VK&& moveSource) = delete;
         VK& operator=(VK const& copySource) = delete;
@@ -91,7 +93,7 @@ namespace EWE{
         std::array<std::mutex, Queue::_count> poolMutex{};
         std::mutex STGMutex{};
         std::array<VkCommandPool, Queue::_count> commandPools = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
-        VkCommandPool STGCmdPool{ VK_NULL_HANDLE }; //separate graphics pool for single time commands
+        VkCommandPool renderCmdPool{ VK_NULL_HANDLE }; //separate graphics pool for single time commands
         std::array<VkQueue, Queue::_count> queues;
         std::array<int, Queue::_count> queueIndex;
         VkSurfaceKHR surface;

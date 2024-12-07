@@ -44,7 +44,7 @@ namespace EWE {
 		//dependent on this not being in the graphics thread, or it'll infinitely loop
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 
-		while (syncHub->CheckFencesForUsage()) {/*printf("waiting on fences\n");*/ std::this_thread::sleep_for(std::chrono::nanoseconds(1)); }
+		while (!TransferCommandManager::Empty() || syncHub->CheckFencesForUsage()) {/*printf("waiting on fences\n");*/ std::this_thread::sleep_for(std::chrono::nanoseconds(1)); }
 
 		loadingEngine = false;
 	}

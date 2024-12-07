@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EWEngine/Graphics/SyncPool.h"
+#include "EWEngine/Graphics/QueueSyncPool.h"
 #include "EWEngine/Data/EWE_Memory.h"
 #include "EWEngine/Graphics/TransferCommandManager.h"
 #include "EWEngine/Graphics/TransitionManager.h"
@@ -21,16 +21,12 @@ namespace EWE {
 
 		static SyncHub* syncHubSingleton;
 
-		SyncPool syncPool;
+		QueueSyncPool qSyncPool;
 
 
 		VkSubmitInfo transferSubmitInfo{};
 
-		bool readyForNextTransmit = true;
-		//std::mutex transferFlipFlopMutex{};
-		std::mutex graphicsAsyncMut{};
-		//std::mutex mutexNextTransmit{};
-		bool transferFlipFlop = false;
+		std::mutex transferSubmissionMut{};
 
 
 		//VkFence fence{ VK_NULL_HANDLE };
@@ -40,31 +36,8 @@ namespace EWE {
 
 		std::vector<VkFence> imagesInFlight{};
 
-		struct SubmitGroup {
-			CommandBuffer* cmdBuf;
-			std::vector<SemaphoreData*> semaphoreData; 
-			std::vector<VkImageLayout*> imageLayouts;
-			SubmitGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*>& semaphoreData, std::vector<VkImageLayout*>& imageLayouts) :
-				cmdBuf{ &cmdBuf }, 
-				semaphoreData{ std::move(semaphoreData) },
-				imageLayouts{std::move(imageLayouts)}
-			{}
-		};
-		std::vector<SubmitGroup> graphicsSTCGroup{};
 
 		bool transferring = false;
-
-		//this is designed for synchronizing 2 threads, in which the cuck thread defers to the dom thread
-		//specifically, it'd be used if one of the 2 threads has a higher priority
-		struct DomCuckSync {
-			std::mutex domMutex{};
-			std::mutex cuckMutex{};
-			std::condition_variable domCondition{};
-			std::condition_variable cuckCondition{};
-			bool domConditionHeld = false;
-			bool cuckConditionHeld = false;
-		};
-		DomCuckSync domCuckSync{};
 	public:		
 		static SyncHub* GetSyncHubInstance() {
 			return syncHubSingleton;
@@ -92,28 +65,15 @@ namespace EWE {
 		void SubmitGraphics(VkSubmitInfo& submitInfo, uint32_t* imageIndex);
 		VkResult PresentKHR(VkPresentInfoKHR& presentInfo);
 
-		void DomDemand();
-		void DomRelease();
-		void CuckRequest();
-		void CuckSubmit();
-
 		//this needs to be called from the graphics thread
 		//these have a fence with themselves
 		void EndSingleTimeCommandGraphics(CommandBuffer& cmdBuf);
-		//void EndSingleTimeCommandGraphicsSignal(CommandBufferData& cmdBuf, VkSemaphore signalSemaphore);
-		//void EndSingleTimeCommandGraphicsWaitAndSignal(CommandBufferData& cmdBuf, VkSemaphore& waitSemaphore, VkSemaphore& signalSemaphore);
 
-		static void EndSingleTimeCommandGraphicsGroup(CommandBuffer& cmdBuf, std::vector<SemaphoreData*> waitSemaphores, std::vector<VkImageLayout*> imageInfos);
-		//void SubmitGraphicsSTCGroup();
-
-		//void EndSingleTimeCommandTransfer(CommandBuffer cmdBuf);
 		void EndSingleTimeCommandTransfer();
 
 		CommandBuffer& BeginSingleTimeCommand(Queue::Enum queue);
 		CommandBuffer& BeginSingleTimeCommandGraphics();
 		CommandBuffer& BeginSingleTimeCommandTransfer();
-
-		void AttemptTransferSubmission();
 
 		void WaitOnGraphicsFence() {
 			EWE_VK(vkWaitForFences, VK::Object->vkDevice, 1, &renderSyncData.inFlight[VK::Object->frameIndex], VK_TRUE, UINT64_MAX);
@@ -121,18 +81,17 @@ namespace EWE {
 
 		void RunGraphicsCallbacks();
 		bool CheckFencesForUsage() {
-			return syncPool.CheckFencesForUsage();
+			return qSyncPool.CheckFencesForUsage();
 		}
+		//only access this from EndSingleTimeCommandTransfer for concurrency purposes
+		void SubmitTransferBuffers();
 
 	private:
 
 		void CreateSyncObjects();
 
 		void CreateBuffers();
-
-		void SubmitTransferBuffers();
-
-		const std::thread::id main_thread;
+		bool transferSubmissionThreadActive = false;
 
 	};
 }

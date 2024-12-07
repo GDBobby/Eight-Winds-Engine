@@ -16,9 +16,8 @@ namespace EWE {
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			EWEDescriptorWriter descWriter{ eDSL, DescriptorPool_Global };
 			DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
-			uint8_t currentBinding = 2;
-			bufferHandler->AddDescriptorBindings(i, descWriter, currentBinding);
-			descWriter.WriteImage(currentBinding, Image_Manager::GetDescriptorImageInfo(materialInfo.imageID));
+			bufferHandler->AddDescriptorBindings(i, descWriter);
+			descWriter.WriteImage(materialInfo.imageID);
 			descSets[i] = descWriter.Build();
 		}
 		return descSets;

@@ -9,7 +9,7 @@
 #include <source_location>
 #endif
 
-#define EWE_DEBUG false
+#define EWE_DEBUG true
 
 #define DEBUGGING_DEVICE_LOST false
 #define USING_NVIDIA_AFTERMATH (true && DEBUGGING_DEVICE_LOST)
@@ -30,5 +30,12 @@
 #define SEMAPHORE_TRACKING (true && DEBUG_NAMING)
 
 #define COMMAND_BUFFER_TRACING (true && EWE_DEBUG)
+#define DEBUGGING_FENCES (false && EWE_DEBUG)
 
 #define IMAGE_DEBUGGING (true && EWE_DEBUG)
+
+#ifndef DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION
+#define DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION true
+#endif
+
+#define MIPMAP_ENABLED true

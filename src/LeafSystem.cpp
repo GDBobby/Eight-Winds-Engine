@@ -344,11 +344,12 @@ namespace EWE {
 #if DEBUG_NAMING
 		leafModel->SetDebugNames("leafModel");
 #endif
-		//leafTextureID = Texture_Builder::CreateSimpleTexture("leaf.jpg", false, false, VK_SHADER_STAGE_FRAGMENT_BIT);
 	}
 	void LeafSystem::LoadLeafTexture() {
 		const std::string fullLeafTexturePath = "textures/leaf.jpg";
-		Image::CreateImage(&leafImageInfo, fullLeafTexturePath, false, Queue::graphics);
+		//Image::CreateImage(&leafImageInfo, fullLeafTexturePath, false, Queue::graphics);
+
+		leafImgID = Image_Manager::GetCreateImageID(fullLeafTexturePath, false, Queue::graphics);
 
 		const std::string leafTexturePath = "leaf.jpg";
 		//printf("leaf model loaded \n");
@@ -358,8 +359,10 @@ namespace EWE {
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			EWEDescriptorWriter descWriter{leafEDSL, DescriptorPool_Global};
 			DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
-			descWriter.WriteImage(2, leafImageInfo.GetDescriptorImageInfo());
-			descWriter.WriteBuffer(3, leafBuffer[i]->DescriptorInfo());
+			//descWriter.WriteImage(leafImageInfo.GetDescriptorImageInfo());
+
+			descWriter.WriteImage(leafImgID);
+			descWriter.WriteBuffer(leafBuffer[i]->DescriptorInfo());
 			leafDescriptor[i] = descWriter.Build();
 		}
 #if DEBUG_NAMING

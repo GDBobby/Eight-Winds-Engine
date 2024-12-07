@@ -18,11 +18,7 @@ namespace EWE {
 		void GenerateMipMapsForMultipleImagesTransferQueue(CommandBuffer& cmdBuf, std::vector<ImageInfo*>& imageInfo);
 		void GenerateMipmaps(CommandBuffer& cmdBuf, ImageInfo* imageInfo, Queue::Enum srcQueue);
 
-#if IMAGE_DEBUGGING
-		void CreateImageCommands(ImageInfo& imageInfo, VkImageCreateInfo const& imageCreateInfo, StagingBuffer* stagingBuffer, Queue::Enum queue, bool mipmapping, std::string imageName);
-#else
 		void CreateImageCommands(ImageInfo& imageInfo, VkImageCreateInfo const& imageCreateInfo, StagingBuffer* stagingBuffer, Queue::Enum queue, bool mipmapping);
-#endif
 
 		[[nodiscard("this staging buffer needs to be handled outside of this function")]]
 		StagingBuffer* StageImage(PixelPeek& pixelPeek);

@@ -99,8 +99,8 @@ namespace EWE {
         void InitialFrequencySpectrumGPUData::CreateDescriptorSet(VkDescriptorImageInfo* descImageInfo) {
 
             EWEDescriptorWriter descWriter{eweDSL, DescriptorPool_Global};
-            descWriter.WriteImage(0, descImageInfo);
-            descWriter.WriteBuffer(1, jonswapBuffer->DescriptorInfo());
+            descWriter.WriteImage(descImageInfo);
+            descWriter.WriteBuffer(jonswapBuffer->DescriptorInfo());
             descriptorSet[0] = descWriter.Build();
             descriptorSet[1] = descWriter.Build();
         }
@@ -183,8 +183,8 @@ namespace EWE {
         void TimeDependentFrequencySpectrumGPUData::CreateDescriptorSet(VkDescriptorImageInfo* frequencyImage, VkDescriptorImageInfo* outputImage) {
 
             EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
-            descWriter.WriteImage(0, frequencyImage);
-            descWriter.WriteImage(1, outputImage);
+            descWriter.WriteImage(frequencyImage);
+            descWriter.WriteImage(outputImage);
             descriptorSet = descWriter.Build();
         }
         void TimeDependentFrequencySpectrumGPUData::Compute(float dt) {
@@ -221,7 +221,7 @@ namespace EWE {
 
         void FFTGPUData::CreateDescriptorSet(VkDescriptorImageInfo* outputImage) {
             EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
-            descWriter.WriteImage(0, outputImage);
+            descWriter.WriteImage(outputImage);
             descriptorSet = descWriter.Build();
         }
 
@@ -317,9 +317,9 @@ namespace EWE {
             for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
                 EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
                 DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
-                descWriter.WriteBuffer(2, renderData[i]->DescriptorInfo());
-                descWriter.WriteImage(3, outputImage);
-                descWriter.WriteImage(4, skyboxImage);
+                descWriter.WriteBuffer(renderData[i]->DescriptorInfo());
+                descWriter.WriteImage(outputImage);
+                descWriter.WriteImage(skyboxImage);
                 descriptorSet[i] = descWriter.Build();
             }
         }

@@ -15,7 +15,7 @@ namespace EWE {
 				Deconstruct(bone);
 			}
 
-			void AddDescriptorBindings(uint16_t maxActorCount, EWEDescriptorWriter& descWriter, uint8_t& currentBinding);
+			void AddDescriptorBindings(uint16_t maxActorCount, EWEDescriptorWriter& descWriter);
 
 			void Flush();
 		private:
@@ -37,8 +37,8 @@ namespace EWE {
 		uint32_t GetInstanceCount() {
 			return currentInstanceCount;
 		}
-		void AddDescriptorBindings(uint8_t whichFrame, EWEDescriptorWriter& descWriter, uint8_t& currentBinding) {
-			gpuData[whichFrame].AddDescriptorBindings(maxActorCount, descWriter, currentBinding);
+		void AddDescriptorBindings(uint8_t whichFrame, EWEDescriptorWriter& descWriter) {
+			gpuData[whichFrame].AddDescriptorBindings(maxActorCount, descWriter);
 		}
 
 	private:
@@ -63,7 +63,7 @@ namespace EWE {
 				Deconstruct(bone);
 			}
 
-			void AddDescriptorBindings(EWEDescriptorWriter& descWriter, uint8_t& currentBinding);
+			void AddDescriptorBindings(EWEDescriptorWriter& descWriter);
 
 			void Flush();
 		private:
@@ -85,8 +85,8 @@ namespace EWE {
 		uint16_t GetMaxActorCount() {
 			return maxActorCount;
 		}
-		void AddDescriptorBindings(uint8_t whichFrame, EWEDescriptorWriter& descWriter, uint8_t& currentBinding) {
-			gpuData[whichFrame].AddDescriptorBindings(descWriter, currentBinding);
+		void AddDescriptorBindings(uint8_t whichFrame, EWEDescriptorWriter& descWriter) {
+			gpuData[whichFrame].AddDescriptorBindings(descWriter);
 		}
 	private:
 
