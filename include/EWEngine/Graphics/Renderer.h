@@ -39,8 +39,8 @@ namespace EWE {
 		bool EndFrame();
 		bool EndFrameAndWaitForFence();
 
-		void BeginSwapChainRenderPass();
-		void EndSwapChainRenderPass();
+		void BeginSwapChainRender();
+		void EndSwapChainRender();
 		TextOverlay* MakeTextOverlay() {
 			//assert(!loadingState && "text overlay being made in loading screen renderer?");
 			assert(!hasTextOverlayBeenMade && "textoverlay has already been made?");

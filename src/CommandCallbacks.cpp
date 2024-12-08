@@ -129,41 +129,4 @@ namespace EWE {
         return *this;
     }
 
-    /*
-    CallbacksForGraphics::CallbacksForGraphics(CallbacksForGraphics& copySource) : //copy constructor
-        pipeBarriers{ std::move(copySource.pipeBarriers) },
-        images{ std::move(copySource.images) }
-    {}
-    CallbacksForGraphics& CallbacksForGraphics::operator=(CallbacksForGraphics const& copySource) { //copy assignment
-        pipeBarriers = std::move(copySource.pipeBarriers);
-        images = std::move(copySource.images);
-
-        return *this;
-    }
-    CallbacksForGraphics& CallbacksForGraphics::operator=(CallbacksForGraphics&& moveSource) noexcept { //move assignment
-        pipeBarriers = std::move(moveSource.pipeBarriers);
-        images = std::move(moveSource.images);
-
-        return *this;
-    }
-
-    CallbacksForGraphics::CallbacksForGraphics(CommandCallbacks& copySource) : //copy constructor
-        pipeBarriers{ std::move(copySource.pipeBarriers) },
-        images{ std::move(copySource.images) }
-    {
-        
-    }
-    CallbacksForGraphics& CallbacksForGraphics::operator=(CommandCallbacks const& copySource) { //copy assignment
-        pipeBarriers = std::move(copySource.pipeBarriers);
-        images = std::move(copySource.images);
-
-        return *this;
-    }
-    CallbacksForGraphics& CallbacksForGraphics::operator=(CommandCallbacks&& moveSource) noexcept { //move assignment
-        pipeBarriers = std::move(moveSource.pipeBarriers);
-        images = std::move(moveSource.images);
-
-        return *this;
-    }
-	*/
 }//namespace EWE

@@ -169,10 +169,6 @@ namespace EWE {
 		printf("after init leaf data\n");
 #endif
 
-
-		//EWE_VK(vmaCheckCorruption(EWEDevice::GetAllocator(), UINT32_MAX));
-
-
 		double renderThreadTime = 0.0;
 		const double renderTimeCheck = 1000.0 / 60.0;
 		auto startThreadTime = std::chrono::high_resolution_clock::now();
@@ -195,12 +191,12 @@ namespace EWE {
 
 				if (eweRenderer.BeginFrame()) {
 					
-					eweRenderer.BeginSwapChainRenderPass();
+					eweRenderer.BeginSwapChainRender();
 					leafSystem->FallCalculation(static_cast<float>(renderThreadTime / 1000.0));
 
 					leafSystem->Render();
 					//uiHandler.drawMenuMain(commandBuffer);
-					eweRenderer.EndSwapChainRenderPass();
+					eweRenderer.EndSwapChainRender();
 					if (eweRenderer.EndFrame()) {
 						menuManager.windowResize(eweRenderer.GetExtent());
 					}
@@ -221,7 +217,7 @@ namespace EWE {
 		printf(" ~~~~ END OF LOADING SCREEN FUNCTION \n");
 #endif
 	}
-	bool EightWindsEngine::BeginRenderWithoutPass() {
+	bool EightWindsEngine::BeginFrame() {
 		if (eweRenderer.BeginFrame()) {
 #if BENCHMARKING_GPU
 			QueryTimestampBegin();
@@ -236,14 +232,14 @@ namespace EWE {
 		return false;
 	}
 
-	bool EightWindsEngine::BeginRender() {
+	bool EightWindsEngine::BeginFrameAndRender() {
 		//printf("begin render \n");
 		if (eweRenderer.BeginFrame()) {
 #if BENCHMARKING_GPU
 			QueryTimestampBegin();
 #endif
 
-			eweRenderer.BeginSwapChainRenderPass();
+			eweRenderer.BeginSwapChainRender();
 			return true;
 		}
 		//else {
@@ -253,6 +249,10 @@ namespace EWE {
 		//}
 		return false;
 	}
+	void EightWindsEngine::BeginRenderX() {
+		eweRenderer.BeginSwapChainRender();
+	}
+
 	void EightWindsEngine::Draw2DObjects() {
 		advancedRS.render2DGameObjects(menuManager.getMenuActive());
 	}
@@ -311,7 +311,7 @@ namespace EWE {
 	}
 
 	void EightWindsEngine::EndRender() {
-		eweRenderer.EndSwapChainRenderPass();
+		eweRenderer.EndSwapChainRender();
 	}
 
 	void EightWindsEngine::EndFrame() {

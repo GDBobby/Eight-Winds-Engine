@@ -163,7 +163,7 @@ namespace EWE {
 		return false;
 	}
 	/**/
-	void EWERenderer::BeginSwapChainRenderPass() {
+	void EWERenderer::BeginSwapChainRender() {
 #if EWE_DEBUG
 		assert(isFrameStarted && "Can't call beginSwapChainRenderPass if frame is not in progress!");
 #endif
@@ -218,7 +218,7 @@ namespace EWE {
 		);
 		eweSwapChain->BeginRender(currentImageIndex);
 	}
-	void EWERenderer::EndSwapChainRenderPass() {
+	void EWERenderer::EndSwapChainRender() {
 		assert(isFrameStarted && "Can't call endSwapChainRenderPass if frame is not in progress!");
 
 		//vkCmdEndRenderPass(commandBuffer);

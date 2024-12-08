@@ -54,13 +54,13 @@ namespace EWE {
 		camControl.Zoom(camTransform);
 		ewEngine.camera.SetViewYXZ(camTransform.translation, camTransform.rotation);
 		
-		if (ewEngine.BeginRenderWithoutPass()) {
+		if (ewEngine.BeginFrame()) {
 			//printf("drawing \n");
 			if (!paused) {
 				rockSystem.Dispatch(dt);
 			}
 			ewEngine.camera.BindUBO();
-			ewEngine.eweRenderer.BeginSwapChainRenderPass();
+			ewEngine.BeginRenderX();
 			ewEngine.DrawObjects(dt);
 
 			//rockSystem.Render();

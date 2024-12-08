@@ -59,21 +59,4 @@ namespace EWE {
         TransferCommandCallbacks& operator=(TransferCommandCallbacks&& moveSource) noexcept; //move assignment
         //TransferCommandCallbacks& operator+=(TransferCommandCallbacks& copySource);
     };
-    /*
-    struct CallbacksForGraphics {
-        std::vector<PipelineBarrier> pipeBarriers;
-        std::vector<MipParamPack> mipParamPacks;
-        CallbacksForGraphics() : pipeBarriers{}, mipParamPacks{} {}
-        CallbacksForGraphics(CallbacksForGraphics& copySource); //copy constructor
-        CallbacksForGraphics& operator=(CallbacksForGraphics const& copySource); //copy assignment
-        CallbacksForGraphics(CallbacksForGraphics&& moveSource) noexcept = delete;//move constructor
-        CallbacksForGraphics& operator=(CallbacksForGraphics&& moveSource) noexcept; //move assignment
-
-
-        CallbacksForGraphics(CommandCallbacks& copySource); //copy constructor
-        CallbacksForGraphics& operator=(CommandCallbacks const& copySource); //copy assignment
-        CallbacksForGraphics(CommandCallbacks&& moveSource) noexcept = delete;//move constructor
-        CallbacksForGraphics& operator=(CommandCallbacks&& moveSource) noexcept; //move assignment
-    };
-    */
 } //namespace EWE

@@ -34,7 +34,7 @@ namespace EWE {
 		//printf("render main menu scene \n");
 
 
-		if (ewEngine.BeginRender()) {
+		if (ewEngine.BeginFrameAndRender()) {
 			//printf("drawing \n");
 			ewEngine.Draw2DObjects();
 			ewEngine.DrawText(dt);

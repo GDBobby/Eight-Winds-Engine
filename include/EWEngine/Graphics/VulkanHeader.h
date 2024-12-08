@@ -267,23 +267,6 @@ template<typename F, typename... Args>
 EWE_VK(F&& f, Args&&...) -> EWE_VK<F, Args...>;
 
 #else
-//if having difficulty with template errors related to this function, define the vulkan function by itself before using this function to ensure its correct
-void EWE_VK_RESULT(VkResult vkResult) {
-#if DEBUGGING_DEVICE_LOST                                                                                        
-    if (vkResult == VK_ERROR_DEVICE_LOST) { EWE::VKDEBUG::OnDeviceLost(); }
-    else
-#else
-    if (vkResult != VK_SUCCESS) {
-        printf("VK_ERROR : %d \n", vkResult);
-        std::ofstream logFile{};
-        logFile.open(GPU_LOG_FILE, std::ios::app);
-        assert(logFile.is_open() && "Failed to open log file");
-        logFile << "VK_ERROR : VkResult(" << vkResult << ")\n";
-        logFile.close();
-        assert(vkResult == VK_SUCCESS && "VK_ERROR");
-    }
-#endif
-}
 
 template<typename F, typename... Args>
 void EWE_VK(F&& f, Args&&... args) {

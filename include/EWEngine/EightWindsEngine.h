@@ -110,9 +110,12 @@ namespace EWE {
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		void InitGlobalBuffers();
 
-		bool BeginRender();
+		//this is changed just so that it doesnt overlap with the old name and i know to change it
+		void BeginRenderX();
 
-		bool BeginRenderWithoutPass();
+		bool BeginFrame();
+
+		bool BeginFrameAndRender();
 //#define RENDER_OBJECT_DEBUG
 
 		void Draw2DObjects();

@@ -18,8 +18,8 @@
 
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
-#define AMD_TARGET false
-#define NVIDIA_TARGET true && !AMD_TARGET //not currently setup to correctly 
+#define AMD_TARGET true
+#define NVIDIA_TARGET false && !AMD_TARGET //not currently setup to correctly 
 
 namespace EWE {
 #if DEBUGGING_DEVICE_LOST

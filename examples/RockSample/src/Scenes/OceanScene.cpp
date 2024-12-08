@@ -47,12 +47,12 @@ namespace EWE {
 		//printf("render main menu scene \n");
 
 
-		if (ewEngine.BeginRenderWithoutPass()) {
+		if (ewEngine.BeginFrame()) {
 			//printf("drawing \n");
 			ocean->ReinitUpdate(dt);
 
 
-			ewEngine.eweRenderer.BeginSwapChainRenderPass();
+			ewEngine.BeginRenderX();
 
 			//main controls
 
