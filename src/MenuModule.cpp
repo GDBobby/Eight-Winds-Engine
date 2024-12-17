@@ -14,8 +14,8 @@ namespace EWE {
 
 	void MenuModule::initTextures() {
 
-		model2D = Basic_Model::Quad2D(Queue::transfer);
-		nineUIModel = Basic_Model::NineUIQuad(Queue::transfer);
+		model2D = Basic_Model::Quad2D();
+		nineUIModel = Basic_Model::NineUIQuad();
 	}
 
 	std::pair<UIComponentTypes, int16_t> MenuModule::checkClick(double xpos, double ypos) {

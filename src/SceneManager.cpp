@@ -88,7 +88,7 @@ namespace EWE {
 		assert((scenes.size() + 1) < scene_exit);
 #endif
 		
-		SceneKey currentSize = scenes.size() + 1;
+		SceneKey currentSize = static_cast<SceneKey>(scenes.size() + 1);
 		scenes.emplace(currentSize, scene);
 
 		return currentSize;

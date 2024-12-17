@@ -95,7 +95,7 @@ namespace EWE {
 
 			SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 			//directly to graphics because no data is being uploaded
-			CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand(Queue::graphics);
+			CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand();
 
 			VkImageMemoryBarrier imageBarriers[2];
 			imageBarriers[0] = Barrier::TransitionImageLayout(oceanOutputImages,
@@ -115,7 +115,9 @@ namespace EWE {
 			);
 
 			//directly to graphics because no data is being uploaded
-			syncHub->EndSingleTimeCommandGraphics(cmdBuf);
+			GraphicsCommand gCommand{};
+			gCommand.command = &cmdBuf;
+			syncHub->EndSingleTimeCommandGraphics(gCommand);
 
 			// Create sampler
 			VkSamplerCreateInfo samplerInfo{};

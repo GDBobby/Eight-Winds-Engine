@@ -17,7 +17,7 @@ namespace EWE {
 	public:
 
 		MemoryTypeBucket(std::size_t elementSize) : elementSize{ elementSize } {
-			reservedMemory = Internal::ewe_alloc(elementSize, dataChunkTracker.size());
+			reservedMemory = nullptr;// Internal::ewe_alloc(elementSize, dataChunkTracker.size());
 			//reservedMemory = malloc(elementSize * dataChunkTracker.size());
 		}
 

@@ -73,7 +73,7 @@ namespace EWE {
             pixelPeeks.emplace_back(matPaths[i]);
         }
 
-        ImageID imgID = imPtr->CreateImageArray(pixelPeeks, mipmapping, Queue::transfer);
+        ImageID imgID = imPtr->CreateImageArray(pixelPeeks, mipmapping);
 
         //flags = normal, metal, rough, ao
         MaterialFlags flags = (foundTypes[MT_bump] * MaterialF_hasBump) + (foundTypes[MT_metal] * MaterialF_hasMetal) + (foundTypes[MT_rough] * MaterialF_hasRough) + (foundTypes[MT_ao] * MaterialF_hasAO) + ((foundTypes[MT_normal] * MaterialF_hasNormal));

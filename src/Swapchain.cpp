@@ -131,6 +131,7 @@ namespace EWE {
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext = nullptr;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &VK::Object->GetVKCommandBufferDirect();
 

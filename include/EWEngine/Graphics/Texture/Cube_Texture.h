@@ -3,7 +3,7 @@
 
 namespace EWE {
 	namespace Cube_Texture {
-		ImageID CreateCubeImage(std::string texPath, Queue::Enum queue, std::string extension = ".png");
+		ImageID CreateCubeImage(std::string texPath, std::string extension = ".png");
 	};
 }
 

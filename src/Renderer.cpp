@@ -186,7 +186,7 @@ namespace EWE {
 
 		*/
 #if DEBUG_NAMING
-		DebugNaming::QueueBegin(VK::Object->queues[Queue::graphics], 0.75f, 0.1f, 0.f, "Begin Render Pass");
+		DebugNaming::QueueBegin(Queue::graphics, 0.75f, 0.1f, 0.f, "Begin Render Pass");
 #endif
 
 		VkImageMemoryBarrier image_memory_barrier{
@@ -259,7 +259,7 @@ namespace EWE {
 			&image_memory_barrier // pImageMemoryBarriers
 		);
 #if DEBUG_NAMING
-		DebugNaming::QueueEnd(VK::Object->queues[Queue::graphics]);
+		DebugNaming::QueueEnd(Queue::graphics);
 #endif
 	}
 }

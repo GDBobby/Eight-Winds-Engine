@@ -127,7 +127,7 @@ namespace EWE {
         //printf("after mesh nt texutres \n");
     }
 
-    SkeletonBase::SkeletonBase(std::string importPath, std::string texturePath, Queue::Enum queue, bool instanced) {
+    SkeletonBase::SkeletonBase(std::string importPath, std::string texturePath, bool instanced) {
         printf("skeleton : improting data : %s \n", importPath.c_str());
 
         mySkeletonID = SkinRenderSystem::GetSkinID();
@@ -187,7 +187,7 @@ namespace EWE {
             //printf("mesh thread 1 finished \n");
 
             for (auto const& mesh : importMesh.meshes) {
-                meshes.push_back(Construct<EWEModel>({ reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMesh.vertex_size, mesh.indices, queue }));
+                meshes.push_back(Construct<EWEModel>({ reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMesh.vertex_size, mesh.indices}));
             }
         }
         if (meshThread2Exist) {
@@ -195,7 +195,7 @@ namespace EWE {
             meshThread2.join();
 
             for (auto const& mesh : importMeshNT.meshes) {
-                meshes.push_back(Construct<EWEModel>({ reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMeshNT.vertex_size, mesh.indices, queue }));
+                meshes.push_back(Construct<EWEModel>({ reinterpret_cast<const void*>(mesh.vertices.data()), mesh.vertices.size(), importMeshNT.vertex_size, mesh.indices}));
             }
             //printf("mesh thread 2 finished \n");
         }

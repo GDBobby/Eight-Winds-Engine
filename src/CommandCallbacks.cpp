@@ -54,33 +54,30 @@ namespace EWE {
     }
 #endif
 
-
-
-
-    TransferCommandCallbacks::TransferCommandCallbacks(TransferCommandCallbacks& copySource) : //copy constructor
+    TransferCommand::TransferCommand(TransferCommand& copySource) : //copy constructor
         commands{ std::move(copySource.commands) },
         stagingBuffers{ std::move(copySource.stagingBuffers) },
         pipeBarriers{ std::move(copySource.pipeBarriers) },
         images{ std::move(copySource.images) },
         semaphore{ copySource.semaphore }
     {
-        printf("TransferCommandCallbacks:: copy constructor\n");
+        printf("TransferCommand:: copy constructor\n");
 
         copySource.semaphore = nullptr;
     }
-    TransferCommandCallbacks& TransferCommandCallbacks::operator=(TransferCommandCallbacks& copySource) { //copy assignment
+    TransferCommand& TransferCommand::operator=(TransferCommand& copySource) { //copy assignment
         commands = std::move(copySource.commands);
         stagingBuffers = std::move(copySource.stagingBuffers);
         pipeBarriers = std::move(copySource.pipeBarriers);
         images = std::move(copySource.images);
         semaphore = copySource.semaphore;
         copySource.semaphore = nullptr;
-        printf("TransferCommandCallbacks:: copy constructor\n");
+        printf("TransferCommand:: copy constructor\n");
 
         return *this;
     }
 
-    //TransferCommandCallbacks& TransferCommandCallbacks::operator+=(TransferCommandCallbacks& copySource) {
+    //TransferCommand& TransferCommand::operator+=(TransferCommand& copySource) {
     //    if (copySource.commands.size() > 0) {
     //        commands.insert(commands.end(), copySource.commands.begin(), copySource.commands.end());
     //        copySource.commands.clear();
@@ -102,7 +99,7 @@ namespace EWE {
     //    copySource.Semaphore = nullptr;
     //}
 
-    TransferCommandCallbacks::TransferCommandCallbacks(TransferCommandCallbacks&& moveSource) noexcept ://move constructor
+    TransferCommand::TransferCommand(TransferCommand&& moveSource) noexcept ://move constructor
         commands{ std::move(moveSource.commands) },
         stagingBuffers{ std::move(moveSource.stagingBuffers) },
         pipeBarriers{ std::move(moveSource.pipeBarriers) },
@@ -111,12 +108,12 @@ namespace EWE {
 
     {
 
-        printf("TransferCommandCallbacks:: move constructor\n");
+        printf("TransferCommand:: move constructor\n");
 
         moveSource.semaphore = nullptr;
     }
 
-    TransferCommandCallbacks& TransferCommandCallbacks::operator=(TransferCommandCallbacks&& moveSource) noexcept { //move assignment
+    TransferCommand& TransferCommand::operator=(TransferCommand&& moveSource) noexcept { //move assignment
         commands = std::move(moveSource.commands);
         stagingBuffers = std::move(moveSource.stagingBuffers);
         pipeBarriers = std::move(moveSource.pipeBarriers);
@@ -124,7 +121,7 @@ namespace EWE {
         semaphore = moveSource.semaphore;
         moveSource.semaphore = nullptr;
 
-        printf("TransferCommandCallbacks:: move assignment\n");
+        printf("TransferCommand:: move assignment\n");
 
         return *this;
     }

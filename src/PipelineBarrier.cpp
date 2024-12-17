@@ -21,7 +21,7 @@ namespace EWE {
         imageBarriers{ std::move(copySource.imageBarriers) },
         bufferBarriers{ std::move(copySource.bufferBarriers) }
     {}
-    PipelineBarrier& PipelineBarrier::operator=(PipelineBarrier& copySource) {
+    PipelineBarrier& PipelineBarrier::operator=(PipelineBarrier& copySource) noexcept {
         srcStageMask = copySource.srcStageMask;
         dstStageMask = copySource.dstStageMask;
         dependencyFlags = copySource.dependencyFlags;
@@ -39,7 +39,7 @@ namespace EWE {
         imageBarriers{ std::move(moveSource.imageBarriers) },
         bufferBarriers{ std::move(moveSource.bufferBarriers) }
     {}
-    PipelineBarrier& PipelineBarrier::operator=(PipelineBarrier&& moveSource) {
+    PipelineBarrier& PipelineBarrier::operator=(PipelineBarrier&& moveSource) noexcept {
         srcStageMask = moveSource.srcStageMask;
         dstStageMask = moveSource.dstStageMask;
         dependencyFlags = moveSource.dependencyFlags;
@@ -52,12 +52,13 @@ namespace EWE {
 
 
 	void PipelineBarrier::Submit(CommandBuffer& cmdBuf) const {
+        //need pool synchronization here
 		EWE_VK(vkCmdPipelineBarrier, cmdBuf,
 			srcStageMask, dstStageMask,
 			dependencyFlags,
-			memoryBarriers.size(), memoryBarriers.data(),
-			bufferBarriers.size(), bufferBarriers.data(),
-			imageBarriers.size(), imageBarriers.data()
+			static_cast<uint32_t>(memoryBarriers.size()), memoryBarriers.data(),
+            static_cast<uint32_t>(bufferBarriers.size()), bufferBarriers.data(),
+            static_cast<uint32_t>(imageBarriers.size()), imageBarriers.data()
 		);
 	}
 	//the parameter object passed in is no longer usable, submitting both barriers will potentially lead to errors
@@ -78,17 +79,17 @@ namespace EWE {
 
         uint8_t lastComparisonIndex = 0;
 		uint8_t currentComparisonIndex = 1;
-		int16_t nextComparisonIndex = -1;
+		uint8_t nextComparisonIndex = -1;
 
 		//c short for comparison
         while (currentComparisonIndex < barriers.size()) {
-            nextComparisonIndex = barriers.size();
+            nextComparisonIndex = static_cast<uint8_t>(barriers.size());
 
             const VkPipelineStageFlagBits cSrcStageMask = barriers[currentComparisonIndex].srcStageMask;
             const VkPipelineStageFlagBits cDstStageMask = barriers[currentComparisonIndex].dstStageMask;
             const VkDependencyFlags cDependencyFlags = barriers[currentComparisonIndex].dependencyFlags;
 
-            for ( ; currentComparisonIndex < barriers.size(); currentComparisonIndex++) {
+            for ( ; currentComparisonIndex < static_cast<uint8_t>(barriers.size()); currentComparisonIndex++) {
                 const bool srcComp{ cSrcStageMask == barriers[currentComparisonIndex].srcStageMask };
                 const bool dstComp{ cDstStageMask == barriers[currentComparisonIndex].dstStageMask };
                 const bool dfComp{ cDependencyFlags == barriers[currentComparisonIndex].dependencyFlags };
@@ -120,6 +121,8 @@ namespace EWE {
 			imageMemoryBarrier.newLayout = newImageLayout;
 			imageMemoryBarrier.image = image;
 			imageMemoryBarrier.subresourceRange = subresourceRange;
+            imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
 			if ((oldImageLayout == VK_IMAGE_LAYOUT_UNDEFINED) && (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)) {
 				imageMemoryBarrier.srcAccessMask = 0;

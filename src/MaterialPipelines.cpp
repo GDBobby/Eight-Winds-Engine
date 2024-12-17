@@ -8,7 +8,7 @@ namespace EWE {
 
 	struct MaterialPipeLayoutInfo {
 		VkPipelineLayout pipeLayout{ VK_NULL_HANDLE };
-		size_t pushSize;
+		uint32_t pushSize;
 		VkShaderStageFlags pushStageFlags;
 
 		void Push(void* pushData) {

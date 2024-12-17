@@ -260,7 +260,7 @@ namespace EWE {
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.pNext = nullptr;
         write.descriptorType = bindingDescription.descriptorType;
-        write.dstBinding = writes.size();
+        write.dstBinding = static_cast<uint32_t>(writes.size());
         write.pBufferInfo = bufferInfo;
         write.descriptorCount = 1;
 
@@ -276,7 +276,7 @@ namespace EWE {
         write.pNext = nullptr;
         auto& bindingDescription = setLayout->bindings[writes.size()];
         write.descriptorType = bindingDescription.descriptorType;
-        write.dstBinding = writes.size();
+        write.dstBinding = static_cast<uint32_t>(writes.size());
         write.pImageInfo = imgInfo;
         write.descriptorCount = 1;
         write.dstArrayElement = 0;

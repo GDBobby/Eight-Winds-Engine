@@ -32,7 +32,7 @@ namespace EWE {
 		printf("ARS constructor \n");
 #endif
 
-		model2D = Basic_Model::Quad2D(Queue::transfer);
+		model2D = Basic_Model::Quad2D();
 #if EWE_DEBUG
 		printf("after ARS constructor finished \n");
 #endif

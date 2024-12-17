@@ -15,9 +15,9 @@ namespace EWE {
 
 		PipelineBarrier();
 		PipelineBarrier(PipelineBarrier& copySource) noexcept;
-		PipelineBarrier& operator=(PipelineBarrier& copySource);
+		PipelineBarrier& operator=(PipelineBarrier& copySource) noexcept;
 		PipelineBarrier(PipelineBarrier&& moveSource) noexcept;
-		PipelineBarrier& operator=(PipelineBarrier&& moveSource);
+		PipelineBarrier& operator=(PipelineBarrier&& moveSource) noexcept;
 
 		bool Empty() const {
 			return (memoryBarriers.size() + imageBarriers.size() + bufferBarriers.size()) == 0;

@@ -11,11 +11,15 @@
 #define USING_MALLOC false
 
 namespace Internal { //need header access for the templates
+#if CALL_TRACING
     void* ewe_alloc(std::size_t element_size, std::size_t element_count, std::source_location srcLoc = std::source_location::current());
+#endif
     void ewe_free(void* ptr);
 }//namespace Internal
 
+#if CALL_TRACING
 void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc = std::source_location::current());
+#endif
 void ewe_free_mem_track(void* ptr);
 
 //template<typename T, typename... Args>
@@ -77,7 +81,6 @@ T* Construct(void* address, ConstructAddrHelper<T> construct
     , std::source_location srcLoc = std::source_location::current()) {
     ewe_alloc_mem_track(reinterpret_cast<void*>(construct.ptr), srcLoc);
 #else
-) {
 ) {
 #endif
     return construct.ptr;

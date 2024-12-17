@@ -12,7 +12,7 @@ namespace EWE {
 		int channels;
 
 #if DEBUG_NAMING
-		const std::string debugName;
+		std::string debugName{};
 #endif
 
 		PixelPeek() {}
@@ -29,7 +29,7 @@ namespace EWE {
 		VkImageView imageView;
 		VkSampler sampler{ VK_NULL_HANDLE };
 		uint8_t mipLevels{ 1 };
-		uint8_t arrayLayers{ 1 };
+		uint16_t arrayLayers{ 1 };
 		VkDescriptorImageInfo descriptorImageInfo;
 		uint32_t width;
 		uint32_t height;

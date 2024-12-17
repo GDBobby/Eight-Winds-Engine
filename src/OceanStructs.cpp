@@ -115,7 +115,7 @@ namespace EWE {
                 0, nullptr
             );
 
-            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
+            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, static_cast<uint32_t>(sizeof(pushData)), &pushData);
 
 #if CASCADE_COUNT_IN_ZED_GROUP_COUNT
             EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, cascade_count);
@@ -198,7 +198,7 @@ namespace EWE {
                 0, nullptr
             );
             pushData.mTime += dt;
-            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
+            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, static_cast<uint32_t>(sizeof(pushData)), &pushData);
 
 #if CASCADE_COUNT_IN_ZED_GROUP_COUNT
             EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, OCEAN_WAVE_COUNT / LOCAL_WORK_GROUP_SIZE, cascade_count);
@@ -274,7 +274,7 @@ namespace EWE {
             );
             pushData.deltaTime = dt;
             pushData.secondPass = 0;
-            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
+            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, static_cast<uint32_t>(sizeof(pushData)), &pushData);
 
 #if CASCADE_COUNT_IN_ZED_GROUP_COUNT
             EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), 1, OCEAN_WAVE_COUNT, cascade_count);
@@ -282,7 +282,7 @@ namespace EWE {
             EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), 1, OCEAN_WAVE_COUNT, 1);
             Barrier::TransferImageStage(VK::Object->GetFrameBuffer(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, fftImage);
             pushData.secondPass = 1;
-            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pushData), &pushData);
+            EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, static_cast<uint32_t>(sizeof(pushData)), &pushData);
             EWE_VK(vkCmdDispatch, VK::Object->GetFrameBuffer(), 1, OCEAN_WAVE_COUNT, 1);
 #endif
         }
@@ -405,7 +405,7 @@ namespace EWE {
                 }
             }
 
-            oceanModel = Construct<EWEModel>({ gridVertices.data(), gridVertices.size(), sizeof(gridVertices[0]), gridIndices, Queue::graphics });
+            oceanModel = Construct<EWEModel>({ gridVertices.data(), gridVertices.size(), sizeof(gridVertices[0]), gridIndices});
         }
 
         void OceanGraphicsGPUData::Render() {

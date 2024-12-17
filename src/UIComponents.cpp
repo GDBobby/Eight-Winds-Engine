@@ -369,19 +369,19 @@ namespace EWE {
 	void ComboBox::move(float xDiff, float yDiff, float screenWidth, float screenHeight) {
 		activeOption.textStruct.x += xDiff;
 		activeOption.textStruct.y += yDiff;
-		activeOption.clickBox.x += xDiff;
-		activeOption.clickBox.z += xDiff;
-		activeOption.clickBox.y += yDiff;
-		activeOption.clickBox.w += yDiff;
+		activeOption.clickBox.x += static_cast<int>(xDiff);
+		activeOption.clickBox.z += static_cast<int>(xDiff);
+		activeOption.clickBox.y += static_cast<int>(yDiff);
+		activeOption.clickBox.w += static_cast<int>(yDiff);
 		UIComp::convertClickToTransform(activeOption.clickBox, activeOption.transform, screenWidth, screenHeight);
 
 		for (auto& cOption : comboOptions) {
 			cOption.textStruct.x += xDiff;
 			cOption.textStruct.y += yDiff;
-			cOption.clickBox.x += xDiff;
-			cOption.clickBox.z += xDiff;
-			cOption.clickBox.y += yDiff;
-			cOption.clickBox.w += yDiff;
+			cOption.clickBox.x += static_cast<int>(xDiff);
+			cOption.clickBox.z += static_cast<int>(xDiff);
+			cOption.clickBox.y += static_cast<int>(yDiff);
+			cOption.clickBox.w += static_cast<int>(yDiff);
 			UIComp::convertClickToTransform(cOption.clickBox, cOption.transform, screenWidth, screenHeight);
 		}
 	}

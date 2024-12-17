@@ -41,25 +41,6 @@ namespace EWE {
     class EWEModel {
     public:
 
-        struct Builder {
-            std::vector<VertexNT> vertices{};
-            std::vector<uint32_t> indices{};
-
-            void LoadModel(const std::string& filepath);
-        };
-        struct SimpleBuilder {
-            std::vector<SimpleVertex> vertices{};
-            std::vector<uint32_t> indices{};
-
-            void LoadModel(const std::string& filepath);
-        };
-        struct GrassBuilder {
-            std::vector<GrassVertex> vertices{};
-            std::vector<uint32_t> indices{};
-
-            void LoadModel(const std::string& filepath);
-        };
-
         template <typename T>
         static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions() {
             std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
@@ -71,23 +52,23 @@ namespace EWE {
         }
 
 
-        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices, Queue::Enum queue);
-        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, Queue::Enum queue);
+        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices);
+        EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex);
 
 
-        void AddInstancing(uint32_t instanceCount, const uint32_t instanceSize, void const* data, Queue::Enum queue);
+        void AddInstancing(uint32_t instanceCount, const uint32_t instanceSize, void const* data);
 
 
         EWEModel(const EWEModel&) = delete;
         EWEModel& operator=(const EWEModel&) = delete;
 #if CALL_TRACING
-        static EWEModel* CreateModelFromObj(const std::string& filepath, Queue::Enum queue, std::source_location = std::source_location::current());
-        static EWEModel* CreateSimpleModelFromObj(const std::string& filePath, Queue::Enum queue, std::source_location = std::source_location::current());
-        static EWEModel* CreateGrassModelFromObj(const std::string& filePath, Queue::Enum queue, std::source_location = std::source_location::current());
+        static EWEModel* CreateModelFromObj(const std::string& filepath, std::source_location = std::source_location::current());
+        static EWEModel* CreateSimpleModelFromObj(const std::string& filePath, std::source_location = std::source_location::current());
+        static EWEModel* CreateGrassModelFromObj(const std::string& filePath, std::source_location = std::source_location::current());
 #else
-        static EWEModel* CreateModelFromObj(const std::string& filepath, Queue::Enum queue);
-        static EWEModel* CreateSimpleModelFromObj(const std::string& filePath, Queue::Enum queue);
-        static EWEModel* CreateGrassModelFromObj(const std::string& filePath, Queue::Enum queue);
+        static EWEModel* CreateModelFromObj(const std::string& filepath);
+        static EWEModel* CreateSimpleModelFromObj(const std::string& filePath);
+        static EWEModel* CreateGrassModelFromObj(const std::string& filePat);
 #endif
 
         void BindAndDraw();
@@ -119,10 +100,10 @@ namespace EWE {
         //void createBoneVertexBuffers(const std::vector<boneVertex>& vertices);
         //void createBobVertexBuffers(const std::vector <bobVertex>& vertices);
 
-        void VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data, Queue::Enum queue);
+        void VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data);
 
-        void CreateIndexBuffer(void const* indexData, uint32_t indexCount, Queue::Enum queue);
-        void CreateIndexBuffers(const std::vector<uint32_t>& indices, Queue::Enum queue);
+        void CreateIndexBuffer(void const* indexData, uint32_t indexCount);
+        void CreateIndexBuffers(const std::vector<uint32_t>& indices);
 
 
         EWEBuffer* vertexBuffer{ nullptr };

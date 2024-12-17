@@ -4,7 +4,7 @@
 #define VMA_IMPLEMENTATION
 #include "EWEngine/Graphics/vk_mem_alloc.h"
 #endif
-
+#if CALL_TRACING
 void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation) {
 #if DEBUGGING_DEVICE_LOST                                                                                        
     if (vkResult == VK_ERROR_DEVICE_LOST) { EWE::VKDEBUG::OnDeviceLost(); }
@@ -20,6 +20,23 @@ void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation
         assert(vkResult == VK_SUCCESS && "VK_ERROR");
     }
 }
+#else
+void EWE_VK_RESULT(VkResult vkResult) {
+#if DEBUGGING_DEVICE_LOST                                                                                        
+    if (vkResult == VK_ERROR_DEVICE_LOST) { EWE::VKDEBUG::OnDeviceLost(); }
+    else
+#endif
+        if (vkResult != VK_SUCCESS) {
+            printf("VK_ERROR : %d \n", vkResult);
+            std::ofstream logFile{};
+            logFile.open(GPU_LOG_FILE, std::ios::app);
+            assert(logFile.is_open() && "Failed to open log file");
+            logFile << "VK_ERROR : " << vkResult << "\n";
+            logFile.close();
+            assert(vkResult == VK_SUCCESS && "VK_ERROR");
+        }
+}
+#endif
 
 
 namespace EWE {
@@ -183,7 +200,6 @@ namespace EWE {
 
 
 
-#if COMMAND_BUFFER_TRACING
     void CommandBuffer::Reset() {
         //VkCommandBufferResetFlags flags = VkCommandBufferResetFlagBits::VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT;
         VkCommandBufferResetFlags flags = 0;
@@ -198,5 +214,4 @@ namespace EWE {
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         EWE_VK(vkBeginCommandBuffer, *this, &beginInfo);
     }
-#endif
 }

@@ -1,4 +1,5 @@
 #include "EWEngine/Systems/SyncHub.h"
+#include "EWEngine/Graphics/Texture/ImageFunctions.h"
 
 #include <future>
 #include <cassert>
@@ -24,18 +25,13 @@ namespace EWE {
 
 	void SyncHub::Initialize() {
 		syncHubSingleton = Construct<SyncHub>({});
-#if DEBUG_NAMING
-		DebugNaming::SetObjectName(VK::Object->commandPools[Queue::transfer], VK_OBJECT_TYPE_COMMAND_BUFFER, "transfer command pool");
-		DebugNaming::SetObjectName(VK::Object->commandPools[Queue::graphics], VK_OBJECT_TYPE_COMMAND_BUFFER, "graphics STG command pool");
-		DebugNaming::SetObjectName(VK::Object->renderCmdPool, VK_OBJECT_TYPE_COMMAND_BUFFER, "render command pool");
-#endif
 
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 		syncHubSingleton->transferSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		syncHubSingleton->transferSubmitInfo.pNext = nullptr;
+#endif
 
 		syncHubSingleton->CreateBuffers();
-
-		syncHubSingleton->CreateSyncObjects();
 	}
 	void SyncHub::Destroy() {
 		assert(syncHubSingleton != nullptr);
@@ -44,12 +40,8 @@ namespace EWE {
 #endif
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-#if COMMAND_BUFFER_TRACING
 			if (VK::Object->renderCommands[i].cmdBuf != VK_NULL_HANDLE) {
-#else
-			if (VK::Object->renderCommands[i] != VK_NULL_HANDLE) {
-#endif
-				EWE_VK(vkFreeCommandBuffers, VK::Object->vkDevice, VK::Object->renderCmdPool, 1, &VK::Object->renderCommands[i]);
+				EWE_VK(vkFreeCommandBuffers, VK::Object->vkDevice, VK::Object->renderCmdPool, 1, VK::Object->renderCommands[i]);
 			}
 		}
 
@@ -68,23 +60,10 @@ namespace EWE {
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandPool = VK::Object->renderCmdPool;
 		allocInfo.commandBufferCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-#if COMMAND_BUFFER_TRACING
 		std::array<VkCommandBuffer, MAX_FRAMES_IN_FLIGHT> tempCmdBuf{};
 		EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &allocInfo, &tempCmdBuf[0]);
 		VK::Object->renderCommands[0].cmdBuf = tempCmdBuf[0];
 		VK::Object->renderCommands[1].cmdBuf = tempCmdBuf[1];
-#else
-		EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &allocInfo, VK::Object->renderCommands.data());
-#endif
-	}
-
-	void SyncHub::CreateSyncObjects() {
-
-		VkFenceCreateInfo fenceInfo = {};
-		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fenceInfo.pNext = nullptr;
-		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		EWE_VK(vkCreateFence, VK::Object->vkDevice, &fenceInfo, nullptr, &singleTimeFenceGraphics);
 	}
 
 	CommandBuffer& SyncHub::BeginSingleTimeCommandGraphics() {
@@ -111,40 +90,16 @@ namespace EWE {
 #endif
 	}
 
-	CommandBuffer& SyncHub::BeginSingleTimeCommand(Queue::Enum queue) {
-		if (queue == Queue::graphics) {
+	CommandBuffer& SyncHub::BeginSingleTimeCommand() {
+		if (VK::Object->CheckMainThread()) {
 			return BeginSingleTimeCommandGraphics();
 		}
-		else if (queue == Queue::transfer) {
+		else {
 			return BeginSingleTimeCommandTransfer();
 		}
-		else {
-			assert(false && "unsupported queue");
-			return BeginSingleTimeCommandGraphics(); //error silencing, DO NOT RETURN THIS
-		}
 	}
 
-	void SyncHub::EndSingleTimeCommandGraphics(CommandBuffer& cmdBuf) {
-		EWE_VK(vkEndCommandBuffer, cmdBuf);
-
-		EWE_VK(vkResetFences, VK::Object->vkDevice, 1, &singleTimeFenceGraphics);
-
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pNext = nullptr;
-		submitInfo.commandBufferCount = 1;
-#if COMMAND_BUFFER_TRACING
-		submitInfo.pCommandBuffers = &cmdBuf.cmdBuf;
-#else
-		submitInfo.pCommandBuffers = &cmdBuf;
-#endif
-		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, singleTimeFenceGraphics);
-
-		EWE_VK(vkWaitForFences, VK::Object->vkDevice, 1, &singleTimeFenceGraphics, VK_TRUE, UINT64_MAX);
-
-		qSyncPool.ResetCommandBuffer(cmdBuf, Queue::graphics);
-	}
-
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 	void SyncHub::RunGraphicsCallbacks() {
 		qSyncPool.CheckFencesForCallbacks();
 #if DEBUG_NAMING
@@ -225,8 +180,37 @@ namespace EWE {
 		DebugNaming::QueueEnd(VK::Object->queues[Queue::graphics]);
 #endif
 	}
+#else
+	void SyncHub::RunGraphicsCallbacks() {
+		qSyncPool.CheckFencesForCallbacks();
+	}
+#endif
+	void SyncHub::EndSingleTimeCommandGraphics(GraphicsCommand& graphicsCommand) {
+		EWE_VK(vkEndCommandBuffer, *graphicsCommand.command);
+		assert(std::this_thread::get_id() == VK::Object->mainThreadID);
 
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext = nullptr;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &graphicsCommand.command->cmdBuf;
+		submitInfo.signalSemaphoreCount = 1;
+		Semaphore* semaphore = qSyncPool.GetSemaphoreForSignaling();
+		submitInfo.pSignalSemaphores = &semaphore->vkSemaphore;
+
+		GraphicsFence& fence = qSyncPool.GetMainThreadGraphicsFence();
+		fence.gCommand = graphicsCommand;
+
+		VK::Object->queueMutex[Queue::graphics].lock();
+		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, fence.fence.vkFence);
+		renderSyncData.AddWaitSemaphore(semaphore, graphicsCommand.waitStage);
+		VK::Object->queueMutex[Queue::graphics].unlock();
+	}
+
+
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 	void SyncHub::EndSingleTimeCommandTransfer() {
+
 		/*
 		* i suspect its possible for transfer commands to hang without being submitted
 		*havent had the issue yet
@@ -238,7 +222,7 @@ namespace EWE {
 		* SubmitTransferBuffer attempts to exit, but lags a little bit
 		* this function completes ::FinalizeCommand and moves to try_lock, and fails to acquire lock, exits
 		* SubmitTransferBuffers exits, and unlocks the transferSubmissionMut, with 1 command submitted to TCM
-		
+
 		* Might be exceptionally rare for this function to attempt the transferSubmissionMut lock before SubmitTransferBuffer
 		* I'll worry about it when it becomes an issue, or I'll just fix it at some point later idk
 		*/
@@ -248,7 +232,131 @@ namespace EWE {
 				transferSubmissionMut.unlock();
 		}
 	}
+#else
+	void SyncHub::EndSingleTimeCommandTransfer(TransferCommand& transferCommand) {
 
+		Fence& transferFence = qSyncPool.GetFence();
+		VkSubmitInfo transferSubmitInfo{};
+		transferSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		transferSubmitInfo.pNext = nullptr;
+		transferSubmitInfo.commandBufferCount = 1;
+#if 0//GROUPING_SUBMITS
+		std::vector<VkCommandBuffer> cmdBufs(transferCommand.commands.size());
+		for (uint32_t i = 0; i < cmdBufs.size(); i++) {
+			EWE_VK(vkEndCommandBuffer, *transferCommand.commands[i]);
+			cmdBufs[i] = transferCommand.commands[i]->cmdBuf
+		}
+		transferSubmitInfo.pCommandBuffers = cmdBufs.data();
+#else
+		EWE_VK(vkEndCommandBuffer, *transferCommand.commands[0]);
+		assert(transferCommand.commands.size() == 1);
+		transferSubmitInfo.pCommandBuffers = &transferCommand.commands[0]->cmdBuf;
+#endif
+
+		Semaphore* transferSemaphore = nullptr; 
+
+		if ((transferCommand.images.size() > 0) || (transferCommand.pipeBarriers.size() > 0)) {
+			transferSemaphore = qSyncPool.GetSemaphoreForSignaling();
+			PipelineBarrier::SimplifyVector(transferCommand.pipeBarriers);
+			transferSubmitInfo.signalSemaphoreCount = 1;
+			transferSubmitInfo.pSignalSemaphores = &transferSemaphore->vkSemaphore;
+		}
+		else {
+			transferSubmitInfo.pSignalSemaphores = nullptr;
+			transferSubmitInfo.signalSemaphoreCount = 0;
+		}
+
+		VK::Object->queueMutex[Queue::transfer].lock();
+		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::transfer], 1, &transferSubmitInfo, transferFence.vkFence);
+		VK::Object->queueMutex[Queue::transfer].unlock();
+
+#if DEBUGGING_FENCES
+		transferFence.fence.log.push_back("setting transfer fence to submitted");
+#endif
+		transferFence.submitted = true;
+
+		if (transferSemaphore == nullptr) {
+			while (!transferFence.CheckReturn(0)) {
+				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+			}
+			for (auto& sb : transferCommand.stagingBuffers) {
+				sb->Free();
+				Deconstruct(sb);
+			}
+			for (auto& cmd : transferCommand.commands) {
+				cmd->Reset();
+			}
+		}
+		else {
+			CommandBuffer& graphicsCmdBuf = qSyncPool.GetCmdBufSingleTime(Queue::graphics);
+			std::vector<ImageInfo*> genMipImages{};
+			for (auto& img : transferCommand.images) {
+				if (img->descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+					genMipImages.push_back(img);
+				}
+			}
+			if (genMipImages.size() > 1) {
+				Image::GenerateMipMapsForMultipleImagesTransferQueue(graphicsCmdBuf, genMipImages);
+			}
+			else if (genMipImages.size() == 1) {
+				Image::GenerateMipmaps(graphicsCmdBuf, genMipImages[0], Queue::transfer);
+			}
+
+			for (auto& barrier : transferCommand.pipeBarriers) {
+				barrier.Submit(graphicsCmdBuf);
+			}
+			EWE_VK(vkEndCommandBuffer, graphicsCmdBuf);
+
+			VkSubmitInfo graphicsSubmitInfo{};
+			graphicsSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			graphicsSubmitInfo.pNext = nullptr;
+			graphicsSubmitInfo.commandBufferCount = 1;
+			graphicsSubmitInfo.pCommandBuffers = &graphicsCmdBuf.cmdBuf;
+
+			graphicsSubmitInfo.waitSemaphoreCount = 1;
+			graphicsSubmitInfo.pWaitSemaphores = &transferSemaphore->vkSemaphore;
+
+			Semaphore* graphicsSemaphore = qSyncPool.GetSemaphoreForSignaling();
+			graphicsSubmitInfo.signalSemaphoreCount = 1;
+			graphicsSubmitInfo.pSignalSemaphores = &graphicsSemaphore->vkSemaphore;
+
+			VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+			graphicsSubmitInfo.pWaitDstStageMask = &waitStage;
+
+			Fence& graphicsFence = qSyncPool.GetFence();
+			VK::Object->queueMutex[Queue::graphics].lock();
+			EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &graphicsSubmitInfo, graphicsFence.vkFence);
+			renderSyncData.AddWaitSemaphore(graphicsSemaphore, waitStage);
+			VK::Object->queueMutex[Queue::graphics].unlock();
+			graphicsFence.submitted = true;
+#if DEBUGGING_FENCES
+			graphicsFence.fence.log.push_back("setting graphics fence to submitted");
+#endif
+
+
+			while (!transferFence.CheckReturn(0)) {
+				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+			}
+			for (auto& sb : transferCommand.stagingBuffers) {
+				sb->Free();
+				Deconstruct(sb);
+			}
+			for (auto& cmd : transferCommand.commands) {
+				cmd->Reset();
+			}
+			while (!graphicsFence.CheckReturn(0)) {
+				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+			}
+			graphicsCmdBuf.Reset();
+			for (auto& image : transferCommand.images) {
+				image->descriptorImageInfo.imageLayout = image->destinationImageLayout;
+			}
+		}
+
+	}
+#endif
+		
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 	void SyncHub::SubmitTransferBuffers() {
 		assert(!TransferCommandManager::Empty());
 		while (!TransferCommandManager::Empty()) {
@@ -284,9 +392,9 @@ namespace EWE {
 			transferSubmitInfo.pWaitSemaphores = nullptr;
 			transferSubmitInfo.waitSemaphoreCount = 0;
 
-			VK::Object->poolMutex[Queue::transfer].lock();
+			VK::Object->queueMutex[Queue::transfer].lock();
 			EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::transfer], 1, &transferSubmitInfo, transferFence.fence.vkFence);
-			VK::Object->poolMutex[Queue::transfer].unlock();
+			VK::Object->queueMutex[Queue::transfer].unlock();
 
 #if DEBUGGING_FENCES
 			transferFence.fence.log.push_back("setting transfer fence to submitted");
@@ -294,6 +402,7 @@ namespace EWE {
 			transferFence.fence.submitted = true;
 		}
 	}
+#endif
 
 	void SyncHub::SubmitGraphics(VkSubmitInfo& submitInfo, uint32_t* imageIndex) {
 
@@ -310,13 +419,16 @@ namespace EWE {
 
 		EWE_VK(vkResetFences, VK::Object->vkDevice, 1, &renderSyncData.inFlight[VK::Object->frameIndex]);
 
+		VK::Object->queueMutex[Queue::graphics].lock();
 		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, renderSyncData.inFlight[VK::Object->frameIndex]);
+		VK::Object->queueMutex[Queue::graphics].unlock();
 	}
 
 	VkResult SyncHub::PresentKHR(VkPresentInfoKHR& presentInfo) {
 
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = &renderSyncData.renderFinishedSemaphore[VK::Object->frameIndex];
+		std::unique_lock<std::mutex> queueLock{VK::Object->queueMutex[Queue::graphics]};
 		return vkQueuePresentKHR(VK::Object->queues[Queue::present], &presentInfo);
 	}
 }

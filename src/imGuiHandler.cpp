@@ -79,7 +79,7 @@ namespace EWE {
 
 		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
 		pool_info.maxSets = 0;
-		for (int i = 0; i < pool_info.poolSizeCount; i++) {
+		for (uint32_t i = 0; i < pool_info.poolSizeCount; i++) {
 			pool_info.maxSets += pool_sizes[i].descriptorCount;
 		}
 		//pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);

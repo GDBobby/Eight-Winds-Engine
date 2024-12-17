@@ -9,7 +9,7 @@ namespace EWE {
     public:
         static uint32_t nextSkeletonID;
 
-        SkeletonBase(std::string importPath, std::string texturePath, Queue::Enum queue, bool instanced = false);
+        SkeletonBase(std::string importPath, std::string texturePath, bool instanced = false);
 #if DECONSTRUCTION_DEBUG
         ~SkeletonBase() {
             printf("Deconstructing player skeleton \n");

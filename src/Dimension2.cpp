@@ -80,15 +80,17 @@ namespace EWE {
 		fragString = "NineUI.frag.spv";
 		pipe9 = ConstructSingular<EWEPipeline>(ewe_call_trace, vertString, fragString, pipelineConfig);
 		*/
-		model2D = Basic_Model::Quad2D(Queue::transfer);
-		//nineUIModel = Basic_Model::NineUIQuad(Queue::transfer);
+		model2D = Basic_Model::Quad2D();
+		//nineUIModel = Basic_Model::NineUIQuad();
 	}
 
 
 	void Dimension2::Init() {
 		assert(dimension2Ptr == nullptr && "initing dimension2 twice?");
 		dimension2Ptr = new Dimension2();
+#if CALL_TRACING
 		ewe_alloc_mem_track(dimension2Ptr);
+#endif
 		//dimension2Ptr = ConstructSingular<Dimension2>(ewe_call_trace);
 
 	}
@@ -181,12 +183,12 @@ namespace EWE {
 		//possibly do a check here, to ensure the pipeline and descriptors are properly binded
 		//thats really just a feature to check bad programming, dont rely on the programmer being bad. (easy enough to debug)
 
-		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_array, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Simple2DPushConstantData), &push);
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_array, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(Simple2DPushConstantData)), &push);
 		dimension2Ptr->model2D->Draw();
 	}
 
 	void Dimension2::PushAndDraw(void* ptr) {
-		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_single, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(glm::vec4), ptr);
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_single, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(glm::vec4)), ptr);
 		dimension2Ptr->model2D->Draw();
 	}
 }

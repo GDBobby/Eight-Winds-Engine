@@ -6,53 +6,87 @@
 
 namespace EWE {
     ThreadPool* ThreadPool::singleton{ nullptr };
+
+    thread_local std::queue<std::function<void()>>* ThreadPool::localThreadTasks{};
+
     void ThreadPool::Construct() {
         assert(singleton == nullptr && "constructing Threadpool twice");
-        singleton = new ThreadPool(std::thread::hardware_concurrency() - 2);
-        //1 thread reserved for graphics, which is the calling thread
-        //1 thread is reserved for transfer executive, i need to come back and see if an executive transfer thread is necessary, or if it could be considered a worker thread
-        //might be necessary to reserve a thread for compute, and logic. not sure if they can also be considered worker threads
+        singleton = new ThreadPool(std::thread::hardware_concurrency() - 1);
     }
     void ThreadPool::Deconstruct() {
         delete singleton;
     }
 
-    ThreadPool::ThreadPool(std::size_t numThreads) {
+    ThreadPool::ThreadPool(std::size_t numThreads) : threadSpecificTasks{}, threadMutexesBase{numThreads}, threadSpecificMutex{} {
+
+        threadSpecificTasks.reserve(numThreads);
+        threadSpecificMutex.reserve(numThreads);
+
         for (std::size_t i = 0; i < numThreads; ++i) {
+
             threads.emplace_back(
-                [this] {
+                [this, localThreadMutex = &threadMutexesBase[i]] {
+                    const std::thread::id myThreadID = std::this_thread::get_id();
+
+                    threadSpecificTasks.Lock();
+                    localThreadTasks = &threadSpecificTasks.Add(myThreadID);
+                    threadSpecificTasks.Unlock();
+
+                    threadSpecificMutex.Add(myThreadID, localThreadMutex);
+
                     while (true) {
+                        while(localThreadTasks->size() != 0){
+                            localThreadMutex->lock();
+                            auto func = localThreadTasks->front();
+                            localThreadTasks->pop();
+                            localThreadMutex->unlock();
+                            func();
+                        }
+
                         std::unique_lock<std::mutex> lock(this->queueMutex);
                         this->condition.wait(lock,
                             [this] {
-                                return this->stop || !this->tasks.empty();
+                                return this->stop || !this->tasks.empty() || (this->localThreadTasks->size() != 0);
                             }
                         );
                         if (this->stop && this->tasks.empty()) {
                             return;
                         }
-                        auto task = std::move(this->tasks.front());
-                        this->tasks.pop();
-                        lock.unlock();
+                        if (tasks.size() == 0) {
+                            lock.unlock();
+                            assert(localThreadTasks->size() != 0);
+                            while (localThreadTasks->size() != 0) {
+                                localThreadMutex->lock();
+                                auto func = localThreadTasks->front();
+                                localThreadTasks->pop();
+                                localThreadMutex->unlock();
+                                func();
+                            }
+                        }
+                        else {
+                            auto task = std::move(this->tasks.front());
+                            this->tasks.pop();
+                            lock.unlock();
 #if DEBUGGING_THREADS
-                        printf("thread[%u] doing a task\n", std::this_thread::get_id());
+                            printf("thread[%u] doing a task\n", std::this_thread::get_id());
 #endif
 
-                        task();
+                            task();
 #if DEBUGGING_THREADS
-                        printf("thread[%u] finished task\n", std::this_thread::get_id());
+                            printf("thread[%u] finished task\n", std::this_thread::get_id());
 #endif
 
-                        // Increment the number of tasks completed
-                        std::unique_lock<std::mutex> counterLock(this->counterMutex);
-                        this->numTasksCompleted++;
+                            // Increment the number of tasks completed
+                            std::unique_lock<std::mutex> counterLock(this->counterMutex);
+                            this->numTasksCompleted++;
 
 #if DEBUGGING_THREADS
-                        printf("task completed:enqueued - %zu:%zu\n", this->numTasksCompleted, this->numTasksEnqueued);
+                            printf("task completed:enqueued - %zu:%zu\n", this->numTasksCompleted, this->numTasksEnqueued);
 #endif
-                        // Notify any waiting threads if all tasks have completed
-                        if (this->numTasksCompleted == this->numTasksEnqueued) {
-                            this->counterCondition.notify_all();
+                            // Notify any waiting threads if all tasks have completed
+                            if (this->numTasksCompleted == this->numTasksEnqueued) {
+                                this->counterCondition.notify_all();
+                            }
                         }
                     }
                 }
@@ -115,5 +149,14 @@ namespace EWE {
             ++singleton->numTasksEnqueued;
         }
         singleton->condition.notify_one();
+    }
+
+    void ThreadPool::GiveTaskToAThread(std::thread::id id, std::function<void()> task) {
+        std::mutex* threadMut = threadSpecificMutex.GetValue(id);
+        threadMut->lock();
+        threadSpecificTasks.Lock();
+        threadSpecificTasks.GetValue(id).push(task);
+        threadSpecificTasks.Unlock();
+        threadMut->unlock();
     }
 }//namespace EWE

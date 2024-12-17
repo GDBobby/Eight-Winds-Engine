@@ -53,6 +53,7 @@ void UpdateMemoryLogFile() {
 #endif
 
 namespace Internal {
+#if CALL_TRACING
 	void* ewe_alloc(std::size_t element_size, std::size_t element_count, std::source_location srcLoc) {
 		void* ptr = malloc(element_count * element_size);
 #if EWE_DEBUG
@@ -60,6 +61,7 @@ namespace Internal {
 #endif
 		return ptr;
 	}
+#endif
 
 
 	void ewe_free(void* ptr) {
@@ -71,7 +73,7 @@ namespace Internal {
 #endif
 	}
 }//namespace Internal
-
+#if CALL_TRACING
 void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc) {
 
 #if EWE_DEBUG
@@ -79,6 +81,7 @@ void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc) {
 	UpdateMemoryLogFile();
 #endif
 }
+#endif
 
 void ewe_free_mem_track(void* ptr){
 #if EWE_DEBUG

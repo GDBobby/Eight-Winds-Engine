@@ -19,8 +19,8 @@ namespace EWE {
         EweObject& operator=(const EweObject& other) = delete;
 
 
-        EweObject(std::string objectPath, bool globalTextures, Queue::Enum queue);
-        EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, Queue::Enum queue);
+        EweObject(std::string objectPath, bool globalTextures);
+        EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID);
         ~EweObject();
 
 		TransformComponent transform{};
@@ -43,8 +43,8 @@ namespace EWE {
 
         uint32_t mySkinID = 0;
 
-        void AddToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker, Queue::Enum queue);
-        void AddToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner, Queue::Enum queue);
+        void AddToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker);
+        void AddToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner);
 
         void LoadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);
 	

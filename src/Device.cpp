@@ -280,12 +280,6 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
         printf("beginning EWEdevice deconstruction \n");
 #endif
-
-        for (uint8_t i = 0; i < VK::Object->commandPools.size(); i++) {
-            if (VK::Object->commandPools[i] != VK_NULL_HANDLE) {
-                EWE_VK(vkDestroyCommandPool, VK::Object->vkDevice, VK::Object->commandPools[i], nullptr);
-            }
-        }
         if (VK::Object->renderCmdPool != VK_NULL_HANDLE) {
             EWE_VK(vkDestroyCommandPool, VK::Object->vkDevice, VK::Object->renderCmdPool, nullptr);
         }
@@ -651,52 +645,6 @@ namespace EWE {
             EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->renderCmdPool);
 #if DEBUG_NAMING
             DebugNaming::SetObjectName(VK::Object->renderCmdPool, VK_OBJECT_TYPE_COMMAND_POOL, "render cmd pool");
-#endif
-        }
-        {
-            VkCommandPoolCreateInfo poolInfo = {};
-            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
-            poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::graphics]);
-#if DEBUG_NAMING
-            DebugNaming::SetObjectName(VK::Object->commandPools[Queue::graphics], VK_OBJECT_TYPE_COMMAND_POOL, "graphics STG cmd pool");
-#endif
-        }
-        {
-            VkCommandPoolCreateInfo poolInfo = {};
-            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            if (VK::Object->queueIndex[Queue::transfer] != -1) {
-#if EWE_DEBUG
-                printf("transfer command pool created with transfer queue family \n");
-#endif
-                poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
-            }
-            else {
-#if EWE_DEBUG
-                printf("transfer command pool created with graphics queue family \n");
-#endif
-                poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
-            }
-            poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::transfer]);
-#if DEBUG_NAMING
-            DebugNaming::SetObjectName(VK::Object->commandPools[Queue::transfer], VK_OBJECT_TYPE_COMMAND_POOL, "transfer cmd pool");
-#endif
-        }
-        {
-            VkCommandPoolCreateInfo poolInfo = {};
-            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            poolInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::compute];
-
-            //sascha doesnt use TRANSIENT_BIT
-            poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-            EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &VK::Object->commandPools[Queue::compute]);
-#if DEBUG_NAMING
-            DebugNaming::SetObjectName(VK::Object->commandPools[Queue::compute], VK_OBJECT_TYPE_COMMAND_POOL, "compute cmd pool");
 #endif
         }
     }

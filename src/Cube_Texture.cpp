@@ -15,7 +15,7 @@ namespace EWE {
 #define SKYBOX_DIR "textures/skybox/"
 #endif
     namespace Cube_Texture {
-        void CreateCubeImage(ImageInfo& cubeImage, std::vector<PixelPeek>& pixelPeek, Queue::Enum queue) {
+        void CreateCubeImage(ImageInfo& cubeImage, std::vector<PixelPeek>& pixelPeek) {
             uint64_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
             cubeImage.arrayLayers = 6;
             VkDeviceSize imageSize = layerSize * cubeImage.arrayLayers;
@@ -72,7 +72,7 @@ namespace EWE {
 #if IMAGE_DEBUGGING
             cubeImage.imageName = pixelPeek[0].debugName;
 #endif
-            Image::CreateImageCommands(cubeImage, imageCreateInfo, stagingBuffer, queue, false);
+            Image::CreateImageCommands(cubeImage, imageCreateInfo, stagingBuffer, false);
         }
 
         void CreateCubeImageView(ImageInfo& cubeImage) {
@@ -127,7 +127,7 @@ namespace EWE {
             cubeImage.sampler = Sampler::GetSampler(samplerInfo);
         }
 
-        ImageID CreateCubeImage(std::string texPath, Queue::Enum queue, std::string extension) {
+        ImageID CreateCubeImage(std::string texPath, std::string extension) {
             {
                 ImageID foundImage = Image_Manager::FindByPath(texPath);
                 if (foundImage != IMAGE_INVALID) {
@@ -154,22 +154,16 @@ namespace EWE {
             Image_Manager::ImageReturn cubeTracker = Image_Manager::ConstructEmptyImageTracker(texPath);
             ImageInfo& cubeImage = cubeTracker.imgTracker->imageInfo;
 
-            if (queue == Queue::graphics) {
-                cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                cubeImage.destinationImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-            else {
-                cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                cubeImage.destinationImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
+            cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            cubeImage.destinationImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            
 
-            CreateCubeImage(cubeImage, pixelPeeks, queue);
+            CreateCubeImage(cubeImage, pixelPeeks);
             CreateCubeImageView(cubeImage);
             CreateCubeSampler(cubeImage);
 
             cubeImage.descriptorImageInfo.sampler = cubeImage.sampler;
             cubeImage.descriptorImageInfo.imageView = cubeImage.imageView;
-            cubeImage.descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             return cubeTracker.imgID;
         }

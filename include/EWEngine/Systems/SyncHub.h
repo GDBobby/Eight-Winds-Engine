@@ -24,13 +24,10 @@ namespace EWE {
 		QueueSyncPool qSyncPool;
 
 
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 		VkSubmitInfo transferSubmitInfo{};
-
 		std::mutex transferSubmissionMut{};
-
-
-		//VkFence fence{ VK_NULL_HANDLE };
-		VkFence singleTimeFenceGraphics{ VK_NULL_HANDLE };
+#endif
 
 		RenderSyncData renderSyncData;
 
@@ -67,11 +64,15 @@ namespace EWE {
 
 		//this needs to be called from the graphics thread
 		//these have a fence with themselves
-		void EndSingleTimeCommandGraphics(CommandBuffer& cmdBuf);
+		void EndSingleTimeCommandGraphics(GraphicsCommand& graphicsCommand);
 
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 		void EndSingleTimeCommandTransfer();
+#else
+		void EndSingleTimeCommandTransfer(TransferCommand& transferCommand);
+#endif
 
-		CommandBuffer& BeginSingleTimeCommand(Queue::Enum queue);
+		CommandBuffer& BeginSingleTimeCommand();
 		CommandBuffer& BeginSingleTimeCommandGraphics();
 		CommandBuffer& BeginSingleTimeCommandTransfer();
 
@@ -80,18 +81,18 @@ namespace EWE {
 		}
 
 		void RunGraphicsCallbacks();
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 		bool CheckFencesForUsage() {
 			return qSyncPool.CheckFencesForUsage();
 		}
-		//only access this from EndSingleTimeCommandTransfer for concurrency purposes
+#endif
+
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 		void SubmitTransferBuffers();
-
+#endif
 	private:
-
-		void CreateSyncObjects();
 
 		void CreateBuffers();
 		bool transferSubmissionThreadActive = false;
-
 	};
 }

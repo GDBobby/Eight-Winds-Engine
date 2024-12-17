@@ -10,7 +10,7 @@ namespace EWE {
 		size_t alignment = 0;
 		alignment = VK::Object->properties.limits.minStorageBufferOffsetAlignment;
 
-		alignment = std::ceil(static_cast<double>((sizeof(glm::mat4) + sizeof(glm::mat3))) / alignment) * alignment;
+		alignment = static_cast<std::size_t>(std::ceil(static_cast<double>((sizeof(glm::mat4) + sizeof(glm::mat3))) / alignment) * alignment);
 
 		transformBuffer = std::make_unique<EWEBuffer>(sizeof(glm::mat4) + sizeof(glm::mat3), modelLimit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);// , device.getProperties().limits.minStorageBufferOffsetAlignment);
 	}

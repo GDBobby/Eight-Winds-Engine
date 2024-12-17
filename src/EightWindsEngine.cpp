@@ -40,12 +40,13 @@ namespace EWE {
 
 	void EightWindsEngine::EndEngineLoadScreen() {
 		printf("~~~~ ENDING LOADING SCREEN ~~~ \n");
-
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 		//dependent on this not being in the graphics thread, or it'll infinitely loop
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 
+		
 		while (!TransferCommandManager::Empty() || syncHub->CheckFencesForUsage()) {/*printf("waiting on fences\n");*/ std::this_thread::sleep_for(std::chrono::nanoseconds(1)); }
-
+#endif
 		loadingEngine = false;
 	}
 

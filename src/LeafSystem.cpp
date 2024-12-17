@@ -339,7 +339,7 @@ namespace EWE {
 		inFile.close();
 		//printf("file read successfully \n");
 
-		leafModel = Construct<EWEModel>({ importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::graphics });
+		leafModel = Construct<EWEModel>({ importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices});
 
 #if DEBUG_NAMING
 		leafModel->SetDebugNames("leafModel");
@@ -347,9 +347,9 @@ namespace EWE {
 	}
 	void LeafSystem::LoadLeafTexture() {
 		const std::string fullLeafTexturePath = "textures/leaf.jpg";
-		//Image::CreateImage(&leafImageInfo, fullLeafTexturePath, false, Queue::graphics);
+		//Image::CreateImage(&leafImageInfo, fullLeafTexturePath, false);
 
-		leafImgID = Image_Manager::GetCreateImageID(fullLeafTexturePath, false, Queue::graphics);
+		leafImgID = Image_Manager::GetCreateImageID(fullLeafTexturePath, false);
 
 		const std::string leafTexturePath = "leaf.jpg";
 		//printf("leaf model loaded \n");

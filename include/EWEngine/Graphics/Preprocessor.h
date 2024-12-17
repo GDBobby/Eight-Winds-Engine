@@ -4,12 +4,13 @@
  //_DEBUG is already defined in Visual Studio while in DEBUG mode
  //this changes it so that on windows, _DEBUG needs to be defined explicitly
 
-#define CALL_TRACING true
+
+#define EWE_DEBUG false
+
+#define CALL_TRACING (true && EWE_DEBUG)
 #if CALL_TRACING
 #include <source_location>
 #endif
-
-#define EWE_DEBUG true
 
 #define DEBUGGING_DEVICE_LOST false
 #define USING_NVIDIA_AFTERMATH (true && DEBUGGING_DEVICE_LOST)
@@ -31,6 +32,8 @@
 
 #define COMMAND_BUFFER_TRACING (true && EWE_DEBUG)
 #define DEBUGGING_FENCES (false && EWE_DEBUG)
+
+#define ONE_SUBMISSION_THREAD_PER_QUEUE false
 
 #define IMAGE_DEBUGGING (true && EWE_DEBUG)
 

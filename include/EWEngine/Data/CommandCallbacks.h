@@ -44,19 +44,25 @@ namespace EWE {
         void BeginWaiting();
 #endif
     };
+    struct GraphicsCommand {
+        CommandBuffer* command{ nullptr };
+        ImageInfo* imageInfo{ nullptr };
+        StagingBuffer* stagingBuffer{ nullptr }; 
+        VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    };
 
-    struct TransferCommandCallbacks {
+    struct TransferCommand {
         std::vector<CommandBuffer*> commands;
         std::vector<StagingBuffer*> stagingBuffers;
         std::vector<PipelineBarrier> pipeBarriers;
         std::vector<ImageInfo*> images;
         Semaphore* semaphore;
 
-        TransferCommandCallbacks() : commands{}, stagingBuffers{}, pipeBarriers{}, images{}, semaphore{ nullptr } {} //constructor
-        TransferCommandCallbacks(TransferCommandCallbacks& copySource); //copy constructor
-        TransferCommandCallbacks& operator=(TransferCommandCallbacks& copySource); //copy assignment
-        TransferCommandCallbacks(TransferCommandCallbacks&& moveSource) noexcept;//move constructor
-        TransferCommandCallbacks& operator=(TransferCommandCallbacks&& moveSource) noexcept; //move assignment
-        //TransferCommandCallbacks& operator+=(TransferCommandCallbacks& copySource);
+        TransferCommand() : commands{}, stagingBuffers{}, pipeBarriers{}, images{}, semaphore{ nullptr } {} //constructor
+        TransferCommand(TransferCommand& copySource); //copy constructor
+        TransferCommand& operator=(TransferCommand& copySource); //copy assignment
+        TransferCommand(TransferCommand&& moveSource) noexcept;//move constructor
+        TransferCommand& operator=(TransferCommand&& moveSource) noexcept; //move assignment
+        //TransferCommand& operator+=(TransferCommand& copySource);
     };
 } //namespace EWE

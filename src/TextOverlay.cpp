@@ -186,7 +186,9 @@ namespace EWE {
 		// Copy to image
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-		CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand(Queue::transfer);
+		const bool inMainThread = VK::Object->CheckMainThread();
+
+		CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand();
 		VkImageSubresourceRange subresourceRange{};
 		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		subresourceRange.baseMipLevel = 0;
@@ -226,20 +228,35 @@ namespace EWE {
 		}
 		{//transition image to a read state, and from transfer queue to graphics queue (in one barrier?)
 			VkImageMemoryBarrier imageBarrier = Barrier::ChangeImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
-			imageBarrier.srcQueueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
-			imageBarrier.dstQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
+			if (inMainThread) {
+				GraphicsCommand gCommand{};
+				gCommand.command = &cmdBuf;
+				gCommand.stagingBuffer = stagingBuffer;
+				EWE_VK(vkCmdPipelineBarrier, cmdBuf,
+					VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
+					0, nullptr,
+					0, nullptr,
+					1, &imageBarrier
+				);
+				syncHub->EndSingleTimeCommandGraphics(gCommand);
+			}
+			else {
+				imageBarrier.srcQueueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
+				imageBarrier.dstQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
+				PipelineBarrier pipeBarrier{};
+				pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+				pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+				pipeBarrier.AddBarrier(imageBarrier);
+				pipeBarrier.dependencyFlags = 0;
+				pipeBarrier.Submit(cmdBuf);
 
-			PipelineBarrier pipeBarrier{};
-			pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-			pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-			pipeBarrier.AddBarrier(imageBarrier);
-			pipeBarrier.dependencyFlags = 0;
-			pipeBarrier.Submit(cmdBuf);
+				TransferCommand command{};
+				command.commands.push_back(&cmdBuf);
+				command.stagingBuffers.push_back(stagingBuffer);
+				command.pipeBarriers.push_back(std::move(pipeBarrier));
+				syncHub->EndSingleTimeCommandTransfer(command);
+			}
 
-			TransferCommandManager::AddCommand(cmdBuf);
-			TransferCommandManager::AddPropertyToCommand(stagingBuffer);
-			TransferCommandManager::AddPropertyToCommand(pipeBarrier);
-			syncHub->EndSingleTimeCommandTransfer();
 		}
 
 
@@ -289,7 +306,7 @@ namespace EWE {
 		descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		descriptorSetLayoutInfo.pNext = nullptr;
 		descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
-		descriptorSetLayoutInfo.bindingCount = setLayoutBindings.size();
+		descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
 
 		//std::cout << "vkcreatedescriptorsetlayout return pre " << std::endl;
 

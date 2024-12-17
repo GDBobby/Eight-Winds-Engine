@@ -38,10 +38,11 @@ namespace EWE{
     } //namespace Queue
 
     uint32_t FindMemoryType(uint32_t typeFilter, const VkMemoryPropertyFlags properties);
-#if COMMAND_BUFFER_TRACING
+
     struct CommandBuffer {
         VkCommandBuffer cmdBuf;
         bool inUse;
+#if COMMAND_BUFFER_TRACING
         struct Tracking {
             std::string funcName;
             std::source_location srcLoc;
@@ -50,22 +51,37 @@ namespace EWE{
         std::vector<Tracking> usageTracking;
 
         CommandBuffer() : cmdBuf{ VK_NULL_HANDLE }, inUse{ false }, usageTracking{} {}
+#else
+        CommandBuffer() : cmdBuf{ VK_NULL_HANDLE }, inUse{ false } {}
+        operator VkCommandBuffer() const { return cmdBuf; }
+        operator VkCommandBuffer*() { return &cmdBuf; }
+#endif
 
-        //dont use these, but i need it for the vector. reenable to spot check and ensure none happen periodically
-        //CommandBuffer(CommandBuffer const& other) = delete;
-        //CommandBuffer(CommandBuffer&& other) = delete;
-        //CommandBuffer& operator=(CommandBuffer const& other) = delete;
-        //CommandBuffer& operator=(CommandBuffer&& other) = delete;
 
+        bool operator==(CommandBuffer const& other) const {
+            return cmdBuf == other.cmdBuf;
+        }
+        void operator=(VkCommandBuffer cmdBuf) {
+            assert(this->cmdBuf == VK_NULL_HANDLE);
+            this->cmdBuf = cmdBuf;
+        }
 
         void Reset();
         void BeginSingleTime();
 
         //void Begin();
     };
-#else
-    typedef VkCommandBuffer CommandBuffer;
+
+    struct ThreadedSingleTimeCommands {
+        std::array<VkCommandPool, Queue::_count> commandPools{VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
+        std::array<std::vector<CommandBuffer>, Queue::_count> cmdBufs;
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
+        std::mutex poolMutex{};
 #endif
+    };
+
+
+
     namespace Sampler { //defined in Sampler.cpp, testing a split cpp/header file
         VkSampler GetSampler(VkSamplerCreateInfo const& samplerInfo);
         void RemoveSampler(VkSampler sampler);
@@ -81,6 +97,9 @@ namespace EWE{
             Object = this;
         }
         const std::thread::id mainThreadID;
+        bool CheckMainThread() const {
+            return std::this_thread::get_id() == mainThreadID;
+        }
 
         VK(VK& copySource) = delete;
         VK(VK&& moveSource) = delete;
@@ -90,9 +109,10 @@ namespace EWE{
         VkDevice vkDevice;
         VkPhysicalDevice physicalDevice;
         VkInstance instance;
-        std::array<std::mutex, Queue::_count> poolMutex{};
-        std::mutex STGMutex{};
-        std::array<VkCommandPool, Queue::_count> commandPools = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
+        std::array<std::mutex, Queue::_count> queueMutex{};
+        std::array<ThreadedSingleTimeCommands, Queue::_count> threadedSTCs{};
+        static thread_local ThreadedSingleTimeCommands* threadedSTC;
+
         VkCommandPool renderCmdPool{ VK_NULL_HANDLE }; //separate graphics pool for single time commands
         std::array<VkQueue, Queue::_count> queues;
         std::array<int, Queue::_count> queueIndex;
@@ -107,11 +127,7 @@ namespace EWE{
         std::array<CommandBuffer, MAX_FRAMES_IN_FLIGHT> renderCommands{};
 
         VkCommandBuffer& GetVKCommandBufferDirect() {
-#if COMMAND_BUFFER_TRACING
             return renderCommands[frameIndex].cmdBuf;
-#else
-            return renderCommands[frameIndex];
-#endif
         }
 
         CommandBuffer& GetFrameBuffer() {
@@ -268,12 +284,14 @@ EWE_VK(F&& f, Args&&...) -> EWE_VK<F, Args...>;
 
 #else
 
+void EWE_VK_RESULT(VkResult vkResult);
+
 template<typename F, typename... Args>
 void EWE_VK(F&& f, Args&&... args) {
 #if WRAPPING_VULKAN_FUNCTIONS
     //call a preliminary function
 #endif
-    if constexpr (std::is_same_v<std::invoke_result<F(Args...)>, void>) {
+    if constexpr (std::is_void_v<decltype(std::forward<F>(f)(std::forward<Args>(args)...))>) {
         std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         //f(args);
     }

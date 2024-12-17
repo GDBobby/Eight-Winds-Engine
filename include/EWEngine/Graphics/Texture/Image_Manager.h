@@ -21,12 +21,12 @@ namespace EWE {
 		ImageInfo imageInfo;
 		uint8_t usageCount;
 		bool zeroUsageDelete;
-		ImageTracker(std::string const& path, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete) : usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
-			Image::CreateImage(&imageInfo, path, mipmap, whichQueue);
+		ImageTracker(std::string const& path, bool mipmap, bool zeroUsageDelete) : usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
+			Image::CreateImage(&imageInfo, path, mipmap);
 		}
-		ImageTracker(std::string const& path, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete) : usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
+		ImageTracker(std::string const& path, VkSampler sampler, bool mipmap, bool zeroUsageDelete) : usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
 			imageInfo.sampler = sampler;
-			Image::CreateImage(&imageInfo, path, mipmap, whichQueue);
+			Image::CreateImage(&imageInfo, path, mipmap);
 		}
 		ImageTracker(ImageInfo& imageInfo, bool zeroUsageDelete) : imageInfo{ imageInfo }, usageCount{ 1 }, zeroUsageDelete{ zeroUsageDelete } {
 		}
@@ -54,8 +54,8 @@ namespace EWE {
 		friend class Material_Image;
 
 		static Image_Manager* imgMgrPtr;
-		static ImageID ConstructImageTracker(std::string const& imagePath, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false);
-		static ImageID ConstructImageTracker(std::string const& imagePath, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false);
+		static ImageID ConstructImageTracker(std::string const& imagePath, bool mipmap, bool zeroUsageDelete = false);
+		static ImageID ConstructImageTracker(std::string const& imagePath, VkSampler sampler, bool mipmap, bool zeroUsageDelete = false);
 		static EWEDescriptorSetLayout* GetSimpleTextureDSL(VkShaderStageFlags stageFlags);
 
 	public:
@@ -69,11 +69,11 @@ namespace EWE {
 
 		Image_Manager();
 
-		static ImageID GetCreateImageID(std::string const& imagePath, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false);
-		static ImageID GetCreateImageID(std::string const& imagePath, VkSampler sampler, bool mipmap, Queue::Enum whichQueue, bool zeroUsageDelete = false);
+		static ImageID GetCreateImageID(std::string const& imagePath, bool mipmap, bool zeroUsageDelete = false);
+		static ImageID GetCreateImageID(std::string const& imagePath, VkSampler sampler, bool mipmap, bool zeroUsageDelete = false);
 
 
-		static VkDescriptorSet CreateSimpleTexture(std::string const& imagePath, bool mipMap, Queue::Enum whichQueue, VkShaderStageFlags stageFlags, bool zeroUsageDelete = false);
+		static VkDescriptorSet CreateSimpleTexture(std::string const& imagePath, bool mipMap, VkShaderStageFlags stageFlags, bool zeroUsageDelete = false);
 #if DESCRIPTOR_IMAGE_IMPLICIT_SYNCHRONIZATION
 		static VkDescriptorSet CreateSimpleTexture(ImageID imageID, VkShaderStageFlags stageFlags);
 #else
@@ -97,7 +97,8 @@ namespace EWE {
 
 		static Image_Manager* GetImageManagerPtr() { return imgMgrPtr; }
 		static ImageID CreateUIImage();
-		static ImageID CreateImageArray(std::vector<PixelPeek> const& pixelPeeks, bool mipmapping, Queue::Enum whichQueue);
+		static ImageID CreateImageArrayFromSingleFile(std::string const& filePath, uint32_t layerWidth, uint32_t layerHeight, uint8_t channelCount);
+		static ImageID CreateImageArray(std::vector<PixelPeek> const& pixelPeeks, bool mipmapping);
 		//static void AddImageInfo(std::string const& path, ImageInfo& imageTemp, bool global);
 	};
 }

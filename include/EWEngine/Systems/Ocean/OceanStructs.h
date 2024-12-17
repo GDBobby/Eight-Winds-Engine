@@ -44,7 +44,7 @@ namespace EWE {
             float mPeakEnhancement{ 3.3f };
             float mShortWavesFade{ 0.1f };
             float mFetch{ 100.f };
-            float mWindDirection{ -29.81 / 180.f * O_PI };
+            float mWindDirection{ -29.81f / 180.f * O_PI };
         };
 
 

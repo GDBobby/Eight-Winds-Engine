@@ -12,7 +12,7 @@ namespace EWE {
     namespace UI_Texture {
 
         //namespace internal {
-        void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek, bool mipmapping, Queue::Enum queue) {
+        void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek, bool mipmapping) {
             std::size_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
             uiImageInfo.arrayLayers = pixelPeek.size();
             const VkDeviceSize imageSize = layerSize * uiImageInfo.arrayLayers;
@@ -79,7 +79,7 @@ namespace EWE {
 #if IMAGE_DEBUGGING
             uiImageInfo.imageName = pixelPeek[0].debugName;
 #endif
-            Image::CreateImageCommands(uiImageInfo, imageCreateInfo, stagingBuffer, queue, mipmapping);
+            Image::CreateImageCommands(uiImageInfo, imageCreateInfo, stagingBuffer, mipmapping);
         }
 
         void CreateUIImageView(ImageInfo& uiImageInfo) {

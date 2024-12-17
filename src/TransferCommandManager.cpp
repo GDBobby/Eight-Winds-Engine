@@ -7,9 +7,10 @@
 
 namespace EWE {
 
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
 	namespace TransferCommandManager {
 		std::mutex callbackMutex{};
-		TransferCommandCallbacks commandCallbacks;
+		TransferCommand commandCallbacks;
 
 
 		bool Empty(){
@@ -24,16 +25,14 @@ namespace EWE {
 			return commandCallbacks.commands.size() == 0;
 		}
 
-		TransferCommandCallbacks PrepareSubmit(){
+		TransferCommand PrepareSubmit(){
 			std::lock_guard<std::mutex> guard{ callbackMutex };
 			return commandCallbacks;
 		}
 
 
 		void AddCommand(CommandBuffer& cmdBuf) {
-			VK::Object->poolMutex[Queue::transfer].lock();
 			EWE_VK(vkEndCommandBuffer, cmdBuf);
-			VK::Object->poolMutex[Queue::transfer].unlock();
 			callbackMutex.lock();
 
 			commandCallbacks.commands.push_back(&cmdBuf);
@@ -52,4 +51,5 @@ namespace EWE {
 		}
 
 	} //namespace TransferCommandManager
+#endif
 } //namespace EWE
