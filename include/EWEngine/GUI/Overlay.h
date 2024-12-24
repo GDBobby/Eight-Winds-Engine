@@ -6,7 +6,7 @@
 namespace EWE {
 	class OverlayBase {
 	public:
-		OverlayBase(float screenWidth, float screenHeight);
+		OverlayBase();
 
 		virtual void DrawText();
 
@@ -18,12 +18,10 @@ namespace EWE {
 		}
 
 		virtual void DrawObjects() = 0;
-		void ResizeWindow();
+		void ResizeWindow(glm::vec2 rescalingRatio);
 		
 	protected:
 		bool isActive = false;
-		float screenWidth;
-		float screenHeight;
 		std::vector<TextStruct> textStructs{};
 		std::vector<GameObject2D> gameObjects{};
 	};

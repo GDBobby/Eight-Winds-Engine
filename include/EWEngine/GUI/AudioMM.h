@@ -6,7 +6,7 @@
 namespace EWE {
 	class AudioMM : public MenuModule {
 	public:
-		AudioMM(float screenWidth, float screenHeight, GLFWwindow* windowPtr);
+		AudioMM(GLFWwindow* windowPtr);
 
 		void processClick(double xpos, double ypos);
 
@@ -14,21 +14,19 @@ namespace EWE {
 
 		void initSoundSettings();
 
-		void initVolumes(float master, float music, float sfx, float screenWidth, float screenHeight) {
+		void initVolumes(float master, float music, float sfx) {
 			sliders.emplace_back();
-			sliders[0].Init(glm::vec2{ 0.f, -.4f }, screenHeight, screenWidth, master);
+			sliders[0].Init(glm::vec2{ 0.f, -.4f }, master);
 			sliders.emplace_back();
-			sliders[1].Init(glm::vec2{ 0.f, -.4f + .25f }, screenHeight, screenWidth, sfx);
+			sliders[1].Init(glm::vec2{ 0.f, -.4f + .25f }, sfx);
 			sliders.emplace_back();
-			sliders[2].Init(glm::vec2{ 0.f, -.4f + (.25f * 2.f) }, screenHeight, screenWidth, music);
+			sliders[2].Init(glm::vec2{ 0.f, -.4f + (.25f * 2.f) }, music);
 
 		}
 		void resetSounds(float master, float music, float sfx);
 	private:
 		static AudioMM* audioPtr;
 		GLFWwindow* windowPtr;
-
-		float screenWidth, screenHeight;
 
 		double mousePosX = 0;
 		double mousePosY = 0;

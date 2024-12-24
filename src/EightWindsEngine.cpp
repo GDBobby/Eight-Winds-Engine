@@ -66,7 +66,7 @@ namespace EWE {
 		uiHandler{ SettingsJSON::settingsData.getDimensions(), mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
 		advancedRS{ objectManager, menuManager },
 		imageManager{ },
-		menuManager{ mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay() },
+		menuManager{ mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay(), VK::Object->screenWidth, VK::Object->screenHeight },
 		skinnedRS{ }
 	{
 		printf("after finishing construction of engine\n");
@@ -199,12 +199,12 @@ namespace EWE {
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.EndSwapChainRender();
 					if (eweRenderer.EndFrame()) {
-						menuManager.windowResize(eweRenderer.GetExtent());
+						menuManager.WindowResize(eweRenderer.GetExtent());
 					}
 				}
 				else {
 
-					menuManager.windowResize(eweRenderer.GetExtent());
+					menuManager.WindowResize(eweRenderer.GetExtent());
 				}
 				
 				renderThreadTime = 0.0;
@@ -328,7 +328,7 @@ namespace EWE {
 			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain recreation
 			//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
 			//uiHandler.windowResize(eweRenderer.getExtent());
-			menuManager.windowResize(eweRenderer.GetExtent());
+			menuManager.WindowResize(eweRenderer.GetExtent());
 		}
 	}
 #if BENCHMARKING_GPU

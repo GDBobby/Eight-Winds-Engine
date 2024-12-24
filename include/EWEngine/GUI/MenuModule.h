@@ -24,15 +24,12 @@ namespace EWE {
 			UIImageStruct(ImageID texture, Transform2dComponent& transform) : texture{ texture }, transform{ transform } {}
 		};
 		static EWEModel* model2D;
-		static EWEModel* nineUIModel;
 
 
-		static void (*changeMenuStateFromMM)(uint8_t, unsigned char);
-		static void changeMenuState(uint8_t menuStates, unsigned char gameState = 255) {
-			changeMenuStateFromMM(menuStates, gameState);
+		static void (*ChangeMenuStateFromMM)(uint8_t, uint8_t);
+		static void ChangeMenuState(uint8_t menuStates, uint8_t gameState = 255) {
+			ChangeMenuStateFromMM(menuStates, gameState);
 		}
-
-		static std::queue<uint16_t> clickReturns;
 
 		static void initTextures();
 
@@ -50,8 +47,7 @@ namespace EWE {
 		}
 
 		static void cleanup() {
-			delete model2D;
-			delete nineUIModel;
+			Deconstruct(model2D);
 		}
 
 		//thread pool functions repurposed, not sure if i need these yet?
@@ -100,6 +96,8 @@ namespace EWE {
 		std::vector<MenuBar> menuBars;
 
 		std::vector<UIImageStruct> images;
+
+		std::vector<std::function<void()>> callbacks{};
 
 		//one function per UI button
 		/* this is on hold for a little while
@@ -168,20 +166,20 @@ namespace EWE {
 			}
 		}
 		*/
-		virtual void processClick(double xpos, double ypos) = 0;
-		std::pair<UIComponentTypes, int16_t> checkClick(double xpos, double ypos);
+		virtual void ProcessClick(double xpos, double ypos) = 0;
+		std::pair<UIComponentTypes, int16_t> CheckClick(double xpos, double ypos);
 
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
+		void ResizeWindow(glm::vec2 rescalingRatio);
 
-		virtual void drawText(TextOverlay* textOverlay);
-		virtual void drawNewObjects();
+		virtual void DrawText();
+		virtual void DrawNewObjects();
 		//void drawObjects(FrameInfo2D& frameInfo);
 
-		bool drawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0) || (menuBars.size() > 0); }
-		virtual void drawNewNine();
+		bool DrawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0) || (menuBars.size() > 0); }
+		virtual void DrawNewNine();
 		//void drawNineUI(FrameInfo2D& frameInfo);
 
 
-		static std::string getInputName(int keycode);
+		static std::string GetInputName(int keycode);
 	};
 }

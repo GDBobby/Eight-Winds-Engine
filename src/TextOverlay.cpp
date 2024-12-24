@@ -64,9 +64,9 @@ namespace EWE {
 	}
 
 
-	uint16_t TextStruct::GetSelectionIndex(double xpos, float screenWidth) {
-		const float charW = 1.5f * scale / screenWidth;
-		float width = GetWidth(screenWidth);
+	uint16_t TextStruct::GetSelectionIndex(double xpos) {
+		const float charW = 1.5f * scale / VK::Object->screenWidth;
+		float width = GetWidth();
 		float currentPos = x;
 		stb_fontchar* charData = &stbFontData[(uint32_t)string.back() - STB_FONT_consolas_24_latin1_FIRST_CHAR];
 #if EWE_DEBUG
@@ -92,18 +92,18 @@ namespace EWE {
 		//float lastPos = currentPos;
 		for (uint16_t i = 0; i < string.length(); i++) {
 			charData = &stbFontData[static_cast<uint32_t>(string[i]) - STB_FONT_consolas_24_latin1_FIRST_CHAR];
-			currentPos += (charData->advance * charW) * screenWidth / 8.f;
+			currentPos += (charData->advance * charW) * VK::Object->screenWidth / 8.f;
 #if EWE_DEBUG
 			printf("currentPos : %.2f \n", currentPos);
 #endif
 			if (xpos <= currentPos) { return i; }
-			currentPos += (charData->advance * charW) * screenWidth * 3.f / 8.f;
+			currentPos += (charData->advance * charW) * VK::Object->screenWidth * 3.f / 8.f;
 		}
 		return static_cast<uint16_t>(string.length());
 	}
-	float TextStruct::GetWidth(float screenWidth) {
+	float TextStruct::GetWidth() {
 		//std::cout << "yo? : " << frameBufferWidth << std::endl;
-		const float charW = 1.5f * scale / screenWidth;
+		const float charW = 1.5f * scale / VK::Object->screenWidth;
 		float textWidth = 0;
 		stb_fontchar* charData;
 		for (auto const& letter : string) {

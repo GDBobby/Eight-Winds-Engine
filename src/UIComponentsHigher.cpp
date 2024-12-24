@@ -5,11 +5,11 @@ namespace EWE {
 	// ~~~~~~~~~~~~~~~~~~~~~ VARIABLE CONTROL ~~~~~~~~~~~~~~~~~~~~
 	VariableControl* VariableControl::variableCtrlPtr;
 
-	VariableControl::VariableControl(GLFWwindow* windowPtr, float posX, float posY, float width, float screenWidth, float screenHeight, std::string dataLabelString, void* dataPointer, UIComp::VariableType dataType, uint8_t dataCount, void* steps)
-		: dataPtr{ dataPointer }, dataType{ dataType }, dataCount{ dataCount }, screenWidth{ screenWidth }, screenHeight{ screenHeight }, windowPtr{ windowPtr }, width{ width }
+	VariableControl::VariableControl(GLFWwindow* windowPtr, float posX, float posY, float width, std::string dataLabelString, void* dataPointer, UIComp::VariableType dataType, uint8_t dataCount, void* steps)
+		: dataPtr{ dataPointer }, dataType{ dataType }, dataCount{ dataCount }, windowPtr{ windowPtr }, width{ width }
 	{
 		assert(dataCount > 0);
-		size_t variableSize = UIComp::getVariableSize(dataType);
+		size_t variableSize = UIComp::GetVariableSize(dataType);
 		dataLabel = TextStruct{ dataLabelString, posX, posY, TA_left, 1.f };
 		//assert(sizeof(T) == variableSize);
 
@@ -17,32 +17,32 @@ namespace EWE {
 
 		memcpy(this->steps, steps, variableSize * 3);
 
-		float ratioWidth = width * screenWidth / DEFAULT_WIDTH;
+		float ratioWidth = width * VK::Object->screenWidth / DEFAULT_WIDTH;
 
 		glm::ivec2 buttonScreen;
 		glm::vec2 buttonTranslation;
-		float verticalSpacing = 26.6f * screenHeight / DEFAULT_HEIGHT;
+		float verticalSpacing = 26.6f * VK::Object->screenHeight / DEFAULT_HEIGHT;
 
 
 		for (int i = 0; i < dataCount; i++) {
-			TypeBox& typeRef = typeBoxes.emplace_back(getVariableString(this->dataPtr, i, this->dataType), this->dataLabel.x, this->dataLabel.y + (verticalSpacing * (i + 1)), TA_left, 1.f, screenWidth, screenHeight);
+			TypeBox& typeRef = typeBoxes.emplace_back(GetVariableString(this->dataPtr, i, this->dataType), this->dataLabel.x, this->dataLabel.y + (verticalSpacing * (i + 1)), TA_left, 1.f);
 			typeRef.inputType = UIComp::InputType_numeric;
 
 			//only supporting align_left right now
 			typeRef.clickBox.z = static_cast<int>(typeRef.clickBox.x + ratioWidth);
-			typeRef.transform.translation.x = ((typeRef.clickBox.x + ratioWidth / 2) - (screenWidth / 2.f)) / (screenWidth / 2.f);
+			typeRef.transform.translation.x = ((typeRef.clickBox.x + ratioWidth / 2) - (VK::Object->screenWidth / 2.f)) / (VK::Object->screenWidth / 2.f);
 			typeRef.transform.scale.x = (ratioWidth / (DEFAULT_WIDTH / 2.f));
 
 			buttonScreen = glm::ivec2(dataLabel.x + ratioWidth, (typeRef.clickBox.y + typeRef.clickBox.w) / 2); //? this is lining up the buttons with the top of textbox
-			UIComp::convertScreenTo2D(buttonScreen, buttonTranslation, screenWidth, screenHeight);
+			UIComp::ConvertScreenTo2D(buttonScreen, buttonTranslation, VK::Object->screenWidth, VK::Object->screenHeight);
 
-			std::pair<Button, Button>& buttonRef = buttons.emplace_back(std::piecewise_construct, std::make_tuple(buttonTranslation, screenWidth, screenHeight), std::make_tuple(buttonTranslation, screenWidth, screenHeight));
+			std::pair<Button, Button>& buttonRef = buttons.emplace_back(std::piecewise_construct, std::make_tuple(buttonTranslation, VK::Object->screenWidth, VK::Object->screenHeight), std::make_tuple(buttonTranslation, VK::Object->screenWidth, VK::Object->screenHeight));
 			buttonRef.first.transform.translation.x += buttonRef.first.transform.scale.x / 2.f;
 			buttonRef.second.transform.translation.x += buttonRef.second.transform.scale.x * 1.55f;
 			buttonRef.first.transform.scale *= .8f;
-			UIComp::convertTransformToClickBox(buttonRef.first.transform, buttonRef.first.clickBox, screenWidth, screenHeight);
+			UIComp::ConvertTransformToClickBox(buttonRef.first.transform, buttonRef.first.clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 			buttonRef.second.transform.scale *= .8f;
-			UIComp::convertTransformToClickBox(buttonRef.second.transform, buttonRef.second.clickBox, screenWidth, screenHeight);
+			UIComp::ConvertTransformToClickBox(buttonRef.second.transform, buttonRef.second.clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 
 			buttonRef.second.transform.scale.y *= -1.f;
 		}
@@ -71,8 +71,8 @@ namespace EWE {
 				//*variables[j] += mediumStep;
 				printf("adding \n");
 				int stepOffset = 1 - glfwGetKey(windowPtr, GLFW_KEY_LEFT_CONTROL) + glfwGetKey(windowPtr, GLFW_KEY_LEFT_SHIFT);
-				addVariables(dataPtr, j, steps, stepOffset, dataType);
-				typeBoxes[j].textStruct.string = getVariableString(dataPtr, j, dataType);
+				AddVariables(dataPtr, j, steps, stepOffset, dataType);
+				typeBoxes[j].textStruct.string = GetVariableString(dataPtr, j, dataType);
 				return false;
 			}
 			else if (buttons[j].second.Clicked(xpos, ypos)) {
@@ -81,27 +81,25 @@ namespace EWE {
 				//*variables[j] -= mediumStep;
 				printf("subtracting \n");
 				int stepOffset = 1 - glfwGetKey(windowPtr, GLFW_KEY_LEFT_CONTROL) + glfwGetKey(windowPtr, GLFW_KEY_LEFT_SHIFT);
-				subtractVariables(dataPtr, j, steps, stepOffset, dataType);
-				typeBoxes[j].textStruct.string = getVariableString(dataPtr, j, dataType);
+				SubtractVariables(dataPtr, j, steps, stepOffset, dataType);
+				typeBoxes[j].textStruct.string = GetVariableString(dataPtr, j, dataType);
 				return false;
 			}
 		}
 		return false;
 	}
-	void VariableControl::resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
+	void VariableControl::ResizeWindow(glm::vec2 resizeRatio) {
 
-		float xRatio = rszWidth / oldWidth;
-		float yRatio = rszHeight / oldHeight;
 		for (int i = 0; i < buttons.size(); i++) {
-			buttons[i].first.clickBox.x = static_cast<int>(static_cast<float>(buttons[i].first.clickBox.x) * xRatio);
-			buttons[i].first.clickBox.z = static_cast<int>(static_cast<float>(buttons[i].first.clickBox.z) * xRatio);
-			buttons[i].first.clickBox.y = static_cast<int>(static_cast<float>(buttons[i].first.clickBox.y) * yRatio);
-			buttons[i].first.clickBox.w = static_cast<int>(static_cast<float>(buttons[i].first.clickBox.w) * yRatio);
+			buttons[i].first.clickBox.x = static_cast<int>(static_cast<float>(buttons[i].first.clickBox.x) * resizeRatio.x);
+			buttons[i].first.clickBox.z = static_cast<int>(static_cast<float>(buttons[i].first.clickBox.z) * resizeRatio.x);
+			buttons[i].first.clickBox.y = static_cast<int>(static_cast<float>(buttons[i].first.clickBox.y) * resizeRatio.y);
+			buttons[i].first.clickBox.w = static_cast<int>(static_cast<float>(buttons[i].first.clickBox.w) * resizeRatio.y);
 
-			buttons[i].second.clickBox.x = static_cast<int>(static_cast<float>(buttons[i].second.clickBox.x) * xRatio);
-			buttons[i].second.clickBox.z = static_cast<int>(static_cast<float>(buttons[i].second.clickBox.z) * xRatio);
-			buttons[i].second.clickBox.y = static_cast<int>(static_cast<float>(buttons[i].second.clickBox.y) * yRatio);
-			buttons[i].second.clickBox.w = static_cast<int>(static_cast<float>(buttons[i].second.clickBox.w) * yRatio);
+			buttons[i].second.clickBox.x = static_cast<int>(static_cast<float>(buttons[i].second.clickBox.x) * resizeRatio.x);
+			buttons[i].second.clickBox.z = static_cast<int>(static_cast<float>(buttons[i].second.clickBox.z) * resizeRatio.x);
+			buttons[i].second.clickBox.y = static_cast<int>(static_cast<float>(buttons[i].second.clickBox.y) * resizeRatio.y);
+			buttons[i].second.clickBox.w = static_cast<int>(static_cast<float>(buttons[i].second.clickBox.w) * resizeRatio.y);
 
 			//UIComp::convertClickToTransform(buttons[i].first.clickBox, buttons[i].first.transform, screenWidth, screenHeight);
 			//UIComp::convertClickToTransform(buttons[i].second.clickBox, buttons[i].second.transform, screenWidth, screenHeight);
@@ -111,18 +109,18 @@ namespace EWE {
 		}
 		for (int i = 0; i < typeBoxes.size(); i++) {
 
-			typeBoxes[i].textStruct.x *= xRatio;
-			typeBoxes[i].textStruct.y *= yRatio;
-			typeBoxes[i].clickBox.x = static_cast<int>(static_cast<float>(typeBoxes[i].clickBox.x) * xRatio);
-			typeBoxes[i].clickBox.z = static_cast<int>(static_cast<float>(typeBoxes[i].clickBox.z) * xRatio);
-			typeBoxes[i].clickBox.y = static_cast<int>(static_cast<float>(typeBoxes[i].clickBox.y) * yRatio);
-			typeBoxes[i].clickBox.w = static_cast<int>(static_cast<float>(typeBoxes[i].clickBox.w) * yRatio);
+			typeBoxes[i].textStruct.x *= resizeRatio.x;
+			typeBoxes[i].textStruct.y *= resizeRatio.y;
+			typeBoxes[i].clickBox.x = static_cast<int>(static_cast<float>(typeBoxes[i].clickBox.x) * resizeRatio.x);
+			typeBoxes[i].clickBox.z = static_cast<int>(static_cast<float>(typeBoxes[i].clickBox.z) * resizeRatio.x);
+			typeBoxes[i].clickBox.y = static_cast<int>(static_cast<float>(typeBoxes[i].clickBox.y) * resizeRatio.y);
+			typeBoxes[i].clickBox.w = static_cast<int>(static_cast<float>(typeBoxes[i].clickBox.w) * resizeRatio.y);
 
 			//UIComp::convertClickToTransform(typeBoxes[i].clickBox, typeBoxes[i].transform, screenWidth, screenHeight);
 		}
 
-		dataLabel.x *= xRatio;
-		dataLabel.y *= yRatio;
+		dataLabel.x *= resizeRatio.x;
+		dataLabel.y *= resizeRatio.y;
 		//for (int i = 0; i < variableNames.size(); i++) {
 		//	variableNames[i].x *= xRatio;
 		//	variableNames[i].y *= yRatio;
@@ -132,9 +130,6 @@ namespace EWE {
 		//dragBox.y *= yRatio;
 		//dragBox.w *= yRatio;
 		//shouldnt need to resize the transform?
-
-		screenWidth = rszWidth;
-		screenHeight = rszHeight;
 	}
 
 	void VariableControl::giveGLFWCallbacks(GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction) {
@@ -164,7 +159,7 @@ namespace EWE {
 			typeBoxes[i].clickBox.y += movementY;
 			typeBoxes[i].clickBox.w += movementY;
 
-			UIComp::convertClickToTransform(typeBoxes[i].clickBox, typeBoxes[i].transform, screenWidth, screenHeight);
+			UIComp::ConvertClickToTransform(typeBoxes[i].clickBox, typeBoxes[i].transform, VK::Object->screenWidth, VK::Object->screenHeight);
 		}
 		for (int i = 0; i < buttons.size(); i++) {
 			buttons[i].first.clickBox.x += movementX;
@@ -177,8 +172,8 @@ namespace EWE {
 			buttons[i].second.clickBox.y += movementY;
 			buttons[i].second.clickBox.w += movementY;
 
-			UIComp::convertClickToTransform(buttons[i].first.clickBox, buttons[i].first.transform, screenWidth, screenHeight);
-			UIComp::convertClickToTransform(buttons[i].second.clickBox, buttons[i].second.transform, screenWidth, screenHeight);
+			UIComp::ConvertClickToTransform(buttons[i].first.clickBox, buttons[i].first.transform, VK::Object->screenWidth, VK::Object->screenHeight);
+			UIComp::ConvertClickToTransform(buttons[i].second.clickBox, buttons[i].second.transform, VK::Object->screenWidth, VK::Object->screenHeight);
 			//buttons[i].first.transform.scale *= 1.f;
 			buttons[i].second.transform.scale.y *= -1.0f;
 			buttons[i].second.transform.scale.x *= 1.f;
@@ -212,15 +207,15 @@ namespace EWE {
 				glfwGetCursorPos(window, &xpos, &ypos);
 				bool clickedABox = false;
 				for (int i = 0; i < variableCtrlPtr->typeBoxes.size(); i++) {
-					if (UIComp::checkClickBox(variableCtrlPtr->typeBoxes[i].clickBox, xpos, ypos)) {
+					if (UIComp::CheckClickBox(variableCtrlPtr->typeBoxes[i].clickBox, xpos, ypos)) {
 						if (i != variableCtrlPtr->selectedTypeBox) {
 							variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string.erase(variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string.find_first_of('|'), 1);
 							printf("remove the | \n");
-							variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string = getVariableString(variableCtrlPtr->dataPtr, variableCtrlPtr->selectedTypeBox, variableCtrlPtr->dataType);
+							variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string = GetVariableString(variableCtrlPtr->dataPtr, variableCtrlPtr->selectedTypeBox, variableCtrlPtr->dataType);
 							variableCtrlPtr->selectedTypeBox = i;
 						}
 						printf("clicked a type box? \n");
-						variableCtrlPtr->stringSelectionIndex = variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.GetSelectionIndex(xpos, variableCtrlPtr->screenWidth);
+						variableCtrlPtr->stringSelectionIndex = variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.GetSelectionIndex(xpos);
 						std::string& stringRef = variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string;
 						size_t indexPos = stringRef.find_first_of('|');
 						if ((indexPos != variableCtrlPtr->stringSelectionIndex) && (indexPos != (variableCtrlPtr->stringSelectionIndex + 1))) {
@@ -237,7 +232,7 @@ namespace EWE {
 					}
 				}
 				if (!clickedABox) {
-					variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string = getVariableString(variableCtrlPtr->dataPtr, variableCtrlPtr->selectedTypeBox, variableCtrlPtr->dataType);
+					variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string = GetVariableString(variableCtrlPtr->dataPtr, variableCtrlPtr->selectedTypeBox, variableCtrlPtr->dataType);
 					variableCtrlPtr->selectedTypeBox = -1;
 					variableCtrlPtr->readyForInput = false;
 					glfwSetMouseButtonCallback(window, variableCtrlPtr->mouseReturnPointer);
@@ -271,7 +266,7 @@ namespace EWE {
 			}
 			case GLFW_KEY_ESCAPE: {
 				printf("escape \n");
-				variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string = getVariableString(variableCtrlPtr->dataPtr, variableCtrlPtr->selectedTypeBox, variableCtrlPtr->dataType);
+				variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string = GetVariableString(variableCtrlPtr->dataPtr, variableCtrlPtr->selectedTypeBox, variableCtrlPtr->dataType);
 				variableCtrlPtr->readyForInput = false;
 				variableCtrlPtr->selectedTypeBox = -1;
 				glfwSetMouseButtonCallback(window, variableCtrlPtr->mouseReturnPointer);
@@ -283,7 +278,7 @@ namespace EWE {
 				std::string& stringRef = variableCtrlPtr->typeBoxes[variableCtrlPtr->selectedTypeBox].textStruct.string;
 				stringRef.erase(variableCtrlPtr->stringSelectionIndex, 1);
 				UIComp::SetVariableFromString(variableCtrlPtr->dataPtr, variableCtrlPtr->selectedTypeBox, stringRef, variableCtrlPtr->dataType);
-				stringRef = getVariableString(variableCtrlPtr->dataPtr, variableCtrlPtr->selectedTypeBox, variableCtrlPtr->dataType);
+				stringRef = GetVariableString(variableCtrlPtr->dataPtr, variableCtrlPtr->selectedTypeBox, variableCtrlPtr->dataType);
 				//variableCtrlPtr->stringSelectionIndex = stringRef.length();
 				//stringRef.push_back('|');
 				variableCtrlPtr->readyForInput = false;
@@ -370,10 +365,10 @@ namespace EWE {
 	//		Dimension2::PushAndDraw(push);
 	//	}
 	//}
-	void VariableControl::render(Simple2DPushConstantData& push) {
+	void VariableControl::Render(Array2DPushConstantData& push) {
 		for (int k = 0; k < buttons.size(); k++) {
-			buttons[k].first.render(push);
-			buttons[k].second.render(push);
+			buttons[k].first.Render(push);
+			buttons[k].second.Render(push);
 		}
 	}
 
@@ -416,7 +411,7 @@ namespace EWE {
 		dragBox.w = variableControls.back().typeBoxes.back().clickBox.w;
 		dragBox.x = static_cast<int>(label.x);
 		dragBox.z = dragBox.x + static_cast<int>((ratioWidth + (60.f * screenWidth / DEFAULT_WIDTH)));
-		UIComp::convertClickToTransform(dragBox, transform, screenWidth, screenHeight);
+		UIComp::ConvertClickToTransform(dragBox, transform, screenWidth, screenHeight);
 		dragBox.w = dragBox.y + static_cast<int>(label.scale * verticalSpacing);
 	}
 
@@ -437,7 +432,7 @@ namespace EWE {
 			}
 		}
 
-		if (UIComp::checkClickBox(dragBox, xpos, ypos)) {
+		if (UIComp::CheckClickBox(dragBox, xpos, ypos)) {
 			printf("contorl box dragging \n");
 			mouseDragging = true;
 			double xpos;
@@ -480,21 +475,21 @@ namespace EWE {
 		ctrlBoxPtr->dragBox.w = ctrlBoxPtr->variableControls.back().typeBoxes.back().clickBox.w;
 		ctrlBoxPtr->dragBox.x = static_cast<int>(ctrlBoxPtr->label.x);
 		ctrlBoxPtr->dragBox.z = ctrlBoxPtr->dragBox.x + static_cast<int>(ctrlBoxPtr->ratioWidth + (60.f * ctrlBoxPtr->screenWidth / DEFAULT_WIDTH));
-		UIComp::convertClickToTransform(ctrlBoxPtr->dragBox, ctrlBoxPtr->transform, ctrlBoxPtr->screenWidth, ctrlBoxPtr->screenHeight);
+		UIComp::ConvertClickToTransform(ctrlBoxPtr->dragBox, ctrlBoxPtr->transform, ctrlBoxPtr->screenWidth, ctrlBoxPtr->screenHeight);
 		ctrlBoxPtr->dragBox.w = ctrlBoxPtr->dragBox.y + static_cast<int>(ctrlBoxPtr->label.scale * ctrlBoxPtr->verticalSpacing);
 
 		//then readjust the back Controller window
 	}
 
-	void ControlBox::resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
+	void ControlBox::ResizeWindow(glm::vec2 resizeRatio) {
 
 		for (int i = 0; i < variableControls.size(); i++) {
-			variableControls[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			variableControls[i].ResizeWindow(resizeRatio);
 		}
 	}
-	void ControlBox::render(Simple2DPushConstantData& push) {
+	void ControlBox::Render(Array2DPushConstantData& push) {
 		for (auto& object : variableControls) {
-			object.render(push);
+			object.Render(push);
 		}
 	}
 	//void ControlBox::render(NineUIPushConstantData& push) {
@@ -538,13 +533,13 @@ namespace EWE {
 		}
 		//backRef.init(screenWidth, screenHeight);
 	}
-	void MenuBar::init(float screenWidth, float screenHeight) {
+	void MenuBar::init() {
 		for (int i = 0; i < dropBoxes.size(); i++) {
 			if (i >= 1) {
-				dropBoxes[i].dropper.textStruct.x = dropBoxes[i - 1].dropper.clickBox.z + (10.f * screenWidth / DEFAULT_WIDTH);
+				dropBoxes[i].dropper.textStruct.x = dropBoxes[i - 1].dropper.clickBox.z + (10.f * VK::Object->screenWidth / DEFAULT_WIDTH);
 			}
-			dropBoxes[i].dropper.textStruct.y = screenCoordinates.second + (screenDimensions.second / 2.f) - (10.f * screenHeight / DEFAULT_HEIGHT);
-			dropBoxes[i].init(screenWidth, screenHeight);
+			dropBoxes[i].dropper.textStruct.y = screenCoordinates.second + (screenDimensions.second / 2.f) - (10.f * VK::Object->screenHeight / DEFAULT_HEIGHT);
+			dropBoxes[i].Init();
 		}
 	}
 
@@ -568,7 +563,7 @@ namespace EWE {
 		}
 		return -1;
 	}
-	void MenuBar::render(Simple2DPushConstantData& push, uint8_t drawID) {
+	void MenuBar::Render(Array2DPushConstantData& push, uint8_t drawID) {
 		if (drawID == 0) {
 			if (dropBoxes.size() > 0) { //drawing these here instead of tumblingg these with the earlier drop boxes because i dont want to draw the dropper box
 				push.color = glm::vec3{ .5f, .35f, .25f };

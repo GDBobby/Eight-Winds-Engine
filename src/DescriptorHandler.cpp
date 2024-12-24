@@ -49,11 +49,11 @@ namespace EWE {
                 globalBuffer[i]->Map();
                 lightBuffer[i] = EWEBuffer::CreateAndInitBuffer(&lbo, sizeof(LightBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-//
-//                globalDescSet[i] = EWEDescriptorWriter(globalDSL, DescriptorPool_Global)
-//                    .WriteBuffer(0, globalBuffer[i]->DescriptorInfo())
-//                    .WriteBuffer(1, lightBuffer[i]->DescriptorInfo())
-//                    .Build();
+
+                globalDescSet[i] = EWEDescriptorWriter(globalDSL, DescriptorPool_Global)
+                    .WriteBuffer(globalBuffer[i]->DescriptorInfo())
+                    .WriteBuffer(lightBuffer[i]->DescriptorInfo())
+                    .Build();
             }
 //#if DEBUG_NAMING
 //            DebugNaming::SetObjectName(globalDescSet[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "global DS[0]");

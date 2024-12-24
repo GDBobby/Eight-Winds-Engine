@@ -52,10 +52,10 @@ namespace EWE{
 			textOverlay->EndTextUpdate();
 		}
 
-		unsigned int* activeTargets = 0;
-		unsigned int* maxTargets = 0;
+		uint32_t* activeTargets = 0;
+		uint32_t* maxTargets = 0;
 
-		GameObject2D backgroundObject{ GameObject2D::createGameObject() };
+		GameObject2D backgroundObject{};
 
 		TextOverlay* GetTextOverlay() {
 			//throw std::exception("only copy this once, to MenuManager");

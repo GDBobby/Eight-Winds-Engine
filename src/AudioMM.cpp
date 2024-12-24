@@ -24,41 +24,32 @@ namespace EWE {
 			nextVolume += slider_movement;
 			SettingsJSON::tempSettings.setVolume(audioPtr->grabbedSlider, static_cast<uint8_t>(nextVolume));
 		}
-		audioPtr->sliders[audioPtr->grabbedSlider].setSliderPosition(static_cast<float>(nextVolume) / 100.f);
+		audioPtr->sliders[audioPtr->grabbedSlider].SetSliderPosition(static_cast<float>(nextVolume) / 100.f);
 	}
 
-	AudioMM::AudioMM(float screenWidth, float screenHeight, GLFWwindow* windowPtr) : soundEngine{ SoundEngine::GetSoundEngineInstance() }, windowPtr{ windowPtr }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
+	AudioMM::AudioMM(GLFWwindow* windowPtr) : soundEngine{ SoundEngine::GetSoundEngineInstance() }, windowPtr{ windowPtr }{
 		assert(audioPtr == nullptr && "audiomm can only be creatged once");
 		audioPtr = this;
 
 		//float widthRescaling = screenWidth / DEFAULT_WIDTH;
-		const float heightRescaling = screenHeight / DEFAULT_HEIGHT;
+		const float heightRescaling = VK::Object->screenHeight / DEFAULT_HEIGHT;
 
-		labels.emplace_back("Audio Settings", screenWidth / 2, 40.f * heightRescaling, TA_center, 4.f);
-		labels.emplace_back("Audio Devices", screenWidth * 0.75f, 365.f * heightRescaling, TA_left, 2.f);
-		labels.emplace_back("Master Volume", screenWidth / 2, 260.f * heightRescaling, TA_center, 2.f);
-		labels.emplace_back("Effects Volume", screenWidth / 2, 390.f * heightRescaling, TA_center, 2.f);
-		labels.emplace_back("Msuci Volume", screenWidth / 2, 520.f * heightRescaling, TA_center, 2.f);
+		labels.emplace_back("Audio Settings", VK::Object->screenWidth / 2, 40.f * heightRescaling, TA_center, 4.f);
+		labels.emplace_back("Audio Devices", VK::Object->screenWidth * 0.75f, 365.f * heightRescaling, TA_left, 2.f);
+		labels.emplace_back("Master Volume", VK::Object->screenWidth / 2, 260.f * heightRescaling, TA_center, 2.f);
+		labels.emplace_back("Effects Volume", VK::Object->screenWidth / 2, 390.f * heightRescaling, TA_center, 2.f);
+		labels.emplace_back("Msuci Volume", VK::Object->screenWidth / 2, 520.f * heightRescaling, TA_center, 2.f);
 
-		//clickText.emplace_back(TextStruct{ "No Device", screenWidth * 0.51f, 460.f * heightRescaling, TA_left, 1.f }, screenWidth, screenHeight);
-		clickText.emplace_back(TextStruct{ "Discard Return", screenWidth * .3f, 700.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
-		clickText.emplace_back(TextStruct{ "Save Return", screenWidth / 2.f, 700.f * heightRescaling, TA_center, 2.f }, screenWidth, screenHeight);
+		clickText.emplace_back(TextStruct{ "Discard Return", VK::Object->screenWidth * .3f, 700.f * heightRescaling, TA_center, 2.f });
+		clickText.emplace_back(TextStruct{ "Save Return", VK::Object->screenWidth / 2.f, 700.f * heightRescaling, TA_center, 2.f });
 
-
-		//sliders.emplace_back();
-		//sliders[0].Init(glm::vec2{ 0.f, -.4f }, screenHeight, screenWidth, 0.5f);
-		//sliders.emplace_back();
-		//sliders[1].Init(glm::vec2{ 0.f, -.4f + .25f }, screenHeight, screenWidth, 0.5f);
-		//sliders.emplace_back();
-		//sliders[2].Init(glm::vec2{ 0.f, -.4f + (.25f * 2.f) }, screenHeight, screenWidth, 0.5f);
-
-		comboBoxes.emplace_back(TextStruct{ "default", screenWidth * 0.75f, 400.f * heightRescaling, TA_left, 1.f }, screenWidth, screenHeight);
+		comboBoxes.emplace_back(TextStruct{ "default", VK::Object->screenWidth * 0.75f, 400.f * heightRescaling, TA_left, 1.f });
 
 		initSoundSettings();
 	}
 
 	void AudioMM::processClick(double xpos, double ypos) {
-		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
+		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::CheckClick(xpos, ypos);
 		if (returnValues.first > 0) {
 			soundEngine->PlayEffect(0);
 		}
@@ -96,7 +87,8 @@ namespace EWE {
 				resetSounds(static_cast<float>(SettingsJSON::settingsData.masterVolume) / 100.f, static_cast<float>(SettingsJSON::settingsData.musicVolume) / 100.f, static_cast<float>(SettingsJSON::settingsData.effectsVolume) / 100.f);
 				//printf("after resetting sounds \n");
 
-				clickReturns.push(MCR_DiscardReturn);
+				//clickReturns.push(MCR_DiscardReturn);
+				callbacks[0]();
 				//return MCR_DiscardReturn;
 			}
 			else if (returnValues.second == 1) { //save return
@@ -105,7 +97,8 @@ namespace EWE {
 				SettingsJSON::saveToJsonFile();
 				soundEngine->initVolume();
 				
-				clickReturns.push(MCR_SaveReturn);
+				//clickReturns.push(MCR_SaveReturn);
+				callbacks[1]();
 				//return MCR_SaveReturn;
 			}
 		}
@@ -139,11 +132,11 @@ namespace EWE {
 			if (strLength != 0) {
 				//comboMenuStructs[0].push_back({ soundEngine->deviceNames[i].substr(0, strLength), screenWidth / 2, 80, TA_left, 2.f });
 				//printf("pushing back soudn device option, screenDim %.2f:%.2f \n", screenWidth, screenHeight);
-				comboBoxes[0].pushOption(soundEngine->deviceNames[i].substr(0, strLength), screenWidth, screenHeight);
+				comboBoxes[0].PushOption(soundEngine->deviceNames[i].substr(0, strLength));
 			}
 			else {
 				//comboMenuStructs[0].push_back({ soundEngine->deviceNames[i], screenWidth / 2, 80, TA_left, 2.f });
-				comboBoxes[0].pushOption(soundEngine->deviceNames[i], screenWidth, screenHeight);
+				comboBoxes[0].PushOption(soundEngine->deviceNames[i]);
 			}
 			//printf("device name : i ~ %s : i \n", comboMenuStructs[0].back().string.c_str(), i);
 			if (i == soundEngine->GetSelectedDevice()) {
@@ -152,7 +145,7 @@ namespace EWE {
 				//printf("yo wtf is music volume here? %.2f \n", soundEngine->getVolume(SoundVolume::music));
 				//menuStructs[menu_audio_settings].second[0].string = comboMenuStructs[0].back().string;
 
-				comboBoxes[0].setSelection(static_cast<int8_t>(comboBoxes[0].comboOptions.size() - 1));
+				comboBoxes[0].SetSelection(static_cast<int8_t>(comboBoxes[0].comboOptions.size() - 1));
 				//menuMap[menu_audio_settings].comboBoxes.emplace_back(TextStruct{ soundEngine->deviceNames[i].substr(0, strLength), })
 			}
 			//printf("after : % s \n", comboMenuStructs[0].back().string.c_str());
@@ -164,12 +157,12 @@ namespace EWE {
 			soundEngine->SetVolume(SoundVolume::effect, SettingsJSON::settingsData.effectsVolume);
 		}
 
-		initVolumes(soundEngine->GetVolume(SoundVolume::master), soundEngine->GetVolume(SoundVolume::music), soundEngine->GetVolume(SoundVolume::effect), screenWidth, screenHeight);
+		initVolumes(soundEngine->GetVolume(SoundVolume::master), soundEngine->GetVolume(SoundVolume::music), soundEngine->GetVolume(SoundVolume::effect));
 	}
 
 	void AudioMM::resetSounds(float master, float music, float sfx) {
-		sliders[0].setSliderPosition(master);
-		sliders[1].setSliderPosition(sfx);
-		sliders[2].setSliderPosition(music);
+		sliders[0].SetSliderPosition(master);
+		sliders[1].SetSliderPosition(sfx);
+		sliders[2].SetSliderPosition(music);
 	}
 }

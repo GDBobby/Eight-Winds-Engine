@@ -32,10 +32,14 @@ struct Grid2DPushConstantData {
 	alignas(16)glm::vec2 gridScale{1.f};
 	alignas(16)glm::vec3 color{ 1.f };
 };
-struct Simple2DPushConstantData {
+struct Array2DPushConstantData {
 	glm::vec4 scaleOffset{ 1.f }; //4 floats here, 2 x 2
 	alignas(16) glm::vec3 color{1.f}; //?idk if id stuff anything else right here
 	alignas(16) int textureID;
+};
+struct Single2DPushConstantData {
+	glm::vec4 scaleOffset{ 1.f };
+	alignas(16) glm::vec3 color{ 1.f };
 };
 
 struct LordDeliverMeFromThisEvilPushConstantData {

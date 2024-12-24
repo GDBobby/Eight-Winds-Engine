@@ -18,7 +18,7 @@ namespace EWE {
 		bool windowWasResized = false;
 		TextOverlay* textOverlay;
 	public:
-
+		
 		std::unordered_map<uint16_t, std::unique_ptr<MenuModule>> menuModules;
 		float screenWidth, screenHeight;
 		GLFWwindow* windowPtr;
@@ -26,7 +26,7 @@ namespace EWE {
 		//std::queue<MenuClickReturn> clickReturns;
 		uint8_t currentMenuState = 0;
 
-		MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay);
+		MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay, float screenWidth, float screenHeight);
 		int8_t whichScene = -1;
 		/*
 		static void DiscardReturnCallback() {
@@ -49,13 +49,9 @@ namespace EWE {
 			glfwSetCursorPosCallback(windowPtr, nullptr);
 		}
 
-		std::pair<float, float> getScreenDimensions() {
-			return { screenWidth, screenHeight };
-		}
-
-		void changeMenuState(uint8_t newState, uint8_t newGameState = 255);
-		static void changeMenuStateFromMM(uint8_t newState, unsigned char newGameState = 255) {
-			menuManagerPtr->changeMenuState(newState, newGameState);
+		void ChangeMenuState(uint8_t newState, uint8_t newGameState = 255);
+		static void ChangeMenuStateFromMM(uint8_t newState, unsigned char newGameState = 255) {
+			menuManagerPtr->ChangeMenuState(newState, newGameState);
 		}
 		void giveMenuFocus() {
 			//glfwFocusWindow(windowPtr);
@@ -67,7 +63,7 @@ namespace EWE {
 			isActive = true;
 		}
 
-		static void windowResize(std::pair<uint32_t, uint32_t> windowDim);
+		static void WindowResize(std::pair<uint32_t, uint32_t> windowDim);
 
 		void drawNewMenuObejcts();
 		//void drawMenuObjects(FrameInfo& frameInfo, bool menuActive);
@@ -78,13 +74,13 @@ namespace EWE {
 
 		void drawText() {
 			if (isActive) {
-				menuModules.at(currentMenuState)->drawText(textOverlay);
+				menuModules.at(currentMenuState)->DrawText();
 			}
 		}
-		bool drawingNineUI() { return menuModules.at(currentMenuState)->drawingNineUI(); }
-		void drawNewNine() { menuModules.at(currentMenuState)->drawNewNine(); }
 
 		static void staticKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void staticMouseCallback(GLFWwindow* window, int button, int action, int mods);
+
+		std::function<void()> escapeCallback{ nullptr };
 	};
 }

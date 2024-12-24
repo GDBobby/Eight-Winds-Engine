@@ -6,19 +6,15 @@
 namespace EWE {
 
 	EWEModel* MenuModule::model2D;
-	EWEModel* MenuModule::nineUIModel;
 
-	std::queue<uint16_t> MenuModule::clickReturns{};
-
-	void (*MenuModule::changeMenuStateFromMM)(uint8_t, unsigned char);
+	void (*MenuModule::ChangeMenuStateFromMM)(uint8_t, uint8_t);
 
 	void MenuModule::initTextures() {
 
 		model2D = Basic_Model::Quad2D();
-		nineUIModel = Basic_Model::NineUIQuad();
 	}
 
-	std::pair<UIComponentTypes, int16_t> MenuModule::checkClick(double xpos, double ypos) {
+	std::pair<UIComponentTypes, int16_t> MenuModule::CheckClick(double xpos, double ypos) {
 		std::pair<UIComponentTypes, int16_t> returnVal = { UIT_none, -1 };
 		if (selectedComboBox >= 0) {
 #if EWE_DEBUG
@@ -27,7 +23,7 @@ namespace EWE {
 			//one combo box is unraveled
 			for (int i = 0; i < comboBoxes[selectedComboBox].comboOptions.size(); i++) {
 				if (comboBoxes[selectedComboBox].comboOptions[i].Clicked(xpos, ypos)) {
-					comboBoxes[selectedComboBox].setSelection(i);
+					comboBoxes[selectedComboBox].SetSelection(i);
 					//UIComp::TextToTransform(comboBoxes[selectedComboBox].activeOption.transform, comboBoxes[selectedComboBox].activeOption.textStruct, comboBoxes[selectedComboBox].activeOption.clickBox, screenWidth, screenHeight);
 					return { UIT_Combobox, i };
 				}
@@ -112,21 +108,21 @@ namespace EWE {
 		return returnVal;
 	}
 
-	void MenuModule::drawNewObjects() {
+	void MenuModule::DrawNewObjects() {
 		Dimension2::BindDefaultDesc();
-		Simple2DPushConstantData push{};
+		Array2DPushConstantData push{};
 		if (checkBoxes.size() > 0) {
 			push.color = glm::vec3{ 1.f };
 			for (auto& object : checkBoxes) {
 				if (object.isChecked) {
 					push.textureID = MT_Checked;
-					object.render(push);
+					object.Render(push);
 				}
 			}
 			for (auto& object : checkBoxes) {
 				if (!object.isChecked) {
 					push.textureID = MT_Unchecked;
-					object.render(push);
+					object.Render(push);
 				}
 			}
 		}
@@ -136,15 +132,15 @@ namespace EWE {
 			push.textureID = MT_Slider;
 
 			for (auto& object : sliders) {
-				object.render(push, 0);
+				object.Render(push, 0);
 			}
 			push.textureID = MT_BracketButton;
 			for (auto& object : sliders) {
-				object.render(push, 1);
+				object.Render(push, 1);
 			}
 			push.textureID = MT_Bracket;
 			for (auto& object : sliders) {
-				object.render(push, 2);
+				object.Render(push, 2);
 			}
 		}
 
@@ -153,7 +149,7 @@ namespace EWE {
 			push.color = glm::vec3(1.f);
 			push.textureID = MT_Button;
 			for (auto& object : controlBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 
 
@@ -170,41 +166,41 @@ namespace EWE {
 			}
 		}
 	}
-	void MenuModule::drawNewNine() {
+	void MenuModule::DrawNewNine() {
 
 		Dimension2::BindDefaultDesc();
-		Simple2DPushConstantData push{};
+		Array2DPushConstantData push{};
 		push.textureID = MT_NineUI;
 		if (comboBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
 			for (auto& object : comboBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 		}
 
 		if (dropBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
 			for (auto& object : dropBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 		}
 
 		if (clickText.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
 			for (auto& object : clickText) {
-				object.render(push);
+				object.Render(push);
 			}
 		}
 
 		if (typeBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
 			for (auto& object : typeBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 		}
 		if (controlBoxes.size() > 0) {
 			for (auto& object : controlBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 			//printf("after nine ui control boxes \n");
 		}
@@ -213,95 +209,95 @@ namespace EWE {
 			push.textureID = MT_NineUI;
 			push.color = glm::vec3{ .5f, .35f, .25f };
 			for (auto& object : menuBars) {
-				object.render(push, 0);
+				object.Render(push, 0);
 			}
 			push.textureID = MT_NineFade;
 			for (auto& object : menuBars) {
-				object.render(push, 1);
+				object.Render(push, 1);
 			}
 		}
 
 	}
 
-	void MenuModule::resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
+	void MenuModule::ResizeWindow(glm::vec2 resizeRatio) {
 		//i think its just clickboxes?
 		for (int i = 0; i < sliders.size(); i++) {
-			sliders[i].resizeWindow(rszWidth, rszHeight); //ok why is this given a pointer to window size
+			sliders[i].ResizeWindow(); //ok why is this given a pointer to window size
 		}
 		for (int i = 0; i < comboBoxes.size(); i++) {
-			comboBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			comboBoxes[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < checkBoxes.size(); i++) {
-			checkBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			checkBoxes[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < labels.size(); i++) {
-			labels[i].x *= rszWidth / oldWidth;
-			labels[i].y *= rszHeight / oldHeight;
+			labels[i].x *= resizeRatio.x;
+			labels[i].y *= resizeRatio.y;
 		}
 		for (int i = 0; i < clickText.size(); i++) {
-			clickText[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			clickText[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < dropBoxes.size(); i++) {
-			dropBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			dropBoxes[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < typeBoxes.size(); i++) {
-			typeBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			typeBoxes[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < controlBoxes.size(); i++) {
-			controlBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			controlBoxes[i].ResizeWindow(resizeRatio);
 		}
 		//printf("initializing menu bars \n");
 		for (int i = 0; i < menuBars.size(); i++) {
-			menuBars[i].init(rszWidth, rszHeight);
+			menuBars[i].init();
 		}
 		//printf("after initializing menu bars \n");
 	}
 
-	void MenuModule::drawText(TextOverlay* textOverlay) {
+	void MenuModule::DrawText() {
 		for (int i = 0; i < comboBoxes.size(); i++) {
-			textOverlay->AddText(comboBoxes[i].activeOption.textStruct);
+			TextOverlay::StaticAddText(comboBoxes[i].activeOption.textStruct);
 			if (comboBoxes[i].currentlyDropped) {
 				for (int j = 0; j < comboBoxes[i].comboOptions.size(); j++) {
-					textOverlay->AddText(comboBoxes[i].comboOptions[j].textStruct);
+					TextOverlay::StaticAddText(comboBoxes[i].comboOptions[j].textStruct);
 				}
 			}
 		}
 		for (int i = 0; i < dropBoxes.size(); i++) {
-			textOverlay->AddText(dropBoxes[i].dropper.textStruct);
+			TextOverlay::StaticAddText(dropBoxes[i].dropper.textStruct);
 			if (dropBoxes[i].currentlyDropped) {
 				for (int j = 0; j < dropBoxes[i].dropOptions.size(); j++) {
-					textOverlay->AddText(dropBoxes[i].dropOptions[j]);
+					TextOverlay::StaticAddText(dropBoxes[i].dropOptions[j]);
 				}
 			}
 		}
 		for (int i = 0; i < checkBoxes.size(); i++) {
-			textOverlay->AddText(checkBoxes[i].label);
+			TextOverlay::StaticAddText(checkBoxes[i].label);
 		}
 		for (int i = 0; i < labels.size(); i++) {
-			textOverlay->AddText(labels[i]);
+			TextOverlay::StaticAddText(labels[i]);
 		}
 		for (int i = 0; i < clickText.size(); i++) {
-			textOverlay->AddText(clickText[i].textStruct);
+			TextOverlay::StaticAddText(clickText[i].textStruct);
 		}
 		for (int i = 0; i < typeBoxes.size(); i++) {
-			textOverlay->AddText(typeBoxes[i].textStruct);
+			TextOverlay::StaticAddText(typeBoxes[i].textStruct);
 		}
 		for (int i = 0; i < controlBoxes.size(); i++) {
-			textOverlay->AddText(controlBoxes[i].label);
+			TextOverlay::StaticAddText(controlBoxes[i].label);
 			for (int j = 0; j < controlBoxes[i].variableControls.size(); j++) {
 				for (int k = 0; k < controlBoxes[i].variableControls[j].typeBoxes.size(); k++) {
-					textOverlay->AddText(controlBoxes[i].variableControls[j].typeBoxes[k].textStruct);
+					TextOverlay::StaticAddText(controlBoxes[i].variableControls[j].typeBoxes[k].textStruct);
 				}
-				textOverlay->AddText(controlBoxes[i].variableControls[j].dataLabel);
+				TextOverlay::StaticAddText(controlBoxes[i].variableControls[j].dataLabel);
 			}
 		}
 		//printf("drawing menu bar text \n");
 		for (int i = 0; i < menuBars.size(); i++) {
 			for (int j = 0; j < menuBars[i].dropBoxes.size(); j++) {
-				textOverlay->AddText(menuBars[i].dropBoxes[j].dropper.textStruct);
+				TextOverlay::StaticAddText(menuBars[i].dropBoxes[j].dropper.textStruct);
 				if (menuBars[i].dropBoxes[j].currentlyDropped) {
 					for (int k = 0; k < menuBars[i].dropBoxes[j].dropOptions.size(); k++) {
-						textOverlay->AddText(menuBars[i].dropBoxes[j].dropOptions[k]);
+						TextOverlay::StaticAddText(menuBars[i].dropBoxes[j].dropOptions[k]);
 					}
 				}
 			}
@@ -309,7 +305,7 @@ namespace EWE {
 		//printf("aftter drawing menu bar text \n");
 	}
 
-	std::string MenuModule::getInputName(int keyCode) {
+	std::string MenuModule::GetInputName(int keyCode) {
 		//std::cout << "get mouse? : " << keyCode << std::endl;
 		//std::cout << "get mouse key : " << keyCode << std::endl;
 		if (keyCode == 0) {

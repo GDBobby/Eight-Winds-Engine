@@ -47,8 +47,8 @@ namespace EWE {
 		//static void BindTexture2D(ImageID texture);
 		//static void BindTexture9(TextureDesc texture);
 
-		static void PushAndDraw(Simple2DPushConstantData& push);
-		static void PushAndDraw(void* ptr);
+		static void PushAndDraw(Array2DPushConstantData& push);
+		static void PushAndDraw(Single2DPushConstantData& push);
 
 		static EWEDescriptorSetLayout* GetDSL() {
 			return dimension2Ptr->eDSL;

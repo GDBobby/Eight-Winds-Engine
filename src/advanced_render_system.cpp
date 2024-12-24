@@ -265,9 +265,6 @@ namespace EWE {
 
 		if (menuActive) {
 			Dimension2::BindArrayPipeline();
-			if (menuManager.drawingNineUI()) {
-				menuManager.drawNewNine();
-			}
 			
 			menuManager.drawNewMenuObejcts();
 

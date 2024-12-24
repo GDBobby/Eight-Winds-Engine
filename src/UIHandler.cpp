@@ -27,7 +27,7 @@ namespace EWE {
 		//textOverlay = std::make_unique<TextOverlay>(eweDevice, EWESwapChain->getFrameBuffers(), EWESwapChain->width(), EWESwapChain->height(), EWESwapChain->getRenderPass(), 1.f);
 
 
-		//MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
+		//MenuModule::ChangeMenuStateFromMM = ChangeMenuStateFromMM;
 		//printf("before sound engine \n");
 		soundEngine = SoundEngine::GetSoundEngineInstance();
 		//printf("after sound engine \n");

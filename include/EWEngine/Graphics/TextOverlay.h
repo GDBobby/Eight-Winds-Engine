@@ -33,8 +33,8 @@ namespace EWE {
 		TextStruct(std::string string, float x, float y, TextAlign align, float scale) 
 			: string{ string }, x{ x }, y{ y }, align{ static_cast<uint8_t>(align) }, scale{ scale }
 		{}
-		uint16_t GetSelectionIndex(double xpos, float screenWidth);
-		float GetWidth(float screenWidth);
+		uint16_t GetSelectionIndex(double xpos);
+		float GetWidth();
 	};
 
 
@@ -93,9 +93,9 @@ namespace EWE {
 		void BeginTextUpdate();
 		void EndTextUpdate();
 
-		void WindowResize(float newWidth, float newHeight) {
-			frameBufferWidth = newWidth;
-			frameBufferHeight = newHeight;
+		void WindowResize() {
+			frameBufferWidth = VK::Object->screenWidth;
+			frameBufferHeight = VK::Object->screenHeight;
 			scale = frameBufferWidth / DEFAULT_WIDTH;
 		}
 	};

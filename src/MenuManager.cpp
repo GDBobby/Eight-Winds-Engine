@@ -3,7 +3,7 @@
 namespace EWE {
 	MenuManager* MenuManager::menuManagerPtr = nullptr;
 
-	MenuManager::MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ VK::Object->screenWidth }, screenHeight{ VK::Object->screenHeight } {
+	MenuManager::MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay, float screenWidth, float screenHeight) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
 		assert(menuManagerPtr == nullptr && "created two menu managers?");
 #if EWE_DEBUG
 		printf("beginning menu manager construction\n");
@@ -14,33 +14,37 @@ namespace EWE {
 
 		MenuModule::initTextures();
 
-		menuModules.try_emplace(menu_audio_settings, std::make_unique<AudioMM>(screenWidth, screenHeight, windowPtr));
-		menuModules.try_emplace(menu_graphics_settings, std::make_unique<GraphicsMM>(screenWidth, screenHeight));
+		menuModules.try_emplace(menu_audio_settings, std::make_unique<AudioMM>(windowPtr));
+		menuModules.try_emplace(menu_graphics_settings, std::make_unique<GraphicsMM>());
 
 
-		MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
+		MenuModule::ChangeMenuStateFromMM = ChangeMenuStateFromMM;
 
 	}
-	void MenuManager::windowResize(std::pair<uint32_t, uint32_t> windowDim) {
+	void MenuManager::WindowResize(std::pair<uint32_t, uint32_t> windowDim) {
 		menuManagerPtr->windowWasResized = true;
-		float rszWidth = static_cast<float>(windowDim.first);
-		float rszHeight = static_cast<float>(windowDim.second);
-		menuManagerPtr->textOverlay->WindowResize(rszWidth, rszHeight);
+		menuManagerPtr->textOverlay->WindowResize();
+		const float nextWidth = static_cast<float>(windowDim.first);
+		const float nextHeight = static_cast<float>(windowDim.second);
+		glm::vec2 resizeRatio{
+			nextWidth / menuManagerPtr->screenWidth,
+			nextHeight / menuManagerPtr->screenHeight
+		};
+		menuManagerPtr->screenWidth = nextWidth;
+		menuManagerPtr->screenHeight = nextHeight;
 
 		for (auto iter = menuManagerPtr->menuModules.begin(); iter != menuManagerPtr->menuModules.end(); iter++) {
-			iter->second->resizeWindow(rszWidth, menuManagerPtr->screenWidth, rszHeight, menuManagerPtr->screenHeight);
+			iter->second->ResizeWindow(resizeRatio);
 		}
-		menuManagerPtr->screenWidth = rszWidth;
-		menuManagerPtr->screenHeight = rszHeight;
 	}
 	void MenuManager::drawNewMenuObejcts() {
 		if (isActive) {
 			//printf("Drawing menu \n");
-			menuModules.at(currentMenuState)->drawNewObjects();//(gameState == 0));
+			menuModules.at(currentMenuState)->DrawNewObjects();//(gameState == 0));
 		}
 	}
 
-	void MenuManager::changeMenuState(uint8_t nextMenu, uint8_t nextScene) { //nextScene is really just turning on mouse or not
+	void MenuManager::ChangeMenuState(uint8_t nextMenu, uint8_t nextScene) { //nextScene is really just turning on mouse or not
 		printf("beginning of change menu state \n");
 		//std::cout << "newcurrentScene : " << +newcurrentScene << std::endl;
 		if (nextScene != 255) {
@@ -75,11 +79,7 @@ namespace EWE {
 			//menuManagerPtr->lastClicked = menuManagerPtr->anythingClicked(xpos, ypos);
 			//printf("last clicked pair - %d:%d \n", menuManagerPtr->lastClicked.first, menuManagerPtr->lastClicked.second);
 			
-			menuManagerPtr->menuModules.at(menuManagerPtr->currentMenuState)->processClick(xpos, ypos);
-			 
-			if (MenuModule::clickReturns.size() > 0) {
-				printf("clickReturns front : %d \n", MenuModule::clickReturns.front());
-			}
+			menuManagerPtr->menuModules.at(menuManagerPtr->currentMenuState)->ProcessClick(xpos, ypos);
 		}
 		/*
 		else if ((button == GLFW_MOUSE_BUTTON_1) && (action == GLFW_RELEASE) && (menuManagerPtr->callbackSlider != -1)) {
@@ -108,7 +108,8 @@ namespace EWE {
 			//menuManagerPtr->isActive = false;
 			//menuManagerPtr->escapePressed = true;
 			//glfwSetCursorPosCallback(menuManagerPtr->windowPtr, nullptr);
-			MenuModule::clickReturns.push(MCR_EscapePressed);
+			//MenuModule::clickReturns.push(MCR_EscapePressed);
+			menuManagerPtr->escapeCallback();
 			//menuManagerPtr->inputHandler->returnFocus();
 		}
 

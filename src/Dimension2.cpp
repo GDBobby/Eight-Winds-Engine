@@ -16,7 +16,7 @@ namespace EWE {
 		VkPushConstantRange pushConstantRange{};
 		pushConstantRange.offset = 0;
 		pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-		pushConstantRange.size = sizeof(Simple2DPushConstantData);
+		pushConstantRange.size = sizeof(Array2DPushConstantData);
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
@@ -30,7 +30,7 @@ namespace EWE {
 
 		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &PL_array);
 
-		pushConstantRange.size = sizeof(glm::vec4);
+		pushConstantRange.size = sizeof(Single2DPushConstantData);
 		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &PL_single);
 
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
@@ -152,43 +152,16 @@ namespace EWE {
 		);
 	}
 
-	/*
-	void Dimension2::BindTexture2DUI(ImageID texture) {
-		if (texture != dimension2Ptr->bindedTexture) {
-			EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				dimension2Ptr->PL_2d,
-				0, 1,
-				&dimension2Ptr->desc2D,
-				0, nullptr
-			);
-			dimension2Ptr->bindedTexture = texture;
-		}
-	}
-	void Dimension2::BindTexture2D(ImageID texture) {
-		if (texture != dimension2Ptr->bindedTexture) {
-			EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				dimension2Ptr->PL_2d,
-				0, 1,
-				&dimension2Ptr->descNine,
-				0, nullptr
-			);
-			dimension2Ptr->bindedTexture = texture;
-		}
-	}
-	*/
-
-	void Dimension2::PushAndDraw(Simple2DPushConstantData& push) {
+	void Dimension2::PushAndDraw(Array2DPushConstantData& push) {
 		//possibly do a check here, to ensure the pipeline and descriptors are properly binded
 		//thats really just a feature to check bad programming, dont rely on the programmer being bad. (easy enough to debug)
 
-		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_array, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(Simple2DPushConstantData)), &push);
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_array, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(Array2DPushConstantData)), &push);
 		dimension2Ptr->model2D->Draw();
 	}
 
-	void Dimension2::PushAndDraw(void* ptr) {
-		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_single, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(glm::vec4)), ptr);
+	void Dimension2::PushAndDraw(Single2DPushConstantData& push) {
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), dimension2Ptr->PL_single, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(Single2DPushConstantData)), &push);
 		dimension2Ptr->model2D->Draw();
 	}
 }

@@ -8,16 +8,17 @@ layout (location = 0) out vec4 outColor;
 layout(set = 0, binding = 0) uniform sampler2D tex;
 
 layout(push_constant) uniform Push {
-    mat3 transform;
+    vec4 scaleOffset;
+	vec3 color;
 } push;
 
 void main() {
-    ivec2 textureSizeAtLOD0 = textureSize(tex, 0);
+    //ivec2 textureSizeAtLOD0 = textureSize(tex, 0);
 	ivec2 texelCoords;
-	texelCoords.x = int(float(textureSizeAtLOD0.x) * fragTexCoord.x);
-	texelCoords.y = int(float(textureSizeAtLOD0.y) * fragTexCoord.y);
+	texelCoords.x = fragTexCoord.x;
+	texelCoords.y = fragTexCoord.y;
 
-	vec4 texColor = texelFetch(tex, texelCoords, 0).rgba;
+	vec4 texColor = texture(tex, texelCoords).rgba;
     
     outColor = vec4(texColor.rgb, texColor.a);
     

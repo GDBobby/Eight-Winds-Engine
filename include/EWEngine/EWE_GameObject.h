@@ -11,6 +11,9 @@ namespace EWE {
 	class EWEGameObject {
 	public:
 		EWEGameObject() {}
+		~EWEGameObject() {
+			Deconstruct(model);
+		}
 
 		//static EWEGameObject makeTextBilboard(float size, std::string text, int xPos, int yPos);
 
@@ -39,7 +42,7 @@ namespace EWE {
 		//int16_t textureFlags = -1;
 
 		//optional pointer components
-		std::shared_ptr<EWEModel> model{};
+		EWEModel* model{};
 
 	private:
 		

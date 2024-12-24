@@ -25,6 +25,9 @@ namespace EWE {
 
         VkDescriptorBufferInfo* GetCameraDescriptorBufferInfo(uint8_t whichFrame);
         VkDescriptorBufferInfo* GetLightingDescriptorBufferInfo(uint8_t whichFrame);
+
+        VkDescriptorSet* GetGlobalDescSet();
+
         /*
         namespace Template_Helper {
             void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, std::array<VkDescriptorBufferInfo*, MAX_FRAMES_IN_FLIGHT>& arg) {

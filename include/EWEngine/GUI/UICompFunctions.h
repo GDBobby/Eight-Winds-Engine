@@ -24,28 +24,28 @@ namespace EWE {
 		};
 
 		//type abstraction
-		size_t getVariableSize(VariableType vType);
-		std::string getVariableString(void* data, int offset, VariableType vType);
+		size_t GetVariableSize(VariableType vType);
+		std::string GetVariableString(void* data, int offset, VariableType vType);
 		void SetVariableFromString(void* data, int offset, std::string& inString, VariableType vType);
-		void addVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType);
-		void subtractVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType);
+		void AddVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType);
+		void SubtractVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType);
 
 		void TypeToString(std::string& outputString, uint16_t maxStringLength, int codePoint, InputType inputType, uint8_t stringSelectionIndex);
 
 
 		//2d to screen conversions
-		void convertTransformToClickBox(Transform2dComponent& transform, glm::ivec4& clickBox, float screenWidth, float screenHeight);
+		void ConvertTransformToClickBox(Transform2dComponent& transform, glm::ivec4& clickBox, float screenWidth, float screenHeight);
 
-		bool checkClickBox(glm::ivec4& clickBox, double mouseX, double mouseY);
+		bool CheckClickBox(glm::ivec4& clickBox, double mouseX, double mouseY);
 
 		void TextToTransform(Transform2dComponent& transform, TextStruct& textStruct, glm::ivec4& clickBox, float screenWidth, float screenHeight);
 
-		void convertScreenTo2D(glm::ivec2 screen, glm::vec2& coord2D, float screenWidth, float screenHeight);
-		void printClickBox(glm::ivec4& clickBox);
+		void ConvertScreenTo2D(glm::ivec2 screen, glm::vec2& coord2D, float screenWidth, float screenHeight);
+		void PrintClickBox(glm::ivec4& clickBox);
 
-		void convertClickToTransform(glm::ivec4& clickBox, Transform2dComponent& transform, float screenWidth, float screenHeight);
+		void ConvertClickToTransform(glm::ivec4& clickBox, Transform2dComponent& transform, float screenWidth, float screenHeight);
 
-		glm::ivec2 convertWorldCoordinatesToScreenCoordinates(glm::vec2 worldCoord, float screenWidth, float screenHeight);
+		glm::ivec2 ConvertWorldCoordinatesToScreenCoordinates(glm::vec2 worldCoord, float screenWidth, float screenHeight);
 
 	};
 }

@@ -26,7 +26,7 @@ struct Transform2dComponent {
 
     float rotation{ 0.f };
 
-    void setPush(Simple2DPushConstantData& push) {
+    void setPush(Single2DPushConstantData& push) {
         push.scaleOffset = scaleOffset;
     }
     glm::vec4 getScaleOffset() {
@@ -35,27 +35,20 @@ struct Transform2dComponent {
     }
 };
 
-class GameObject2D {
- public:
+    class GameObject2D {
+    public:
+        GameObject2D() {}
 
-    static GameObject2D createGameObject() {
-        return GameObject2D{};
-    }
-
-    GameObject2D(const GameObject2D &) = delete;
-    GameObject2D &operator=(const GameObject2D &) = delete;
-    GameObject2D(GameObject2D &&) = default;
-    GameObject2D &operator=(GameObject2D &&) = default;
+        GameObject2D(GameObject2D const&) = delete;
+        GameObject2D &operator=(GameObject2D const&) = delete;
+        GameObject2D(GameObject2D &&) = default;
+        GameObject2D &operator=(GameObject2D &&) = default;
 
 
-    //uint8_t model;
-    glm::vec3 color{1.f};
-    Transform2dComponent transform2d{};
+        //uint8_t model;
+        glm::vec3 color{1.f};
+        Transform2dComponent transform2d{};
 
-    bool drawable = false;
-
-    private:
-    GameObject2D() {}
-
-};
+        bool drawable = false;
+    };
 }  // namespace EWE

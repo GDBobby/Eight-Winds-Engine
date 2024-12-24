@@ -36,7 +36,7 @@ namespace EWE {
 			"Reset Camera Pos"
 		};
 		backRef.pushDropper("View", options, screenWidth, screenHeight);
-		backRef.init(screenWidth, screenHeight);
+		backRef.init();
 
 		printf("bug before control box construction? \n");
 		float steps[] = { 0.01f, .1f, 1.f };
@@ -58,7 +58,7 @@ namespace EWE {
 	}
 
 	void LevelBuilderMM::processClick(double xpos, double ypos) {
-		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
+		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::CheckClick(xpos, ypos);
 		
 
 		//return MCR_none;
