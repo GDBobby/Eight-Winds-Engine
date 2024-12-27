@@ -63,14 +63,14 @@ namespace EWE {
 			assert(!instancedBuffers.contains(skeletonID));
 #endif
 			//instancedBuffersCreated += 2;
-			return &instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ boneCount, 2000}).first->second;
+			return &instancedBuffers.try_emplace(skeletonID, boneCount, 2000).first->second;
 		}
 		[[nodiscard]] SkinBufferHandler* CreateBoneBuffer(SkeletonID skeletonID, uint16_t boneCount) {
 #if EWE_DEBUG
 			assert(!buffers.contains(skeletonID));
 #endif
 			//buffersCreated += 2;
-			return &buffers.emplace(skeletonID, SkinBufferHandler{ boneCount, 1}).first->second;
+			return &buffers.try_emplace(skeletonID, boneCount, 1).first->second;
 		}
 
 		static std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> CreateDescriptorSets(MaterialInfo materialInfo, SkeletonID skeletonID);

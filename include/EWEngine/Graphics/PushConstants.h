@@ -38,8 +38,8 @@ struct Array2DPushConstantData {
 	alignas(16) int textureID;
 };
 struct Single2DPushConstantData {
-	glm::vec4 scaleOffset{ 1.f };
-	alignas(16) glm::vec3 color{ 1.f };
+	std::array<glm::vec4, 3> transform;
+	glm::vec3 color{ 1.f };
 };
 
 struct LordDeliverMeFromThisEvilPushConstantData {

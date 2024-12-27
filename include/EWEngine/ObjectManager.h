@@ -1,12 +1,12 @@
 #pragma once
-#include "EWE_GameObject.h"
+#include "EWEngine/EWE_GameObject.h"
 #include "EWEngine/Graphics/PointLight.h"
 //#include "FloatingRockSystem.h"
-#include "GameObject2D.h"
+#include "EWEngine/GameObject2D.h"
 //#include "EWEngine/graphicsAssimpModel.h"
-#include "EWEngine/Graphics/EWE_Object.h"
-#include "Collision.h"
+#include "EWEngine/Collision.h"
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
+#include "EWEngine/Graphics/EWE_Object.h"
 
 namespace EWE {
 	class ObjectManager {
@@ -16,9 +16,6 @@ namespace EWE {
 			printf("object manager deconstructor \n");
 #endif
 		}
-
-		//FOR A DAY IN THE FUTURE
-		//std::map<Pipeline_Enum, std::vector<EWEGameObject>> objectMap;
 
 		std::vector<EWEGameObject> texturedGameObjects{};
 		std::vector<EWEGameObject> transparentGameObjects{};

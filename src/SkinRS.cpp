@@ -302,6 +302,7 @@ namespace EWE {
 		}
 		else {
 			auto boneDataIter = skinnedMainObject->boneData.find(materialInfo.materialFlags);
+
 			SkinBufferHandler* bufferHandler = skinnedMainObject->CreateBoneBuffer(skeletonID, boneCount);
 			if (boneDataIter == skinnedMainObject->boneData.end()) {
 

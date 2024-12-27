@@ -21,8 +21,6 @@ namespace EWE{
 
 		menu_level_builder,
 
-		menu_controls,
-
 		menu_engine_size, //oversize check? idk if i need this
 	};
 

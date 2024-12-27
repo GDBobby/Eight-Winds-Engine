@@ -38,11 +38,12 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
 		printf("beginniing synchub destroy \n");
 #endif
-
+		std::array<VkCommandBuffer, MAX_FRAMES_IN_FLIGHT> cmdBufs{
+			VK::Object->renderCommands[0].cmdBuf,
+			VK::Object->renderCommands[1].cmdBuf
+		};
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			if (VK::Object->renderCommands[i].cmdBuf != VK_NULL_HANDLE) {
-				EWE_VK(vkFreeCommandBuffers, VK::Object->vkDevice, VK::Object->renderCmdPool, 1, VK::Object->renderCommands[i]);
-			}
+			EWE_VK(vkFreeCommandBuffers, VK::Object->vkDevice, VK::Object->renderCmdPool, MAX_FRAMES_IN_FLIGHT, cmdBufs.data());
 		}
 
 		Deconstruct(syncHubSingleton);

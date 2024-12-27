@@ -26,6 +26,7 @@
 
 #define SHADER_DYNAMIC_PATH "shaders/materials/"
 
+
 namespace EWE {
 	namespace ShaderBlock {
 

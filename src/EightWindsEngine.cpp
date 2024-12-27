@@ -282,7 +282,7 @@ namespace EWE {
 #if RENDER_DEBUG
 		std::cout << "before rendering game objects \n";
 #endif
-		advancedRS.renderGameObjects(timeTracker);
+		advancedRS.renderGameObjects(static_cast<float>(timeTracker));
 #if RENDER_DEBUG
 		std::cout << "before skin render \n";
 #endif

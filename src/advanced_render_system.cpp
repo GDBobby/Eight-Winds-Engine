@@ -239,7 +239,7 @@ namespace EWE {
 		pipe->Push(&push);
 
 		for (const auto& grassField : objectManager.grassField) {
-			pipe->DrawInstanced(grassField.model.get());
+			pipe->DrawInstanced(grassField.model);
 		}
 #if DEBUGGING_PIPELINES
 		printf("after drawing grass \n");

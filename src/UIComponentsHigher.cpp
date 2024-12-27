@@ -36,7 +36,7 @@ namespace EWE {
 			buttonScreen = glm::ivec2(dataLabel.x + ratioWidth, (typeRef.clickBox.y + typeRef.clickBox.w) / 2); //? this is lining up the buttons with the top of textbox
 			UIComp::ConvertScreenTo2D(buttonScreen, buttonTranslation, VK::Object->screenWidth, VK::Object->screenHeight);
 
-			std::pair<Button, Button>& buttonRef = buttons.emplace_back(std::piecewise_construct, std::make_tuple(buttonTranslation, VK::Object->screenWidth, VK::Object->screenHeight), std::make_tuple(buttonTranslation, VK::Object->screenWidth, VK::Object->screenHeight));
+			std::pair<Button, Button>& buttonRef = buttons.emplace_back(std::piecewise_construct, std::make_tuple(buttonTranslation), std::make_tuple(buttonTranslation));
 			buttonRef.first.transform.translation.x += buttonRef.first.transform.scale.x / 2.f;
 			buttonRef.second.transform.translation.x += buttonRef.second.transform.scale.x * 1.55f;
 			buttonRef.first.transform.scale *= .8f;
@@ -403,7 +403,7 @@ namespace EWE {
 		//glm::ivec2 buttonScreen;
 		//glm::vec2 buttonTranslation;
 		//(GLFWwindow* windowPtr, float posX, float posY, float screenWidth, float screenHeight, TextStruct dataLabel, void* dataPointer, UIComp::VariableType dataType, uint8_t dataCount, void* steps)
-		VariableControl& backRef = variableControls.emplace_back(windowPtr, label.x, label.y + startingOffset, width, screenWidth, screenHeight, dataLabel, dataPointer, dataType, dataCount, steps);
+		VariableControl& backRef = variableControls.emplace_back(windowPtr, label.x, label.y + startingOffset, width, dataLabel, dataPointer, dataType, dataCount, steps);
 
 		//steps should be temporary data outside of this function, construct an array, pass it here, erase the original array
 		dragBox.y = static_cast<int>(label.y);// -label.scale * 13.f;

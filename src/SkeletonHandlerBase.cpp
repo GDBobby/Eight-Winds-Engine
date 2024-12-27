@@ -69,10 +69,8 @@ namespace EWE {
             }
             inFile.close();
             //printf("after loading anim archive \n");
-            if (importData.versionTracker != EXPECTED_IMPORT_VERSION) {
-                printf("FAILED TO MATCH VERSION, DISCARD \n");
-                throw std::runtime_error("failed to match expected import version");
-            }
+            assert(importData.versionTracker == EXPECTED_IMPORT_VERSION && "failed tom match version");
+            
 
             fullAnimationData.resize(importData.animations.size());
             //printf("animationData size? : %d \n", animationData.size());
@@ -109,9 +107,9 @@ namespace EWE {
         //printf("before textures \n");
 
         for (int i = 0; i < importData.meshNames.size(); i++) {
-            importData.meshNames[i] = importData.meshNames[i].substr(0, importData.meshNames[i].find_first_of("."));
+            importData.meshNames[i] = importData.meshNames[i].substr(0, importData.meshNames[i].find_first_of('.'));
             std::string finalDir = texturePath;
-            finalDir += importData.meshNames[i];
+            finalDir += importData.meshNames[i] + '_';
             
             textureTracker.first.emplace_back(Material_Image::CreateMaterialImage(finalDir, true, true));
             
@@ -120,7 +118,7 @@ namespace EWE {
         for (int i = 0; i < importData.meshNTNames.size(); i++) {
             importData.meshNTNames[i] = importData.meshNTNames[i].substr(0, importData.meshNTNames[i].find_first_of("."));
             std::string finalDir = texturePath;
-            finalDir += importData.meshNTNames[i];
+            finalDir += importData.meshNTNames[i] + '_';
 
             textureTracker.second.emplace_back(Material_Image::CreateMaterialImage(finalDir, true, true));
         }

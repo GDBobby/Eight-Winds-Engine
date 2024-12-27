@@ -4,9 +4,9 @@
 namespace EWE {
 	class GraphicsMM : public MenuModule {
 	public:
-		GraphicsMM(float screenWidth, float screenHeight);
+		GraphicsMM();
 
-		void processClick(double xpos, double ypos);
+		void ProcessClick(double xpos, double ypos) final;
 
 	};
 }

@@ -5,7 +5,7 @@
  //this changes it so that on windows, _DEBUG needs to be defined explicitly
 
 
-#define EWE_DEBUG false
+#define EWE_DEBUG true
 
 #define CALL_TRACING (true && EWE_DEBUG)
 #if CALL_TRACING

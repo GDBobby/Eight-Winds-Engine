@@ -274,7 +274,7 @@ namespace EWE {
 
 	void ComboBox::PushOption(std::string string) {
 		//printf("pushing option, comboX:comboY:scale - %.3f:%.3f:%.1f \n", activeOption.textStruct.x, activeOption.textStruct.y, scale);
-		comboOptions.emplace_back(TextStruct{ string, activeOption.textStruct.x, activeOption.textStruct.y + (comboOptions.size() + 1) * (19.f * scale) * VK::Object->screenHeight / DEFAULT_HEIGHT, align, scale }, VK::Object->screenWidth, VK::Object->screenHeight);
+		comboOptions.emplace_back(TextStruct{ string, activeOption.textStruct.x, activeOption.textStruct.y + (comboOptions.size() + 1) * (19.f * scale) * VK::Object->screenHeight / DEFAULT_HEIGHT, align, scale });
 		//comboOptions.back().clickBox = activeOption.clickBox;
 		if ((comboOptions.back().clickBox.z - comboOptions.back().clickBox.x) > (activeOption.clickBox.z - activeOption.clickBox.x)) {
 			activeOption.clickBox.z = activeOption.clickBox.x + comboOptions.back().clickBox.z - comboOptions.back().clickBox.x;

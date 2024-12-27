@@ -27,7 +27,7 @@ struct Transform2dComponent {
     float rotation{ 0.f };
 
     void setPush(Single2DPushConstantData& push) {
-        push.scaleOffset = scaleOffset;
+        //push.scaleOffset = scaleOffset;
     }
     glm::vec4 getScaleOffset() {
 

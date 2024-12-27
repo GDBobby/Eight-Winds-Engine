@@ -1,12 +1,12 @@
 #include "EWEngine/GUI/GraphicsMM.h"
 
 namespace EWE {
-	GraphicsMM::GraphicsMM(float screenWidth, float screenHeight) {
+	GraphicsMM::GraphicsMM() {
 
-		float widthRescaling = screenWidth / DEFAULT_WIDTH;
-		float heightRescaling = screenHeight / DEFAULT_HEIGHT;
+		float widthRescaling = VK::Object->screenWidth / DEFAULT_WIDTH;
+		float heightRescaling = VK::Object->screenHeight / DEFAULT_HEIGHT;
 
-		labels.emplace_back("Graphics Settings", screenWidth / 2, 40.f, TA_center, 4.f);
+		labels.emplace_back("Graphics Settings", VK::Object->screenWidth / 2, 40.f, TA_center, 4.f);
 
 		labels.emplace_back("Screen Dimensions", 100.f * widthRescaling, 200.f * heightRescaling, TA_left, 2.f);
 		{ //screen dimensions, local scope
@@ -73,13 +73,13 @@ namespace EWE {
 		checkBoxes.emplace_back("Point Lights ", translation, Checkbox::DO_left);
 
 		screenCoords = { 1000 * widthRescaling, 380 * heightRescaling };
-		UIComp::ConvertScreenTo2D(screenCoords, translation, screenWidth, screenHeight);
+		UIComp::ConvertScreenTo2D(screenCoords, translation, VK::Object->screenWidth, VK::Object->screenHeight);
 		checkBoxes.emplace_back("Render Info ", translation, Checkbox::DO_left);
 
 		//printf("after checkboxes \n");
 
-		clickText.emplace_back(TextStruct{ "Discard Return", screenWidth * .3f, 700.f * heightRescaling, TA_center, 2.f });
-		clickText.emplace_back(TextStruct{ "Save Return", screenWidth / 2.f, 700.f * heightRescaling, TA_center, 2.f });
+		clickText.emplace_back(TextStruct{ "Discard Return", VK::Object->screenWidth * .3f, 700.f * heightRescaling, TA_center, 2.f });
+		clickText.emplace_back(TextStruct{ "Save Return", VK::Object->screenWidth / 2.f, 700.f * heightRescaling, TA_center, 2.f });
 		//printf("end audio constructor \n");
 
 
@@ -88,7 +88,7 @@ namespace EWE {
 	}
 
 
-	void GraphicsMM::processClick(double xpos, double ypos) {
+	void GraphicsMM::ProcessClick(double xpos, double ypos) {
 		//UIComponentTypes returnValues.first, int8_t returnValues.second
 		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::CheckClick(xpos, ypos);
 

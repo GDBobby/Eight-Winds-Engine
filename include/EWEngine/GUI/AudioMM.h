@@ -8,7 +8,7 @@ namespace EWE {
 	public:
 		AudioMM(GLFWwindow* windowPtr);
 
-		void processClick(double xpos, double ypos);
+		void ProcessClick(double xpos, double ypos) final;
 
 		std::shared_ptr<SoundEngine> soundEngine;
 

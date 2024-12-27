@@ -12,17 +12,23 @@ namespace EWE {
 	public:
 		EWEGameObject() {}
 		~EWEGameObject() {
-			Deconstruct(model);
+			if (model != nullptr) {
+				Deconstruct(model);
+			}
 		}
+
 
 		//static EWEGameObject makeTextBilboard(float size, std::string text, int xPos, int yPos);
 
-		/* DO NOT COPY, ONLY MOVE, IDK BOUT THESE SO I CANT FORCE THAT
 		EWEGameObject(const EWEGameObject&) = delete;
 		EWEGameObject& operator=(const EWEGameObject&) = delete;
-		EWEGameObject(EWEGameObject&&) = default;
+		
+		EWEGameObject(EWEGameObject&& other) noexcept {
+			this->model = other.model;
+			other.model = nullptr;
+		}
 		EWEGameObject& operator=(EWEGameObject&&) = default;
-		*/
+		
 
 		void giveCollision() {
 			collision = true;
@@ -38,11 +44,11 @@ namespace EWE {
 
 		TransformComponent transform{};
 
-		VkDescriptorSet descriptor{ VK_NULL_HANDLE };
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor{ VK_NULL_HANDLE, VK_NULL_HANDLE };
 		//int16_t textureFlags = -1;
 
 		//optional pointer components
-		EWEModel* model{};
+		EWEModel* model{nullptr};
 
 	private:
 		

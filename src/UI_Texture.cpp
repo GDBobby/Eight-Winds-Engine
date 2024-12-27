@@ -14,7 +14,7 @@ namespace EWE {
         //namespace internal {
         void CreateUIImage(ImageInfo& uiImageInfo, std::vector<PixelPeek> const& pixelPeek, bool mipmapping) {
             std::size_t layerSize = pixelPeek[0].width * pixelPeek[0].height * 4;
-            uiImageInfo.arrayLayers = pixelPeek.size();
+            uiImageInfo.arrayLayers = static_cast<uint16_t>(pixelPeek.size());
             const VkDeviceSize imageSize = layerSize * uiImageInfo.arrayLayers;
 #if EWE_DEBUG
             assert(pixelPeek.size() > 1 && "creating an array without an array of images?");

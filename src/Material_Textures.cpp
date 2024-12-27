@@ -68,6 +68,8 @@ namespace EWE {
                 matPaths.pop_back();
             }
         }
+
+        assert(foundTypes[1] && "failed to find albedo");
         std::vector<PixelPeek> pixelPeeks{};
         for (int i = 0; i < matPaths.size(); i++) {
             pixelPeeks.emplace_back(matPaths[i]);

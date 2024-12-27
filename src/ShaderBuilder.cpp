@@ -11,6 +11,7 @@
 //#include <chrono>
 
 //open in vscode if having intellisense issues in Visual Studio
+#define SHADER_VERSION_ID "1.0.0_"
 
 namespace EWE {
 	bool glslangInitialized = false;
@@ -734,8 +735,8 @@ namespace EWE {
 				//printf("compiled shader to spv successfully \n");
 			}
 			else {
-				printf("failed to compile loading vertex shader\n");
-				//throw std run time error
+				assert(false && "failed to compile loading vert shader");
+				throw std::runtime_error("failed to compile shader");
 			}
 
 			return shaderCodeSpirV;
@@ -776,7 +777,7 @@ namespace EWE {
 				//printf("compiled shader to spv successfully \n");
 			}
 			else {
-				printf("failed to compile loading frag shader \n");
+				assert(false && "failed to compile loading frag shader");
 				throw std::runtime_error("failed to compile shader");
 				//throw std run time error
 			}
@@ -796,6 +797,7 @@ namespace EWE {
 			*/
 			//printf("gettingg fragment shader : %d \n", flags);
 			std::string subPath = SHADER_DYNAMIC_PATH;
+			subPath += SHADER_VERSION_ID;
 			subPath += std::to_string(flags);
 			if (hasBones) {
 				subPath += "b";
@@ -832,8 +834,8 @@ namespace EWE {
 			}
 			else {
 				printf("failed to compile shader : %d \n", flags);
-				assert(false && "failed to compile shader");
-				//throw std run time error
+				assert(false && "failed to compile frag shader");
+				throw std::runtime_error("failed to compile shader");
 			}
 			/*
 			uint8_t paddingNeeded = 4 - shaderCodeSpirV.size() % 4;
@@ -852,6 +854,7 @@ namespace EWE {
 
 
 			std::string subPath = SHADER_DYNAMIC_PATH;
+			subPath += SHADER_VERSION_ID;
 			if (hasNormal) {
 				subPath += 'n';
 			}
@@ -888,7 +891,8 @@ namespace EWE {
 			}
 			else {
 				printf("failed to compile vertex shader : %d:%d \n", hasNormal, boneCount);
-				assert(false && "failed to compile shader");
+				assert(false && "failed to compile vert shader");
+				throw std::runtime_error("failed to compile shader");
 			}
 			/*
 			uint8_t paddingNeeded = 4 - shaderCodeSpirV.size() % 4;

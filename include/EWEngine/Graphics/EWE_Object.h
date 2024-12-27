@@ -14,7 +14,7 @@ namespace EWE {
 	public:
 
         EweObject(const EweObject& other) = delete;
-        EweObject(EweObject&& other) noexcept = delete;
+        EweObject(EweObject&& other) = default;
         EweObject& operator=(const EweObject&& other) = delete;
         EweObject& operator=(const EweObject& other) = delete;
 

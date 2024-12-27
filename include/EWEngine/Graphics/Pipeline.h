@@ -33,7 +33,6 @@ namespace EWE {
 			grid,
 			//bobTrans,
 			sprite,
-			boneWeapon,
 			lightning,
 			spikyBall,
 			visualEffect,

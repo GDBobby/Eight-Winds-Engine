@@ -114,7 +114,7 @@ namespace EWE {
 #if EWE_DEBUG
 		if (textWidth < 0.0f) {
 
-			printf("width less than 0, what  was the string? : %s:%.1f \n", string.c_str(), screenWidth);
+			printf("width less than 0, what  was the string? : %s:%.1f \n", string.c_str(), VK::Object->screenWidth);
 			assert(false);
 		}
 #endif

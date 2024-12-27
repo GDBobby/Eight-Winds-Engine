@@ -54,7 +54,9 @@ namespace EWE {
         }
         template<typename Value>
         static auto GetKVContainerWithThreadIDKeys() {
-            KeyValueContainer<std::thread::id, Value, true> ret{ singleton->threads.size()};
+            KeyValueContainer<std::thread::id, Value, true> ret{};
+            ret.reserve(singleton->threads.size());
+
             for (auto& threadID : singleton->threads) {
                 ret.Add(threadID.get_id());
             }
