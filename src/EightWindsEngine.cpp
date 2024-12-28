@@ -31,6 +31,8 @@
 
 
 namespace EWE {
+
+
 	inline void printmat4(glm::mat4& theMatrix, const std::string& matrixName) {
 		printf("matrix values : %s\n", matrixName.c_str());
 		for(uint8_t i = 0; i < 4; i++) {
@@ -63,10 +65,10 @@ namespace EWE {
 		//imguiHandler{ mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT, eweRenderer.getSwapChainRenderPass() },
 
 		/*2000 is ballparked, if its not set high enough then all textures will be moved, and invalidate the data*/
-		uiHandler{ SettingsJSON::settingsData.getDimensions(), mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
+		uiHandler{ SettingsJSON::settingsData.screenDimensions, mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
 		advancedRS{ objectManager, menuManager },
 		imageManager{ },
-		menuManager{ mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay(), VK::Object->screenWidth, VK::Object->screenHeight },
+		menuManager{ mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay()},
 		skinnedRS{ }
 	{
 		printf("after finishing construction of engine\n");
@@ -199,12 +201,20 @@ namespace EWE {
 					//uiHandler.drawMenuMain(commandBuffer);
 					eweRenderer.EndSwapChainRender();
 					if (eweRenderer.EndFrame()) {
-						menuManager.WindowResize(eweRenderer.GetExtent());
+						VkExtent2D swapExtent = eweRenderer.GetExtent();
+						SettingsInfo::ScreenDimensions resizeDimensions{};
+						resizeDimensions.width = swapExtent.width;
+						resizeDimensions.height = swapExtent.height;
+						menuManager.WindowResize(resizeDimensions);
 					}
 				}
 				else {
 
-					menuManager.WindowResize(eweRenderer.GetExtent());
+					VkExtent2D swapExtent = eweRenderer.GetExtent();
+					SettingsInfo::ScreenDimensions resizeDimensions{};
+					resizeDimensions.width = swapExtent.width;
+					resizeDimensions.height = swapExtent.height;
+					menuManager.WindowResize(resizeDimensions);
 				}
 				
 				renderThreadTime = 0.0;
@@ -328,7 +338,11 @@ namespace EWE {
 			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain recreation
 			//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
 			//uiHandler.windowResize(eweRenderer.getExtent());
-			menuManager.WindowResize(eweRenderer.GetExtent());
+			VkExtent2D swapExtent = eweRenderer.GetExtent();
+			SettingsInfo::ScreenDimensions resizeDimensions{};
+			resizeDimensions.width = swapExtent.width;
+			resizeDimensions.height = swapExtent.height;
+			menuManager.WindowResize(resizeDimensions);
 		}
 	}
 #if BENCHMARKING_GPU

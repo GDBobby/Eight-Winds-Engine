@@ -28,7 +28,7 @@ namespace EWE {
 		//VkRenderPass getSwapChainRenderPass() const { return eweSwapChain->getRenderPass(); }
 		float GetAspectRatio() const { return eweSwapChain->ExtentAspectRatio(); }
 
-		std::pair<uint32_t, uint32_t> GetExtent() { 
+		VkExtent2D GetExtent() { 
 			needToReadjust = false;
 			return eweSwapChain->GetExtent(); 
 		}

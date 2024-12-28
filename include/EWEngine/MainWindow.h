@@ -55,7 +55,7 @@ namespace EWE {
 		int width;
 		int height;
 		bool frameBufferResized = false;
-		SettingsInfo::ScreenDimension_Enum screenDimensions;
+		SettingsInfo::ScreenDimensions screenDimensions;
 		SettingsInfo::WindowMode_Enum windowMode;
 		//static HWND hWnd;
 

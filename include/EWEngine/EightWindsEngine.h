@@ -152,6 +152,8 @@ namespace EWE {
 		};
 		TimestampData timestamps[4];
 #endif
+
+
 	};
 }
 

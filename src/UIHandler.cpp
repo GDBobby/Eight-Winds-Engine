@@ -15,11 +15,11 @@ namespace EWE {
 	UIHandler* UIHandler::uiPointer;
 	//GLFWwindow* UIHandler::windowPtr:
 
-	UIHandler::UIHandler(std::pair<uint32_t, uint32_t> dimensions, GLFWwindow* window, TextOverlay* txtOverlay)
+	UIHandler::UIHandler(SettingsInfo::ScreenDimensions dimensions, GLFWwindow* window, TextOverlay* txtOverlay)
 		: windowPtr{ window }, textOverlay{ txtOverlay } {
 
-		VK::Object->screenWidth = static_cast<float>(dimensions.first);
-		VK::Object->screenHeight = static_cast<float>(dimensions.second);
+		VK::Object->screenWidth = static_cast<float>(dimensions.width);
+		VK::Object->screenHeight = static_cast<float>(dimensions.height);
 #if EWE_DEBUG
 		printf("beg uiHandler construction, dimensions - %.1f:%.1f \n", VK::Object->screenWidth, VK::Object->screenHeight);
 #endif

@@ -76,7 +76,7 @@ namespace EWE {
 	}
 	void SceneManager::ChangeScene(SceneKey sceneKey) {
 #if EWE_DEBUG
-		assert(lastScene == currentScene && "changing scenes too quickly");
+		assert(lastScene != currentScene && "changing scenes too quickly");
 #endif
 		currentScene = sceneKey;
 		swappingScenes = true;

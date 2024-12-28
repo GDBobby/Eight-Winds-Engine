@@ -41,7 +41,7 @@ class EWESwapChain {
         float ExtentAspectRatio() {
             return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
         }
-        std::pair<uint32_t, uint32_t> GetExtent() { return { swapChainExtent.width, swapChainExtent.height }; }
+        VkExtent2D GetExtent() { return swapChainExtent; }
         VkFormat FindDepthFormat();
 
         //return true if recreating swap chain is necessary

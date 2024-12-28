@@ -10,15 +10,13 @@ namespace EWE {
 
 		labels.emplace_back("Screen Dimensions", 100.f * widthRescaling, 200.f * heightRescaling, TA_left, 2.f);
 		{ //screen dimensions, local scope
-			//printf("before dimensions \n");
-			comboBoxes.emplace_back(TextStruct{ SettingsJSON::settingsData.getDimensionsString(), 100.f * widthRescaling, 240.f * heightRescaling, TA_left, 1.5f });
+			comboBoxes.emplace_back(TextStruct{ SettingsJSON::settingsData.GetDimensionsString(), 100.f * widthRescaling, 240.f * heightRescaling, TA_left, 1.5f });
 			//printf("after dimensions string \n");
 
-			std::vector<std::string> SDStrings = SettingsInfo::getScreenDimensionStringVector();
-			//printf("after screendimensionvector \n");
-			for (int i = 0; i < SDStrings.size(); i++) {
-				comboBoxes.back().PushOption(SDStrings[i]);
-				if (strcmp(SDStrings[i].c_str(), comboBoxes.back().activeOption.textStruct.string.c_str()) == 0) {
+			auto& commonSDs = SettingsInfo::ScreenDimensions::commonDimensions;
+			for (int i = 0; i < commonSDs.size(); i++) {
+				comboBoxes.back().PushOption(commonSDs[i].GetString());
+				if (commonSDs[i] == SettingsJSON::settingsData.screenDimensions) {
 					comboBoxes.back().currentlySelected = i;
 				}
 			}
@@ -108,8 +106,10 @@ namespace EWE {
 		}
 		if (returnValues.first == UIT_Combobox) {
 			if (selectedComboBox == 0) { //screen dimensions
-				//printf("setting screen dimensions : %s \n", SettingsInfo::getScreenDimensionString((SettingsInfo::ScreenDimension_Enum)returnValues.second).c_str());
-				SettingsJSON::tempSettings.screenDimensions = (SettingsInfo::ScreenDimension_Enum)returnValues.second;
+				//probably need to fix this
+				if (returnValues.second >= 0) {
+					SettingsJSON::tempSettings.screenDimensions = SettingsInfo::ScreenDimensions::commonDimensions[returnValues.second];
+				}
 			}
 			else if (selectedComboBox == 1) { //window mode
 				SettingsJSON::tempSettings.windowMode = (SettingsInfo::WindowMode_Enum)returnValues.second;
@@ -125,7 +125,12 @@ namespace EWE {
 				SettingsJSON::tempSettings = SettingsJSON::settingsData;
 
 				//printf("screen Dim:winowMode - %d:%d \n", SettingsJSON::settingsData.screenDimensions, SettingsJSON::settingsData.windowMode);
-				comboBoxes[0].SetSelection(SettingsJSON::settingsData.screenDimensions);
+				auto& commonSDs = SettingsInfo::ScreenDimensions::commonDimensions;
+				for (int i = 0; i < commonSDs.size(); i++) {
+					if (commonSDs[i] == SettingsJSON::settingsData.screenDimensions) {
+						comboBoxes[0].SetSelection(i);
+					}
+				}
 				comboBoxes[1].SetSelection(SettingsJSON::settingsData.windowMode);
 				comboBoxes[2].SetSelection(SettingsJSON::settingsData.getFPSEnum());
 				checkBoxes[0].isChecked = SettingsJSON::settingsData.pointLights;

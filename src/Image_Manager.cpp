@@ -26,7 +26,6 @@ namespace EWE {
         for (auto& image : imageTrackerIDMap) {
             //printf("%d tracking \n", tracker++);
             Image::Destroy(image.second->imageInfo);
-            image.second->~ImageTracker();
             Deconstruct(image.second);
             //imageTrackerBucket.FreeDataChunk(image.second);
         }

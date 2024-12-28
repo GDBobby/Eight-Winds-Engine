@@ -20,13 +20,12 @@ namespace EWE {
 	public:
 		
 		std::unordered_map<uint16_t, std::unique_ptr<MenuModule>> menuModules;
-		float screenWidth, screenHeight;
 		GLFWwindow* windowPtr;
 		uint8_t* currentScene;
 		//std::queue<MenuClickReturn> clickReturns;
 		uint8_t currentMenuState = 0;
 
-		MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay, float screenWidth, float screenHeight);
+		MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay);
 		int8_t whichScene = -1;
 		/*
 		static void DiscardReturnCallback() {
@@ -63,10 +62,12 @@ namespace EWE {
 			isActive = true;
 		}
 
-		static void WindowResize(std::pair<uint32_t, uint32_t> windowDim);
+		static void WindowResize(SettingsInfo::ScreenDimensions windowDim);
 
 		void drawNewMenuObejcts();
 		//void drawMenuObjects(FrameInfo& frameInfo, bool menuActive);
+		bool drawingNineUI() { return menuModules.at(currentMenuState)->DrawingNineUI(); }
+		void drawNewNine() { menuModules.at(currentMenuState)->DrawNewNine(); }
 
 		bool getMenuActive() const {
 			return isActive;

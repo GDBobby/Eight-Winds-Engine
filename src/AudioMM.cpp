@@ -28,6 +28,7 @@ namespace EWE {
 	}
 
 	AudioMM::AudioMM(GLFWwindow* windowPtr) : soundEngine{ SoundEngine::GetSoundEngineInstance() }, windowPtr{ windowPtr }{
+
 		assert(audioPtr == nullptr && "audiomm can only be creatged once");
 		audioPtr = this;
 
@@ -98,7 +99,7 @@ namespace EWE {
 				soundEngine->initVolume();
 				
 				//clickReturns.push(MCR_SaveReturn);
-				callbacks[1]();
+				callbacks[0]();
 				//return MCR_SaveReturn;
 			}
 		}

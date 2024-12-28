@@ -10,10 +10,9 @@ namespace EWE {
 		initWindow();
 	}
 	MainWindow::MainWindow(std::string name) : windowName{ name } {
-		std::pair<uint32_t, uint32_t> tempDim = SettingsJSON::settingsData.getDimensions();
 
-		width = tempDim.first;
-		height = tempDim.second;
+		width = SettingsJSON::settingsData.screenDimensions.width;
+		height = SettingsJSON::settingsData.screenDimensions.height;
 
 		screenDimensions = SettingsJSON::settingsData.screenDimensions;
 		windowMode = SettingsJSON::settingsData.windowMode;
@@ -42,24 +41,38 @@ namespace EWE {
 
 		//	printf("monitor name:size - %s:(%.3f:%.3f) \n", monName.c_str(), mode->width, mode->height);
 		//}
+		const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		if (screenDimensions.width > mode->width) {
+			screenDimensions.width = mode->width;
+			SettingsJSON::saveToJsonFile();
+		}
+		if (screenDimensions.height > mode->height) {
+			screenDimensions.height = mode->height;
+			SettingsJSON::saveToJsonFile();
+		}
+		SettingsInfo::ScreenDimensions::FixCommonDimensionsToScreenSize(mode->width, mode->height);
 
-		if (screenDimensions == SettingsInfo::SD_size) {
-			const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		if ((screenDimensions.width == 0) || (screenDimensions.height == 0)) {
 			if (mode != nullptr) {
 				width = mode->width;
 				height = mode->height;
 				//printf("primary monitor - %d:%d \n", width, height);
-				SettingsJSON::settingsData.setDimensions(width, height);
-				SettingsJSON::tempSettings.setDimensions(width, height);
+				SettingsJSON::settingsData.screenDimensions.width = width;
+				SettingsJSON::settingsData.screenDimensions.height = height;
+				SettingsJSON::tempSettings.screenDimensions.width = width;
+				SettingsJSON::tempSettings.screenDimensions.height = height;
 				SettingsJSON::saveToJsonFile();
 			}
 			else {
 				printf("failed to find primary monitor \n");
-				std::pair<uint32_t, uint32_t> tempDim = SettingsInfo::getScreenDimensions(SettingsInfo::SD_1280W);
-				width = tempDim.first;
-				height = tempDim.second;
-				SettingsJSON::settingsData.screenDimensions = SettingsInfo::SD_1280W;
-				SettingsJSON::tempSettings.screenDimensions = SettingsInfo::SD_1280W;
+				width = 1920;
+				height = 1080;
+
+				SettingsJSON::settingsData.screenDimensions.width = width;
+				SettingsJSON::settingsData.screenDimensions.height = height;
+				SettingsJSON::tempSettings.screenDimensions.width = width;
+				SettingsJSON::tempSettings.screenDimensions.height = height;
+				screenDimensions = SettingsJSON::settingsData.screenDimensions;
 			}
 		}
 
@@ -109,6 +122,15 @@ namespace EWE {
 	void MainWindow::frameBufferResizeCallback(GLFWwindow* window, int width, int height) {
 		auto mainWindow = reinterpret_cast<MainWindow*>(glfwGetWindowUserPointer(window));
 		mainWindow->frameBufferResized = true;
+		const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		if (width > mode->width) {
+			width = mode->width;
+			SettingsJSON::saveToJsonFile();
+		}
+		if (height > mode->height) {
+			height = mode->height;
+			SettingsJSON::saveToJsonFile();
+		}
 		mainWindow->width = width;
 		mainWindow->height = height;
 	}
@@ -116,10 +138,18 @@ namespace EWE {
 	void MainWindow::updateSettings() {
 		if (screenDimensions != SettingsJSON::settingsData.screenDimensions) {
 			printf("local - SettingsJSON - %d:%d \n", screenDimensions, SettingsJSON::settingsData.screenDimensions);
+			const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+			if (screenDimensions.width > mode->width) {
+				screenDimensions.width = mode->width;
+				SettingsJSON::saveToJsonFile();
+			}
+			if (screenDimensions.height > mode->height) {
+				screenDimensions.height = mode->height;
+				SettingsJSON::saveToJsonFile();
+			}
 			screenDimensions = SettingsJSON::settingsData.screenDimensions;
-			std::pair<uint32_t, uint32_t> tempDim = SettingsInfo::getScreenDimensions(screenDimensions);
-			width = tempDim.first;
-			height = tempDim.second;
+			width = SettingsJSON::settingsData.screenDimensions.width;
+			height = SettingsJSON::settingsData.screenDimensions.height;
 
 			printf("updating dimensions in mainWindow - %d:%d\n", width, height);
 			glfwSetWindowSize(window, width, height);
@@ -135,9 +165,9 @@ namespace EWE {
 			else {
 				glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
 				GLFWmonitor* currentMonitor = getCurrentMonitor(window);
-				std::pair<uint32_t, uint32_t> tempDim = SettingsInfo::getScreenDimensions(screenDimensions);
-				width = tempDim.first;
-				height = tempDim.second;
+				screenDimensions = SettingsJSON::settingsData.screenDimensions;
+				width = SettingsJSON::settingsData.screenDimensions.width;
+				height = SettingsJSON::settingsData.screenDimensions.height;
 
 				printf("updating dimensions in mainWindow - %d:%d\n", width, height);
 				glfwSetWindowSize(window, width, height);

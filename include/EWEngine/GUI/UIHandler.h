@@ -13,7 +13,7 @@ namespace EWE{
 	public:
 		bool resyncingNetPlay = false;
 
-		UIHandler(std::pair<uint32_t, uint32_t> dimensions, GLFWwindow* window, TextOverlay* txtOverlay);
+		UIHandler(SettingsInfo::ScreenDimensions dimensions, GLFWwindow* window, TextOverlay* txtOverlay);
 
 		~UIHandler() {
 #if DECONSTRUCTION_DEBUG

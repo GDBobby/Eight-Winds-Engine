@@ -3,7 +3,7 @@
 namespace EWE {
 	MenuManager* MenuManager::menuManagerPtr = nullptr;
 
-	MenuManager::MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay, float screenWidth, float screenHeight) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
+	MenuManager::MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay } {
 		assert(menuManagerPtr == nullptr && "created two menu managers?");
 #if EWE_DEBUG
 		printf("beginning menu manager construction\n");
@@ -21,17 +21,18 @@ namespace EWE {
 		MenuModule::ChangeMenuStateFromMM = ChangeMenuStateFromMM;
 
 	}
-	void MenuManager::WindowResize(std::pair<uint32_t, uint32_t> windowDim) {
+	void MenuManager::WindowResize(SettingsInfo::ScreenDimensions windowDim) {
 		menuManagerPtr->windowWasResized = true;
-		menuManagerPtr->textOverlay->WindowResize();
-		const float nextWidth = static_cast<float>(windowDim.first);
-		const float nextHeight = static_cast<float>(windowDim.second);
+		const float nextWidth = static_cast<float>(windowDim.width);
+		const float nextHeight = static_cast<float>(windowDim.height);
 		glm::vec2 resizeRatio{
-			nextWidth / menuManagerPtr->screenWidth,
-			nextHeight / menuManagerPtr->screenHeight
+			nextWidth / VK::Object->screenWidth,
+			nextHeight / VK::Object->screenHeight
 		};
-		menuManagerPtr->screenWidth = nextWidth;
-		menuManagerPtr->screenHeight = nextHeight;
+		VK::Object->screenWidth = nextWidth;
+		VK::Object->screenHeight = nextHeight;
+
+		menuManagerPtr->textOverlay->WindowResize();
 
 		for (auto iter = menuManagerPtr->menuModules.begin(); iter != menuManagerPtr->menuModules.end(); iter++) {
 			iter->second->ResizeWindow(resizeRatio);
@@ -110,6 +111,7 @@ namespace EWE {
 			//glfwSetCursorPosCallback(menuManagerPtr->windowPtr, nullptr);
 			//MenuModule::clickReturns.push(MCR_EscapePressed);
 			menuManagerPtr->escapeCallback();
+			//menuManagerPtr->escapeMenu();
 			//menuManagerPtr->inputHandler->returnFocus();
 		}
 

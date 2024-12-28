@@ -26,6 +26,7 @@ namespace EWE {
 
 		const SceneKey scene_exit = 255;
 
+		double renderRefreshRate = 0.0;
 	private:
 		EightWindsEngine& ewEngine;
 		SceneKey currentScene;
@@ -38,7 +39,6 @@ namespace EWE {
 		bool swappingScenes = false;
 
 		bool gameRunning = true;
-		double renderRefreshRate = 0.0;
 
 		std::unordered_map<SceneKey, Scene*> scenes;
 

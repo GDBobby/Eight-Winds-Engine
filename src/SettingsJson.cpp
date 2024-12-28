@@ -8,94 +8,51 @@ SettingsJSON::SettingsData SettingsJSON::settingsData;
 SettingsJSON::SettingsData SettingsJSON::tempSettings;
 
 namespace SettingsInfo {
-	std::pair<uint32_t, uint32_t> getScreenDimensions(ScreenDimension_Enum SD_E) {
-		switch (SD_E) {
-
-			//wide scren
-		case SD_1920W: {
-			return { 1920, 1080 };
-		}
-		case SD_1536W: {
-			return { 1536, 864 };
-		}
-		case SD_1366W: {
-			return { 1366, 768 };
-		}
-		case SD_1280W: {
-			return { 1280, 720 };
-		}
-		case SD_800W: {
-			return { 800, 450 };
-		}
-		case SD_640W: {
-			return { 640, 360 };
-		}
-					//4:3
-		case SD_1280: {
-			return { 1280, 960 };
-		}
-		case SD_800: {
-			return { 800, 600 };
-		}
-		case SD_640: {
-			return { 640, 480 };
-		}
-		default: {
-			printf("why default sreen dimension? \n");
-			return { 1280,720 };
-		}
-		}
+	std::vector<ScreenDimensions> ScreenDimensions::commonDimensions{
+		{7680, 4320},
+		{5120, 2160},
+		{5120, 1440},
+		{3840, 2160},
+		{3840, 1080},
+		{3440, 1440},
+		{3440, 1440},
+		{2560, 1440},
+		{2560, 1080},
+		{1920, 1080},
+		{1600, 900},
+		{1536, 864},
+		{1440, 900},
+		{1366, 768},
+		{1280, 1024},
+		{1280, 960},
+		{1280, 720},
+		{1024, 768},
+		{800, 600},
+		{800, 450},
+		{640, 480},
+		{640, 360}
 	};
-	std::string getScreenDimensionString(ScreenDimension_Enum SD_E) {
-		switch (SD_E) {
-		case SD_1920W: {
-			return "1920x1080";
-		}
-		case SD_1536W: {
-			return "1536x864";
-		}
-		case SD_1366W: {
-			return "1366x768";
-		}
-		case SD_1280W: {
-			return "1280x720";
-		}
-		case SD_800W: {
-			return "800x450";
-		}
-		case SD_640W: {
-			return "640x360";
-		}
-					//4:3
-		case SD_1280: {
-			return "1280x960";
-		}
-		case SD_800: {
-			return "800x600";
-		}
-		case SD_640: {
-			return "640x480";
-		}
-		default: {
-			printf("why default sreen dimension? \n");
-			return "please report this";
-		}
+	void ScreenDimensions::FixCommonDimensionsToScreenSize(int width, int height) {
+		for (uint16_t i = 0; i < commonDimensions.size(); i++) {
+			if (width < commonDimensions[i].width || height < commonDimensions[i].height) {
+				commonDimensions.erase(commonDimensions.begin() + i);
+				i--;
+			}
 		}
 	}
+	ScreenDimensionsFloat ScreenDimensions::ConvertToFloat() {
+		ScreenDimensionsFloat ret{};
+		ret.width = static_cast<float>(width);
+		ret.height = static_cast<float>(height);
+		return ret;
+	}
 
-	std::vector<std::string> getScreenDimensionStringVector() {
-		return{
-			{"1920x1080"},
-			{"1536x864"},
-			{"1366x768"},
-			{"1280x720"},
-			{"800x450"},
-			{"640x360"},
-			//4x3
-			{"1280x960"},
-			{"800x600"},
-			{"640x480"},
-		};
+	std::string ScreenDimensions::GetString() const {
+
+		std::string ret{ std::to_string(width) };
+		ret += "x";
+		ret += std::to_string(height);
+		return ret;
 	}
 
 	std::vector<std::string> getWindowModeStringVector() {
@@ -225,6 +182,9 @@ namespace SettingsInfo {
 } //namespace SettingsInfo
 
 bool readFromJsonFile(rapidjson::Document& document) {
+	if (!document.HasMember("version")) {
+		return false;
+	}
 	if (!document["version"].IsInt()) {
 		printf("version not int \n");
 		return false;
@@ -238,7 +198,11 @@ bool readFromJsonFile(rapidjson::Document& document) {
 		printf("wm not int \n");
 		return false;
 	}
-	if (!document["screenDimensions"].IsInt()) {
+	if (!document["screenDimensionsX"].IsInt()) {
+		printf("SD not int \n");
+		return false;
+	}
+	if (!document["screenDimensionsY"].IsInt()) {
 		printf("SD not int \n");
 		return false;
 	}
@@ -287,10 +251,11 @@ bool readFromJsonFile(rapidjson::Document& document) {
 		SettingsJSON::settingsData.windowMode = (SettingsInfo::WindowMode_Enum)valueBuffer;
 	}
 
-	valueBuffer = document["screenDimensions"].GetInt();
-	if (valueBuffer >= 0 && valueBuffer < SettingsInfo::SD_size) {
-		SettingsJSON::settingsData.screenDimensions = (SettingsInfo::ScreenDimension_Enum)valueBuffer;
-	}
+	valueBuffer = document["screenDimensionsX"].GetInt();
+	SettingsJSON::settingsData.screenDimensions.width = valueBuffer;
+	valueBuffer = document["screenDimensionsY"].GetInt();
+	SettingsJSON::settingsData.screenDimensions.height = valueBuffer;
+	
 	SettingsJSON::settingsData.masterVolume = document["masterVolume"].GetUint();
 
 	SettingsJSON::settingsData.effectsVolume = document["effectsVolume"].GetUint();
@@ -359,19 +324,6 @@ const uint8_t& SettingsJSON::SettingsData::getVolume(int8_t whichVolume) {
 	std::cout << "invalid volumne type " << std::endl;
 	throw std::runtime_error("invalid volume type");
 	return masterVolume;
-}
-SettingsInfo::ScreenDimension_Enum SettingsJSON::SettingsData::setDimensions(int width, int height) {
-	printf("setting dimensions - %d:%d \n", width, height);
-	for (int i = 0; i < SettingsInfo::SD_size; i++) {
-		if (SettingsInfo::getScreenDimensions((SettingsInfo::ScreenDimension_Enum)i).first == width && SettingsInfo::getScreenDimensions((SettingsInfo::ScreenDimension_Enum)i).second == height) {
-			screenDimensions = (SettingsInfo::ScreenDimension_Enum)i;
-			printf("found screen dimensions : %s \n", SettingsInfo::getScreenDimensionString(screenDimensions).c_str());
-			return screenDimensions;
-		}
-	}
-	printf("couldnt find screen dimensions????? \n");
-	screenDimensions = SettingsInfo::SD_1280;
-	return SettingsInfo::SD_1280;
 }
 
 
@@ -442,8 +394,10 @@ void SettingsJSON::saveToJsonFile() {
 	writer.Int(CURRENT_VERSION);
 	writer.Key("windowMode");
 	writer.Int(settingsData.windowMode);
-	writer.Key("screenDimensions");
-	writer.Int(settingsData.screenDimensions);
+	writer.Key("screenDimensionsX");
+	writer.Int(settingsData.screenDimensions.width);
+	writer.Key("screenDimensionsY");
+	writer.Int(settingsData.screenDimensions.height);
 	writer.Key("masterVolume");
 	writer.Uint(settingsData.masterVolume);
 	writer.Key("effectsVolume");
