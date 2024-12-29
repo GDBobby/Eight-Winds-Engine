@@ -46,7 +46,7 @@ namespace EWE {
 
             for (auto& thread : singleton->threads) {
                 assert(thisThreadID != thread.get_id());
-                singleton->threadSpecificTasks.GetValue(thread.get_id()).push_back(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+                singleton->threadSpecificTasks.GetValue(thread.get_id()).push(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
             }
             for (auto& thread : singleton->threads) {
                 thread.join();

@@ -7,6 +7,6 @@ namespace EWE {
 	public:
 		MainMenuMM();
 
-		void processClick(double xpos, double ypos);
+		void ProcessClick(double xpos, double ypos) final;
 	};
 }

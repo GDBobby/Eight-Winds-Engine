@@ -270,7 +270,6 @@ namespace EWE {
             return nullptr; // error silencing
 #else
             //unreachable
-            __assume(false);
 #endif
         }
         const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr) {
@@ -283,10 +282,7 @@ namespace EWE {
                     return instanced.buffer.GetBuffer();
                 }
             }
-#if EWE_DEBUG
-            assert(false && "failed to find buffer");
-#endif
-            __assume(false);
+            EWE_UNREACHABLE;
         }
 
         std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr) {
@@ -297,10 +293,7 @@ namespace EWE {
                     }
                 }
             }
-#if EWE_DEBUG
-            assert(false && "failed to find buffer");
-#endif
-            __assume(false);
+            EWE_UNREACHABLE;
         }
         std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr) {
 #if EWE_DEBUG
@@ -312,10 +305,7 @@ namespace EWE {
                     return instanced.buffer.GetBothBuffers();
                 }
             }
-#if EWE_DEBUG
-            assert(false && "failed to find buffer");
-#endif
-            __assume(false);
+            EWE_UNREACHABLE;
         }
     }//namespace RigidRenderingSystem
 } //namespace EWE

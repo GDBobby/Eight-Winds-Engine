@@ -12,17 +12,17 @@ namespace EWE {
 
 		//game verison needs to be [1]
 		labels.emplace_back("GAME_VERSION", screenWidth, 39.f * heightRescaling, TA_right, 3.f);
-		clickText.emplace_back("Graphics Settings", 0.f, 600.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
-		clickText.emplace_back("Audio Settings", 0.f, 680.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
+		clickText.emplace_back("Graphics Settings", 0.f, 600.f * heightRescaling, TA_left, 3.f);
+		clickText.emplace_back("Audio Settings", 0.f, 680.f * heightRescaling, TA_left, 3.f);
 
-		clickText.emplace_back("Exit", 0.f, 860.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
+		clickText.emplace_back("Exit", 0.f, 860.f * heightRescaling, TA_left, 3.f);
 		//clickText.emplace_back("Shader Generation", 0.f, 520.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
 		//clickText.emplace_back("Level Builder", 0.f, 760.f * heightRescaling, TA_left, 3.f, screenWidth, screenHeight);
 		
 	}
 
-	void MainMenuMM::processClick(double xpos, double ypos) {
-		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
+	void MainMenuMM::ProcessClick(double xpos, double ypos) {
+		std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::CheckClick(xpos, ypos);
 
 
 		if (returnValues.first == UIT_ClickTextBox) {
@@ -33,15 +33,16 @@ namespace EWE {
 			switch (returnValues.second) {
 
 			case 0: {
-				changeMenuState(menu_graphics_settings);
+				ChangeMenuState(menu_graphics_settings);
 				break;
 			}
 			case 1: {
-				changeMenuState(menu_audio_settings);
+				ChangeMenuState(menu_audio_settings);
 				break;
 			}
 			case 2: {
-				clickReturns.push(MCR_ExitProgram);
+				//clickReturns.push(MCR_ExitProgram);
+				callbacks[0]();
 				break;
 			}
 			//case 3: {

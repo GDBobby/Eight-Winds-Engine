@@ -14,9 +14,26 @@
 
 #define THREAD_NAMING true
 #if THREAD_NAMING
-#if WIN32
-#include <windows.h>
+#ifdef _MSC_VER  // For MSVC compiler (Windows)
+	#include <windows.h>
+
+	void SetThreadName(const std::string& name) {
+		SetThreadDescription(GetCurrentThread(), std::wstring(name.begin(), name.end()).c_str());
+	}
+
+#elif defined(__GNUC__) || defined(__clang__)  // For GCC or Clang (Linux)
+	#include <pthread.h>
+	#include <sys/prctl.h>
+
+	void SetThreadName(const std::string& name) {
+		#ifdef __linux__
+		prctl(PR_SET_NAME, (unsigned long)name.c_str(), 0, 0, 0);
+		#else
+		pthread_setname_np(pthread_self(), name.c_str());
+		#endif
+	}
 #endif
+
 #endif
 namespace EWE {
 	EWESample::EWESample(EightWindsEngine& ewEngine, LoadingThreadTracker& loadingThreadTracker) :
@@ -30,7 +47,7 @@ namespace EWE {
 		//ThreadPool::EnqueueVoid(soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect));
 		{
 			auto loadFunc = [&]() {
-				SetThreadDescription(GetCurrentThread(), L"load sound map thread");
+				SetThreadName("load sound map thread");
 				printf("loading sound map : %u\n", std::this_thread::get_id());
 				std::unordered_map<uint16_t, std::string> effectsMap{};
 				effectsMap.emplace(0, "sounds/effects/click.mp3");
@@ -43,7 +60,7 @@ namespace EWE {
 		//addModulesToMenuManager(screenWidth, screenHeight);
 		{
 			auto loadFunc = [&]() {
-				SetThreadDescription(GetCurrentThread(), L"load menu modules thread");
+				SetThreadName("load menu modules thread");
 				printf("adding modules to menu manager : %u\n", std::this_thread::get_id());
 
 				addModulesToMenuManager();
@@ -54,7 +71,7 @@ namespace EWE {
 		//loadGlobalObjects();
 		{
 			auto loadFunc = [&]() {
-				SetThreadDescription(GetCurrentThread(), L"load global objects thread");
+				SetThreadName("load global objects thread");
 				printf("loading global objects : %u\n", std::this_thread::get_id());
 				loadGlobalObjects();
 				loadingThreadTracker.globalObjectThread = true;
@@ -67,7 +84,7 @@ namespace EWE {
 		scenes.emplace(scene_ocean, nullptr);
 		scenes.emplace(scene_LevelCreation, nullptr);
 		auto sceneLoadFunc = [&]() {
-			SetThreadDescription(GetCurrentThread(), L"load main scene thread");
+			SetThreadName("load main scene thread");
 			printf("loading main menu scene : %u\n", std::this_thread::get_id());
 
 			scenes.at(scene_mainmenu) = Construct<MainMenuScene>({ ewEngine});
@@ -77,14 +94,14 @@ namespace EWE {
 		}; 
 		
 		auto sceneLoadFunc2 = [&]() {
-			SetThreadDescription(GetCurrentThread(), L"load shader gen thread");
+			SetThreadName("load shader gen thread");
 			printf("loading shader gen scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_shaderGen) = Construct<ShaderGenerationScene>({ ewEngine });
 			LoadSceneIfMatching(scene_shaderGen);
 			loadingThreadTracker.shaderGenSceneThread = true;
 		};
 		auto sceneLoadFunc3 = [&]() {
-			SetThreadDescription(GetCurrentThread(), L"load ocean scene thread");
+			SetThreadName("load ocean scene thread");
 			printf("loading ocean scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_ocean) = Construct<OceanScene>({ ewEngine, skyboxImgID });
 			LoadSceneIfMatching(scene_ocean);
@@ -141,7 +158,7 @@ namespace EWE {
 				//stop loading screen here
 			}
 			else if (mainThreadTimeTracker >= renderRefreshRate) {
-				if (processClick()) { printf("continuing on process clikc \n"); swappingScenes = true; continue; }
+				//if (processClick()) { printf("continuing on process clikc \n"); swappingScenes = true; continue; }
 
 
 				//std::cout << "currentScene at render : " << currentScene << std::endl;
@@ -172,10 +189,10 @@ namespace EWE {
 
 	void EWESample::loadGlobalObjects() {
 		std::string skyboxLoc = "nasa/";
-		skyboxImgID = Cube_Texture::CreateCubeImage(skyboxLoc, Queue::transfer);
+		skyboxImgID = Cube_Texture::CreateCubeImage(skyboxLoc);
 
 		//i dont even know if the engine will work if this isnt constructed
-		ewEngine.advancedRS.skyboxModel = Basic_Model::SkyBox(Queue::transfer, 10000.f);
+		ewEngine.advancedRS.skyboxModel = Basic_Model::SkyBox(10000.f);
 		ewEngine.advancedRS.CreateSkyboxDescriptor(skyboxImgID);
 
 		//point lights are off by default
@@ -205,12 +222,22 @@ namespace EWE {
 		}
 	}
 	void EWESample::addModulesToMenuManager() {
-		menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>());
-		menuManager.menuModules.at(menu_main)->labels[1].string = "1.0.0";
+		auto& mm = menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>()).first->second;
+		mm->labels[1].string = "2.0.0";
+		mm->callbacks.push_back([&](){
+				currentScene = scene_exitting;
+				swappingScenes = true;
+
+			}
+		);
+
+		//need to add the callbacks for the graphics and audio settings MMs
+
+		
 		//menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(windowPtr, screenWidth, screenHeight));
 		//Shader::InputBox::giveGLFWCallbacks(MenuManager::staticMouseCallback, MenuManager::staticKeyCallback);
 	}
-
+/*
 	bool EWESample::processClick() {
 
 		bool wantsToChangeScene = false;
@@ -303,6 +330,8 @@ namespace EWE {
 		}
 		return wantsToChangeScene;
 	}
+	*/
+
 	void EWESample::SwapScenes() {
 
 		//loading entry?

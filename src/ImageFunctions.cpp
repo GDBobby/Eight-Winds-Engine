@@ -5,7 +5,7 @@
 
 
 #include <stb/stb_image.h>
-
+#include <cmath>
 
 #ifndef TEXTURE_DIR
 #define TEXTURE_DIR "textures/"

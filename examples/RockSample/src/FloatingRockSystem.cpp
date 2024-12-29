@@ -47,9 +47,14 @@ namespace EWE {
 		EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
 		eweDevice->CopyBuffer(cmdBuf, rockStagingBuffer->buffer, rockBuffer->GetBuffer(), rockBufferSize);
 
-		TransferCommandManager::AddCommand(cmdBuf);
-		TransferCommandManager::AddPropertyToCommand(rockStagingBuffer);
-		syncHub->EndSingleTimeCommandTransfer();
+		//TransferCommandManager::AddCommand(cmdBuf);
+		//TransferCommandManager::AddPropertyToCommand(rockStagingBuffer);
+
+		TransferCommand transferCommand{};
+		transferCommand.commands.push_back(&cmdBuf);
+		transferCommand.stagingBuffers.push_back(rockStagingBuffer);
+
+		syncHub->EndSingleTimeCommandTransfer(transferCommand);
 	}
 
 
@@ -74,7 +79,7 @@ namespace EWE {
 		inFile.close();
 		//printf("file read successfully \n");
 
-		rockModel = Construct<EWEModel>({ importMesh.meshes[0].vertices.data(), importMesh.meshes[0].vertices.size(), importMesh.vertex_size, importMesh.meshes[0].indices, Queue::transfer });
+		rockModel = Construct<EWEModel>({ importMesh.meshes[0].vertices.data(), static_cast<uint32_t>(importMesh.meshes[0].vertices.size()), static_cast<uint32_t>(importMesh.vertex_size), importMesh.meshes[0].indices});
 
 #if DEBUG_NAMING
 		rockModel->SetDebugNames("eyeModel");

@@ -194,7 +194,7 @@ if(EWE_PROJECTS)
 	if(!UNIX)
 		#currently bugged, linux users will need to manually change this line for now.
 		#ill address this eventually
-		add_subdirectory(Projects)
+		#add_subdirectory(Projects)
 	endif()
 endif()
 

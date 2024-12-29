@@ -47,7 +47,7 @@ namespace EWE {
 		void addModulesToMenuManager();
 		
 		void loadGlobalObjects();
-		bool processClick();
+		//bool processClick();
 
 		void SwapScenes();
 

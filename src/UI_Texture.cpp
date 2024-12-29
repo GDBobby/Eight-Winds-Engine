@@ -6,6 +6,7 @@
 #include "EWEngine/Data/EWE_Memory.h"
 
 #include <stb/stb_image.h>
+#include <cmath>
 
 
 namespace EWE {

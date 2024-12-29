@@ -137,7 +137,7 @@ namespace EWE {
 
 	void MainWindow::updateSettings() {
 		if (screenDimensions != SettingsJSON::settingsData.screenDimensions) {
-			printf("local - SettingsJSON - %d:%d \n", screenDimensions, SettingsJSON::settingsData.screenDimensions);
+			printf("local - SettingsJSON - %u:%u \n", screenDimensions.width, SettingsJSON::settingsData.screenDimensions.width);
 			const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 			if (screenDimensions.width > mode->width) {
 				screenDimensions.width = mode->width;

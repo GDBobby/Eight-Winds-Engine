@@ -20,7 +20,7 @@ namespace EWE {
 		soundEngine->StopMusic();
 		//soundEngine->playMusic(Music_Menu);
 
-		menuManager.changeMenuState(menu_ShaderGen, 0);
+		menuManager.ChangeMenuState(menu_ShaderGen, 0);
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {

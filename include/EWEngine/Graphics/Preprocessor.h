@@ -42,3 +42,15 @@
 #endif
 
 #define MIPMAP_ENABLED true
+
+#if EWE_DEBUG
+    #define EWE_UNREACHABLE assert(false)
+#else
+    #ifdef _MSC_VER
+        #define EWE_UNREACHABLE __assume(false)
+    #elif defined(__GNUC__) || defined(__clang__)
+        #define EWE_UNREACHABLE __builtin_unreachable()
+    #else
+        #define EWE_UNREACHABLE throw std::runtime_error("unreachable code")
+    #endif
+#endif

@@ -26,7 +26,7 @@ namespace EWE {
 		soundEngine->StopMusic();
 		//soundEngine->playMusic(Music_Menu);
 
-		menuManager.changeMenuState(menu_main, 0);
+		menuManager.ChangeMenuState(menu_main, 0);
 		ewEngine.camera.SetPerspectiveProjection(glm::radians(70.0f), ewEngine.eweRenderer.GetAspectRatio(), 0.1f, 1000000.0f);
 
 		//old method

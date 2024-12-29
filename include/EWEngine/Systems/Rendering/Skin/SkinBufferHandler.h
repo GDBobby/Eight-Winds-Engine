@@ -42,9 +42,9 @@ namespace EWE {
 		}
 
 	private:
-		std::array<InnerBufferStruct, MAX_FRAMES_IN_FLIGHT> gpuData;
 		const uint32_t boneBlockSize;
 		uint16_t maxActorCount{ 0 };
+		std::array<InnerBufferStruct, MAX_FRAMES_IN_FLIGHT> gpuData;
 
 		uint64_t modelMemOffset = 0;
 		uint64_t boneMemOffset = 0;

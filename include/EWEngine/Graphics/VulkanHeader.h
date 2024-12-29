@@ -22,6 +22,7 @@
 #include <array>
 #include <tuple>
 #include <utility>
+#include <thread>
 
 namespace EWE{
     static constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
