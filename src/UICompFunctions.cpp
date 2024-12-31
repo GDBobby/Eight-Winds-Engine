@@ -4,7 +4,7 @@
 
 namespace EWE {
 	namespace UIComp {
-		void ConvertTransformToClickBox(Transform2dComponent& transform, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
+		void ConvertTransformToClickBox(Transform2D& transform, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
 			clickBox.x = static_cast<int>(screenWidth + ((screenWidth / 2) * (transform.translation.x - 1.f)) - (screenWidth * transform.scale.x / 4));
 			clickBox.y = static_cast<int>(screenHeight + ((screenHeight / 2) * (transform.translation.y - 1.f)) - (screenHeight * transform.scale.y / 4));
 			clickBox.z = static_cast<int>(screenWidth + ((screenWidth / 2) * (transform.translation.x - 1.f)) + (screenWidth * transform.scale.x / 4));
@@ -17,7 +17,7 @@ namespace EWE {
 			printf("print click box - hori(%d:%d), vert(%d:%d) \n", clickBox.x, clickBox.z, clickBox.y, clickBox.w);
 		}
 
-		void TextToTransform(Transform2dComponent& transform, TextStruct& textStruct, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
+		void TextToTransform(Transform2D& transform, TextStruct& textStruct, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
 			//std::cout << "bounds of tempPRinter : " << tempPrinter.x << ":" << tempPrinter.y << ":" << tempPrinter.z << ":" << tempPrinter.w << std::endl;
 			transform.scale.x = textStruct.GetWidth() * screenWidth / DEFAULT_WIDTH;
 			if (transform.scale.x < 0.0f) {
@@ -49,7 +49,7 @@ namespace EWE {
 			coord2D.x = (screen.x - (screenWidth / 2.f)) / (screenWidth / 2.f);
 			coord2D.y = (screen.y - (screenHeight / 2.f)) / (screenHeight / 2.f);
 		}
-		void ConvertClickToTransform(glm::ivec4& clickBox, Transform2dComponent& transform, float screenWidth, float screenHeight) {
+		void ConvertClickToTransform(glm::ivec4& clickBox, Transform2D& transform, float screenWidth, float screenHeight) {
 
 			transform.translation.x = (((clickBox.x + clickBox.z) / 2) - (screenWidth / 2.f)) / (screenWidth / 2.f);
 			transform.translation.y = (((clickBox.y + clickBox.w) / 2) - (screenHeight / 2.f)) / (screenHeight / 2.f);

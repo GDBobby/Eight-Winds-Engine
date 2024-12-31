@@ -265,12 +265,7 @@ namespace EWE {
                     }
                 }
             }
-#if EWE_DEBUG
-            assert(false && "failed to find buffer");
-            return nullptr; // error silencing
-#else
-            //unreachable
-#endif
+            EWE_UNREACHABLE;
         }
         const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr) {
 #if EWE_DEBUG

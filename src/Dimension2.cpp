@@ -56,8 +56,8 @@ namespace EWE {
 		pipelineConfig.pipelineLayout = PL_single;
 		pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		{
-			const std::string vertString = "texture2d_singular.vert.spv";
-			const std::string fragString = "texture2d_singular.frag.spv";
+			const std::string vertString = "texture2D_singular.vert.spv";
+			const std::string fragString = "texture2D_singular.frag.spv";
 			pipe_single = Construct<EWEPipeline>({ vertString, fragString, pipelineConfig });
 		}
 

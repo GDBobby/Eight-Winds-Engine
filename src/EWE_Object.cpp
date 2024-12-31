@@ -119,10 +119,10 @@ namespace EWE {
         MaterialInfo returnPair;
         for (int i = 0; i < importData.meshNames.size(); i++) {
             importData.meshNames[i] = importData.meshNames[i].substr(0, importData.meshNames[i].find_first_of("."));
-            if (importData.meshNames[i].find("lethear") != importData.meshNames[i].npos) {
+            if (importData.meshNames[i].find("lethear") != std::string::npos) {
                 for (int j = 0; j < importData.meshNames.size(); j++) {
                     if (j == i) { continue; }
-                    if (importData.meshNames[j].find("leather") != importData.meshNames[j].npos) {
+                    if (importData.meshNames[j].find("leather") != std::string::npos) {
                         if (j >= i) {
                             printf("leather farther back than lethear 2 ?  \n");
                         }

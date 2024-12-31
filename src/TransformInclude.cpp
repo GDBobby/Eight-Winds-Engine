@@ -127,3 +127,58 @@ bool TransformComponent::similar(TransformComponent& second) {
 
     return ret;
 }
+
+
+
+
+	Matrix3ForGLSL Transform2D::Matrix() const {
+		const float cosine = glm::cos(rotation);
+		const float sine = glm::sin(rotation);
+		Matrix3ForGLSL ret{};
+		ret.columns[0].x = scale.x * cosine;
+		ret.columns[0].y = scale.x * sine;
+
+		ret.columns[1].x = -scale.y * sine;
+		ret.columns[1].y = scale.y * cosine;
+
+		ret.columns[2].x = translation.x;
+		ret.columns[2].y = translation.y;
+		ret.columns[2].z = 1.f;
+
+		return ret;
+	}
+
+	Matrix3ForGLSL Transform2D::Matrix(glm::vec2 const& meterScaling) const {
+		const float cosine = glm::cos(rotation);
+		const float sine = glm::sin(rotation);
+
+		Matrix3ForGLSL mat3{};
+		mat3.columns[0] = glm::vec4(scale.x * cosine, -scale.y * sine, translation.x * meterScaling.x, 0.f);
+		mat3.columns[1] = glm::vec4(scale.x * sine, scale.y * cosine, -translation.y * meterScaling.y, 0.f);
+		mat3.columns[2] = glm::vec4(0.f, 0.f, 1.f, 0.f);
+
+		return mat3;
+	}
+	Matrix3ForGLSL Transform2D::Matrix(const glm::mat3 conversionMatrix, const glm::vec2 tilesOnScreen) const {
+
+		const float cosine = glm::cos(rotation);
+		const float sine = glm::sin(rotation);
+
+		const glm::vec3 tempTrans = conversionMatrix * glm::vec3(translation, 1.f);
+		glm::vec2 renderTrans{ tempTrans.x, -tempTrans.y };
+
+		glm::vec2 renderScale{ scale.x / tilesOnScreen.x, scale.y / tilesOnScreen.y };
+
+		Matrix3ForGLSL ret{};
+		ret.columns[0].x = renderScale.x * cosine;
+		ret.columns[0].y = renderScale.x * sine;
+
+		ret.columns[1].x = -renderScale.y * sine;
+		ret.columns[1].y = renderScale.y * cosine;
+
+		ret.columns[2].x = renderTrans.x;
+		ret.columns[2].y = renderTrans.y;
+		ret.columns[2].z = 1.f;
+
+		return ret;
+	}

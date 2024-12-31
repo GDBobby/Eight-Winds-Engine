@@ -13,6 +13,7 @@ bool notFirstMalloc = false;
 #endif
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 #if EWE_DEBUG
 std::unordered_map<uint64_t, std::source_location> mallocMap{};

@@ -2,10 +2,12 @@
 
  //on linux, _DEBUG needs to be defined explicitly
  //_DEBUG is already defined in Visual Studio while in DEBUG mode
- //this changes it so that on windows, _DEBUG needs to be defined explicitly
+ //so im just replacing _DEBUG with EWE_DEBUG, supports release with debug too
 
 
-#define EWE_DEBUG false
+#ifndef EWE_DEBUG
+#define EWE_DEBUG true
+#endif
 
 #define CALL_TRACING (true && EWE_DEBUG)
 #if CALL_TRACING

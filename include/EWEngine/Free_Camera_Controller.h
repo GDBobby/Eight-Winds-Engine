@@ -81,7 +81,7 @@ namespace EWE {
         
 
         void Move(TransformComponent& transform);
-        void Move2DPlaneXZ(float dt, Transform2dComponent& transform2d);
+        void Move2DPlaneXZ(float dt, Transform2D& transform2d);
         void Zoom(TransformComponent& transform);
         void RotateCam(TransformComponent& transform);
 

@@ -9,19 +9,15 @@
 #include <queue>
 
 namespace EWE {
-
-	//big ol enum to key the menu??
-
-
 	//holds an entire menu and handles all components
 	//interaction between moduels and engine is handled in UIHandler
 	class MenuModule {
 	public:
 		struct UIImageStruct {
 			ImageID texture{IMAGE_INVALID};
-			Transform2dComponent transform{};
+			Transform2D transform{};
 			UIImageStruct() {}
-			UIImageStruct(ImageID texture, Transform2dComponent& transform) : texture{ texture }, transform{ transform } {}
+			UIImageStruct(ImageID texture, Transform2D& transform) : texture{ texture }, transform{ transform } {}
 		};
 		static EWEModel* model2D;
 
@@ -132,7 +128,7 @@ namespace EWE {
 
 		bool hasBackground = false;
 		glm::vec3 backgroundColor = { .1f, .1f, .1f };
-		Transform2dComponent backgroundTransform{};
+		Transform2D backgroundTransform{};
 		/* on hold fornow
 		void processClickCallbacks(double xpos, double ypos) {
 

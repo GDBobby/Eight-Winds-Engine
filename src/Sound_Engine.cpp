@@ -88,7 +88,7 @@ namespace EWE {
 	void SoundEngine::SwitchDevices(uint16_t deviceIterator) {
 		if ((deviceIterator < 0) || (deviceIterator > devices.size())) {
 #if EWE_DEBUG
-			printf("failed to switch devices - %d:%lld \n", deviceIterator, devices.size());
+			printf("failed to switch devices - %d:%zu \n", deviceIterator, devices.size());
 #endif
 			return;
 		}

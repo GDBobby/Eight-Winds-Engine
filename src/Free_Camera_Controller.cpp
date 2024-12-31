@@ -171,7 +171,7 @@ namespace EWE {
         storedZoom = 0.0;
     }
 
-    void CameraController::Move2DPlaneXZ(float dt, Transform2dComponent& transform2d) {
+    void CameraController::Move2DPlaneXZ(float dt, Transform2D& transform2d) {
 
         /*
         glm::vec3 moveDir{ 0.f };

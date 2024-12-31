@@ -26,3 +26,20 @@ protected:
 	glm::mat4 modelMatrix{};
 	glm::mat3 normMat{};
 };
+
+struct Matrix3ForGLSL {
+	std::array<glm::vec4, 3> columns{ glm::vec4{0.f}, glm::vec4{0.f}, glm::vec4{0.f} };
+};
+
+struct Transform2D {
+	glm::vec2 translation{0.f};
+	float rotation{0.f};
+	glm::vec2 scale{ 1.f };
+
+	Matrix3ForGLSL Matrix() const;
+
+	Matrix3ForGLSL Matrix(glm::vec2 const& meterScaling) const;
+	Matrix3ForGLSL Matrix(const glm::mat3 conversionMatrix, const glm::vec2 tilesOnScreen) const;
+
+};
+

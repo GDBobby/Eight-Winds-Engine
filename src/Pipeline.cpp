@@ -33,7 +33,10 @@ namespace EWE {
 //			const std::string errorPrint = "failed to open shader : " + enginePath;
 //			assert(shaderFile.is_open() && errorPrint.c_str());
 //#endif
-			assert(shaderFile.is_open() && "failed to open shader");
+			if(!shaderFile.is_open()){
+				printf("failed ot open shader file : %s\n", enginePath.c_str());
+				assert(shaderFile.is_open() && "failed to open shader");
+			}
 			shaderFile.seekg(0, std::ios::end);
 			std::size_t fileSize = static_cast<std::size_t>(shaderFile.tellg());
 			assert(fileSize > 0 && "shader is empty");

@@ -102,7 +102,7 @@ namespace EWE {
         EWE_VK(vmaCreateBuffer, VK::Object->vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo);
     }
 #else
-    StagingBuffer::StagingBuffer(VkDeviceSize size, const void* data) {
+    StagingBuffer::StagingBuffer(VkDeviceSize size, const void* data) : bufferSize{size} {
         VkBufferCreateInfo bufferCreateInfo{};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferCreateInfo.pNext = nullptr;
@@ -126,7 +126,7 @@ namespace EWE {
 
         Stage(data, size);
     }
-    StagingBuffer::StagingBuffer(VkDeviceSize size) {
+    StagingBuffer::StagingBuffer(VkDeviceSize size) : bufferSize{size} {
         VkBufferCreateInfo bufferCreateInfo{};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferCreateInfo.pNext = nullptr;
@@ -197,6 +197,9 @@ namespace EWE {
 #endif
     }
 
+    void StagingBuffer::Map(void* data){
+            EWE_VK(vkMapMemory, VK::Object->vkDevice, memory, 0, bufferSize, 0, &data);
+    }
 
 
 

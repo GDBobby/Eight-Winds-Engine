@@ -17,7 +17,13 @@ endif()
 
 option(EWE_EXAMPLES "Build examples" ${is_project_root})
 option(EWE_PROJECTS "Build projects" ${is_project_root})
-option(USING_NVIDIA_AFTERMATH, "Nvidia Aftermath" off)
+option(USING_NVIDIA_AFTERMATH, "Nvidia Aftermath" OFF)
+
+if(DEFINED ENABLE_EWE_DEBUG AND ENABLE_EWE_DEBUG)
+    add_definitions(-DEWE_DEBUG=true)
+else()
+    add_definitions(-DEWE_DEBUG=false)
+endif()
 
 Message(STATUS "Cmake Generator : ${CMAKE_GENERATOR}")
 
@@ -63,12 +69,12 @@ FetchContent_Declare(
 	GIT_TAG 6089180
 	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/rapidjson"
 )
-SET(RAPIDJSON_BUILD_DOC OFF)
-SET(RAPIDJSON_BUILD_EXAMPLES OFF)
-SET(RAPIDJSON_BUILD_TESTS OFF)
-SET(RAPIDJSON_BUILD_CXX11 OFF)
-SET(RAPIDJSON_BUILD_CXX17 ON)
-SET(RAPIDJSON_BUILD_THIRDPARTY_GTEST off)
+set(RAPIDJSON_BUILD_DOC OFF)
+set(RAPIDJSON_BUILD_EXAMPLES OFF)
+set(RAPIDJSON_BUILD_TESTS OFF)
+set(RAPIDJSON_BUILD_CXX11 OFF)
+set(RAPIDJSON_BUILD_CXX17 ON)
+set(RAPIDJSON_BUILD_THIRDPARTY_GTEST OFF)
 
 FetchContent_MakeAvailable(rapidjson)
 
@@ -90,12 +96,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(vma)
 
 #glslang
-set(BUILD_SHARED_LIBS FALSE)
-set(BUILD_EXTERNAL TRUE)
-set(ENABLE_GLSLANG_BINARIES TRUE)
-set(ENABLE_CTEST FALSE)
-set(ENABLE_HLSL FALSE)
-set(GLSLANG_TESTS FALSE)
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_EXTERNAL ON)
+set(ENABLE_GLSLANG_BINARIES ON)
+set(ENABLE_CTEST OFF)
+set(ENABLE_HLSL OFF)
+set(GLSLANG_TESTS OFF)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/include/notvulkan/glslang")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/include/notvulkan/glslang")

@@ -25,7 +25,7 @@ namespace EWE {
 	struct ClickTextBox { //i.e. menu options
 		TextStruct textStruct{};
 		glm::ivec4 clickBox{ 0 };
-		Transform2dComponent transform{};
+		Transform2D transform{};
 		bool isActive = false;
 
 		ClickTextBox(std::string string, float x, float y, unsigned char align, float scale);
@@ -40,7 +40,7 @@ namespace EWE {
 	struct TypeBox { //keybinds
 		TextStruct textStruct;
 		glm::ivec4 clickBox{ 0 };
-		Transform2dComponent transform;
+		Transform2D transform;
 		bool isActive = false;
 		bool mouseDragging = false;
 		bool readyForInput = false;
@@ -71,9 +71,9 @@ namespace EWE {
 	};
 
 	struct Slider {
-		std::pair<Transform2dComponent, Transform2dComponent> bracketButtons;
-		Transform2dComponent bracket{};
-		Transform2dComponent slider{};
+		std::pair<Transform2D, Transform2D> bracketButtons;
+		Transform2D bracket{};
+		Transform2D slider{};
 		float slidePosition{0.5f}; //can be translated to volume
 		glm::ivec4 click[3] = { glm::ivec4{0},glm::ivec4{0},glm::ivec4{0} }; //left, slide, right
 		float spaceBetween{};
@@ -133,7 +133,7 @@ namespace EWE {
 		std::vector<TextStruct> dropOptions;
 		std::vector<glm::ivec4> clickBoxes;
 
-		Transform2dComponent dropBackground;
+		Transform2D dropBackground;
 
 		void PushOption(std::string pushString);
 
@@ -177,7 +177,7 @@ namespace EWE {
 	*/
 
 	struct Button {
-		Transform2dComponent transform;
+		Transform2D transform;
 		glm::ivec4 clickBox;
 
 		Button(glm::vec2 translation);

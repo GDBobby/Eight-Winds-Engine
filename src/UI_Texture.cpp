@@ -31,7 +31,7 @@ namespace EWE {
             vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
 #else
             StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize });
-            EWE_VK(vkMapMemory, VK::Object->vkDevice, stagingBuffer->memory, 0, imageSize, 0, &data);
+            stagingBuffer->Map(&data);
 #endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             if (MIPMAP_ENABLED && mipmapping) {
@@ -39,6 +39,7 @@ namespace EWE {
             }
 
             for (uint16_t i = 0; i < pixelPeek.size(); i++) {
+                assert((memAddress + layerSize) <= (reinterpret_cast<uint64_t>(data) + stagingBuffer->bufferSize));
                 memcpy(reinterpret_cast<void*>(memAddress), pixelPeek[i].pixels, layerSize); //static_cast<void*> unnecessary>?
                 stbi_image_free(pixelPeek[i].pixels);
                 memAddress += layerSize;

@@ -144,6 +144,7 @@ namespace EWE{
 
     struct StagingBuffer {
         VkBuffer buffer{ VK_NULL_HANDLE };
+        VkDeviceSize bufferSize;
 #if USING_VMA
         VmaAllocation vmaAlloc{};
         StagingBuffer(VkDeviceSize size, VmaAllocator vmaAllocator);
@@ -158,6 +159,7 @@ namespace EWE{
         void Free();
         void Free() const;
         void Stage(const void* data, VkDeviceSize bufferSize);
+        void Map(void* data);
 #endif
     };
 
