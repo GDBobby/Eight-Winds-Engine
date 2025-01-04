@@ -10,11 +10,12 @@
 namespace EWE {
 	class EWECamera {
 	public:
+		EWECamera();
 
 		void SetOrthographicProjection(float left, float right, float top, float bottom, float near, float far);
 		void SetPerspectiveProjection(float fovy, float aspect, float near, float far);
 
-		void SetViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up = glm::vec3{0.0f,1.0f, 0.0f});
+		void SetViewDirection(const glm::vec3 position, const glm::vec3 direction, const glm::vec3 up = glm::vec3{0.0f,1.0f, 0.0f});
 		//void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up = glm::vec3{ 0.0f,1.0f, 0.0f });
 		void NewViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp);
 		void NewViewTarget(glm::vec3 const& position, glm::vec3 const& target) {
@@ -40,7 +41,7 @@ namespace EWE {
 		GlobalUbo ubo{};
 
 		glm::mat4 projection{ 0.f };
-		glm::mat4 view{ 1.f };
+		glm::mat4 view{ 0.f };
 
 		uint8_t dataHasBeenUpdated = 0;
 		glm::vec3 position;

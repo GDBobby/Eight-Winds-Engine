@@ -6,6 +6,8 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 #include "EWEngine/Systems/Rendering/Pipelines/Pipe_Skybox.h"
 
+#include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
+
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -60,13 +62,9 @@ namespace EWE {
 		mainWindow{ windowName },
 		eweDevice{ mainWindow },
 		eweRenderer{ mainWindow, camera },
-		//computeHandler{},
-		objectManager{},
 		//imguiHandler{ mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT, eweRenderer.getSwapChainRenderPass() },
-
-		/*2000 is ballparked, if its not set high enough then all textures will be moved, and invalidate the data*/
 		uiHandler{ SettingsJSON::settingsData.screenDimensions, mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
-		advancedRS{ objectManager, menuManager },
+		advancedRS{ menuManager },
 		imageManager{ },
 		menuManager{ mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay()},
 		skinnedRS{ }
@@ -277,12 +275,12 @@ namespace EWE {
 		timeTracker = glm::mod(timeTracker + dt, glm::two_pi<double>());
 
 		if (pointLightsEnabled) {
-			PointLight::update(static_cast<float>(dt), objectManager.pointLights);
-			for (int i = 0; i < objectManager.pointLights.size(); i++) {
-				lbo.pointLights[i].position = glm::vec4(objectManager.pointLights[i].transform.translation, 1.f);
-				lbo.pointLights[i].color = glm::vec4(objectManager.pointLights[i].color, objectManager.pointLights[i].lightIntensity);
+			PointLight::update(static_cast<float>(dt), advancedRS.pointLights);
+			for (int i = 0; i < advancedRS.pointLights.size(); i++) {
+				lbo.pointLights[i].position = glm::vec4(advancedRS.pointLights[i].transform.translation, 1.f);
+				lbo.pointLights[i].color = glm::vec4(advancedRS.pointLights[i].color, advancedRS.pointLights[i].lightIntensity);
 			}
-			lbo.numLights = static_cast<uint8_t>(objectManager.pointLights.size());
+			lbo.numLights = static_cast<uint8_t>(advancedRS.pointLights.size());
 
 			DescriptorHandler::WriteToLightBuffer(lbo);
 
@@ -293,10 +291,12 @@ namespace EWE {
 		std::cout << "before rendering game objects \n";
 #endif
 		advancedRS.renderGameObjects(static_cast<float>(timeTracker));
+		
 #if RENDER_DEBUG
 		std::cout << "before skin render \n";
 #endif
 		skinnedRS.Render();
+
 		RigidRenderingSystem::Render();
 #if RENDER_DEBUG
 		std::cout << "end draw3dObjects \n";

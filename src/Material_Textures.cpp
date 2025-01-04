@@ -41,7 +41,7 @@ namespace EWE {
             //foundTypes[i] = true;
             for (int j = 0; j < matImgTypes[i].size(); j++) {
                 auto& empRet = matPaths.emplace_back(TEXTURE_DIR);
-                empRet += texPath + matImgTypes[i][j];
+                empRet += texPath + '_' + matImgTypes[i][j];
 
                 //printf("smart material path : %s \n", materialPath.c_str());
 

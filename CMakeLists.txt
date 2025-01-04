@@ -5,6 +5,14 @@ cmake_minimum_required(VERSION 3.23)
 
 project(EightWindsEngine VERSION 1.1.1)
 
+message(STATUS "Project source dir : ${PROJECT_SOURCE_DIR}")
+message(STATUS "CMAKE source dir : ${CMAKE_SOURCE_DIR}")
+message(STATUS "CMake current list dir : ${CMAKE_CURRENT_LIST_DIR}")
+message(STATUS "~~~ CURRENT SOURCE DIR : ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "project name : ${PROJECT_NAME}")
+message(STATUS "build location : ${CMAKE_CURRENT_BINARY_DIR}")
+
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -13,29 +21,32 @@ set(is_project_root OFF)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	set(is_project_root ON)
+else()
+	set(is_project_root OFF)
 endif()
+message(STATUS "is EWEngine project root? ${is_project_root}")
 
 option(EWE_EXAMPLES "Build examples" ${is_project_root})
 option(EWE_PROJECTS "Build projects" ${is_project_root})
 option(USING_NVIDIA_AFTERMATH, "Nvidia Aftermath" OFF)
 
 if(DEFINED ENABLE_EWE_DEBUG AND ENABLE_EWE_DEBUG)
-    add_definitions(-DEWE_DEBUG=true)
+    add_definitions(-DEWE_DEBUG_PREDEF=true)
 else()
-    add_definitions(-DEWE_DEBUG=false)
+    add_definitions(-DEWE_DEBUG_PREDEF=false)
 endif()
 
 Message(STATUS "Cmake Generator : ${CMAKE_GENERATOR}")
 
-file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-file(GLOB_RECURSE SOURCES_C ${PROJECT_SOURCE_DIR}/src/*.c) #literally just for miniaudio.c, im tempted to move it somewhere else but idk
+file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/src/*.c)
 
-file(GLOB_RECURSE HEADER_FILES ${PROJECT_SOURCE_DIR}/include/*.h)
-file(GLOB_RECURSE HEADER_FILES_PP ${PROJECT_SOURCE_DIR}/include/*.hpp)
+file(GLOB_RECURSE HEADER_FILES ${PROJECT_SOURCE_DIR}/include/*.h ${PROJECT_SOURCE_DIR}/include/*.hpp)
 
 
 include(FetchContent)
-
+if(POLICY CMP0077)
+	cmake_policy(SET CMP0077 NEW)
+endif()
 
 FetchContent_Declare(
 	stb
@@ -54,11 +65,11 @@ FetchContent_Declare(
   BINARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw-build"
 )
 
-set(GLFW_BUILD_EXAMPLES OFF)
-set(GLFW_BUILD_TESTS OFF)
-set(GLFW_BUILD_DOCS OFF)
-set(GLFW_INSTALL OFF)
-set(GLFW_VULKAN_STATIC ON)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "")
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "")
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "")
+set(GLFW_INSTALL OFF CACHE BOOL "")
+set(GLFW_VULKAN_STATIC ON CACHE BOOL "")
 
 FetchContent_MakeAvailable(glfw)
 
@@ -69,12 +80,12 @@ FetchContent_Declare(
 	GIT_TAG 6089180
 	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/rapidjson"
 )
-set(RAPIDJSON_BUILD_DOC OFF)
-set(RAPIDJSON_BUILD_EXAMPLES OFF)
-set(RAPIDJSON_BUILD_TESTS OFF)
-set(RAPIDJSON_BUILD_CXX11 OFF)
-set(RAPIDJSON_BUILD_CXX17 ON)
-set(RAPIDJSON_BUILD_THIRDPARTY_GTEST OFF)
+set(RAPIDJSON_BUILD_DOC OFF CACHE BOOL "")
+set(RAPIDJSON_BUILD_EXAMPLES OFF CACHE BOOL "")
+set(RAPIDJSON_BUILD_TESTS OFF CACHE BOOL "")
+set(RAPIDJSON_BUILD_CXX11 OFF CACHE BOOL "")
+set(RAPIDJSON_BUILD_CXX17 ON CACHE BOOL "")
+set(RAPIDJSON_BUILD_THIRDPARTY_GTEST OFF CACHE BOOL "")
 
 FetchContent_MakeAvailable(rapidjson)
 
@@ -96,12 +107,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(vma)
 
 #glslang
-set(BUILD_SHARED_LIBS OFF)
-set(BUILD_EXTERNAL ON)
-set(ENABLE_GLSLANG_BINARIES ON)
-set(ENABLE_CTEST OFF)
-set(ENABLE_HLSL OFF)
-set(GLSLANG_TESTS OFF)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
+set(BUILD_EXTERNAL ON CACHE BOOL "")
+set(ENABLE_GLSLANG_BINARIES ON CACHE BOOL "")
+set(ENABLE_CTEST OFF CACHE BOOL "")
+set(ENABLE_HLSL OFF CACHE BOOL "")
+set(GLSLANG_TESTS OFF CACHE BOOL "")
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/include/notvulkan/glslang")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/include/notvulkan/glslang")
@@ -139,7 +150,7 @@ endif()
 
 
 
-add_library(${PROJECT_NAME} STATIC ${SOURCES} ${SOURCES_C} ${HEADER_FILES} ${HEADER_FILES_PP})
+add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HEADER_FILES})
 
 # 1. Set VULKAN_SDK_PATH in .env.cmake to target specific vulkan version
 if (DEFINED VULKAN_SDK_PATH)
@@ -170,8 +181,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	${Vulkan_INCLUDE_DIR}
 	${rapidjson_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/external/include
-	
 )
+#set(EWENGINE_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "Build directory for EWEngine")
+
+
 message(STATUS "linking directories")
 
 target_link_directories(${PROJECT_NAME} PUBLIC
@@ -211,4 +224,4 @@ set_target_properties(${PROJECT_NAME}
 )
 
 # Create source groups to maintain file structure in Visual Studio
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${SOURCES_C} ${HEADER_FILES} ${HEADER_FILES_PP})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${HEADER_FILES})

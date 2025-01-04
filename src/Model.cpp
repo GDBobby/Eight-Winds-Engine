@@ -117,12 +117,15 @@ namespace EWE {
                         };
                     }
 
-                    if (!uniqueVertices.contains(vertex)) {
+                    auto vertFind = uniqueVertices.find(vertex);
+                    if (vertFind == uniqueVertices.end()) {
                         uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
-                        //uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                        indices.push_back(static_cast<uint32_t>(vertices.size()));
                         vertices.push_back(vertex);
                     }
-                    indices.push_back(uniqueVertices.at(vertex));
+                    else {
+                        indices.push_back(vertFind->second);
+                    }
                 }
             }
             //printf("vertex count after loading model from file : %d \n", vertices.size());
@@ -160,11 +163,15 @@ namespace EWE {
                         };
                     }
 
-                    if (!uniqueVertices.contains(vertex)) {
+                    auto vertFind = uniqueVertices.find(vertex);
+                    if (vertFind == uniqueVertices.end()) {
                         uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
+                        indices.push_back(static_cast<uint32_t>(vertices.size()));
                         vertices.push_back(vertex);
                     }
-                    indices.push_back(uniqueVertices.at(vertex));
+                    else {
+                        indices.push_back(vertFind->second);
+                    }
                 }
             }
             //printf("vertex count after loading simple model from file : %d \n", vertices.size());
@@ -216,11 +223,15 @@ namespace EWE {
                         }
                         */
                     }
-                    if (!uniqueVertices.contains(vertex)) {
+                    auto vertFind = uniqueVertices.find(vertex);
+                    if (vertFind == uniqueVertices.end()) {
                         uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
+                        indices.push_back(static_cast<uint32_t>(vertices.size()));
                         vertices.push_back(vertex);
                     }
-                    indices.push_back(uniqueVertices[vertex]);
+                    else {
+                        indices.push_back(vertFind->second);
+                    }
                 }
             }
             //printf("vertex count after loading model from file : %d \n", vertices.size());
@@ -282,7 +293,6 @@ namespace EWE {
             gCommand.command = &cmdBuf;
             gCommand.stagingBuffer = stagingBuffer;
             syncHub->EndSingleTimeCommandGraphics(gCommand);
-            Deconstruct(stagingBuffer);
         }
         else {
             //transitioning from transfer to compute not supported currently
@@ -415,8 +425,8 @@ namespace EWE {
     }
 
     void EWEModel::Bind() {
-        VkDeviceSize offsets[] = { 0 };
-        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
 #if EWE_DEBUG
         assert(hasIndexBuffer);
 #endif
@@ -424,13 +434,13 @@ namespace EWE {
     }
 
     void EWEModel::BindNoIndex() {
-        VkDeviceSize offsets[] = { 0 };
-        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
     }
 
     void EWEModel::BindAndDraw() {
-        VkDeviceSize offsets[] = { 0 };
-        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
 
 #if EWE_DEBUG
         assert(hasIndexBuffer);
@@ -440,35 +450,35 @@ namespace EWE {
         
     }
     void EWEModel::BindAndDrawNoIndex() {
-        VkDeviceSize offsets[] = { 0 };
-        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
         EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), vertexCount, 1, 0, 0);
     }
 
     void EWEModel::BindAndDrawInstance(uint32_t instanceCount) {
-        VkDeviceSize offsets[] = { 0 };
-        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
         EWE_VK(vkCmdBindIndexBuffer, VK::Object->GetFrameBuffer(), indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
         EWE_VK(vkCmdDrawIndexed, VK::Object->GetFrameBuffer(), indexCount, instanceCount, 0, 0, 0);
     }
     void EWEModel::BindAndDrawInstance() {
         VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer()};
-        VkDeviceSize offsets[] = { 0 };
+        VkDeviceSize offsets[2] = { 0, 0 };
         EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 2, buffers, offsets);
         EWE_VK(vkCmdBindIndexBuffer, VK::Object->GetFrameBuffer(), indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
         EWE_VK(vkCmdDrawIndexed, VK::Object->GetFrameBuffer(), indexCount, instanceCount, 0, 0, 0);
     }
     void EWEModel::BindAndDrawInstanceNoIndex() {
         VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer() };
-        VkDeviceSize offsets[] = { 0 };
+        VkDeviceSize offsets[2] = { 0, 0 };
         EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 2, buffers, offsets);
         EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), vertexCount, instanceCount, 0, 0);
     }
 
 
     void EWEModel::BindAndDrawInstanceNoBuffer(int instanceCount) {
-        VkDeviceSize offsets[] = { 0 };
-        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
 
 #if EWE_DEBUG
         assert(hasIndexBuffer);
@@ -477,8 +487,8 @@ namespace EWE {
         EWE_VK(vkCmdDrawIndexed, VK::Object->GetFrameBuffer(), indexCount, instanceCount, 0, 0, 0);
     }
     void EWEModel::BindAndDrawInstanceNoBufferNoIndex(int instanceCount) {
-        VkDeviceSize offsets[] = { 0 };
-        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), offsets);
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
 
         EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), vertexCount, instanceCount, 0, 0);
         

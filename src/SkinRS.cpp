@@ -172,7 +172,7 @@ namespace EWE {
 				}
 
 #if EWE_DEBUG
-				assert(buffers.contains(skeleDataRef.first) && "buffer does not exist");
+				//assert(buffers.contains(skeleDataRef.first) && "buffer does not exist");
 #endif
 				//pipe->BindDescriptor(1, buffers.at(skeleDataRef.first).GetDescriptor());
 
@@ -271,6 +271,31 @@ namespace EWE {
 			emplaceRet.first->second.emplace_back(descSets, std::vector<EWEModel*>{modelPtr}, materialInfo.imageID);
 		}
 	}
+	void SkinRenderSystem::AddSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, MaterialInfo const& materialInfo, EWEModel* modelPtr, SkeletonID weaponID, SkeletonID skeletonID) {
+
+		auto textureMeshStructPair = skeleRef.find(weaponID);
+
+		if (textureMeshStructPair != skeleRef.end()) {
+			bool foundATextureMatch = false;
+			for (auto& textureRef : textureMeshStructPair->second) {
+				if (textureRef.imageID == materialInfo.imageID) {
+					foundATextureMatch = true;
+					textureRef.meshes.push_back(modelPtr);
+					break;
+				}
+			}
+			if (!foundATextureMatch) {
+				std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descSets = CreateDescriptorSets(materialInfo, skeletonID);
+
+				textureMeshStructPair->second.emplace_back(descSets, std::vector<EWEModel*>{modelPtr}, materialInfo.imageID);
+			}
+		}
+		else {
+			auto emplaceRet = skeleRef.emplace(weaponID, std::vector<SkinRS::TextureMeshStruct>{});
+			std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descSets = CreateDescriptorSets(materialInfo, skeletonID);
+			emplaceRet.first->second.emplace_back(descSets, std::vector<EWEModel*>{modelPtr}, materialInfo.imageID);
+		}
+	}
 
 	void SkinRenderSystem::AddSkeleton(MaterialInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced) {
 #if EWE_DEBUG
@@ -318,6 +343,7 @@ namespace EWE {
 	}
 	void SkinRenderSystem::AddWeapon(MaterialInfo& materialInfo, EWEModel* modelPtr, SkeletonID weaponID, SkeletonID ownerID) {
 		//need this to reference the owner buffer
+		//just create a descriptor with the owner buffer
 
 		auto boneDataIter = skinnedMainObject->boneData.find(materialInfo.materialFlags);
 
@@ -325,17 +351,15 @@ namespace EWE {
 
 			SkinRS::PipelineStruct& retPipe = skinnedMainObject->CreateBonePipe(materialInfo.materialFlags);
 			auto emplaceRet = retPipe.skeletonData.emplace(weaponID, std::vector<SkinRS::TextureMeshStruct>{});
-			//auto& secondRef = 
-			EWE::SkinBufferHandler* ownerBuffer = skinnedMainObject->GetSkinBuffer(ownerID);
 
-			std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descSets = CreateDescriptorSetsHelper(materialInfo, ownerBuffer);
+			std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descSets = CreateDescriptorSets(materialInfo, ownerID);
 
 			emplaceRet.first->second.emplace_back(descSets, std::vector<EWEModel*>{modelPtr}, materialInfo.imageID);
 			//secondRef.meshes.push_back(modelPtr);
 		}
 		else {
-			assert(false && "I need to figure out how to handle this, avoid currently");
-			AddSkeletonToStructs(boneDataIter->second.skeletonData, materialInfo, modelPtr, weaponID);
+			//assert(false && "I need to figure out how to handle this, avoid currently");
+			AddSkeletonToStructs(boneDataIter->second.skeletonData, materialInfo, modelPtr, weaponID, ownerID);
 		}
 	}
 

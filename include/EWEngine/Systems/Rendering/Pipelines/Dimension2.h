@@ -42,7 +42,7 @@ namespace EWE {
 		static void BindSingularPipeline();
 
 		static void BindDefaultDesc();
-		static void BindDescriptor(VkDescriptorSet desc);
+		static void BindSingleDescriptor(VkDescriptorSet* desc);
 		//static void BindTexture2DUI(ImageID texture);
 		//static void BindTexture2D(ImageID texture);
 		//static void BindTexture9(TextureDesc texture);

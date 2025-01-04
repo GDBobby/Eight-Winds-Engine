@@ -6,6 +6,21 @@
 #include <cassert>
 #include <string.h>
 
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <array>
+
+//CS_ForwardUp
+#define CS_PosXPosY 0
+#define CS_NegZNegY 1
+#ifndef COORDINATE_SYSTEM
+//i dont know how to set this up better
+#define COORDINATE_SYSTEM CS_NegZNegY 
+#endif
+
 namespace EWE {
 	typedef uint8_t MaterialFlags;
 	//typedef VkDescriptorSet TextureDesc;
@@ -23,6 +38,7 @@ namespace EWE {
 	typedef uint64_t ModelID;
 	typedef uint64_t ImageID;
 	typedef uint8_t MaterialCount;
+	typedef uint8_t SceneKey;
 
 
 	struct MaterialInfo {
@@ -30,7 +46,11 @@ namespace EWE {
 		ImageID imageID;
 		MaterialInfo() {}
 		MaterialInfo(MaterialFlags flags, ImageID imageID) : materialFlags{ flags }, imageID{ imageID } {}
+		bool operator==(MaterialInfo const& other) const {
+			return (materialFlags == other.materialFlags) && (imageID == other.imageID);
+		}
 	};
+
 
 	namespace Material {
 		enum Flags : MaterialCount {
@@ -57,5 +77,10 @@ namespace EWE {
 
 
 		//MaterialF_hasBones = 128, //removed from texture flags
+	};
+
+
+	struct Matrix3ForGLSL {
+		std::array<glm::vec4, 3> columns{ glm::vec4{0.f}, glm::vec4{0.f}, glm::vec4{0.f, 0.f, 1.f, 0.f} };
 	};
 } //namespace EWE

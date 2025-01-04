@@ -1,5 +1,5 @@
 #pragma once
-#include "Model.h"
+#include "EWEngine/Graphics/Model/Model.h"
 
 namespace EWE {
     namespace Basic_Model {
@@ -8,7 +8,6 @@ namespace EWE {
         EWEModel* QuadPNU(glm::vec2 uvScale = glm::vec2{ 1.f }, std::source_location = std::source_location::current());
         EWEModel* Simple3DQuad(glm::vec2 uvScale = glm::vec2{ 1.f }, std::source_location = std::source_location::current());
         EWEModel* TileQuad3D(glm::vec2 uvScale, std::source_location = std::source_location::current());
-
 
         EWEModel* Grid2D(glm::vec2 scale = { 1.f,1.f }, std::source_location = std::source_location::current());
         EWEModel* Quad2D(glm::vec2 scale = { 1.f,1.f }, std::source_location = std::source_location::current());

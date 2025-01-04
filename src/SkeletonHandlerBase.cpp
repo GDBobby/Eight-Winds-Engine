@@ -109,7 +109,7 @@ namespace EWE {
         for (int i = 0; i < importData.meshNames.size(); i++) {
             importData.meshNames[i] = importData.meshNames[i].substr(0, importData.meshNames[i].find_first_of('.'));
             std::string finalDir = texturePath;
-            finalDir += importData.meshNames[i] + '_';
+            finalDir += importData.meshNames[i];
             
             textureTracker.first.emplace_back(Material_Image::CreateMaterialImage(finalDir, true, true));
             
@@ -118,7 +118,7 @@ namespace EWE {
         for (int i = 0; i < importData.meshNTNames.size(); i++) {
             importData.meshNTNames[i] = importData.meshNTNames[i].substr(0, importData.meshNTNames[i].find_first_of("."));
             std::string finalDir = texturePath;
-            finalDir += importData.meshNTNames[i] + '_';
+            finalDir += importData.meshNTNames[i];
 
             textureTracker.second.emplace_back(Material_Image::CreateMaterialImage(finalDir, true, true));
         }

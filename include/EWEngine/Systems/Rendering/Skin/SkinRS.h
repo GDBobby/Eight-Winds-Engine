@@ -41,6 +41,7 @@ namespace EWE {
 
 		static void AddSkeleton(MaterialInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced);
 		static void AddSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, MaterialInfo const& materialInfo, EWEModel* modelPtr, SkeletonID skeletonID);
+		static void AddSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, MaterialInfo const& materialInfo, EWEModel* modelPtr, SkeletonID weaponID, SkeletonID skeletonID);
 
 		static void AddWeapon(MaterialInfo& materialInfo, EWEModel* meshes, SkeletonID skeletonID, SkeletonID ownerID);
 
@@ -70,7 +71,7 @@ namespace EWE {
 			assert(!buffers.contains(skeletonID));
 #endif
 			//buffersCreated += 2;
-			return &buffers.try_emplace(skeletonID, boneCount, 1).first->second;
+			return &buffers.try_emplace(skeletonID, boneCount, 2).first->second; //maxactorcount should probably be either 1 or some small number under 5 idk. too lazy to set up instancing for 2 objects so im setting it to 2
 		}
 
 		static std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> CreateDescriptorSets(MaterialInfo materialInfo, SkeletonID skeletonID);

@@ -187,6 +187,9 @@ namespace EWE {
 	}
 #endif
 	void SyncHub::EndSingleTimeCommandGraphics(GraphicsCommand& graphicsCommand) {
+
+
+
 		EWE_VK(vkEndCommandBuffer, *graphicsCommand.command);
 		assert(std::this_thread::get_id() == VK::Object->mainThreadID);
 
@@ -200,12 +203,14 @@ namespace EWE {
 		submitInfo.pSignalSemaphores = &semaphore->vkSemaphore;
 
 		GraphicsFence& fence = qSyncPool.GetMainThreadGraphicsFence();
+		fence.signalSemaphore = semaphore;
 		fence.gCommand = graphicsCommand;
 
 		VK::Object->queueMutex[Queue::graphics].lock();
 		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, fence.fence.vkFence);
 		renderSyncData.AddWaitSemaphore(semaphore, graphicsCommand.waitStage);
 		VK::Object->queueMutex[Queue::graphics].unlock();
+		fence.fence.submitted = true;
 	}
 
 
@@ -287,6 +292,7 @@ namespace EWE {
 			for (auto& cmd : transferCommand.commands) {
 				cmd->Reset();
 			}
+			transferFence.inUse = false;
 		}
 		else {
 			CommandBuffer& graphicsCmdBuf = qSyncPool.GetCmdBufSingleTime(Queue::graphics);
@@ -345,6 +351,7 @@ namespace EWE {
 			for (auto& cmd : transferCommand.commands) {
 				cmd->Reset();
 			}
+			transferFence.inUse = false;
 			while (!graphicsFence.CheckReturn(0)) {
 				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
 			}
@@ -352,6 +359,7 @@ namespace EWE {
 			for (auto& image : transferCommand.images) {
 				image->descriptorImageInfo.imageLayout = image->destinationImageLayout;
 			}
+			graphicsFence.inUse = false;
 		}
 
 	}

@@ -8,7 +8,6 @@
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
 
 #include "EWEngine/Systems/Rendering/advanced_render_system.h"
-#include "EWEngine/ObjectManager.h"
 //#include "LevelBuilder/LevelBuilder.h"
 #include "EWEngine/GUI/UIHandler.h"
 //#include "EWEngine/graphicsimGuiHandler.h"
@@ -68,8 +67,6 @@ namespace EWE {
 		VkQueryPool queryPool[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		float gpuTicksPerSecond = 0;
 #endif
-
-		ObjectManager objectManager;
 		UIHandler uiHandler;
 
 		AdvancedRenderSystem advancedRS;
@@ -122,6 +119,7 @@ namespace EWE {
 		void Draw3DObjects(double dt);
 		void DrawText(double dt);
 		void DrawObjects(double dt);
+		void Render2D(bool menuActive);
 
 		void EndRender();
 		void EndFrame();
@@ -134,7 +132,6 @@ namespace EWE {
 		bool GetLoadingScreenProgress() {
 			return (!finishedLoadingScreen);// || (loadingTime < 2.0);
 		}
-		//bool endlessPaused = false;
 	private:
 		bool finishedLoadingScreen = false;
 		bool loadingEngine = true;

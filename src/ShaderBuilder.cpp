@@ -121,13 +121,13 @@ namespace EWE {
 				retBuf += "vec3 normal = normalize(fragNormalWorld);";
 			}
 			if (hasRough) {
-				retBuf += "float roughness = texture(roughSampler, fragTexCoord).r;";
+				retBuf += "float roughness = texture(materialTextures, vec3(fragTexCoord, roughIndex)).r;";
 			}
 			else {
 				retBuf += "float roughness = 0.5;";
 			}
 			if (hasMetal) {
-				retBuf += "float metal = texture(metalSampler, fragTexCoord).r;";
+				retBuf += "float metal = texture(materialTextures, vec3(fragTexCoord, metalIndex)).r;";
 			}
 			else {;
 				retBuf += "float metal = 0.0;";
@@ -143,7 +143,7 @@ namespace EWE {
 			}
 
 			if (hasAO) {
-				retBuf += "vec3 ambient = vec3(0.05) * albedo * texture(amOccSampler, fragTexCoord).r;";
+				retBuf += "vec3 ambient = vec3(0.05) * albedo * texture(materialTextures, vec3(fragTexCoord, aoIndex)).r;";
 			}
 			else {
 				retBuf += "vec3 ambient = vec3(0.05) * albedo;";
@@ -181,13 +181,13 @@ namespace EWE {
 				retBuf += "vec3 surfaceNormal = normalize(fragNormalWorld);";
 			}
 			if (hasRough) {
-				retBuf += "float roughness = texture(roughSampler, fragTexCoord).r;";
+				retBuf += "float roughness = texture(materialTextures, vec3(fragTexCoord, roughIndex)).r;";
 			}
 			else {
 				retBuf += "float roughness = 0.5;";
 			}
 			if (hasMetal) {
-				retBuf += "float metal = texture(metalSampler, fragTexCoord).r;";
+				retBuf += "float metal = texture(materialTextures, vec3(fragTexCoord, metalIndex)).r;";
 			}
 			else {
 				retBuf += "float metal = 0.0;";
@@ -201,7 +201,7 @@ namespace EWE {
 			}
 
 			if (hasAO) {
-				retBuf += "vec3 ambient = vec3(0.05) * albedo * texture(amOccSampler, fragTexCoord).r;";
+				retBuf += "vec3 ambient = vec3(0.05) * albedo * texture(materialTextures, vec3(fragTexCoord, aoIndex)).r;";
 			}
 			else {
 				retBuf += "vec3 ambient = vec3(0.05) * albedo;";
@@ -326,6 +326,10 @@ namespace EWE {
 		for (int i = 0; i < shaderString.size(); i++) {
 			if ((shaderString[i] == ';') || (shaderString[i] == '{') || (shaderString[i] == '}')) {
 				shaderString.insert(shaderString.begin() + i + 1, '\n');
+				if (shaderString[i] == '}') {
+					shaderString.insert(shaderString.begin() + i + 1, '\n');
+					i++;
+				}
 				i++;
 			}
 		}

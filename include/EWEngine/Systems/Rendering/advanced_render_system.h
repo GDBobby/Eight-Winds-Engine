@@ -8,7 +8,7 @@
 
 #include "EWEngine/GUI/MenuManager.h"
 
-#include "EWEngine/ObjectManager.h"
+#include "EWEngine/Graphics/PointLight.h"
 
 #include <memory>
 #include <vector>
@@ -20,7 +20,7 @@ namespace EWE {
 	//descriptorsetlayouts are in a vector vector
 	//the first layert of the vector (vector<vector>>) designates a pipeline
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
-		AdvancedRenderSystem(ObjectManager& objectManager, MenuManager& menuManager);
+		AdvancedRenderSystem(MenuManager& menuManager);
 		~AdvancedRenderSystem();
 
 		AdvancedRenderSystem(const AdvancedRenderSystem&) = delete;
@@ -38,7 +38,6 @@ namespace EWE {
 		//uint32_t uiTextureID = 0;
 		void takeUIHandlerPtr(UIHandler* uiHandlerPtr) { uiHandler = uiHandlerPtr; }
 
-		ObjectManager& objectManager;
 		MenuManager& menuManager;
 
 		EWEModel* get2DModel() {
@@ -50,6 +49,7 @@ namespace EWE {
 
 		void CreateSkyboxDescriptor(ImageID skyboxImgID);
 
+		std::vector<PointLight> pointLights{};
 	private:
 		UIHandler* uiHandler;
 
@@ -58,21 +58,15 @@ namespace EWE {
 		EWEModel* model2D;
 
 		void renderSkybox();
-		//void renderTexturedGameObjects();
-		void renderVisualEffects();
-		
-		void renderSprites();
+
 
 #if DRAWING_POINTS
 		void renderPointLights();
 #endif
 		void RenderLightning();
 
-		void RenderGrass(float time);
 
 		EWEDescriptorSetLayout* skyboxEDSL{ nullptr };
-		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> skyboxDescriptors{VK_NULL_HANDLE, VK_NULL_HANDLE};
-		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> grassDescriptors{ VK_NULL_HANDLE, VK_NULL_HANDLE };
-
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> skyboxDescriptors{ VK_NULL_HANDLE, VK_NULL_HANDLE };
 	};
 }

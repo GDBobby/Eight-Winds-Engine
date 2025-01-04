@@ -18,8 +18,9 @@ namespace EWE {
 		bool windowWasResized = false;
 		TextOverlay* textOverlay;
 	public:
-		
+		void SetCurrentMenu(uint8_t currentState);
 		std::unordered_map<uint16_t, std::unique_ptr<MenuModule>> menuModules;
+		MenuModule* currentModule = nullptr;
 		GLFWwindow* windowPtr;
 		uint8_t* currentScene;
 		//std::queue<MenuClickReturn> clickReturns;
@@ -66,8 +67,9 @@ namespace EWE {
 
 		void drawNewMenuObejcts();
 		//void drawMenuObjects(FrameInfo& frameInfo, bool menuActive);
-		bool drawingNineUI() { return menuModules.at(currentMenuState)->DrawingNineUI(); }
-		void drawNewNine() { menuModules.at(currentMenuState)->DrawNewNine(); }
+		void drawNewNine() { if (isActive) { currentModule->DrawNewNine(); } }
+		bool DrawingImages() { return currentModule->images.size() > 0; }
+		void DrawImages() { currentModule->DrawImages(); }
 
 		bool getMenuActive() const {
 			return isActive;
@@ -75,7 +77,7 @@ namespace EWE {
 
 		void drawText() {
 			if (isActive) {
-				menuModules.at(currentMenuState)->DrawText();
+				currentModule->DrawText();
 			}
 		}
 

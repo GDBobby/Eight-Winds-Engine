@@ -14,9 +14,11 @@ bool notFirstMalloc = false;
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <mutex>
 
 #if EWE_DEBUG
 std::unordered_map<uint64_t, std::source_location> mallocMap{};
+std::mutex mallocMut{};
 
 void UpdateMemoryLogFile() {
 	std::ofstream memoryLogFile{};
@@ -27,7 +29,6 @@ void UpdateMemoryLogFile() {
 		memoryLogFile.close();
 	}
 	else {
-
 		std::vector<std::string> memoryLogCopy(mallocMap.size());
 
 		std::string temp;
@@ -78,18 +79,22 @@ namespace Internal {
 void ewe_alloc_mem_track(void* ptr, std::source_location srcLoc) {
 
 #if EWE_DEBUG
+	mallocMut.lock();
 	mallocMap.try_emplace(reinterpret_cast<uint64_t>(ptr), srcLoc);
 	UpdateMemoryLogFile();
+	mallocMut.unlock();
 #endif
 }
 #endif
 
 void ewe_free_mem_track(void* ptr){
 #if EWE_DEBUG
+	mallocMut.lock();
 	auto found = mallocMap.find(reinterpret_cast<uint64_t>(ptr));
 	assert((found != mallocMap.end()) && "freeing memory that wasn't allocated");
 	mallocMap.erase(found);
 
 	UpdateMemoryLogFile();
+	mallocMut.unlock();
 #endif
 }

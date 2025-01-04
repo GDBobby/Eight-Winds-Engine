@@ -8,6 +8,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace EWE {
+	EWECamera::EWECamera() {
+		view[3][3] = 1.f;
+	}
+
+
 	void EWECamera::SetBuffers() {
 		DescriptorHandler::SetCameraBuffers(uniformBuffers);
 	}
@@ -28,28 +33,48 @@ namespace EWE {
 		projection = glm::perspective(fovy, aspect, near, far);
 	}
 
-	void EWECamera::SetViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up) {
-		const glm::vec3 w{ glm::normalize(direction) };
-		const glm::vec3 u{ glm::cross(w, up) }; //up needs to be passed in normalized
-		const glm::vec3 v{ glm::cross(w, u) };
+	void EWECamera::SetViewDirection(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 cameraUp) {
+#if COORDINATE_SYSTEM == CS_PosXPosY
+		const glm::vec3 right = glm::normalize(glm::cross(forward, cameraUp));
+		const glm::vec3 up = glm::normalize(glm::cross(right, forward));
 
-		//view = glm::mat4{ 1.f };
+		view[0][0] = forward.x;
+		view[1][0] = forward.y;
+		view[2][0] = forward.z;
 
-		view[0][0] = u.x;
-		view[1][0] = u.y;
-		view[2][0] = u.z;
+		view[0][1] = up.x;
+		view[1][1] = up.y;
+		view[2][1] = up.z;
 
-		view[0][1] = v.x;
-		view[1][1] = v.y;
-		view[2][1] = v.z;
+		view[0][2] = right.x;
+		view[1][2] = right.y;
+		view[2][2] = right.z;
 
-		view[0][2] = w.x;
-		view[1][2] = w.y;
-		view[2][2] = w.z;
+		view[3][0] = -glm::dot(forward, position);
+		view[3][1] = -glm::dot(up, position);
+		view[3][2] = -glm::dot(right, position);
+#elif COORDINATE_SYSTEM == CS_NegZNegY
+		const glm::vec3 right{ normalize(glm::cross(cameraUp, forward)) }; //up needs to be passed in normalized
+		const glm::vec3 up{ normalize(glm::cross(forward, right)) };
 
-		view[3][0] = -glm::dot(u, position);
-		view[3][1] = -glm::dot(v, position);
-		view[3][2] = -glm::dot(w, position);
+		view[0][0] = right.x;
+		view[1][0] = right.y;
+		view[2][0] = right.z;
+
+		view[0][1] = -up.x;
+		view[1][1] = -up.y;
+		view[2][1] = -up.z;
+
+		view[0][2] = -forward.x;
+		view[1][2] = -forward.y;
+		view[2][2] = -forward.z;
+
+		view[3][0] = -glm::dot(right, position);
+		view[3][1] = glm::dot(up, position);
+		view[3][2] = glm::dot(forward, position);
+#else
+		static_assert(false && "incorrect coordinate system");
+#endif
 
 		ubo.projView = projection * view;
 		//ubo.projection = projection;
@@ -60,37 +85,16 @@ namespace EWE {
 	}
 
 	void EWECamera::NewViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp) {
+		glm::vec3 forward = glm::normalize(target - position);
+		SetViewDirection(position, forward, cameraUp);
 
 		//view = glm::lookAt(position, target, cameraUp);
 		//inverseview = glm::inverse(view);
+		return;
 		
 		//f is going to be constant in this top down, or i could change it on a rare zoom
-		glm::vec3 f = glm::normalize(target - position);
-		glm::vec3 s = glm::normalize(glm::cross(f, cameraUp));
-		glm::vec3 u = glm::cross(s, f);
-			
-		view[0][0] = s.x;//
-		view[1][0] = s.y;
-		view[2][0] = s.z;
-
-		view[0][1] = u.x;//
-		view[1][1] = u.y;
-		view[2][1] = u.z;
-
-		view[0][2] = -f.x;//
-		view[1][2] = -f.y;
-		view[2][2] = -f.z;
-
-		view[3][0] = -dot(s, position);
-		view[3][1] = -dot(u, position);
-		view[3][2] = dot(f, position);
-
-		ubo.projView = projection * view;
-		//ubo.projection = projection;
-		//ubo.view = view;
-
-		ubo.cameraPos = position;
-		//printf("camera pos : %.2f:%.2f:%.2f \n", ubo.cameraPos.x, ubo.cameraPos.y, ubo.cameraPos.z);
+		glm::vec3 right = glm::normalize(glm::cross(cameraUp, forward));
+		glm::vec3 up = normalize(glm::cross(forward, right));
 	}
 
 	void EWECamera::ViewTargetDirect() {

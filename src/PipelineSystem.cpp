@@ -44,14 +44,13 @@ namespace EWE {
 
 #if EWE_DEBUG
 		assert(foundPipe != pipelineSystem.end() && "searching invalid pipe \n");
-		currentPipe = pipeID;
 #endif
 		return foundPipe->second;
 	}
 	
 	void PipelineSystem::BindPipeline() {
 #if EWE_DEBUG
-		assert(currentPipe == myID && "pipe id mismatch on model bind");
+		currentPipe = myID;
 #endif
 		pipe->Bind();
 		bindedTexture = VK_NULL_HANDLE;

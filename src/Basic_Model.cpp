@@ -12,10 +12,9 @@ namespace EWE {
             }
 #endif
 
-            glm::vec3 color = { 1.f,1.f,1.f };
-            glm::vec3 normal = { 0.f, -1.f, 0.f };
-            std::vector<Vertex> vertices;
-            vertices.push_back({ { 0.0f,0.0f,0.0f }, normal, { 0.5f,0.5f }, color });
+            const glm::vec3 normal = { 0.f, -1.f, 0.f };
+            std::vector<VertexNT> vertices;
+            vertices.push_back({ { 0.0f,0.0f,0.0f }, normal, { 0.5f,0.5f } });
 
             float angle = glm::two_pi<float>() / points;
 
@@ -26,7 +25,7 @@ namespace EWE {
                 float theSin = glm::sin(angle * i);
                 float theCos = glm::cos(angle * i);
                 //std::cout << "theSin:theCos ~ " << theSin << " : " << theCos << std::endl; //shit is tiling when i want it to stretch
-                vertices.push_back({ {radius * theSin, 0.f, radius * theCos}, normal, {(theSin + 1.f) / 2.f, (theCos + 1.f) / 2.f}, color });
+                vertices.push_back({ {radius * theSin, 0.f, radius * theCos}, normal, {(theSin + 1.f) / 2.f, (theCos + 1.f) / 2.f} });
             }
             std::vector<uint32_t> indices;
 

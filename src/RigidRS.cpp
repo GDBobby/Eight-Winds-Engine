@@ -6,28 +6,32 @@
 namespace EWE {
     std::unordered_map<ImageID, std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>> descriptorsByImageInfo{};
 
+    std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> CreateDescriptor(MaterialInfo materialInfo) {
+
+        EWEDescriptorSetLayout* eDSL = MaterialPipelines::GetDSLFromFlags(materialInfo.materialFlags);
+        std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> ret;
+        for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            EWEDescriptorWriter descWriter{ eDSL, DescriptorPool_Global };
+            DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
+            descWriter.WriteImage(materialInfo.imageID);
+            ret[i] = descWriter.Build();
+        }
+#if DEBUG_NAMING
+        DebugNaming::SetObjectName(ret[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "rigid buffer desc[0]");
+        DebugNaming::SetObjectName(ret[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "rigid buffer desc[1]");
+#endif
+
+        descriptorsByImageInfo.try_emplace(materialInfo.imageID, ret);
+        return ret;
+    }
+
     std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> GetDescriptor(MaterialInfo materialInfo) {
         auto find = descriptorsByImageInfo.find(materialInfo.imageID);
         if (find != descriptorsByImageInfo.end()) {
             return find->second;
         }
         else {
-            EWEDescriptorSetLayout* eDSL = MaterialPipelines::GetDSLFromFlags(materialInfo.materialFlags);
-            std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> ret;
-            for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-                EWEDescriptorWriter descWriter{ eDSL, DescriptorPool_Global };
-                DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
-                descWriter.WriteImage(materialInfo.imageID);
-                ret[i] = descWriter.Build();
-            }
-#if DEBUG_NAMING
-            DebugNaming::SetObjectName(ret[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "rigid buffer desc[0]");
-            DebugNaming::SetObjectName(ret[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "rigid buffer desc[1]");
-#endif
-
-
-            auto empRet = descriptorsByImageInfo.try_emplace(materialInfo.imageID, ret);
-            return ret;
+            return CreateDescriptor(materialInfo);
         }
     }
     InstancedMaterialObjectInfo::InstancedMaterialObjectInfo(EWEModel* meshPtr, uint32_t entityCount, bool computedTransforms, EWEDescriptorSetLayout* eDSL, ImageID imageID) :
@@ -57,6 +61,7 @@ namespace EWE {
     }
 
     void MaterialRenderInfo::Render() {
+
         if (materialVec.size() == 0) {
             return;
         }
@@ -69,11 +74,14 @@ namespace EWE {
             assert(material.desc[VK::Object->frameIndex] != VK_NULL_HANDLE);
 #endif
             pipe->BindDescriptor(0, &material.desc[VK::Object->frameIndex]);
+
+            ModelAndNormalPushData push;
             for (auto& obj : material.objectVec) {
                 if (!obj.drawable) {
                     continue;
                 }
-                SimplePushConstantData push{ obj.ownerTransform->mat4(), obj.ownerTransform->normalMatrix() };
+                push.modelMatrix = obj.ownerTransform->mat4();
+                push.normalMatrix = obj.ownerTransform->normalMatrix();
 
                 pipe->BindModel(obj.meshPtr);
                 pipe->PushAndDraw(&push);
@@ -126,34 +134,44 @@ namespace EWE {
         }
 
         void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo) {
-        #if EWE_DEBUG
             assert(renderInfo.meshPtr != nullptr);
-        #endif
             auto findRet = materialMap->find(materialInfo.materialFlags);
             if (findRet == materialMap->end()) {
                 auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
 
                 //need to create the descriptor here
-                std::array<VkDescriptorSet, 2> desc = GetDescriptor(materialInfo);
-                for (auto& material : empRet.first->second.materialVec) {
-                    if (material.desc == desc) {
-                        material.objectVec.push_back(renderInfo);
-                        break;
-                    }
-                }
+                assert(!descriptorsByImageInfo.contains(materialInfo.imageID)); //somethign wasn't cleaned correctly
+                std::array<VkDescriptorSet, 2> desc = CreateDescriptor(materialInfo); //this should return a new descriptor
+                empRet.first->second.materialVec.emplace_back(desc, std::vector<MaterialObjectInfo>{renderInfo});
             }
             else {
-                std::array<VkDescriptorSet, 2> desc = GetDescriptor(materialInfo);
-                for (auto& material : findRet->second.materialVec) {
-                    if (material.desc == desc) {
-                        material.objectVec.push_back(renderInfo);
-                        break;
+                if (descriptorsByImageInfo.contains(materialInfo.imageID)) {
+                    std::array<VkDescriptorSet, 2> desc = GetDescriptor(materialInfo);
+#if EWE_DEBUG
+                    bool foundMatch = false;
+#endif
+                    for (auto& material : findRet->second.materialVec) {
+                        if (material.desc == desc) {
+                            material.objectVec.push_back(renderInfo);
+#if EWE_DEBUG
+                            foundMatch = true;
+#endif
+                            break;
+                        }
                     }
+#if EWE_DEBUG
+                    assert(foundMatch); //something was cleaned incorrectly
+#endif
+                }
+                else {
+                    std::array<VkDescriptorSet, 2> desc = CreateDescriptor(materialInfo); //this should return a new descriptor
+                    findRet->second.materialVec.emplace_back(desc, std::vector<MaterialObjectInfo>{renderInfo});
                 }
             }
         }
         void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable) {
             MaterialObjectInfo paramPass{ ownerTransform, modelPtr, drawable };
+            assert((modelPtr != nullptr) && (ownerTransform != nullptr) && (drawable != nullptr));
             AddMaterialObject(materialInfo, paramPass);
         }
         void RemoveByTransform(TransformComponent* ownerTransform) {
@@ -167,11 +185,7 @@ namespace EWE {
                     }
                 }
             }
-#if EWE_DEBUG
-            assert(false && "failed to find matching texture");
-#else
-            //unreachable
-#endif
+            EWE_UNREACHABLE;
         }
         void RemoveInstancedMaterialObject(EWEModel* meshPtr) {
             for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {

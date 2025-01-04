@@ -31,7 +31,7 @@ namespace EWE {
             vmaMapMemory(EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
 #else
             StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize });
-            stagingBuffer->Map(&data);
+            stagingBuffer->Map(data);
 #endif
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             if (MIPMAP_ENABLED && mipmapping) {

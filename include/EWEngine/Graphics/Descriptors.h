@@ -79,13 +79,13 @@ namespace EWE {
         EWEDescriptorPool& operator=(const EWEDescriptorPool&) = delete;
 
         static void AllocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor);
-        void AllocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) const;
+        void AllocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor);
 
         static void FreeDescriptors(DescriptorPool_ID poolID, std::vector<VkDescriptorSet>& descriptors);
-        void FreeDescriptors(std::vector<VkDescriptorSet>& descriptors) const;
+        void FreeDescriptors(std::vector<VkDescriptorSet>& descriptors);
 
-        static void FreeDescriptor(DescriptorPool_ID poolID, VkDescriptorSet* descriptors);
-        void FreeDescriptor(VkDescriptorSet* descriptor) const;
+        static void FreeDescriptor(DescriptorPool_ID poolID, const VkDescriptorSet* descriptors);
+        void FreeDescriptor(const VkDescriptorSet* descriptor);
 
         //void getPool(); maybe later for imGuiHandler, not rn
 
@@ -112,8 +112,10 @@ namespace EWE {
         std::unordered_map<VkDescriptorType, DescriptorTracker> trackers;
 
         VkDescriptorPool descriptorPool;
+        std::mutex mutex{};
 
         void AddDescriptorToTrackers(VkDescriptorType descType, uint32_t count);
+
 
         static std::unordered_map<uint16_t, EWEDescriptorPool> pools;
         friend class EWEDescriptorWriter;

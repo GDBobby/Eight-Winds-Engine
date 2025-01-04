@@ -11,9 +11,12 @@ namespace EWE {
 			}
 		}
 	}
-	void OverlayBase::ResizeWindow(glm::vec2 rescalingRatio) {
-		float nextWidth = VK::Object->screenWidth;
-		float nextHeight = VK::Object->screenHeight;
+	void OverlayBase::ResizeWindow(SettingsInfo::ScreenDimensions nextDimensions) {
+		glm::vec2 rescalingRatio{
+			static_cast<float>(nextDimensions.width) / VK::Object->screenWidth,
+			static_cast<float>(nextDimensions.height) / VK::Object->screenHeight
+		};
+
 		for (auto& textS : textStructs) {
 
 			textS.x *= rescalingRatio.x;

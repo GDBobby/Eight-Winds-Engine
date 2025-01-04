@@ -45,6 +45,11 @@ namespace EWE {
 		}
 	}
 
+	void MenuManager::SetCurrentMenu(uint8_t currentMenu) {
+		assert(menuModules.contains(currentMenu));
+		currentMenuState = currentMenu;
+		currentModule = menuModules.at(currentMenuState).get();
+	}
 	void MenuManager::ChangeMenuState(uint8_t nextMenu, uint8_t nextScene) { //nextScene is really just turning on mouse or not
 		printf("beginning of change menu state \n");
 		//std::cout << "newcurrentScene : " << +newcurrentScene << std::endl;
@@ -63,6 +68,7 @@ namespace EWE {
 			glfwSetInputMode(windowPtr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 		currentMenuState = nextMenu;
+		currentModule = menuModules.at(currentMenuState).get();
 		printf("end of change menu state \n");
 	}
 

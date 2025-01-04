@@ -5,9 +5,12 @@
 
 namespace EWE {
 
+	MenuModule::UIImageStruct::UIImageStruct(ImageID imgID, Transform2D& transform) : imgID{ imgID }, transform{ transform }, descriptor{ Image_Manager::CreateSimpleTexture(imgID, VK_SHADER_STAGE_FRAGMENT_BIT) } {}
+
 	EWEModel* MenuModule::model2D;
 
 	void (*MenuModule::ChangeMenuStateFromMM)(uint8_t, uint8_t);
+	std::function<void(SceneKey)> MenuModule::ChangeSceneFromMM;
 
 	void MenuModule::initTextures() {
 
@@ -155,16 +158,6 @@ namespace EWE {
 
 			//printf("after control boxes \n");
 		}
-		if (images.size() > 0) {
-			//not considering for texture ordering
-			push.color = glm::vec3(1.f);
-			for (int i = 0; i < images.size(); i++) {
-				assert(false && "need to figure out this function, replace BindTexture2DUI");
-				//Dimension2::BindTexture2DUI(images[i].texture);
-				push.scaleOffset = glm::vec4(images[i].transform.scale, images[i].transform.translation);
-				Dimension2::PushAndDraw(push);
-			}
-		}
 	}
 	void MenuModule::DrawNewNine() {
 
@@ -251,6 +244,19 @@ namespace EWE {
 			menuBars[i].init();
 		}
 		//printf("after initializing menu bars \n");
+	}
+	void MenuModule::DrawImages() {
+		Single2DPushConstantData push;
+		if (images.size() > 0) {
+			//not considering for texture ordering
+			push.color = glm::vec3(1.f);
+			for (int i = 0; i < images.size(); i++) {
+				Dimension2::BindSingleDescriptor(&images[i].descriptor);
+				push.transform = images[i].transform.MatrixNoRotation();
+				
+				Dimension2::PushAndDraw(push);
+			}
+		}
 	}
 
 	void MenuModule::DrawText() {

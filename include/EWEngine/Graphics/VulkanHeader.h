@@ -159,7 +159,7 @@ namespace EWE{
         void Free();
         void Free() const;
         void Stage(const void* data, VkDeviceSize bufferSize);
-        void Map(void* data);
+        void Map(void*& data);
 #endif
     };
 

@@ -118,6 +118,13 @@ namespace EWE {
     }
 
     void ThreadPool::WaitForCompletion() {
+#if EWE_DEBUG
+        std::thread::id thisThreadID = std::this_thread::get_id();
+        for (auto& eachThread : threads) {
+            assert(eachThread.get_id() != thisThreadID);
+        }
+#endif
+
         std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
         singleton->counterCondition.wait(counterLock,
             [&] {

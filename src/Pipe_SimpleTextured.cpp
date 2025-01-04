@@ -19,7 +19,7 @@ namespace EWE {
 		VkPushConstantRange pushConstantRange{};
 		pushConstantRange.offset = 0;
 		pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		pushConstantRange.size = sizeof(SimplePushConstantData);
+		pushConstantRange.size = sizeof(ModelAndNormalPushData);
 		pushStageFlags = pushConstantRange.stageFlags;
 		pushSize = pushConstantRange.size;
 

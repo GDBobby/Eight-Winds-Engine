@@ -20,13 +20,16 @@ namespace EWE {
 
 
         EweObject(std::string objectPath, bool globalTextures);
-        EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID);
+        EweObject(std::string objectPath, bool globalTextures, uint32_t instanceCount, bool computedTransforms);
+        EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, SkeletonID myID);
+        EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, SkeletonID myID, uint32_t instanceCount);
         ~EweObject();
 
 		TransformComponent transform{};
         std::vector<EWEModel*> meshes{};
         bool drawable = true;
-        std::unordered_set<ImageID> ownedTextures{};
+        std::vector<MaterialInfo> ownedTextures{};
+
 
 
         //void deTexturize();
@@ -34,6 +37,8 @@ namespace EWE {
             return mySkinID;
         }
 	private:
+        bool instanced = false; //purely for deconstruction branching
+
         struct TextureMapping {
             std::vector<MaterialInfo> meshNames;
             std::vector<MaterialInfo> meshNTNames;
@@ -43,8 +48,8 @@ namespace EWE {
 
         uint32_t mySkinID = 0;
 
-        void AddToRigidRenderingSystem(ImportData const& tempData, TextureMapping const& textureTracker);
-        void AddToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner);
+        void AddToRigidRenderingSystem(ImportData const& tempData, TextureMapping& textureTracker, uint32_t instanceCount, bool computedTransforms);
+        void AddToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner, uint32_t instanceCount);
 
         void LoadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);
 	

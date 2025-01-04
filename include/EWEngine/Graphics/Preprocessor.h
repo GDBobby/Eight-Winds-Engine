@@ -5,8 +5,12 @@
  //so im just replacing _DEBUG with EWE_DEBUG, supports release with debug too
 
 
-#ifndef EWE_DEBUG
+#ifndef EWE_DEBUG_PREDEF
+//EWE_DEBUG includes validation layers, this will make a release build not shippable
 #define EWE_DEBUG true
+#else
+#define EWE_DEBUG true
+ //EWE_DEBUG_PREDEF
 #endif
 
 #define CALL_TRACING (true && EWE_DEBUG)

@@ -8,7 +8,6 @@
 #include <thread>
 
 namespace EWE {
-	typedef uint8_t SceneKey;
 
 	//this class does not handle destruction of scenes, left explicitly to user
 	class SceneManager {
@@ -20,7 +19,7 @@ namespace EWE {
 
 		void ChangeScene(SceneKey sceneKey);
 
-		SceneKey AddScene(Scene* scene);
+		SceneKey AddScene(SceneBase* scene);
 
 		void SetStartupScene(SceneKey sceneKey);
 
@@ -35,12 +34,12 @@ namespace EWE {
 		//It just represents the transition from loading to the main scene
 		//this is necessary so that entry is called on the first scene from the game built on the engine
 		SceneKey lastScene = 0;
-		Scene* currentScenePtr{ nullptr };
+		SceneBase* currentScenePtr{ nullptr };
 		bool swappingScenes = false;
 
 		bool gameRunning = true;
 
-		std::unordered_map<SceneKey, Scene*> scenes;
+		std::unordered_map<SceneKey, SceneBase*> scenes;
 
 		std::shared_ptr<SoundEngine> soundEngine;
 

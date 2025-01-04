@@ -21,7 +21,7 @@
 
 
 #define USING_TANGENT_SPACE false
-#define DEBUGGING_SHADERS true
+#define DEBUGGING_SHADERS (EWE_DEBUG && true)
 
 
 #define SHADER_DYNAMIC_PATH "shaders/materials/"

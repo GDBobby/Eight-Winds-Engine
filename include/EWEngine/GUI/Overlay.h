@@ -18,7 +18,7 @@ namespace EWE {
 		}
 
 		virtual void DrawObjects() = 0;
-		void ResizeWindow(glm::vec2 rescalingRatio);
+		void ResizeWindow(SettingsInfo::ScreenDimensions nextDimensions);
 		
 	protected:
 		bool isActive = false;

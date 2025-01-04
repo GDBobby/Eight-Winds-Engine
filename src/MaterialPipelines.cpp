@@ -275,7 +275,7 @@ namespace EWE {
 					pushConstantRange.size = sizeof(PlayerPushConstantData);
 				}
 				else {
-					pushConstantRange.size = sizeof(SimplePushConstantData);
+					pushConstantRange.size = sizeof(ModelAndNormalPushData);
 				}
 				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 				pipelineLayoutInfo.pushConstantRangeCount = 1;

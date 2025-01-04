@@ -82,7 +82,7 @@ namespace EWE {
 		swappingScenes = true;
 	}
 	
-	uint8_t SceneManager::AddScene(Scene* scene) {
+	uint8_t SceneManager::AddScene(SceneBase* scene) {
 #if EWE_DEBUG
 		assert(scene != nullptr);
 		assert((scenes.size() + 1) < scene_exit);
@@ -102,7 +102,6 @@ namespace EWE {
 	void SceneManager::SwapScenes() {
 		EWE_VK(vkDeviceWaitIdle, VK::Object->vkDevice);
 		currentScenePtr->Exit();
-		ewEngine.objectManager.ClearSceneObjects();
 		if (currentScene != scene_exit) {
 			currentScenePtr = scenes.at(currentScene);
 			currentScenePtr->Load();

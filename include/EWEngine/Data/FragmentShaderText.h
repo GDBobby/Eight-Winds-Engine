@@ -85,7 +85,7 @@ namespace FragmentShaderText {
 			"vec3 albedo = texture(materialTextures, vec3(fragTexCoord, albedoIndex)).rgb;",
 		},
 		{
-			"void main(){",
+			"void main(){",			
 			"vec3 viewDirection = normalize(tangentViewPos - tangentFragPos);"
 			"vec3 normal = normalize(textureLod(materialTextures, vec3(fragTexCoord, normalIndex), 0.0).rgb * 2.0 - 1.0);"
 			"vec3 albedo = texture(materialTextures, vec3(fragTexCoord, albedoIndex)).rgb;",

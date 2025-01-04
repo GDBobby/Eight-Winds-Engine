@@ -49,6 +49,7 @@ namespace EWE{
         std::vector<StagingBuffer*> stagingBuffers{};
 #else
         GraphicsCommand gCommand{};
+        Semaphore* signalSemaphore{ nullptr };
 #endif
 
 #if ONE_SUBMISSION_THREAD_PER_QUEUE

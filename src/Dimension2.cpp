@@ -142,12 +142,12 @@ namespace EWE {
 			0, nullptr
 		);
 	}
-	void Dimension2::BindDescriptor(VkDescriptorSet desc) {
+	void Dimension2::BindSingleDescriptor(VkDescriptorSet* desc) {
 		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			dimension2Ptr->PL_single,
 			0, 1,
-			&desc,
+			desc,
 			0, nullptr
 		);
 	}

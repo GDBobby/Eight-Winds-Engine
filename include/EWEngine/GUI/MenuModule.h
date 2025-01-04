@@ -14,10 +14,11 @@ namespace EWE {
 	class MenuModule {
 	public:
 		struct UIImageStruct {
-			ImageID texture{IMAGE_INVALID};
+			ImageID imgID{IMAGE_INVALID};
 			Transform2D transform{};
+			VkDescriptorSet descriptor{ VK_NULL_HANDLE };
 			UIImageStruct() {}
-			UIImageStruct(ImageID texture, Transform2D& transform) : texture{ texture }, transform{ transform } {}
+			UIImageStruct(ImageID imgID, Transform2D& transform);
 		};
 		static EWEModel* model2D;
 
@@ -26,6 +27,7 @@ namespace EWE {
 		static void ChangeMenuState(uint8_t menuStates, uint8_t gameState = 255) {
 			ChangeMenuStateFromMM(menuStates, gameState);
 		}
+		static std::function<void(SceneKey)> ChangeSceneFromMM; //might be more practical to use a C style func pointer
 
 		static void initTextures();
 
@@ -173,6 +175,7 @@ namespace EWE {
 
 		bool DrawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0) || (menuBars.size() > 0); }
 		virtual void DrawNewNine();
+		virtual void DrawImages();
 		//void drawNineUI(FrameInfo2D& frameInfo);
 
 

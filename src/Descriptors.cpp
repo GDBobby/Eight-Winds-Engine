@@ -152,37 +152,43 @@ namespace EWE {
     void EWEDescriptorPool::AllocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) {
         pools.at(poolID).AllocateDescriptor(descriptorSetLayout, descriptor);
     }
-    void EWEDescriptorPool::AllocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) const {
+    void EWEDescriptorPool::AllocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) {
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;
         allocInfo.pSetLayouts = &descriptorSetLayout;
         allocInfo.descriptorSetCount = 1;
-
+        mutex.lock();
         EWE_VK(vkAllocateDescriptorSets, VK::Object->vkDevice, &allocInfo, &descriptor);
+        mutex.unlock();
     }
     void EWEDescriptorPool::FreeDescriptors(DescriptorPool_ID poolID, std::vector<VkDescriptorSet>& descriptors) {
         pools.at(poolID).FreeDescriptors(descriptors);
         //printf("active descriptors after removal : %d \n", activeDescriptors);
     }
-    void EWEDescriptorPool::FreeDescriptors(std::vector<VkDescriptorSet>& descriptors) const {
+    void EWEDescriptorPool::FreeDescriptors(std::vector<VkDescriptorSet>& descriptors) {
+        mutex.lock();
         EWE_VK(vkFreeDescriptorSets,
             VK::Object->vkDevice,
             descriptorPool,
             static_cast<uint32_t>(descriptors.size()),
             descriptors.data());
+        mutex.unlock();
         activeDescriptors -= descriptors.size();
         //printf("active descriptors after removal : %d \n", activeDescriptors);
     }
-    void EWEDescriptorPool::FreeDescriptor(DescriptorPool_ID poolID, VkDescriptorSet* descriptor) {
+    void EWEDescriptorPool::FreeDescriptor(DescriptorPool_ID poolID, const VkDescriptorSet* descriptor) {
         pools.at(poolID).FreeDescriptor(descriptor);
     }
-    void EWEDescriptorPool::FreeDescriptor(VkDescriptorSet* descriptor) const {
+    void EWEDescriptorPool::FreeDescriptor(const VkDescriptorSet* descriptor) {
+        mutex.lock();
         EWE_VK(vkFreeDescriptorSets,
             VK::Object->vkDevice,
             descriptorPool,
             1,
-            descriptor);
+            descriptor
+        );
+        mutex.unlock();
         activeDescriptors--;
         //printf("active descriptors after removal : %d \n", activeDescriptors);
     }

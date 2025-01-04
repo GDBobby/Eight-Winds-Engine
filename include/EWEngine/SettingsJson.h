@@ -12,7 +12,7 @@
 #include <type_traits>
 
 
-#define CURRENT_VERSION 11
+#define CURRENT_SETTINGS_VERSION 11
 #define SETTINGS_LOCATION "settings.json"
 
 
@@ -86,7 +86,7 @@ namespace SettingsInfo {
 class SettingsJSON {
 public:
 	struct SettingsData {
-		int versionKey = CURRENT_VERSION; //i dont think i can use periods, maybe somethin else like X
+		int versionKey = CURRENT_SETTINGS_VERSION; //i dont think i can use periods, maybe somethin else like X
 
 		SettingsInfo::WindowMode_Enum windowMode{ SettingsInfo::WT_borderless };
 		SettingsInfo::ScreenDimensions screenDimensions{1920, 1080};

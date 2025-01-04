@@ -55,19 +55,21 @@ namespace EWE {
             assert(gCommand.command != nullptr);
             gCommand.command->Reset();
             gCommand.command = nullptr;
+
             if (gCommand.stagingBuffer != nullptr) {
                 gCommand.stagingBuffer->Free();
                 Deconstruct(gCommand.stagingBuffer);
                 gCommand.stagingBuffer = nullptr;
             }
             if (gCommand.imageInfo != nullptr) {
-                assert(gCommand.imageInfo->descriptorImageInfo.imageLayout != gCommand.imageInfo->destinationImageLayout);
+                //assert(gCommand.imageInfo->descriptorImageInfo.imageLayout != gCommand.imageInfo->destinationImageLayout); //i dont remember why i put this in
                 gCommand.imageInfo->descriptorImageInfo.imageLayout = gCommand.imageInfo->destinationImageLayout;
                 gCommand.imageInfo = nullptr;
             }
 #if DEBUGGING_FENCES
             fence.log.push_back("allowing graphics fence to be reobtained");
 #endif
+            signalSemaphore->FinishSignaling();
             fence.inUse = false;
         }
     }
@@ -218,6 +220,7 @@ namespace EWE {
             EWE_VK(vkCreateFence, VK::Object->vkDevice, &fenceInfo, nullptr, &graphicsFences[i].fence.vkFence);
 #else
             EWE_VK(vkCreateFence, VK::Object->vkDevice, &fenceInfo, nullptr, &fences[i].vkFence);
+            EWE_VK(vkCreateFence, VK::Object->vkDevice, &fenceInfo, nullptr, &mainThreadGraphicsFences[i].fence.vkFence);
 #endif
         }
 

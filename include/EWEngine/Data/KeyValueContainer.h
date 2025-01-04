@@ -189,13 +189,7 @@ namespace EWE {
 			return inner_data[i];
 		}
 		ValueReturnType GetValue(KVPair::KeyParamType key) {
-			KV_Helper::ConditionalLock<ThreadSafe>{mutex};
-			for (auto& point : inner_data) {
-				if (point.key == key) {
-					return point.value;
-				}
-			}
-			assert(false);
+			return at(key).value;
 		}
 
 		void* data() {

@@ -16,18 +16,13 @@
 #include <set>
 
 
-
-
-
-//#define GRASS_ENABLED false
-
 namespace EWE {
 
 	//descriptorsetlayouts are in a vector vector
 	//the first layert of the vector (vector<vector>>) designates a pipeline
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
 
-	AdvancedRenderSystem::AdvancedRenderSystem(ObjectManager& objectManager, MenuManager& menuManager) : objectManager{ objectManager }, menuManager{ menuManager } {
+	AdvancedRenderSystem::AdvancedRenderSystem(MenuManager& menuManager) : menuManager{ menuManager } {
 #if EWE_DEBUG
 		printf("ARS constructor \n");
 #endif
@@ -85,19 +80,13 @@ namespace EWE {
 		if (drawSkybox) {
 			renderSkybox();
 		}
-		
-		//renderTexturedGameObjects();
-
-		//RenderDynamicMaterials();
 #if DEBUGGING_PIPELINES
 		printf("after rendering dynamic \n");
 #endif
 
-		renderVisualEffects();
-
 		RenderLightning();
 
-		if (shouldRenderPoints){ //shouldRenderPoints) {
+		if (shouldRenderPoints){
 #if DRAWING_POINTS
 			renderPointLights();
 #endif
@@ -108,55 +97,6 @@ namespace EWE {
 #endif
 	}
 
-	void AdvancedRenderSystem::renderSprites() {
-		/*
-			PipelineManager::pipelines[Pipe::sprite]->bind(frameInfo.commandBuffer);
-			vkCmdBindDescriptorSets(
-				frameInfo.commandBuffer,
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				PipelineManager::pipeLayouts[PL_sprite],
-				0, 1,
-				DescriptorHandler::getDescSet(DS_global, frameInfo.frameIndex),
-				0,
-				nullptr
-			);
-			uint32_t currentBindedTextureID = -1;
-
-			for (auto iter = frameInfo.objectManager.spriteBuildObjects.begin(); iter != frameInfo.objectManager.spriteBuildObjects.end(); iter++) {
-				if ((iter->second.textureID == -1) || (iter->second.model == nullptr)) {
-					std::cout << "why does a textured game object have no texture, or no model?? " << std::endl;
-					continue;
-				}
-				else if (iter->second.textureID != currentBindedTextureID) {
-					//std::cout << "texture desriptor set size : " << textureDescriptorSets.size() << std::endl;
-					//std::cout << "iterator value : " << iter->second.textureID * 2 + frameInfo.frameIndex << std::endl;
-
-					vkCmdBindDescriptorSets(
-						frameInfo.commandBuffer,
-						VK_PIPELINE_BIND_POINT_GRAPHICS,
-						PipelineManager::pipeLayouts[PL_sprite],
-						1, 1,
-						//&EWETexture::modeDescriptorSets[iter->second.textureID * 2 + frameInfo.frameIndex],
-						EWETexture::getSpriteDescriptorSets(iter->second.textureID, frameInfo.frameIndex),
-						0, nullptr
-					);
-					currentBindedTextureID = iter->second.textureID;
-				}
-				//printf("drawing now : %d \n", i);
-				SimplePushConstantData push{};
-				push.modelMatrix = iter->second.transform.mat4();
-				push.normalMatrix = iter->second.transform.normalMatrix();
-				//std::cout << "pre-bind/draw : " << i;
-				vkCmdPushConstants(frameInfo.commandBuffer, PipelineManager::pipeLayouts[PL_sprite], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SimplePushConstantData), &push);
-				iter->second.model->bind(frameInfo.commandBuffer);
-				iter->second.model->draw(frameInfo.commandBuffer);
-			}
-
-
-			EWETexture::newSpriteFrame();
-*/
-	}
-
 	void AdvancedRenderSystem::renderSkybox() {
 		assert(skyboxModel != nullptr);
 #if DEBUGGING_PIPELINES
@@ -164,65 +104,18 @@ namespace EWE {
 #endif
 		auto pipe = PipelineSystem::At(Pipe::skybox);
 		pipe->BindPipeline();
-		//objectManager.grassTextureID
 		pipe->BindDescriptor(0, &skyboxDescriptors[VK::Object->frameIndex]);
 
 		pipe->BindModel(skyboxModel);
 		pipe->DrawModel();
 		
 	}
-//
-//	inline void AdvancedRenderSystem::renderTexturedGameObjects() {
-//		if ((objectManager.texturedGameObjects.size() > 0)) {
-//			auto pipe = PipelineSystem::At(Pipe::textured);
-//#if DEBUGGING_PIPELINES
-//			printf("Drawing texutered game objects \n");
-//#endif
-//			pipe->BindPipeline();
-//			//pipe->BindDescriptor(0, DescriptorHandler::GetDescSet(DS_global));
-//
-//
-//			//std::cout << "post-bind textured" << std::endl;
-//			TextureDesc currentBindedTextureID = IMAGE_INVALID;
-//
-//			SimplePushConstantData push{};
-//			//std::cout << "textured game o bject size : " << objectManager.texturedGameObjects.size() << std::endl;
-//			for(auto& textureGameObject : objectManager.texturedGameObjects){
-//
-//				if (textureGameObject.isTarget && (!textureGameObject.activeTarget)) {
-//					continue;
-//				}
-//				if ((textureGameObject.textureID == TEXTURE_UNBINDED_DESC) || (textureGameObject.model == nullptr)) {
-//					std::cout << "why does a textured game object have no texture, or no model?? " << std::endl;
-//					continue;
-//				}
-//				else if (textureGameObject.textureID != currentBindedTextureID) {
-//
-//					//pipe->BindDescriptor(0, &textureGameObject.textureID);
-//
-//					currentBindedTextureID = textureGameObject.textureID;
-//				}
-//				//printf("drawing now : %d \n", i);
-//				push.modelMatrix = textureGameObject.transform.mat4();
-//				push.normalMatrix = textureGameObject.transform.normalMatrix();
-//				//std::cout << "pre-bind/draw : " << i;
-//
-//				pipe->BindModel(textureGameObject.model.get());
-//				pipe->PushAndDraw(&push);
-//				//std::cout << " ~ post-bind/draw : " << i << std::endl;
-//			}
-//		}
-//		
-//	}
-
-	void AdvancedRenderSystem::renderVisualEffects() {
-
-	}
 
 	void AdvancedRenderSystem::RenderLightning() {
 		//printf("beginning render lightning \n");
 		//i need to pull this data out of the voids gaze source, if it still exists (rip)
 	}
+	/*
 	void AdvancedRenderSystem::RenderGrass(float time) {
 
 		if (objectManager.grassField.size() == 0) { return; }
@@ -245,6 +138,7 @@ namespace EWE {
 		printf("after drawing grass \n");
 #endif
 	}
+	*/
 
 	void AdvancedRenderSystem::render2DGameObjects(bool menuActive) {
 
@@ -265,19 +159,20 @@ namespace EWE {
 
 		if (menuActive) {
 			Dimension2::BindArrayPipeline(); 
-			if (menuManager.drawingNineUI()) {
-				menuManager.drawNewNine();
-			}
+			menuManager.drawNewNine();
 			
 			menuManager.drawNewMenuObejcts();
 
 			if (uiHandler->overlay) {
 				uiHandler->overlay->DrawObjects();
 			}
+			if (menuManager.DrawingImages()) {
+				Dimension2::BindSingularPipeline();
+				menuManager.DrawImages();
+			}
 		}
 		else {
 			if (uiHandler->overlay) {
-				Dimension2::BindArrayPipeline();
 				uiHandler->overlay->DrawObjects();
 			}
 		}

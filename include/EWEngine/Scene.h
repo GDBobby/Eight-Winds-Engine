@@ -1,9 +1,9 @@
 #pragma once
 namespace EWE {
 
-	class Scene {
+	class SceneBase {
 	public:
-		virtual ~Scene() = default;
+		virtual ~SceneBase() = default;
 		//this is called immediately after the last scene's exit, the loading screen will be running during this function
 		virtual void Load() = 0;
 		//this is called immediately after load, the loading screen will be running during this function

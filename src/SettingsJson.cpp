@@ -189,7 +189,7 @@ bool readFromJsonFile(rapidjson::Document& document) {
 		printf("version not int \n");
 		return false;
 	}
-	else if (document["version"].GetInt() != CURRENT_VERSION) {
+	else if (document["version"].GetInt() != CURRENT_SETTINGS_VERSION) {
 		printf("icnorrect version \n");
 		return false;
 	}
@@ -241,7 +241,7 @@ bool readFromJsonFile(rapidjson::Document& document) {
 
 
 
-	SettingsJSON::settingsData.versionKey = CURRENT_VERSION;
+	SettingsJSON::settingsData.versionKey = CURRENT_SETTINGS_VERSION;
 
 	int valueBuffer = document["windowMode"].GetInt();
 	if (valueBuffer != 0 && valueBuffer != 1) {
@@ -391,7 +391,7 @@ void SettingsJSON::saveToJsonFile() {
 	rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
 	writer.StartObject();
 	writer.Key("version");
-	writer.Int(CURRENT_VERSION);
+	writer.Int(CURRENT_SETTINGS_VERSION);
 	writer.Key("windowMode");
 	writer.Int(settingsData.windowMode);
 	writer.Key("screenDimensionsX");

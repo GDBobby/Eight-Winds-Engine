@@ -4,6 +4,8 @@
 
 #define MODEL_PATH "models/"
 
+#include "EWEngine/Systems/ThreadPool.h"
+
 namespace EWE {
 
     /*
@@ -85,11 +87,11 @@ namespace EWE {
     ImportData ImportData::LoadData(std::string importPath) {
         ImportData returnData;
         //printf("entering static load data function \n");
-        std::thread meshThread[2];
         std::string meshPath = MODEL_PATH;
         meshPath += importPath + "_mesh.ewe";
 
         bool meshThreadActive[2] = { false, false };
+        bool meshThreadFinished[2] = { false, false };
 
 
         uint32_t testValue = 1;
@@ -97,7 +99,8 @@ namespace EWE {
 
         if (std::filesystem::exists(meshPath)) {
             meshThreadActive[0] = true;
-            meshThread[0] = std::thread(&ImportData::ReadData<boneVertex>, std::ref(returnData.meshExport), meshPath, endian);
+            ThreadPool::Enqueue(&ImportData::ReadData<boneVertex>, std::ref(returnData.meshExport), meshPath, endian);
+            meshThreadFinished[0] = true;
         }
         else {
             //printf("mesh NT path doesn't exist : %s \n", meshPath.c_str());
@@ -106,7 +109,8 @@ namespace EWE {
         meshPath = MODEL_PATH + importPath + "_meshNT.ewe";
         if (std::filesystem::exists(meshPath)) {
             meshThreadActive[1] = true;
-            meshThread[1] = std::thread(&ImportData::ReadData<boneVertexNoTangent>, std::ref(returnData.meshNTExport), meshPath, endian);
+            ThreadPool::Enqueue(&ImportData::ReadData<boneVertexNoTangent>, std::ref(returnData.meshNTExport), meshPath, endian);
+            meshThreadFinished[1] = true;
         }
         else {
             //printf("mesh NT path doesn't exist : %s \n", meshPath.c_str());
@@ -129,11 +133,11 @@ namespace EWE {
 
         for (int i = 0; i < 2; i++) {
             if (meshThreadActive[i]) {
-                if (meshThread[i].joinable()) {
+                while (!meshThreadFinished[i]) {
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(1));
 #if EWE_DEBUG
                     printf("waiting on simple mesh thread : %d \n", i);
 #endif
-                    meshThread[i].join();
                 }
                 meshThreadActive[i] = false;
             }
@@ -142,22 +146,24 @@ namespace EWE {
         meshPath = MODEL_PATH + importPath + "_simpleMesh.ewe";
         if (std::filesystem::exists(meshPath)) {
             meshThreadActive[0] = true;
-            meshThread[0] = std::thread(&ImportData::ReadData<Vertex>, std::ref(returnData.meshSimpleExport), meshPath, endian);
+            ThreadPool::Enqueue(&ImportData::ReadData<Vertex>, std::ref(returnData.meshSimpleExport), meshPath, endian);
+            meshThreadFinished[0] = true;
         }
 
         meshPath = MODEL_PATH + importPath + "_simpleMeshNT.ewe";
         if (std::filesystem::exists(meshPath)) {
             meshThreadActive[1] = true;
-            meshThread[1] = std::thread(&ImportData::ReadData<VertexNT>, std::ref(returnData.meshNTSimpleExport), meshPath, endian);
+            ThreadPool::Enqueue(&ImportData::ReadData<VertexNT>, std::ref(returnData.meshNTSimpleExport), meshPath, endian);
+            meshThreadFinished[1] = true;
         }
 
         for (int i = 0; i < 2; i++) {
             if (meshThreadActive[i]) {
-                if (meshThread[i].joinable()) {
+                while (!meshThreadFinished[i]) {
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(1));
 #if EWE_DEBUG
                     printf("waiting on simple mesh thread : %d \n", i);
 #endif
-                    meshThread[i].join();
                 }
                 meshThreadActive[i] = false;
             }

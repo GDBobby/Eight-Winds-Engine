@@ -23,21 +23,10 @@ namespace EWE {
 		enum Pipeline_Enum : PipelineID {
 			pointLight,
 			textured,
-			instance_textured,
-			alpha,
-			//material,
-			twod,
-			NineUI,
-			//fbx,
 			skybox,
 			grid,
-			//bobTrans,
-			sprite,
-			lightning,
-			spikyBall,
-			visualEffect,
-			grass,
 			loading,
+			lightning,
 
 			ENGINE_MAX_COUNT,
 		};

@@ -158,11 +158,12 @@ namespace EWE {
         EWE_VK(vmaDestroyBuffer, VK::Object->vmaAllocator, buffer, vmaAlloc);
 #else
     void StagingBuffer::Free() {
-        if (buffer == VK_NULL_HANDLE) {
-            return;
+        if (buffer != VK_NULL_HANDLE) {
+            EWE_VK(vkDestroyBuffer, VK::Object->vkDevice, buffer, nullptr);
         }
-        EWE_VK(vkDestroyBuffer, VK::Object->vkDevice, buffer, nullptr);
-        EWE_VK(vkFreeMemory, VK::Object->vkDevice, memory, nullptr);
+        if (memory != VK_NULL_HANDLE) {
+            EWE_VK(vkFreeMemory, VK::Object->vkDevice, memory, nullptr);
+        }
 #endif
     }
 
@@ -174,11 +175,12 @@ namespace EWE {
         EWE_VK(vmaDestroyBuffer, VK::Object->vmaAllocator, buffer, vmaAlloc);
 #else
     void StagingBuffer::Free() const {
-        if (buffer == VK_NULL_HANDLE) {
-            return;
+        if (buffer != VK_NULL_HANDLE) {
+            EWE_VK(vkDestroyBuffer, VK::Object->vkDevice, buffer, nullptr);
         }
-        EWE_VK(vkDestroyBuffer, VK::Object->vkDevice, buffer, nullptr);
-        EWE_VK(vkFreeMemory, VK::Object->vkDevice, memory, nullptr);
+        if (memory != VK_NULL_HANDLE) {
+            EWE_VK(vkFreeMemory, VK::Object->vkDevice, memory, nullptr);
+        }
 #endif
     }
 #if USING_VMA
@@ -197,7 +199,7 @@ namespace EWE {
 #endif
     }
 
-    void StagingBuffer::Map(void* data){
+    void StagingBuffer::Map(void*& data){
             EWE_VK(vkMapMemory, VK::Object->vkDevice, memory, 0, bufferSize, 0, &data);
     }
 
