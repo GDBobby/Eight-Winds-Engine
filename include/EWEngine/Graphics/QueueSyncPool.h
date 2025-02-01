@@ -150,9 +150,6 @@ namespace EWE{
         void SemaphoreFinishedWaiting(VkSemaphore semaphore, std::source_location srcLoc = std::source_location::current()) {
             GetSemaphore(semaphore).FinishWaiting(srcLoc);
         }
-        void SemaphoreFinishedSignaling(VkSemaphore semaphore, std::source_location srcLoc = std::source_location::current()) {
-            GetSemaphore(semaphore).FinishSignaling(srcLoc);
-        }
 #else
         void SemaphoreBeginSignaling(VkSemaphore semaphore) {
             GetSemaphore(semaphore).BeginSignaling();
@@ -162,9 +159,6 @@ namespace EWE{
         }
         void SemaphoreFinishedWaiting(VkSemaphore semaphore) {
             GetSemaphore(semaphore).FinishWaiting();
-        }
-        void SemaphoreFinishedSignaling(VkSemaphore semaphore) {
-            GetSemaphore(semaphore).FinishSignaling();
         }
 #endif
         

@@ -36,6 +36,9 @@
 
 #define SEMAPHORE_TRACKING (true && DEBUG_NAMING)
 
+//descriptor tracing requires C++23 and <stacktrace>
+#define DESCRIPTOR_TRACING (true && EWE_DEBUG)
+
 #define COMMAND_BUFFER_TRACING (true && EWE_DEBUG)
 #define DEBUGGING_FENCES (false && EWE_DEBUG)
 

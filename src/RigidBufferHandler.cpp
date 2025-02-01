@@ -23,12 +23,56 @@ namespace EWE {
 		transformBuffer[1]->SetName("rigid buffer 1");
 #endif
 	}
-
-	RigidInstancedBufferHandler::~RigidInstancedBufferHandler() {
-		Deconstruct(transformBuffer[0]);
-		Deconstruct(transformBuffer[1]);
+	RigidInstancedBufferHandler::RigidInstancedBufferHandler(RigidInstancedBufferHandler&& other) noexcept
+		:
+		transformBuffer{ other.transformBuffer },
+		computedTransforms{ other.computedTransforms },
+		maxEntityCount{ other.maxEntityCount },
+		currentEntityCount{ other.currentEntityCount }
+	{
+		other.transformBuffer[0] = nullptr;
+		other.transformBuffer[1] = nullptr;
 	}
 
+	RigidInstancedBufferHandler::~RigidInstancedBufferHandler() {
+		if (transformBuffer[0] != nullptr) {
+			Deconstruct(transformBuffer[0]);
+			Deconstruct(transformBuffer[1]);
+		}
+	}
+
+	RigidInstancedBufferHandler::RigidInstancedBufferHandler(RigidInstancedBufferHandler& other) 
+		:
+		transformBuffer{other.transformBuffer},
+		computedTransforms{other.computedTransforms},
+		maxEntityCount{other.maxEntityCount},
+		currentEntityCount{other.currentEntityCount}
+	{
+		other.transformBuffer[0] = nullptr;
+		other.transformBuffer[1] = nullptr;
+	}
+	RigidInstancedBufferHandler& RigidInstancedBufferHandler::operator=(RigidInstancedBufferHandler& other) {
+		transformBuffer[0] = other.transformBuffer[0];
+		transformBuffer[1] = other.transformBuffer[1];
+		other.transformBuffer[0] = nullptr;
+		other.transformBuffer[1] = nullptr;
+		computedTransforms = other.computedTransforms;
+		maxEntityCount = other.maxEntityCount;
+		currentEntityCount = other.currentEntityCount;
+
+		return *this;
+	}
+	RigidInstancedBufferHandler& RigidInstancedBufferHandler::operator=(RigidInstancedBufferHandler&& other) {
+		transformBuffer[0] = other.transformBuffer[0];
+		transformBuffer[1] = other.transformBuffer[1];
+		other.transformBuffer[0] = nullptr;
+		other.transformBuffer[1] = nullptr;
+		computedTransforms = other.computedTransforms;
+		maxEntityCount = other.maxEntityCount;
+		currentEntityCount = other.currentEntityCount;
+
+		return *this;
+	}
 	void RigidInstancedBufferHandler::WritePartialData(glm::mat4* transform, std::size_t offset) {
 		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4), offset);
 	}

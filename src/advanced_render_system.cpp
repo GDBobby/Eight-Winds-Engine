@@ -2,18 +2,14 @@
 
 #include "EWEngine/Systems/PipelineSystem.h"
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
-#include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 #include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
 
 #include <array>
-#include <stdexcept>
 #include <iostream>
-#include <set>
 
 
 namespace EWE {
@@ -48,12 +44,12 @@ namespace EWE {
 	}
 
 	void AdvancedRenderSystem::CreateSkyboxDescriptor(ImageID skyboxImgID) {
-		if (skyboxDescriptors[0] != VK_NULL_HANDLE) {
-			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &skyboxDescriptors[0]);
-			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &skyboxDescriptors[1]);
-		}
 		if (skyboxEDSL == nullptr) {
 			skyboxEDSL = PipelineSystem::At(Pipe::skybox)->GetDSL();
+		}
+		if (skyboxDescriptors[0] != VK_NULL_HANDLE) {
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, skyboxEDSL, &skyboxDescriptors[0]);
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, skyboxEDSL, &skyboxDescriptors[1]);
 		}
 
 		assert(skyboxEDSL != nullptr);
@@ -172,7 +168,9 @@ namespace EWE {
 			}
 		}
 		else {
+
 			if (uiHandler->overlay) {
+
 				uiHandler->overlay->DrawObjects();
 			}
 		}

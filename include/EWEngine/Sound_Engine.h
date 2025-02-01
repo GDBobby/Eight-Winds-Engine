@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <stdexcept>
 #include <map>
 #include <array>
 #include <unordered_map>
@@ -50,25 +49,12 @@ namespace EWE {
 
 		void PlayMusic(uint16_t whichSong, bool repeat = false);
 		void PlayEffect(uint16_t whichEffect, bool looping = false);
-		void StopEfect(uint16_t whichEffect);
+		void StopEffect(uint16_t whichEffect);
+		void RestartEffect(uint16_t whichEffect, bool looping = false);
 		void PlayVoice(uint16_t whichVoice) {} //idk
 
 		void PlayNextSong() {}
-		void StopMusic() {
-			printf("stop the music pls \n");
-			if (currentSong == 65534) {
-				ma_sound_stop(&hwSound);
-				return;
-			}
-
-
-			if (music.at(selectedEngine).find(currentSong) != music.at(selectedEngine).end()) {
-				ma_sound_stop(&music.at(selectedEngine).at(currentSong));
-			}
-			else {
-				printf("attempting to stop music, failed to find it \n");
-			}
-		}
+		void StopMusic();
 
 		float GetVolume(SoundVolume whichVolume) { return volumes[(uint8_t)whichVolume]; }
 		float GetVolume(int8_t whichVolume) { return volumes[whichVolume]; }
@@ -78,6 +64,8 @@ namespace EWE {
 		void SetVolume(SoundVolume whichVolume, uint8_t value);
 		//void loadEffects(std::unordered_map<uint16_t, std::string>& loadEffects);
 		void LoadSoundMap(std::unordered_map<uint16_t, std::string>& loadSounds, SoundType soundType);
+
+		int16_t AddMusicToBack(std::string const& musicLocation);
 
 		std::vector<std::string> deviceNames;
 		uint16_t GetSelectedDevice() {

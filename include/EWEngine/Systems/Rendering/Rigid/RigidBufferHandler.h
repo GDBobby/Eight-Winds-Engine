@@ -6,6 +6,10 @@ namespace EWE {
 	class RigidInstancedBufferHandler {
 	public:
 		RigidInstancedBufferHandler(uint32_t entityCount, bool computedTransforms, EWEDescriptorSetLayout* eDSL, ImageID imgID);
+		RigidInstancedBufferHandler(RigidInstancedBufferHandler&&) noexcept;
+		RigidInstancedBufferHandler(RigidInstancedBufferHandler&);
+		RigidInstancedBufferHandler& operator=(RigidInstancedBufferHandler& other);
+		RigidInstancedBufferHandler& operator=(RigidInstancedBufferHandler&& other);
 		~RigidInstancedBufferHandler();
 
 		void WritePartialData(glm::mat4* transform, std::size_t offset);

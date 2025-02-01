@@ -29,7 +29,7 @@ namespace EWE {
     void DescriptorHandler::Cleanup() {
         Deconstruct(globalDSL);
         for (auto& descriptorSet : globalDescSet) {
-            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet);
+            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, globalDSL, &descriptorSet);
         }
     }
     namespace DescriptorHandler {

@@ -8,6 +8,7 @@ namespace EWE {
     ThreadPool* ThreadPool::singleton{ nullptr };
 
     thread_local std::queue<std::function<void()>>* ThreadPool::localThreadTasks{};
+    thread_local int ThreadPool::myThreadIndex;
 
     void ThreadPool::Construct() {
         assert(singleton == nullptr && "constructing Threadpool twice");
@@ -21,12 +22,14 @@ namespace EWE {
 
         threadSpecificTasks.reserve(numThreads);
         threadSpecificMutex.reserve(numThreads);
+        threadTasks.resize(numThreads, Task_None);
 
         for (std::size_t i = 0; i < numThreads; ++i) {
 
             threads.emplace_back(
-                [this, localThreadMutex = &threadMutexesBase[i]] {
+                [this, localThreadMutex = &threadMutexesBase[i], threadSize = threads.size()] {
                     const std::thread::id myThreadID = std::this_thread::get_id();
+                    myThreadIndex = threadSize;
 
                     threadSpecificTasks.Lock();
                     localThreadTasks = &threadSpecificTasks.Add(myThreadID);

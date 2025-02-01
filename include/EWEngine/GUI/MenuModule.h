@@ -4,9 +4,6 @@
 #include "UIComponentsHigher.h"
 #include "EWEngine/Graphics/Model/Basic_Model.h"
 #include "EWEngine/GUI/MenuEnums.h"
-//#include "../../Game/InputHandler.h"
-
-#include <queue>
 
 namespace EWE {
 	//holds an entire menu and handles all components

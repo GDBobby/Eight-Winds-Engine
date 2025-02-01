@@ -1,10 +1,7 @@
 #pragma once
 
 #include "EWEngine/Graphics/Model/Model.h"
-#include "EWEngine/Graphics/PushConstants.h"
 #include "EWEngine/Data/TransformInclude.h"
-// std
-#include <memory>
 
 /*
 I can only use this for 2d view ports

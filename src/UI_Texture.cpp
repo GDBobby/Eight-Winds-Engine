@@ -109,10 +109,10 @@ namespace EWE {
             samplerInfo.pNext = nullptr;
 
             //if(tType == tType_2d){
-            samplerInfo.magFilter = VK_FILTER_NEAREST;
-            samplerInfo.minFilter = VK_FILTER_NEAREST;
+            samplerInfo.magFilter = VK_FILTER_LINEAR;
+            samplerInfo.minFilter = VK_FILTER_LINEAR;
 
-            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
             samplerInfo.addressModeV = samplerInfo.addressModeU;
             samplerInfo.addressModeW = samplerInfo.addressModeU;

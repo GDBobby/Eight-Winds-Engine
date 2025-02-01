@@ -163,6 +163,7 @@ namespace EWE {
 
 		Dimension2::BindDefaultDesc();
 		Array2DPushConstantData push{};
+		push.depth = 0.9f;
 		push.textureID = MT_NineUI;
 		if (comboBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };

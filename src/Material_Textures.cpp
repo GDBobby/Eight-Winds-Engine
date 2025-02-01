@@ -20,6 +20,9 @@ namespace EWE {
                 if (findRet != imPtr->existingMaterialsByID.end()) {
                     return findRet->second;
                 }
+#if EWE_DEBUG
+                printf("image manager contains texPath, but it's not a material?\n");
+#endif
             }
         }
 
@@ -91,6 +94,7 @@ namespace EWE {
         }
 #endif
         std::unique_lock<std::mutex> imgLock(imPtr->imageMutex);
+        imPtr->imageStringToIDMap.try_emplace(texPath, imgID);
         imPtr->existingMaterialsByID.try_emplace(imgID, flags, imgID);
         //existingMaterialIDs[texPath] = std::pair<MaterialFlags, int32_t>{ flags, returnID };
 

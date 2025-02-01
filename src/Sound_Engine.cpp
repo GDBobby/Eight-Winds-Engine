@@ -1,8 +1,6 @@
 #include "EWEngine/Sound_Engine.h"
 
 #include <filesystem>
-#include <iostream>
-#include <iterator>
 
 #define EFFECTS_PATH "sounds/effects/"
 #define MUSIC_PATH "sounds/music/"
@@ -137,14 +135,31 @@ namespace EWE {
 		ma_result result = ma_sound_start(&music.at(selectedEngine).at(whichSong));
 
 		if (result != MA_SUCCESS) {
-			printf("WARNING: Failed to [load];ay sound \"%d\"", whichSong);
+			printf("WARNING: Failed to play music %d", whichSong);
 			return;
 		}
 	}
+	void SoundEngine::StopMusic() {
+		printf("stop the music pls \n");
+		if (currentSong == 65534) {
+			ma_sound_stop(&hwSound);
+			return;
+		}
+
+
+		if (music.at(selectedEngine).find(currentSong) != music.at(selectedEngine).end()) {
+			ma_sound_stop(&music.at(selectedEngine).at(currentSong));
+		}
+		else {
+			printf("attempting to stop music, failed to find it \n");
+		}
+	}
 	void SoundEngine::PlayEffect(uint16_t whichEffect, bool looping) {
+#if EWE_DEBUG
 		printf("starting sound \n");
-		
-		if(selectedEngine > effects.size()){
+#endif
+
+ 		if(selectedEngine > effects.size()){
 			printf("selected engine is out of range \n");
 			return;
 		}
@@ -153,8 +168,15 @@ namespace EWE {
 			return;
 		}
 
+		if ((volumes[(uint8_t)SoundVolume::master] <= 0.f) && (volumes[(uint8_t)SoundVolume::effect] <= 0.f)) {
+			printf("volume is 0\n");
+			return;
+		}
+
+#if EWE_DEBUG
 		printf("selectedEngine : %d:%.2f - volume of sound : %.2f \n", selectedEngine, ma_engine_get_volume(&engines.at(selectedEngine)), ma_sound_get_volume(&effects.at(selectedEngine).at(whichEffect)));
-		
+#endif
+		//ma_sound
 		ma_result result = ma_sound_start(&effects.at(selectedEngine).at(whichEffect));
 		ma_sound_set_looping(&effects.at(selectedEngine).at(whichEffect), looping);
 		if (result != MA_SUCCESS) {
@@ -162,8 +184,22 @@ namespace EWE {
 			return;
 		}
 	}
-	void SoundEngine::StopEfect(uint16_t whichEffect) {
-		ma_sound_stop(&effects.at(selectedEngine).at(whichEffect));
+	void SoundEngine::StopEffect(uint16_t whichEffect) {
+		printf("stop effect : %d\n", ma_sound_stop(&effects.at(selectedEngine).at(whichEffect)));
+		ma_sound_seek_to_pcm_frame(&effects.at(selectedEngine).at(whichEffect), 0);
+	}
+
+	void SoundEngine::RestartEffect(uint16_t whichEffect, bool looping)
+	{
+		ma_sound* soundAddr = &effects.at(selectedEngine).at(whichEffect);
+		ma_sound_stop(soundAddr);
+		ma_sound_seek_to_pcm_frame(soundAddr, 0);
+		ma_result result = ma_sound_start(soundAddr);
+		ma_sound_set_looping(soundAddr, looping);
+		if (result != MA_SUCCESS) {
+			printf("WARNING: Failed to start sound \"%d\"", whichEffect);
+			return;
+		}
 	}
 
 	void SoundEngine::LoadHowlingWind() {
@@ -367,6 +403,10 @@ namespace EWE {
 		ma_result result;
 		for (auto& sound : loadSounds) {
 			if (locations->find(sound.first) == locations->end()) {
+				if (!std::filesystem::exists(sound.second))
+				{
+					printf("failed to find sound file location : %s\n", sound.second.c_str());
+				}
 				locations->emplace(sound);
 			}
 			else {
@@ -418,6 +458,34 @@ namespace EWE {
 		}
 
 	}
+
+	int16_t SoundEngine::AddMusicToBack(std::string const& musicLocation)
+	{
+		for (auto& loc : musicLocations)
+		{
+			if (loc.second == musicLocation)
+			{
+				return loc.first;
+			}
+		}
+		int16_t ret = musicLocations.size();
+		musicLocations.try_emplace(ret, musicLocation);
+
+		ma_result result;
+		music[selectedEngine].emplace(ret, ma_sound{});
+		result = ma_sound_init_from_file(&engines[selectedEngine], musicLocation.c_str(), MA_SOUND_FLAG_STREAM, NULL, NULL, &music[selectedEngine].at(ret));
+
+		ma_sound_set_volume(&music[selectedEngine].at(ret), volumes[(uint8_t)SoundVolume::music]);
+		if (result != MA_SUCCESS) {
+			printf("WARNING: Failed to load music or voice \"%s\"", musicLocation.c_str());
+			throw std::runtime_error("failed to load sound");
+			return -1;
+		}
+		printf("successfully added music to back\n");
+		return ret;
+	}
+
+
 	void SoundEngine::ReloadSounds() {
 		ma_result result;
 		//effects

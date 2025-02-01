@@ -38,11 +38,20 @@ namespace EWE {
 		static void Destruct();
 
 		//static void BindNineUI(CommandBuffer cmdBuffer, uint8_t frameIndex);
+		static void BindModel()
+		{
+			dimension2Ptr->model2D->Bind();
+		}
+		static void DrawModel()
+		{
+			dimension2Ptr->model2D->Draw();
+		}
 		static void BindArrayPipeline();
 		static void BindSingularPipeline();
 
 		static void BindDefaultDesc();
 		static void BindSingleDescriptor(VkDescriptorSet* desc);
+		static void BindArrayDescriptor(VkDescriptorSet* desc);
 		//static void BindTexture2DUI(ImageID texture);
 		//static void BindTexture2D(ImageID texture);
 		//static void BindTexture9(TextureDesc texture);

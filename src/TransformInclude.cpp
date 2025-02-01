@@ -163,7 +163,7 @@ namespace EWE {
         ret.columns[0].x = scale.x * cosine;
         ret.columns[0].y = scale.x * sine;
 
-        ret.columns[1].x = -scale.y * sine;
+        ret.columns[1].x = scale.y * -sine;
         ret.columns[1].y = scale.y * cosine;
 
         ret.columns[2].x = translation.x;
@@ -196,9 +196,9 @@ namespace EWE {
 
         Matrix3ForGLSL ret{};
         ret.columns[0].x = renderScale.x * cosine;
-        ret.columns[0].y = renderScale.x * sine;
+        ret.columns[0].y = sine / tilesOnScreen.y * scale.x;
 
-        ret.columns[1].x = -renderScale.y * sine;
+        ret.columns[1].x = -sine / tilesOnScreen.x * scale.y;
         ret.columns[1].y = renderScale.y * cosine;
 
         ret.columns[2].x = renderTrans.x;

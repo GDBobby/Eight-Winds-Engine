@@ -84,7 +84,7 @@ namespace EWE {
             }
         }
         else {
-            for (auto iter = ownedTextures.begin(); iter != ownedTextures.end(); iter++) {
+            for (auto& mesh : meshes) {
                 RigidRenderingSystem::RemoveByTransform(&transform);
             }
         }

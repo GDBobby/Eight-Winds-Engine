@@ -2,6 +2,17 @@
 #include <EWEngine/imgui/imGuiHandler.h>
 
 #include <EWEngine/Graphics/Pipeline.h>
+#include "EWEngine/Systems/ThreadPool.h"
+
+void check_vk_result(VkResult err) {
+	if (err == 0) {
+		return;
+	}
+	fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+	if (err < 0) {
+		abort();
+	}
+}
 
 namespace EWE {
 	ImGUIHandler::ImGUIHandler(GLFWwindow* window, uint32_t imageCount) {
@@ -9,7 +20,7 @@ namespace EWE {
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		ImGui::StyleColorsDark();
 
@@ -37,10 +48,19 @@ namespace EWE {
 
 		ImGui_ImplVulkan_Init(&init_info);
 
+		ImPlot::CreateContext();
+		ImNodes::CreateContext();
+
+
+
+		
 		//uploadFonts();
 		//printf("end of imgui constructor \n");
 	}
 	ImGUIHandler::~ImGUIHandler() {
+
+		ImNodes::DestroyContext();
+		ImPlot::DestroyContext();
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
@@ -75,9 +95,10 @@ namespace EWE {
 		};
 		VkDescriptorPoolCreateInfo pool_info = {};
 		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.pNext = nullptr;
 		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+		pool_info.poolSizeCount = static_cast<uint32_t>(IM_ARRAYSIZE(pool_sizes));
 		pool_info.maxSets = 0;
 		for (uint32_t i = 0; i < pool_info.poolSizeCount; i++) {
 			pool_info.maxSets += pool_sizes[i].descriptorCount;
@@ -86,4 +107,25 @@ namespace EWE {
 		pool_info.pPoolSizes = pool_sizes;
 		EWEDescriptorPool::AddPool(DescriptorPool_imgui, pool_info);
 	}
+
+	void ImGUIHandler::InitializeRenderGraph() {
+		scrollingBuffers.resize(2);
+	}
+	void ImGUIHandler::AddEngineGraph() {
+		auto taskDetails = &ThreadPool::GetThreadTasks();
+	}
+
+
+	void ImGUIHandler::AddRenderData(float x, float y) {
+		assert(scrollingBuffers.size() > 0);
+		scrollingBuffers[0].AddPoint(x, y);
+	}
+	void ImGUIHandler::AddLogicData(float x, float y) {
+		assert(scrollingBuffers.size() > 1);
+		scrollingBuffers[1].AddPoint(x, y);
+	}
+	void ImGUIHandler::ClearRenderGraphs() {
+		scrollingBuffers.clear();
+	}
+
 }

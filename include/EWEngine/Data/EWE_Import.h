@@ -137,6 +137,9 @@ namespace EWE {
             //inFile.open();
             assert(inFile.is_open() && "failed to open file");
             if (endian) {
+#if EWE_DEBUG
+                printf("reading templatemeshdata : %s\n", meshPath.c_str());
+#endif
                 data.ReadFromFile(inFile);
             }
             else {

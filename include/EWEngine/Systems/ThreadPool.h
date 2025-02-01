@@ -21,6 +21,7 @@ namespace EWE {
         std::vector<std::thread> threads{};
         KeyValueContainer<std::thread::id, std::queue<std::function<void()>>, true> threadSpecificTasks;
         static thread_local std::queue<std::function<void()>>* localThreadTasks;
+        static thread_local int myThreadIndex;
 
         std::vector<std::mutex> threadMutexesBase;
         KeyValueContainer<std::thread::id, std::mutex*, true> threadSpecificMutex;
@@ -38,7 +39,14 @@ namespace EWE {
         explicit ThreadPool(std::size_t numThreads);
         ~ThreadPool();
 
+
     public:
+        enum TaskType {
+            Task_None = 0,
+            Task_ThreadLocal,
+            Task_Generic,
+        };
+
         template<typename F, typename... Args>
         static void EnqueueForEachThread(F&& f, Args&&... args) {
             assert(singleton != nullptr);
@@ -107,5 +115,11 @@ namespace EWE {
 
         static void WaitForCompletion();
         static bool CheckEmpty();
+
+        static std::vector<TaskType> const& GetThreadTasks() {
+            return singleton->threadTasks;
+        }
+        private:
+            std::vector<TaskType> threadTasks;
     };
 }

@@ -6,7 +6,7 @@ namespace EWE {
 	void AudioMM::AudioPosCallback(GLFWwindow* window, double xpos, double ypos) {
 		//controlPtr->
 		if (glfwGetMouseButton(audioPtr->windowPtr, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
-			glfwSetCursorPosCallback(audioPtr->windowPtr, nullptr);
+			//glfwSetCursorPosCallback(audioPtr->windowPtr, nullptr);
 			return; //works fine
 		}
 		int16_t slider_movement = (static_cast<int16_t>(xpos - audioPtr->mousePosX));

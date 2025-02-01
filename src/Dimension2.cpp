@@ -36,6 +36,7 @@ namespace EWE {
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
 		EWEPipeline::EnableAlphaBlending(pipelineConfig);
+		//pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexUI>();
 		pipelineConfig.attributeDescriptions = VertexUI::GetAttributeDescriptions();
 		pipelineConfig.pipelineLayout = PL_array;
@@ -45,6 +46,7 @@ namespace EWE {
 		EWE_VK(vkCreatePipelineCache, VK::Object->vkDevice, &createInfo, nullptr, &cache);
 
 		pipelineConfig.cache = cache;
+		pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		{
 			const std::string vertString = "texture2D_array.vert.spv";
 			const std::string fragString = "texture2D_array.frag.spv";
@@ -66,8 +68,10 @@ namespace EWE {
 		printf("after constructing with UI shaders\n");
 #endif
 #if DEBUG_NAMING
-		pipe_array->SetDebugName("UI 2d pipeline");
-		DebugNaming::SetObjectName(PL_array, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "2d pipe layout");
+		pipe_array->SetDebugName("UI array pipeline");
+		pipe_single->SetDebugName("UI single pipe");
+		DebugNaming::SetObjectName(PL_array, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "2d array layout");
+		DebugNaming::SetObjectName(PL_single, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "2d single layout");
 #endif
 		CreateDefaultDesc();
 
@@ -142,6 +146,18 @@ namespace EWE {
 			0, nullptr
 		);
 	}
+	void Dimension2::BindArrayDescriptor(VkDescriptorSet* desc)
+	{
+
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			dimension2Ptr->PL_array,
+			0, 1,
+			desc,
+			0, nullptr
+		);
+	}
+
 	void Dimension2::BindSingleDescriptor(VkDescriptorSet* desc) {
 		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_GRAPHICS,

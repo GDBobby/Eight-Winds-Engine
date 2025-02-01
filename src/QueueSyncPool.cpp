@@ -69,7 +69,7 @@ namespace EWE {
 #if DEBUGGING_FENCES
             fence.log.push_back("allowing graphics fence to be reobtained");
 #endif
-            signalSemaphore->FinishSignaling();
+            //signalSemaphore->FinishSignaling();
             fence.inUse = false;
         }
     }
@@ -172,9 +172,9 @@ namespace EWE {
     }
     std::vector<VkSemaphore> RenderSyncData::GetSignalData() {
         signalMutex.lock();
-        for (auto& sigSem : previousSignals[VK::Object->frameIndex]) {
-            sigSem->FinishSignaling();
-        }
+        //for (auto& sigSem : previousSignals[VK::Object->frameIndex]) {
+            //sigSem->FinishSignaling();
+        //}
         previousSignals[VK::Object->frameIndex].clear();
         previousSignals[VK::Object->frameIndex] = signalSemaphores;
         signalSemaphores.clear();

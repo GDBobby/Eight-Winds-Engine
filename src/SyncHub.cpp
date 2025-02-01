@@ -321,6 +321,7 @@ namespace EWE {
 			graphicsSubmitInfo.pCommandBuffers = &graphicsCmdBuf.cmdBuf;
 
 			graphicsSubmitInfo.waitSemaphoreCount = 1;
+			transferSemaphore->BeginWaiting();
 			graphicsSubmitInfo.pWaitSemaphores = &transferSemaphore->vkSemaphore;
 
 			Semaphore* graphicsSemaphore = qSyncPool.GetSemaphoreForSignaling();
@@ -335,6 +336,7 @@ namespace EWE {
 			EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &graphicsSubmitInfo, graphicsFence.vkFence);
 			renderSyncData.AddWaitSemaphore(graphicsSemaphore, waitStage);
 			VK::Object->queueMutex[Queue::graphics].unlock();
+
 			graphicsFence.submitted = true;
 #if DEBUGGING_FENCES
 			graphicsFence.fence.log.push_back("setting graphics fence to submitted");
@@ -355,6 +357,7 @@ namespace EWE {
 			while (!graphicsFence.CheckReturn(0)) {
 				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
 			}
+			transferSemaphore->FinishWaiting();
 			graphicsCmdBuf.Reset();
 			for (auto& image : transferCommand.images) {
 				image->descriptorImageInfo.imageLayout = image->destinationImageLayout;

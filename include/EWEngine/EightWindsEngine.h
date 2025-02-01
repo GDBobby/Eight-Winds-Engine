@@ -132,6 +132,7 @@ namespace EWE {
 		bool GetLoadingScreenProgress() {
 			return (!finishedLoadingScreen);// || (loadingTime < 2.0);
 		}
+
 	private:
 		bool finishedLoadingScreen = false;
 		bool loadingEngine = true;

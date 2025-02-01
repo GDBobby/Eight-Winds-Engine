@@ -44,8 +44,8 @@ namespace EWE {
             CreateBuffers();
         }
         InitialFrequencySpectrumGPUData::~InitialFrequencySpectrumGPUData() {
-            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet[0]);
-            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet[1]);
+            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, eweDSL, &descriptorSet[0]);
+            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, eweDSL, &descriptorSet[1]);
 
 			EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, pipeline, nullptr);
 			EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipeLayout, nullptr);
@@ -131,7 +131,7 @@ namespace EWE {
             CreatePipeline();
         }
         TimeDependentFrequencySpectrumGPUData::~TimeDependentFrequencySpectrumGPUData() {
-            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &descriptorSet);
+            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, eweDSL, &descriptorSet);
 
             EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, pipeline, nullptr);
             EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipeLayout, nullptr);
@@ -217,6 +217,8 @@ namespace EWE {
         }
         FFTGPUData::~FFTGPUData() {
             Deconstruct(eweDSL);
+
+            EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, eweDSL, &descriptorSet);
         }
 
         void FFTGPUData::CreateDescriptorSet(VkDescriptorImageInfo* outputImage) {
@@ -297,6 +299,11 @@ namespace EWE {
         OceanGraphicsGPUData::~OceanGraphicsGPUData() {
             Deconstruct(renderData[0]);
             Deconstruct(renderData[1]);
+
+            for (auto& ds : descriptorSet) {
+                EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, eweDSL, &ds);
+            }
+
             delete oceanModel;
         }
 

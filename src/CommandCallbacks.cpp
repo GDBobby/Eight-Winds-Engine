@@ -5,14 +5,10 @@ namespace EWE {
 
 
 #if SEMAPHORE_TRACKING
-    void Semaphore::FinishSignaling(std::source_location srcLoc) {
-        tracking.emplace_back(Tracking::State::FinishSignaling, srcLoc);
-        assert(signaling && "finishing a signal that wasn't signaled");
-        signaling = false;
-    }
     void Semaphore::FinishWaiting(std::source_location srcLoc) {
         assert(waiting && "finished waiting when not waiting");
         waiting = false;
+        signaling = false;
         tracking.emplace_back(Tracking::State::FinishWaiting, srcLoc);
     }
     void Semaphore::BeginWaiting(std::source_location srcLoc) {
@@ -26,13 +22,7 @@ namespace EWE {
         signaling = true;
         tracking.emplace_back(Tracking::State::BeginSignaling, srcLoc);
     }
-#else     
-    void Semaphore::FinishSignaling() {
-#if EWE_DEBUG
-        assert(signaling == true && "finishing a signal that wasn't signaled");
-#endif
-        signaling = false;
-    }
+#else   
     void Semaphore::FinishWaiting() {
 #if EWE_DEBUG
         assert(waiting == true && "finished waiting when not waiting");

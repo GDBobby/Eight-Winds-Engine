@@ -35,7 +35,15 @@ namespace EWE {
     };
     struct MaterialObjectByDesc {
         std::array<VkDescriptorSet, 2> desc{VK_NULL_HANDLE, VK_NULL_HANDLE};
+        EWEDescriptorSetLayout* eDSL{ eDSL };
         std::vector<MaterialObjectInfo> objectVec{};
+        MaterialObjectByDesc(std::array<VkDescriptorSet, 2> desc, EWEDescriptorSetLayout* eDSL, MaterialObjectInfo& objectVec);
+        MaterialObjectByDesc(MaterialObjectByDesc&&) noexcept;
+        MaterialObjectByDesc(MaterialObjectByDesc&);
+        MaterialObjectByDesc& operator=(MaterialObjectByDesc&&) noexcept;
+        MaterialObjectByDesc& operator=(MaterialObjectByDesc&);
+
+        ~MaterialObjectByDesc();
     };
 
     struct MaterialRenderInfo {
@@ -48,9 +56,15 @@ namespace EWE {
     struct InstancedMaterialObjectInfo {
         EWEModel* meshPtr;
         RigidInstancedBufferHandler buffer;
-        std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets;
+        EWEDescriptorSetLayout* eDSL{ nullptr };
+        std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets{ VK_NULL_HANDLE, VK_NULL_HANDLE };
         //i need to combine the texture and bfufer descriptor into 1
         InstancedMaterialObjectInfo(EWEModel* meshPtr, uint32_t entityCount, bool computedTransforms, EWEDescriptorSetLayout* eDSL, ImageID imageID);
+        InstancedMaterialObjectInfo(InstancedMaterialObjectInfo&&) noexcept;
+        InstancedMaterialObjectInfo(InstancedMaterialObjectInfo&);
+        InstancedMaterialObjectInfo& operator=(InstancedMaterialObjectInfo&);
+        InstancedMaterialObjectInfo& operator=(InstancedMaterialObjectInfo&&) noexcept;
+        ~InstancedMaterialObjectInfo();
     };
     struct InstancedMaterialRenderInfo {
         MaterialPipelines* pipe;

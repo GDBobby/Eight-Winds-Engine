@@ -34,12 +34,10 @@ namespace EWE {
 #if SEMAPHORE_TRACKING
 
         void BeginSignaling(std::source_location srcLoc = std::source_location::current());
-        void FinishSignaling(std::source_location srcLoc = std::source_location::current());
         void FinishWaiting(std::source_location srcLoc = std::source_location::current());
         void BeginWaiting(std::source_location srcLoc = std::source_location::current());
 #else
         void BeginSignaling();
-        void FinishSignaling();
         void FinishWaiting();
         void BeginWaiting();
 #endif

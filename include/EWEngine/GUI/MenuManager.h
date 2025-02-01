@@ -41,12 +41,12 @@ namespace EWE {
 		*/
 		void closeMenu() {
 			isActive = false;
-			glfwSetCursorPosCallback(windowPtr, nullptr);
+			//glfwSetCursorPosCallback(windowPtr, nullptr);
 		}
 		void escapeMenu() {
 			isActive = false;
 			escapePressed = true;
-			glfwSetCursorPosCallback(windowPtr, nullptr);
+			//glfwSetCursorPosCallback(windowPtr, nullptr);
 		}
 
 		void ChangeMenuState(uint8_t newState, uint8_t newGameState = 255);

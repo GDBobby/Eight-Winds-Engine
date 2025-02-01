@@ -34,10 +34,24 @@ namespace EWE {
 		glm::vec4 scaleOffset{ 1.f }; //need to change this to Matrix3ForGLSL transform, later
 		alignas(16) glm::vec3 color{ 1.f }; //?idk if id stuff anything else right here
 		alignas(16) int textureID;
+		float depth{0.f};
 	};
 	struct Single2DPushConstantData {
 		Matrix3ForGLSL transform;
 		glm::vec3 color{ 1.f };
+		Single2DPushConstantData() {}
+		Single2DPushConstantData(Matrix3ForGLSL const& transform) : transform{ transform } {}
+		Single2DPushConstantData(Matrix3ForGLSL const& transform, glm::vec3 color) : transform{ transform }, color{ color } {}
+	};
+	struct UV2DPushConstantData
+	{
+
+		Matrix3ForGLSL transform;
+		glm::vec3 color{ 1.f };
+		alignas(8)glm::vec2 uv{1.f};
+		UV2DPushConstantData() {}
+		UV2DPushConstantData(Matrix3ForGLSL const& transform) : transform{ transform } {}
+		UV2DPushConstantData(Matrix3ForGLSL const& transform, glm::vec3 color) : transform{ transform }, color{ color } {}
 	};
 
 	struct LordDeliverMeFromThisEvilPushConstantData {

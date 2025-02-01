@@ -214,6 +214,11 @@ namespace EWE {
 			inner_data.reserve(res);
 		}
 
+		void erase(std::vector<KVPair>::iterator iter)
+		{
+			inner_data.erase(iter);
+		}
+
 		void clear() {
 			KV_Helper::ConditionalLock<ThreadSafe>{mutex};
 			inner_data.clear();
