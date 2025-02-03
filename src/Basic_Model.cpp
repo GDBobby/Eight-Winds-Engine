@@ -13,7 +13,7 @@ namespace EWE {
 #endif
 
             const glm::vec3 normal = { 0.f, -1.f, 0.f };
-            std::vector<VertexNT> vertices;
+            std::vector<VertexNT> vertices{};
             vertices.push_back({ { 0.0f,0.0f,0.0f }, normal, { 0.5f,0.5f } });
 
             float angle = glm::two_pi<float>() / points;

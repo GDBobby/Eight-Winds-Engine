@@ -265,7 +265,7 @@ namespace EWE {
         for (auto& stc  : threadedSTCs) {
             auto& buf = stc.value;
             for (uint8_t queue = 0; queue < Queue::_count; queue++) {
-                if (!(queue != Queue::graphics && VK::Object->queues[queue] == VK::Object->queues[Queue::graphics])) {
+                if (VK::Object->queueEnabled[queue]) {
                     poolInfo.queueFamilyIndex = VK::Object->queueIndex[queue];
                     EWE_VK(vkCreateCommandPool, VK::Object->vkDevice, &poolInfo, nullptr, &buf.commandPools[queue]);
 #if DEBUG_NAMING

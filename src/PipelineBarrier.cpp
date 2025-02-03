@@ -373,6 +373,9 @@ namespace EWE {
             imageBarriers[0].subresourceRange.baseArrayLayer = 0;
             imageBarriers[0].subresourceRange.layerCount = 1;
             if (VK::Object->queueIndex[Queue::compute] != VK::Object->queueIndex[Queue::graphics]) {
+                if (!VK::Object->queueEnabled[Queue::compute]) {
+                    throw std::runtime_error("misisng comptue queue but still using it");
+                }
                 imageBarriers[0].srcQueueFamilyIndex = VK::Object->queueIndex[Queue::compute];
                 imageBarriers[0].dstQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
             }

@@ -241,20 +241,32 @@ namespace EWE {
 				syncHub->EndSingleTimeCommandGraphics(gCommand);
 			}
 			else {
-				imageBarrier.srcQueueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
-				imageBarrier.dstQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
-				PipelineBarrier pipeBarrier{};
-				pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-				pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-				pipeBarrier.AddBarrier(imageBarrier);
-				pipeBarrier.dependencyFlags = 0;
-				pipeBarrier.Submit(cmdBuf);
+				if (VK::Object->queueEnabled[Queue::transfer]) {
+					imageBarrier.srcQueueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
+					imageBarrier.dstQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
+					PipelineBarrier pipeBarrier{};
+					pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+					pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+					pipeBarrier.AddBarrier(imageBarrier);
+					pipeBarrier.dependencyFlags = 0;
+					pipeBarrier.Submit(cmdBuf);
 
-				TransferCommand command{};
-				command.commands.push_back(&cmdBuf);
-				command.stagingBuffers.push_back(stagingBuffer);
-				command.pipeBarriers.push_back(std::move(pipeBarrier));
-				syncHub->EndSingleTimeCommandTransfer(command);
+					TransferCommand command{};
+					command.commands.push_back(&cmdBuf);
+					command.stagingBuffers.push_back(stagingBuffer);
+					command.pipeBarriers.push_back(std::move(pipeBarrier));
+					syncHub->EndSingleTimeCommandTransfer(command);
+				}
+				else {
+					imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+					imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+					PipelineBarrier pipeBarrier{};
+					pipeBarrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+					pipeBarrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+					pipeBarrier.AddBarrier(imageBarrier);
+					pipeBarrier.dependencyFlags = 0;
+					pipeBarrier.Submit(cmdBuf);
+				}
 			}
 
 		}

@@ -65,7 +65,7 @@ namespace EWE {
 #endif
 		void RenderLightning();
 
-
+		
 		EWEDescriptorSetLayout* skyboxEDSL{ nullptr };
 		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> skyboxDescriptors{ VK_NULL_HANDLE, VK_NULL_HANDLE };
 	};

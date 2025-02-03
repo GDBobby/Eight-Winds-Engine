@@ -112,6 +112,8 @@ namespace EWE{
         VkInstance instance;
         std::array<std::mutex, Queue::_count> queueMutex{};
         std::array<ThreadedSingleTimeCommands, Queue::_count> threadedSTCs{};
+        std::array<bool, Queue::_count> queueEnabled{ true, true, false, false};
+
         static thread_local ThreadedSingleTimeCommands* threadedSTC;
 
         VkCommandPool renderCmdPool{ VK_NULL_HANDLE }; //separate graphics pool for single time commands

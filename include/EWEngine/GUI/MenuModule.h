@@ -128,39 +128,6 @@ namespace EWE {
 		bool hasBackground = false;
 		glm::vec3 backgroundColor = { .1f, .1f, .1f };
 		Transform2D backgroundTransform{};
-		/* on hold fornow
-		void processClickCallbacks(double xpos, double ypos) {
-
-			std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
-			if (returnValues.second < 0) {
-				return;
-			}
-			switch (returnValues.first) {
-			case UIT_Combobox: {
-				clickComboCallback[selectedComboBox](returnValues.second);
-				break;
-			}
-			case UIT_Dropbox: {
-				printf("no drop box is currently implemented, MAJOR BUG IF HERE \n");
-				throw std::exception("drop box not currently used, might need to remove");
-				clickDropCallback[selectedDropBox](returnValues.second);
-				break;
-			}
-			case UIT_ClickTextBox: {
-				clickTextCallback[returnValues.second]();
-				break;
-			}
-			case UIT_Checkbox: {
-				clickCheckCallback[returnValues.second]();
-				break;
-			}
-			default: {
-				printf("this type isn't currently supported (needs support asap) : %d \n", returnValues.first);
-				break;
-			}
-			}
-		}
-		*/
 		virtual void ProcessClick(double xpos, double ypos) = 0;
 		std::pair<UIComponentTypes, int16_t> CheckClick(double xpos, double ypos);
 

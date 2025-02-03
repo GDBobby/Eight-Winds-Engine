@@ -75,6 +75,7 @@ namespace EWE {
             );
         }
         void GenerateMipMapsForMultipleImagesTransferQueue(CommandBuffer& cmdBuf, std::vector<ImageInfo*>& imageInfos) {
+            assert(VK::Object->queueEnabled[Queue::transfer]);
             //printf("before mip map loop? size of image : %d \n", image.size());
 
             //printf("after beginning single time command \n");
@@ -397,7 +398,7 @@ namespace EWE {
 
             const bool inMainThread = VK::Object->CheckMainThread();
 
-            if (inMainThread) {
+            if (inMainThread || (!VK::Object->queueEnabled[Queue::transfer])) {
                 GraphicsCommand graphicsCommand{};
                 graphicsCommand.command = &cmdBuf;
                 graphicsCommand.stagingBuffer = stagingBuffer;
@@ -433,7 +434,6 @@ namespace EWE {
                 }
             }
             else {
-
                 VkImageMemoryBarrier imageBarrier{};
                 imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
                 imageBarrier.pNext = nullptr;
@@ -494,6 +494,7 @@ namespace EWE {
                     command.pipeBarriers.push_back(std::move(pipeBarrier));
                     syncHub->EndSingleTimeCommandTransfer(command);
                 }
+                
             }
             
         }

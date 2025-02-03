@@ -288,7 +288,7 @@ namespace EWE {
         EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer->buffer, dstBuffer, bufferSize);
 
 
-        if (VK::Object->CheckMainThread()) {
+        if (VK::Object->CheckMainThread() || (!VK::Object->queueEnabled[Queue::transfer])) {
             GraphicsCommand gCommand{};
             gCommand.command = &cmdBuf;
             gCommand.stagingBuffer = stagingBuffer;

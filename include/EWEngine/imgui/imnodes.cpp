@@ -1948,8 +1948,9 @@ void ClearObjectSelection(
 {
     const int idx = ObjectPoolFind(objects, id);
     IM_ASSERT(idx >= 0);
-    IM_ASSERT(selected_indices.find(idx) != selected_indices.end());
-    selected_indices.find_erase_unsorted(idx);
+    if (selected_indices.find(idx) != selected_indices.end()) {
+        selected_indices.find_erase_unsorted(idx);
+    }
 }
 
 template<typename T>

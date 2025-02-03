@@ -132,11 +132,6 @@ namespace EWE {
 
 		if (sliders.size() > 0) {
 			push.color = glm::vec3(1.f);
-			push.textureID = MT_Slider;
-
-			for (auto& object : sliders) {
-				object.Render(push, 0);
-			}
 			push.textureID = MT_BracketButton;
 			for (auto& object : sliders) {
 				object.Render(push, 1);
@@ -144,6 +139,10 @@ namespace EWE {
 			push.textureID = MT_Bracket;
 			for (auto& object : sliders) {
 				object.Render(push, 2);
+			}
+			push.textureID = MT_Slider;
+			for (auto& object : sliders) {
+				object.Render(push, 0);
 			}
 		}
 

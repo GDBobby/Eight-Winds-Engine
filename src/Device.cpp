@@ -19,7 +19,8 @@
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
 #define AMD_TARGET true
-#define NVIDIA_TARGET false && !AMD_TARGET //not currently setup to correctly 
+#define NVIDIA_TARGET (false && !AMD_TARGET) //not currently setup to correctly
+#define INTEGRATED_TARGET (true && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
 
 namespace EWE {
 #if DEBUGGING_DEVICE_LOST
@@ -199,7 +200,14 @@ namespace EWE {
         assert(found[Queue::compute] && found[Queue::transfer] && "did not find a dedicated transfer or compute queue");
         assert(VK::Object->queueIndex[Queue::compute] != VK::Object->queueIndex[Queue::transfer] && "compute queue and transfer q should not be the same");
 
-        return found[Queue::graphics] && found[Queue::present] && found[Queue::transfer] && found[Queue::compute];
+        if (!found[Queue::compute]) {
+            printf("missing dedicated compute queue, potentially fatal crash incoming if this hasn't been resolved yet (if you don't crash it has)\n");
+        }
+        for (uint8_t i = 0; i < Queue::_count; i++) {
+            VK::Object->queueEnabled[i] = found[i];
+        }
+        
+        return found[Queue::graphics] && found[Queue::present];// && found[Queue::transfer];//&& found[Queue::compute];
     }
 
     // class member functions
@@ -394,9 +402,17 @@ namespace EWE {
             score += VK::Object->properties.limits.maxImageDimension2D;
             std::string deviceNameTemp = VK::Object->properties.deviceName;
 #if AMD_TARGET
-            printf("found an amd card\n");
+            //printf("found an amd card\n");
             if ((deviceNameTemp.find("AMD") != deviceNameTemp.npos) && (VK::Object->properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
                 score = UINT32_MAX;
+            }
+#elif NVIDIA_TARGET
+            if ((deviceNameTemp.find("GeForce") != deviceNameTemp.npos) && (VK::Object->properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
+                score = UINT32_MAX;
+            }
+#elif INTEGRATED_TARGET
+            if (VK::Object->properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+
             }
 #endif
             //properties.limits.maxFramebufferWidth;
@@ -479,20 +495,22 @@ namespace EWE {
         VK::Object->queueIndex[Queue::present] = VK::Object->queueIndex[Queue::graphics];
 
         queuePriorities.emplace_back().push_back(1.f);
-        VkDeviceQueueCreateInfo queueCreateInfo = {};
+        VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
-
         queueCreateInfo.queueCount = 1;
         queueCreateInfos.push_back(queueCreateInfo);
 
-        queuePriorities.emplace_back().push_back(0.9f);
-        queueCreateInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::compute];
-        queueCreateInfos.push_back(queueCreateInfo);
-
-        queuePriorities.emplace_back().push_back(0.8f);
-        queueCreateInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
-        queueCreateInfos.push_back(queueCreateInfo);
+        if (VK::Object->queueEnabled[Queue::compute]) {
+            queuePriorities.emplace_back().push_back(0.9f);
+            queueCreateInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::compute];
+            queueCreateInfos.push_back(queueCreateInfo);
+        }
+        if (VK::Object->queueEnabled[Queue::transfer]) {
+            queuePriorities.emplace_back().push_back(0.8f);
+            queueCreateInfo.queueFamilyIndex = VK::Object->queueIndex[Queue::transfer];
+            queueCreateInfos.push_back(queueCreateInfo);
+        }
         //not currently doing a separate queue for present. its currently combined with graphics
         //not sure how much wrok it'll be to fix that, i'll come back to it later
 
@@ -606,10 +624,12 @@ namespace EWE {
         else {
             VK::Object->queues[Queue::present] = VK::Object->queues[Queue::graphics];
         }
-
-        EWE_VK(vkGetDeviceQueue, VK::Object->vkDevice, VK::Object->queueIndex[Queue::compute], 0, &VK::Object->queues[Queue::compute]);
-
-        EWE_VK(vkGetDeviceQueue, VK::Object->vkDevice, VK::Object->queueIndex[Queue::transfer], 0, &VK::Object->queues[Queue::transfer]);
+        if (VK::Object->queueEnabled[Queue::compute]) {
+            EWE_VK(vkGetDeviceQueue, VK::Object->vkDevice, VK::Object->queueIndex[Queue::compute], 0, &VK::Object->queues[Queue::compute]);
+        }
+        if (VK::Object->queueEnabled[Queue::transfer]) {
+            EWE_VK(vkGetDeviceQueue, VK::Object->vkDevice, VK::Object->queueIndex[Queue::transfer], 0, &VK::Object->queues[Queue::transfer]);
+        }
         printf("after transfer qeuue \n");
 
 #if GPU_LOGGING
