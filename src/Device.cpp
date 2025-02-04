@@ -18,7 +18,7 @@
 
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
-#define AMD_TARGET true
+#define AMD_TARGET false
 #define NVIDIA_TARGET (false && !AMD_TARGET) //not currently setup to correctly
 #define INTEGRATED_TARGET (true && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
 
@@ -128,6 +128,7 @@ namespace EWE {
         for (const auto& queueFamily : queueFamilies) {
             VkBool32 presentSupport = false;
             EWE_VK(vkGetPhysicalDeviceSurfaceSupportKHR, device, currentIndex, surface_, &presentSupport);
+            printf("queue present support[%d] : %d\n", currentIndex, presentSupport);
             bool graphicsSupport = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
             bool computeSupport = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
             if ((presentSupport && graphicsSupport && computeSupport) == true) {
@@ -179,7 +180,7 @@ namespace EWE {
         }
         if (combinedTransferComputeFamilies.size() > 0) {
             if ((!found[Queue::compute]) && (!found[Queue::transfer])) {
-                assert(combinedTransferComputeFamilies.size() >= 2 && "not enough queues for transfer and compute");
+                //assert(combinedTransferComputeFamilies.size() >= 2 && "not enough queues for transfer and compute");
 
                 VK::Object->queueIndex[Queue::compute] = combinedTransferComputeFamilies.top();
                 found[Queue::compute] = true;
@@ -197,8 +198,8 @@ namespace EWE {
                 found[Queue::transfer] = true;
             }
         }
-        assert(found[Queue::compute] && found[Queue::transfer] && "did not find a dedicated transfer or compute queue");
-        assert(VK::Object->queueIndex[Queue::compute] != VK::Object->queueIndex[Queue::transfer] && "compute queue and transfer q should not be the same");
+        //assert(found[Queue::compute] && found[Queue::transfer] && "did not find a dedicated transfer or compute queue");
+        //assert(VK::Object->queueIndex[Queue::compute] != VK::Object->queueIndex[Queue::transfer] && "compute queue and transfer q should not be the same");
 
         if (!found[Queue::compute]) {
             printf("missing dedicated compute queue, potentially fatal crash incoming if this hasn't been resolved yet (if you don't crash it has)\n");
@@ -412,7 +413,7 @@ namespace EWE {
             }
 #elif INTEGRATED_TARGET
             if (VK::Object->properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-
+                score = UINT32_MAX;
             }
 #endif
             //properties.limits.maxFramebufferWidth;

@@ -7,6 +7,7 @@
 #include IMNODES_USER_CONFIG
 #endif
 
+struct ImGuiContext;
 namespace ImNodes{
 
 typedef int ImNodesCol;             // -> enum ImNodesCol_
@@ -214,16 +215,14 @@ enum ImNodesMiniMapLocation_
     ImNodesMiniMapLocation_TopRight,
 };
 
-struct ImGuiContext;
-
-struct Internal::ImNodesContext;
+struct ImNodesContext;
 
 // An editor context corresponds to a set of nodes in a single workspace (created with a single
 // Begin/EndNodeEditor pair)
 //
 // By default, the library creates an editor context behind the scenes, so using any of the imnodes
 // functions doesn't require you to explicitly create a context.
-struct Internal::ImNodesEditorContext;
+struct ImNodesEditorContext;
 
 
 

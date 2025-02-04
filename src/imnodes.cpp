@@ -27,9 +27,9 @@
 #define sscanf sscanf_s
 #endif
 
-ImNodesContext* GImNodes = NULL;
 
 namespace ImNodes {
+ImNodesContext* GImNodes = NULL;
 // [SECTION] bezier curve helpers
 
 struct CubicBezier

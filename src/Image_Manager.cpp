@@ -200,7 +200,7 @@ namespace EWE {
             "bracketButton.png",
             "bracketSlide.png",
             "unchecked.png",
-            "buttonUp.png",
+            "ButtonUp.png",
             "checked.png",
             "menuBase.png",
             //"roundButton.png",

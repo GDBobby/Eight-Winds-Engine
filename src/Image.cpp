@@ -1,6 +1,7 @@
 #include "EWEngine/Graphics/Texture/Image.h"
 
 #include <stb/stb_image.h>
+#include <filesystem>
 
 #ifndef TEXTURE_DIR
 #define TEXTURE_DIR "textures/"
@@ -17,9 +18,18 @@ namespace EWE {
         : debugName{ path }
 #endif
     {
+#if EWE_DEBUG
+        if(!std::filesystem::exists(path)){
+            printf("image path doesn't exist - %s\n", path.c_str());
+            assert(false);
+        }
+#endif
         pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 #if EWE_DEBUG
-        assert(pixels && ((width * height) > 0) && path.c_str());
+        if(!pixels || (width * height <= 0)){
+            printf("peel peek error : %s - %zu : %d\n", path.c_str(), pixels, width * height);
+        }
+        assert(pixels && ((width * height) > 0));
 #endif
     }
 
