@@ -5,7 +5,6 @@
 #include "EWEngine/imgui/backends/imgui_impl_glfw.h"
 #include "EWEngine/imgui/backends/imgui_impl_vulkan.h"
 #include "EWEngine/imgui/implot.h"
-
 #include "EWEngine/imgui/imnodes.h"
 
 #include "EWEngine/Data/EngineDataTypes.h"
@@ -31,28 +30,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(VkDebugReportFlagsEXT flags, 
 #endif // IMGUI_VULKAN_DEBUG_REPORT
 
 namespace EWE {
-	namespace IMNODE {
-		struct Node {
-			int id;
-			float value;
-			Node(const int i, const float v) : id{ i }, value{ v } {}
-		};
-
-		struct Link
-		{
-			int id;
-			int start_attr, end_attr;
-		};
-
-		struct Editor
-		{
-			ImNodesEditorContext* context = nullptr;
-			std::vector<Node>     nodes;
-			std::vector<Link>     links;
-			int                   current_id = 0;
-		};
-	}
-
 	class ImGUIHandler {
 	public:
 		ImGUIHandler(GLFWwindow* window, uint32_t imageCount);

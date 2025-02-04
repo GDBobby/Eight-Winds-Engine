@@ -8,6 +8,9 @@
 
 #include <limits.h>
 
+
+namespace ImNodes {
+    namespace Internal{
 // the structure of this file:
 //
 // [SECTION] internal enums
@@ -348,8 +351,6 @@ struct ImNodesContext
     bool  MultipleSelectModifier;
 };
 
-namespace IMNODES_NAMESPACE
-{
 static inline ImNodesEditorContext& EditorContextGet()
 {
     // No editor context was set! Did you forget to call ImNodes::CreateContext()?
@@ -492,4 +493,5 @@ static inline T& ObjectPoolFindOrCreateObject(ImObjectPool<T>& objects, const in
     const int index = ObjectPoolFindOrCreateIndex(objects, id);
     return objects.Pool[index];
 }
+    }//namespace Internal
 } // namespace IMNODES_NAMESPACE

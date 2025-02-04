@@ -29,10 +29,7 @@
 
 ImNodesContext* GImNodes = NULL;
 
-namespace IMNODES_NAMESPACE
-{
-namespace
-{
+namespace ImNodes {
 // [SECTION] bezier curve helpers
 
 struct CubicBezier
@@ -1960,9 +1957,6 @@ bool IsObjectSelected(const ImObjectPool<T>& objects, ImVector<int>& selected_in
     return selected_indices.find(idx) != selected_indices.end();
 }
 
-} // namespace
-} // namespace IMNODES_NAMESPACE
-
 // [SECTION] API implementation
 
 ImNodesIO::EmulateThreeButtonMouse::EmulateThreeButtonMouse() : Modifier(NULL) {}
@@ -1987,8 +1981,6 @@ ImNodesStyle::ImNodesStyle()
 {
 }
 
-namespace IMNODES_NAMESPACE
-{
 ImNodesContext* CreateContext()
 {
     ImNodesContext* ctx = IM_NEW(ImNodesContext)();
@@ -3190,8 +3182,6 @@ bool IsLinkDestroyed(int* const link_id)
     return link_destroyed;
 }
 
-namespace
-{
 void NodeLineHandler(ImNodesEditorContext& editor, const char* const line)
 {
     int id;
@@ -3214,7 +3204,6 @@ void EditorLineHandler(ImNodesEditorContext& editor, const char* const line)
 {
     (void)sscanf(line, "panning=%f,%f", &editor.Panning.x, &editor.Panning.y);
 }
-} // namespace
 
 const char* SaveCurrentEditorStateToIniString(size_t* const data_size)
 {
@@ -3354,4 +3343,4 @@ void LoadEditorStateFromIniFile(ImNodesEditorContext* const editor, const char* 
     LoadEditorStateFromIniString(editor, file_data, data_size);
     ImGui::MemFree(file_data);
 }
-} // namespace IMNODES_NAMESPACE
+} // namespace ImNodes

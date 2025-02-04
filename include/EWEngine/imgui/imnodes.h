@@ -7,9 +7,7 @@
 #include IMNODES_USER_CONFIG
 #endif
 
-#ifndef IMNODES_NAMESPACE
-#define IMNODES_NAMESPACE ImNodes
-#endif
+namespace ImNodes{
 
 typedef int ImNodesCol;             // -> enum ImNodesCol_
 typedef int ImNodesStyleVar;        // -> enum ImNodesStyleVar_
@@ -217,16 +215,15 @@ enum ImNodesMiniMapLocation_
 };
 
 struct ImGuiContext;
-struct ImVec2;
 
-struct ImNodesContext;
+struct Internal::ImNodesContext;
 
 // An editor context corresponds to a set of nodes in a single workspace (created with a single
 // Begin/EndNodeEditor pair)
 //
 // By default, the library creates an editor context behind the scenes, so using any of the imnodes
 // functions doesn't require you to explicitly create a context.
-struct ImNodesEditorContext;
+struct Internal::ImNodesEditorContext;
 
 
 
@@ -239,8 +236,6 @@ typedef void (*ImNodesMiniMapNodeHoveringCallback)(int, void*);
 typedef void* ImNodesMiniMapNodeHoveringCallbackUserData;
 #endif
 
-namespace IMNODES_NAMESPACE
-{
 // Call this function if you are compiling imnodes in to a dll, separate from ImGui. Calling this
 // function sets the GImGui global variable, which is not shared across dll boundaries.
 void SetImGuiContext(ImGuiContext* ctx);
@@ -451,4 +446,6 @@ void SaveEditorStateToIniFile(const ImNodesEditorContext* editor, const char* fi
 
 void LoadCurrentEditorStateFromIniFile(const char* file_name);
 void LoadEditorStateFromIniFile(ImNodesEditorContext* editor, const char* file_name);
-} // namespace IMNODES_NAMESPACE
+
+
+} // namespace ImNodes
