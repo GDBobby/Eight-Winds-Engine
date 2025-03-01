@@ -30,12 +30,6 @@ option(EWE_EXAMPLES "Build examples" ${is_project_root})
 option(EWE_PROJECTS "Build projects" ${is_project_root})
 option(USING_NVIDIA_AFTERMATH, "Nvidia Aftermath" OFF)
 
-if(DEFINED ENABLE_EWE_DEBUG AND ENABLE_EWE_DEBUG)
-    add_definitions(-DEWE_DEBUG_PREDEF=true)
-else()
-    add_definitions(-DEWE_DEBUG_PREDEF=false)
-endif()
-
 Message(STATUS "Cmake Generator : ${CMAKE_GENERATOR}")
 
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/src/*.c)

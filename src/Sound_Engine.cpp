@@ -156,7 +156,7 @@ namespace EWE {
 	}
 	void SoundEngine::PlayEffect(uint16_t whichEffect, bool looping) {
 #if EWE_DEBUG
-		printf("starting sound \n");
+		//printf("starting sound \n");
 #endif
 
  		if(selectedEngine > effects.size()){
@@ -174,7 +174,7 @@ namespace EWE {
 		}
 
 #if EWE_DEBUG
-		printf("selectedEngine : %d:%.2f - volume of sound : %.2f \n", selectedEngine, ma_engine_get_volume(&engines.at(selectedEngine)), ma_sound_get_volume(&effects.at(selectedEngine).at(whichEffect)));
+		//printf("selectedEngine : %d:%.2f - volume of sound : %.2f \n", selectedEngine, ma_engine_get_volume(&engines.at(selectedEngine)), ma_sound_get_volume(&effects.at(selectedEngine).at(whichEffect)));
 #endif
 		//ma_sound
 		ma_result result = ma_sound_start(&effects.at(selectedEngine).at(whichEffect));

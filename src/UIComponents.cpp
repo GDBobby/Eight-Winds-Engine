@@ -12,7 +12,7 @@ namespace EWE {
 		UIComp::TextToTransform(transform, textStruct, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
 	void ClickTextBox::ResizeWindow(glm::vec2 rescalingRatio) {
-		printf("click text resize \n");
+		//printf("click text resize \n");
 		textStruct.x *= rescalingRatio.x;
 		textStruct.y *= rescalingRatio.y;
 		UIComp::TextToTransform(transform, textStruct, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);

@@ -61,6 +61,9 @@ class EWESwapChain {
         }
         void BeginRender(uint8_t imageIndex) {
             //std::cout << "before vkCmdBeginRendering : " << std::endl;
+#if COMMAND_BUFFER_TRACING
+            VK::Object->GetFrameBuffer().usageTracking.clear();
+#endif
             EWE_VK(vkCmdBeginRendering, VK::Object->GetFrameBuffer(), &dynamicStructs[imageIndex].render_info); //might need to use the frameIndex from renderer, not sure
             //std::cout << "after vkCmdBeginRendering : " << std::endl;
         }

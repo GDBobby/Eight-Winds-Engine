@@ -4,13 +4,15 @@
  //_DEBUG is already defined in Visual Studio while in DEBUG mode
  //so im just replacing _DEBUG with EWE_DEBUG, supports release with debug too
 
-
-#ifndef EWE_DEBUG_PREDEF
-//EWE_DEBUG includes validation layers, this will make a release build not shippable
-#define EWE_DEBUG true
-#else
-#define EWE_DEBUG true
- //EWE_DEBUG_PREDEF
+#if _WIN32
+    #ifdef _DEBUG
+        #define EWE_DEBUG true
+    #else
+        #define EWE_DEBUG false
+    #endif
+#else //linux
+    //need to manually define it
+    #define EWE_DEBUG true
 #endif
 
 #define CALL_TRACING (true && EWE_DEBUG)
@@ -27,14 +29,14 @@
 #define DEBUGGING_PIPELINES (false && EWE_DEBUG)
 #define DEBUGGING_MATERIAL_PIPE (false && EWE_DEBUG)
 
-#define DEBUG_NAMING (true && EWE_DEBUG)
+#define DEBUG_NAMING true//(true && EWE_DEBUG)
 
 #define RENDER_DEBUG false
 
 #define USING_VMA false
 #define DEBUGGING_MEMORY_WITH_VMA (USING_VMA && false)
 
-#define SEMAPHORE_TRACKING (true && DEBUG_NAMING)
+#define SEMAPHORE_TRACKING (true && DEBUG_NAMING && EWE_DEBUG)
 
 //descriptor tracing requires C++23 and <stacktrace>
 #define DESCRIPTOR_TRACING (false && EWE_DEBUG)

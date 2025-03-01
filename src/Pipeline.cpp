@@ -17,7 +17,7 @@ namespace EWE {
 
 	namespace Pipeline_Helper_Functions {
 		std::vector<char> ReadFile(const std::string& filepath) {
-			printf("reading shader file\n");
+			//printf("reading shader file\n");
 
 			//#define ENGINE_DIR "..//shaders//"
 
@@ -70,7 +70,9 @@ namespace EWE {
 		}
 		template <typename T>
 		void CreateShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule) {
-			printf("creating sahder module\n");
+#if EWE_DEBUG
+			//printf("creating sahder module\n");
+#endif
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			createInfo.pNext = nullptr;
@@ -144,14 +146,14 @@ namespace EWE {
 	VkPipelineRenderingCreateInfo* EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic;
 
 	EWEPipeline::EWEPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo) {
-		printf("constructing ewe pipeline\n");
+		//printf("constructing ewe pipeline\n");
 
 
 		const auto vertFind = shaderModuleMap.find(vertFilepath);
 		if (vertFind == shaderModuleMap.end()) {
 			auto vertCode = Pipeline_Helper_Functions::ReadFile(vertFilepath);
 			Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
-			printf("emplacing shader module vert to map\n");
+			//printf("emplacing shader module vert to map\n");
 			shaderModuleMap.try_emplace(vertFilepath, vertShaderModule);
 		}
 		else {
@@ -162,15 +164,16 @@ namespace EWE {
 		if (fragFind == shaderModuleMap.end()) {
 			auto fragCode = Pipeline_Helper_Functions::ReadFile(fragFilepath);
 			Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
-			printf("emplacing shader module frag to map\n");
+			//printf("emplacing shader module frag to map\n");
 			shaderModuleMap.try_emplace(fragFilepath, fragShaderModule);
 		}
 		else {
 			fragShaderModule = fragFind->second;
 		}
-		printf("creating graphics pipeline\n");
+		//printf("creating graphics pipeline\n");
 		CreateGraphicsPipeline(configInfo);
 	}
+
 	EWEPipeline::EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo) : vertShaderModule{ vertShaderModu }, fragShaderModule{ fragShaderModu } {
 		CreateGraphicsPipeline(configInfo);
 	}
@@ -261,7 +264,7 @@ namespace EWE {
 		assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no pipelineLayout provided in configInfo");
 		//assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no renderPass provided in configInfo");
 
-		VkPipelineShaderStageCreateInfo shaderStages[2];
+		std::vector<VkPipelineShaderStageCreateInfo> shaderStages{2 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE)};
 		shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
 		shaderStages[0].module = vertShaderModule;
@@ -270,14 +273,27 @@ namespace EWE {
 		shaderStages[0].pNext = nullptr;
 		shaderStages[0].pSpecializationInfo = nullptr;
 
+		if (configInfo.geomShaderModule != VK_NULL_HANDLE) {
+			auto& geomStage = shaderStages[1];
+			geomStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			geomStage.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+			geomStage.module = configInfo.geomShaderModule;
+			geomStage.pName = "main";
+			geomStage.flags = 0;
+			geomStage.pNext = nullptr;
+			geomStage.pSpecializationInfo = nullptr;
+		}
 
-		shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		shaderStages[1].module = fragShaderModule;
-		shaderStages[1].pName = "main";
-		shaderStages[1].flags = 0;
-		shaderStages[1].pNext = nullptr;
-		shaderStages[1].pSpecializationInfo = nullptr;
+
+		
+		auto& fragStage = shaderStages[1 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE)];
+		fragStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragStage.module = fragShaderModule;
+		fragStage.pName = "main";
+		fragStage.flags = 0;
+		fragStage.pNext = nullptr;
+		fragStage.pSpecializationInfo = nullptr;
 
 		auto& bindingDescriptions = configInfo.bindingDescriptions;
 		auto& attributeDescriptions = configInfo.attributeDescriptions;
@@ -291,8 +307,8 @@ namespace EWE {
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.pNext = &configInfo.pipelineRenderingInfo;
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.stageCount = 2;
-		pipelineInfo.pStages = shaderStages;
+		pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+		pipelineInfo.pStages = shaderStages.data();
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
 		pipelineInfo.pViewportState = &configInfo.viewportInfo;
@@ -427,6 +443,20 @@ namespace EWE {
 		configInfo.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 		configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 		configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+	}
+
+	void EWEPipeline::PipelineConfigInfo::AddGeomShaderModule(std::string const& geomFilepath) {
+
+		const auto geomFind = shaderModuleMap.find(geomFilepath);
+		if (geomFind == shaderModuleMap.end()) {
+			auto geomCode = Pipeline_Helper_Functions::ReadFile(geomFilepath);
+			Pipeline_Helper_Functions::CreateShaderModule(geomCode, &geomShaderModule);
+			shaderModuleMap.try_emplace(geomFilepath, geomShaderModule);
+
+		}
+		else {
+			geomShaderModule = geomFind->second;
+		}
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PIPELINE MANAGER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

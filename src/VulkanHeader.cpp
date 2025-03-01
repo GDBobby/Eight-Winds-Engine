@@ -210,6 +210,10 @@ namespace EWE {
         VkCommandBufferResetFlags flags = 0;
         EWE_VK(vkResetCommandBuffer, *this, flags);
         inUse = false;
+
+#if COMMAND_BUFFER_TRACING
+        usageTracking.clear();
+#endif
     }
     void CommandBuffer::BeginSingleTime() {
         inUse = true;

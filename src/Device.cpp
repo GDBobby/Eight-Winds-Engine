@@ -18,9 +18,9 @@
 
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
-#define AMD_TARGET false
+#define AMD_TARGET true
 #define NVIDIA_TARGET (false && !AMD_TARGET) //not currently setup to correctly
-#define INTEGRATED_TARGET (true && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
+#define INTEGRATED_TARGET (false && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
 
 namespace EWE {
 #if DEBUGGING_DEVICE_LOST
@@ -31,7 +31,7 @@ namespace EWE {
 
     EWEDevice* EWEDevice::eweDevice = nullptr;
 
-    const bool enableValidationLayers = EWE_DEBUG;
+    const bool enableValidationLayers = true;
 
     // local callback functions
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -546,6 +546,8 @@ namespace EWE {
 
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
+        deviceFeatures.geometryShader = VK_TRUE;
+        deviceFeatures.wideLines = VK_TRUE;
 
         VkDeviceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

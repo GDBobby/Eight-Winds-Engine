@@ -2066,8 +2066,8 @@ void StyleColorsDark(ImNodesStyle* dest)
     dest->Colors[ImNodesCol_LinkHovered] = IM_COL32(66, 150, 250, 255);
     dest->Colors[ImNodesCol_LinkSelected] = IM_COL32(66, 150, 250, 255);
     // pin colors match ImGui's button colors
-    dest->Colors[ImNodesCol_Pin] = IM_COL32(53, 150, 250, 180);
-    dest->Colors[ImNodesCol_PinHovered] = IM_COL32(53, 150, 250, 255);
+    dest->Colors[ImNodesCol_Pin] = IM_COL32(255, 0, 0, 180);
+    dest->Colors[ImNodesCol_PinHovered] = IM_COL32(255, 255, 255, 255);
 
     dest->Colors[ImNodesCol_BoxSelector] = IM_COL32(61, 133, 224, 30);
     dest->Colors[ImNodesCol_BoxSelectorOutline] = IM_COL32(61, 133, 224, 150);

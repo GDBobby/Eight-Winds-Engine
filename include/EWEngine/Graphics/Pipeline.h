@@ -91,8 +91,12 @@ namespace EWE {
 			PipelineConfigInfo(const PipelineConfigInfo&) = delete;
 			PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
 
+			void AddGeomShaderModule(std::string const& geomFilepath);
+
 			VkViewport viewport;
 			VkRect2D scissor;
+
+			VkShaderModule geomShaderModule{ VK_NULL_HANDLE };
 
 			std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
 			std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};

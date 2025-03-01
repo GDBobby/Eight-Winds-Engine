@@ -52,7 +52,7 @@ namespace EWE {
 
         return *this;
     }
-#if DEBUG_NAMING
+#if EWE_DEBUG
     EWEDescriptorSetLayout* EWEDescriptorSetLayout::Builder::Build(std::source_location srcLoc) {
         return Construct<EWEDescriptorSetLayout>({ bindings }, srcLoc);
     }
@@ -102,7 +102,7 @@ namespace EWE {
         maxSets = count;
         return *this;
     }
-#if DEBUG_NAMING
+#if EWE_DEBUG
     EWEDescriptorPool* EWEDescriptorPool::Builder::Build(std::source_location srcLoc) const {
         return Construct<EWEDescriptorPool>({ maxSets, poolFlags, poolSizes }, srcLoc);
     }
