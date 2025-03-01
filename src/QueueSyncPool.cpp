@@ -19,7 +19,11 @@ namespace EWE {
         log.push_back("checked return, submitted");
 #endif
 
-        
+#if EWE_DEBUG
+        if(vkFence == VK_NULL_HANDLE){
+            printf("invalid fence?\n");
+        }
+#endif
         VkResult ret = vkWaitForFences(VK::Object->vkDevice, 1, &vkFence, true, time);
         if (ret == VK_SUCCESS) {
             EWE_VK(vkResetFences, VK::Object->vkDevice, 1, &vkFence);

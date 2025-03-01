@@ -18,9 +18,9 @@
 
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
-#define AMD_TARGET true
+#define AMD_TARGET false
 #define NVIDIA_TARGET (false && !AMD_TARGET) //not currently setup to correctly
-#define INTEGRATED_TARGET (false && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
+#define INTEGRATED_TARGET (true && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
 
 namespace EWE {
 #if DEBUGGING_DEVICE_LOST
@@ -182,9 +182,12 @@ namespace EWE {
             if ((!found[Queue::compute]) && (!found[Queue::transfer])) {
                 //assert(combinedTransferComputeFamilies.size() >= 2 && "not enough queues for transfer and compute");
 
-                VK::Object->queueIndex[Queue::compute] = combinedTransferComputeFamilies.top();
-                found[Queue::compute] = true;
-                combinedTransferComputeFamilies.pop();
+                //VK::Object->queueIndex[Queue::compute] = combinedTransferComputeFamilies.top();
+                //found[Queue::compute] = true;
+                //combinedTransferComputeFamilies.pop();
+                
+                //need a flag in VK::Object for combined transfer and compute
+
 
                 VK::Object->queueIndex[Queue::transfer] = combinedTransferComputeFamilies.top();
                 found[Queue::transfer] = true;

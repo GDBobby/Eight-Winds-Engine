@@ -12,7 +12,7 @@
     #endif
 #else //linux
     //need to manually define it
-    #define EWE_DEBUG true
+    #define EWE_DEBUG false
 #endif
 
 #define CALL_TRACING (true && EWE_DEBUG)

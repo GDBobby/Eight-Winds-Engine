@@ -53,6 +53,11 @@ namespace EWE {
 		void Destroy();
 
 		VkFence* GetFlightFence() {
+#if EWE_DEBUG
+			if(renderSyncData.inFlight[VK::Object->frameIndex] == VK_NULL_HANDLE){
+				printf("invalid in flight fence\n");
+			}
+#endif
 			return &renderSyncData.inFlight[VK::Object->frameIndex];
 		}
 		VkSemaphore GetImageAvailableSemaphore() {

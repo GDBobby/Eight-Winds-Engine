@@ -45,11 +45,12 @@ namespace EWE {
 		//	printf("device name[%d] : %s\n", i, deviceNames.emplace_back(pPlaybackDeviceInfos[i].name).c_str());
 		//}
 
+
+		InitEngines(pPlaybackDeviceInfos, playbackDeviceCount);
+
 		effects.resize(engines.size());
 		music.resize(engines.size());
 		voices.resize(engines.size());
-
-		InitEngines(pPlaybackDeviceInfos, playbackDeviceCount);
 
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &effectGroup);
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &musicGroup);
@@ -126,6 +127,15 @@ namespace EWE {
 
 	void SoundEngine::PlayMusic(uint16_t whichSong, bool repeat) {
 		//printf("starting music \n");
+
+ 		if(selectedEngine > music.size()){
+			printf("selected engine is out of range \n");
+			return;
+		}
+		if(whichSong > music.at(selectedEngine).size()){
+			printf("selected effect is out of range \n");
+			return;
+		}
 
 		currentSong = whichSong;
 		//ma_result result = ma_sound_start(&music.at(selectedEngine).at(whichSong));
@@ -243,7 +253,7 @@ namespace EWE {
 			deviceNames.emplace_back(pPlaybackDeviceInfos[i].name);
 		}
 
-		for (uint32_t i = 0; i < deviceCount + 1; i++) {
+		for (int32_t i = 0; (i < deviceCount + 1) && (deviceCount > 0); i++) {
 			ma_device_config deviceConfig;
 
 			deviceConfig = ma_device_config_init(ma_device_type_playback);
@@ -261,16 +271,14 @@ namespace EWE {
 
 			ma_result result = ma_device_init(&context, &deviceConfig, &devices[i]);
 			if (result != MA_SUCCESS) {
-				if (i == 0) {
-					printf("failed to initialize the default device \n");
-					//throw std::runtime_error("failed to init miniaudio device");
-					return;
+				printf("failed to intialize sound device : %s\n", deviceNames[i].c_str());
 
-				}
-				else{
-					printf("Failed to initialize device for %s.\n", pPlaybackDeviceInfos[i - 1].name);
-					throw std::runtime_error("failed to init miniaudio device");
-				}
+				devices.erase(devices.begin() + i);
+				engines.erase(engines.begin() + i);
+				deviceNames.erase(deviceNames.begin() + i);
+				deviceCount--;
+				i--;
+				continue;
 			}
 
 			auto& deviceName = deviceNames[i];
