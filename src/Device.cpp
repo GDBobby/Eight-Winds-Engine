@@ -20,7 +20,7 @@
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
 #define AMD_TARGET false
 #define NVIDIA_TARGET (false && !AMD_TARGET) //not currently setup to correctly
-#define INTEGRATED_TARGET (true && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
+#define INTEGRATED_TARGET (false && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
 
 namespace EWE {
 #if DEBUGGING_DEVICE_LOST
@@ -31,7 +31,7 @@ namespace EWE {
 
     EWEDevice* EWEDevice::eweDevice = nullptr;
 
-    const bool enableValidationLayers = true;
+    const bool enableValidationLayers = EWE_DEBUG;
 
     // local callback functions
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(

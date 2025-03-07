@@ -29,7 +29,7 @@
 #define DEBUGGING_PIPELINES (false && EWE_DEBUG)
 #define DEBUGGING_MATERIAL_PIPE (false && EWE_DEBUG)
 
-#define DEBUG_NAMING true//(true && EWE_DEBUG)
+#define DEBUG_NAMING (true && EWE_DEBUG)
 
 #define RENDER_DEBUG false
 
@@ -38,7 +38,7 @@
 
 #define SEMAPHORE_TRACKING (true && DEBUG_NAMING && EWE_DEBUG)
 
-//descriptor tracing requires C++23 and <stacktrace>
+//descriptor tracing requires C++23 and <stacktrace> stacktrace is not supported in clang20 (afaik)
 #define DESCRIPTOR_TRACING (false && EWE_DEBUG)
 
 #define COMMAND_BUFFER_TRACING (true && EWE_DEBUG)
