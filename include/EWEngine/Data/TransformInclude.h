@@ -30,9 +30,10 @@ namespace EWE {
 		glm::vec2 scale{ 1.f };
 
 		Matrix3ForGLSL Matrix() const;
-
+		/*
 		Matrix3ForGLSL Matrix(glm::vec2 const& meterScaling) const;
 		Matrix3ForGLSL Matrix(const glm::mat3 conversionMatrix, const glm::vec2 tilesOnScreen) const;
+		*/
 		Matrix3ForGLSL MatrixNoRotation() const;
 
 	};

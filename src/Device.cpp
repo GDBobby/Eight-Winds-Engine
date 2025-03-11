@@ -56,16 +56,8 @@ namespace EWE {
             assert(false && "validation layer error");
             break;
         default:
-#if EWE_DEBUG
             printf("validation default: %s \n", pCallbackData->pMessage);
-            assert(false && "why is this reachable");
-#else
-#if defined(_MSC_VER) && !defined(__clang__) // MSVC
-            __assume(false);
-#else // GCC, Clang
-            __builtin_unreachable();
-#endif
-#endif
+            EWE_UNREACHABLE;
             break;
 
         }

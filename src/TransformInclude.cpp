@@ -173,6 +173,7 @@ namespace EWE {
         return ret;
     }
 
+    /*
     Matrix3ForGLSL Transform2D::Matrix(glm::vec2 const& meterScaling) const {
         const float cosine = glm::cos(rotation);
         const float sine = glm::sin(rotation);
@@ -207,6 +208,7 @@ namespace EWE {
 
         return ret;
     }
+    */
     Matrix3ForGLSL Transform2D::MatrixNoRotation() const {
         //const float cosine = glm::cos(rotation);
         //const float sine = glm::sin(rotation);

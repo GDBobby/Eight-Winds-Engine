@@ -82,5 +82,8 @@ namespace EWE {
 
 	struct Matrix3ForGLSL {
 		std::array<glm::vec4, 3> columns{ glm::vec4{0.f}, glm::vec4{0.f}, glm::vec4{0.f, 0.f, 1.f, 0.f} };
+		Matrix3ForGLSL() {}
+		Matrix3ForGLSL(glm::mat3 const& inMat);
+		
 	};
 } //namespace EWE
