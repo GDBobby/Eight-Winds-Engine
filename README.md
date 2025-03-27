@@ -1,10 +1,16 @@
 # Eight-Winds-Engine
 
+## Current Version - 1.2.0
+* Added VMA
+* Now functional on integrated GPUs and AMD gpus.
+* EWE Pipelines now support geometry shaders.
+* Rigid Rendering System now supports instancing.
+* New Scene Management System
+* Async Transfer now supported (resources loaded in on threads that are not the main thread are automatically async loaded)
+
 Version 1.1.0
 
-Boost removed, Engine works on Linux
-
-I'll improve this readme later.
+* Boost removed, Engine works on Linux
 
 
 ## Dependencies
@@ -14,6 +20,7 @@ I'll improve this readme later.
 * tinyobjloader : https://github.com/tinyobjloader/tinyobjloader
 * miniaudio     : https://miniaud.io/
 * vulkan        : https://vulkan.lunarg.com/
+* vma           : https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
 
 
 
