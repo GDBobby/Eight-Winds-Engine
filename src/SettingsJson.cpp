@@ -1,98 +1,58 @@
 #include "EWEngine/SettingsJson.h"
 
+#include <include/rapidjson/document.h>
+#include <include/rapidjson/prettywriter.h>// for stringify JSON
+#include <include/rapidjson/error/en.h>
 
 SettingsJSON::SettingsData SettingsJSON::settingsData;
 SettingsJSON::SettingsData SettingsJSON::tempSettings;
 
 namespace SettingsInfo {
-	std::pair<uint32_t, uint32_t> getScreenDimensions(ScreenDimension_Enum SD_E) {
-		switch (SD_E) {
-
-			//wide scren
-		case SD_1920W: {
-			return { 1920, 1080 };
-		}
-		case SD_1536W: {
-			return { 1536, 864 };
-		}
-		case SD_1366W: {
-			return { 1366, 768 };
-		}
-		case SD_1280W: {
-			return { 1280, 720 };
-		}
-		case SD_800W: {
-			return { 800, 450 };
-		}
-		case SD_640W: {
-			return { 640, 360 };
-		}
-					//4:3
-		case SD_1280: {
-			return { 1280, 960 };
-		}
-		case SD_800: {
-			return { 800, 600 };
-		}
-		case SD_640: {
-			return { 640, 480 };
-		}
-		default: {
-			printf("why default sreen dimension? \n");
-			return { 1280,720 };
-		}
-		}
+	std::vector<ScreenDimensions> ScreenDimensions::commonDimensions{
+		{7680, 4320},
+		{5120, 2160},
+		{5120, 1440},
+		{3840, 2160},
+		{3840, 1080},
+		{3440, 1440},
+		{3440, 1440},
+		{2560, 1440},
+		{2560, 1080},
+		{1920, 1080},
+		{1600, 900},
+		{1536, 864},
+		{1440, 900},
+		{1366, 768},
+		{1280, 1024},
+		{1280, 960},
+		{1280, 720},
+		{1024, 768},
+		{800, 600},
+		{800, 450},
+		{640, 480},
+		{640, 360}
 	};
-	std::string getScreenDimensionString(ScreenDimension_Enum SD_E) {
-		switch (SD_E) {
-		case SD_1920W: {
-			return "1920x1080";
-		}
-		case SD_1536W: {
-			return "1536x864";
-		}
-		case SD_1366W: {
-			return "1366x768";
-		}
-		case SD_1280W: {
-			return "1280x720";
-		}
-		case SD_800W: {
-			return "800x450";
-		}
-		case SD_640W: {
-			return "640x360";
-		}
-					//4:3
-		case SD_1280: {
-			return "1280x960";
-		}
-		case SD_800: {
-			return "800x600";
-		}
-		case SD_640: {
-			return "640x480";
-		}
-		default: {
-			printf("why default sreen dimension? \n");
-			return "please report this";
-		}
+	void ScreenDimensions::FixCommonDimensionsToScreenSize(int width, int height) {
+		for (uint16_t i = 0; i < commonDimensions.size(); i++) {
+			if (width < commonDimensions[i].width || height < commonDimensions[i].height) {
+				commonDimensions.erase(commonDimensions.begin() + i);
+				i--;
+			}
 		}
 	}
+	ScreenDimensionsFloat ScreenDimensions::ConvertToFloat() {
+		ScreenDimensionsFloat ret{};
+		ret.width = static_cast<float>(width);
+		ret.height = static_cast<float>(height);
+		return ret;
+	}
 
-	std::vector<std::string> getScreenDimensionStringVector() {
-		return{
-			{"1920x1080"},
-			{"1536x864"},
-			{"1366x768"},
-			{"1280x720"},
-			{"800x450"},
-			{"640x360"},
-			//4x3
-			{"1280x960"},
-			{"800x600"},
-			{"640x480"},
-		};
+	std::string ScreenDimensions::GetString() const {
+
+		std::string ret{ std::to_string(width) };
+		ret += "x";
+		ret += std::to_string(height);
+		return ret;
 	}
 
 	std::vector<std::string> getWindowModeStringVector() {
@@ -221,119 +181,15 @@ namespace SettingsInfo {
 	}
 } //namespace SettingsInfo
 
-void SettingsJSON::SettingsData::setVolume(int8_t whichVolume, uint8_t value) {
-	//ma_device_set_SoundVolume::master(&device, volume[whichVolume]);
-	//printf("setting volume %d : %.2f \n", whichVolume, value);
-
-	if (whichVolume == (uint8_t)SoundVolume::master) {
-		masterVolume = value;
+bool readFromJsonFile(rapidjson::Document& document) {
+	if (!document.HasMember("version")) {
+		return false;
 	}
-	else if (whichVolume == (uint8_t)SoundVolume::effect) {
-		effectsVolume = value;
-	}
-	else if (whichVolume == (uint8_t)SoundVolume::music) {
-		musicVolume = value;
-	}
-	else if (whichVolume == (uint8_t)SoundVolume::voice) {
-		voiceVolume = value;
-	}
-}
-const uint8_t& SettingsJSON::SettingsData::getVolume(int8_t whichVolume) {
-	if (whichVolume == (uint8_t)SoundVolume::master) {
-		return masterVolume;
-	}
-	else if (whichVolume == (uint8_t)SoundVolume::effect) {
-		return effectsVolume;
-	}
-	else if (whichVolume == (uint8_t)SoundVolume::music) {
-		return musicVolume;
-	}
-	else if (whichVolume == (uint8_t)SoundVolume::voice) {
-		return voiceVolume;
-	}
-	std::cout << "invalid volumne type " << std::endl;
-	throw std::runtime_error("invalid volume type");
-	return masterVolume;
-}
-SettingsInfo::ScreenDimension_Enum SettingsJSON::SettingsData::setDimensions(int width, int height) {
-	printf("setting dimensions - %d:%d \n", width, height);
-	for (int i = 0; i < SettingsInfo::SD_size; i++) {
-		if (SettingsInfo::getScreenDimensions((SettingsInfo::ScreenDimension_Enum)i).first == width && SettingsInfo::getScreenDimensions((SettingsInfo::ScreenDimension_Enum)i).second == height) {
-			screenDimensions = (SettingsInfo::ScreenDimension_Enum)i;
-			printf("found screen dimensions : %s \n", SettingsInfo::getScreenDimensionString(screenDimensions).c_str());
-			return screenDimensions;
-		}
-	}
-	printf("couldnt find screen dimensions????? \n");
-	screenDimensions = SettingsInfo::SD_1280;
-	return SettingsInfo::SD_1280;
-}
-
-
-
-
-void SettingsJSON::initializeSettings() {
-	rapidjson::Document document;
-
-	if (!std::filesystem::exists(SETTINGS_LOCATION)) {
-		//no file exist
-		std::ofstream tempFile{ SETTINGS_LOCATION };
-		generateDefaultFile();
-		tempFile.close();
-	}
-	else {
-		std::ifstream inFile;
-		inFile.open(SETTINGS_LOCATION, std::ios::binary);
-
-		// get length of file:
-		inFile.seekg(0, std::ios::end);
-		size_t length = inFile.tellg();
-		inFile.seekg(0, std::ios::beg);
-
-		// allocate memory:
-		char* buffer = new char[length + 1];
-
-		// read data as a block:
-		inFile.read(buffer, length);
-		buffer[length] = '\0';
-
-		document.Parse(buffer);
-		if (document.HasParseError() || !document.IsObject()) {
-			printf("error parsing settings at : %s \n", SETTINGS_LOCATION);
-			printf("error at %d : %s \n", static_cast<int32_t>(document.GetErrorOffset()), rapidjson::GetParseError_En(document.GetParseError()));
-			throw std::runtime_error("failed to parse");
-			generateDefaultFile();
-		}
-		else {
-			if (!readFromJsonFile(document)) {
-				//failed to parse correctly
-				printf("failed to read settings correctly \n");
-				throw std::runtime_error("failed t o read settings correctly");
-				generateDefaultFile();
-			}
-		}
-		// delete temporary buffer
-		delete[] buffer;
-
-		// close filestream
-		inFile.close();
-	}
-}
-
-void SettingsJSON::generateDefaultFile() {
-	SettingsData settingsDefault;
-	settingsData = settingsDefault;
-	tempSettings = settingsDefault;
-	printf("generating default file \n");
-	saveToJsonFile();
-}
-
-bool SettingsJSON::readFromJsonFile(rapidjson::Document& document) {
 	if (!document["version"].IsInt()) {
 		printf("version not int \n");
 		return false;
 	}
-	else if (document["version"].GetInt() != CURRENT_VERSION) {
+	else if (document["version"].GetInt() != CURRENT_SETTINGS_VERSION) {
 		printf("icnorrect version \n");
 		return false;
 	}
@@ -342,7 +198,11 @@ bool SettingsJSON::readFromJsonFile(rapidjson::Document& document) {
 		printf("wm not int \n");
 		return false;
 	}
-	if (!document["screenDimensions"].IsInt()) {
+	if (!document["screenDimensionsX"].IsInt()) {
+		printf("SD not int \n");
+		return false;
+	}
+	if (!document["screenDimensionsY"].IsInt()) {
 		printf("SD not int \n");
 		return false;
 	}
@@ -381,64 +241,163 @@ bool SettingsJSON::readFromJsonFile(rapidjson::Document& document) {
 
 
 
-	settingsData.versionKey = CURRENT_VERSION;
+	SettingsJSON::settingsData.versionKey = CURRENT_SETTINGS_VERSION;
 
 	int valueBuffer = document["windowMode"].GetInt();
 	if (valueBuffer != 0 && valueBuffer != 1) {
-		settingsData.windowMode = SettingsInfo::WT_borderless;
+		SettingsJSON::settingsData.windowMode = SettingsInfo::WT_borderless;
 	}
 	else {
-		settingsData.windowMode = (SettingsInfo::WindowMode_Enum)valueBuffer;
+		SettingsJSON::settingsData.windowMode = (SettingsInfo::WindowMode_Enum)valueBuffer;
 	}
 
-	valueBuffer = document["screenDimensions"].GetInt();
-	if (valueBuffer >= 0 && valueBuffer < SettingsInfo::SD_size) {
-		settingsData.screenDimensions = (SettingsInfo::ScreenDimension_Enum)valueBuffer;
-	}
-	settingsData.masterVolume = document["masterVolume"].GetUint();
+	valueBuffer = document["screenDimensionsX"].GetInt();
+	SettingsJSON::settingsData.screenDimensions.width = valueBuffer;
+	valueBuffer = document["screenDimensionsY"].GetInt();
+	SettingsJSON::settingsData.screenDimensions.height = valueBuffer;
+	
+	SettingsJSON::settingsData.masterVolume = document["masterVolume"].GetUint();
 
-	settingsData.effectsVolume = document["effectsVolume"].GetUint();
-	settingsData.musicVolume = document["musicVolume"].GetUint();
-	settingsData.voiceVolume = document["voiceVolume"].GetUint();
+	SettingsJSON::settingsData.effectsVolume = document["effectsVolume"].GetUint();
+	SettingsJSON::settingsData.musicVolume = document["musicVolume"].GetUint();
+	SettingsJSON::settingsData.voiceVolume = document["voiceVolume"].GetUint();
 
 	//holma
-	if (settingsData.masterVolume < 0 || settingsData.masterVolume > 100) {
-		settingsData.masterVolume = 50;
+	if (SettingsJSON::settingsData.masterVolume < 0 || SettingsJSON::settingsData.masterVolume > 100) {
+		SettingsJSON::settingsData.masterVolume = 50;
 	}
-	if (settingsData.effectsVolume < 0 || settingsData.effectsVolume > 100) {
-		settingsData.effectsVolume = 50;
+	if (SettingsJSON::settingsData.effectsVolume < 0 || SettingsJSON::settingsData.effectsVolume > 100) {
+		SettingsJSON::settingsData.effectsVolume = 50;
 	}
-	if (settingsData.musicVolume < 0 || settingsData.musicVolume > 100) {
-		settingsData.musicVolume = 50;
+	if (SettingsJSON::settingsData.musicVolume < 0 || SettingsJSON::settingsData.musicVolume > 100) {
+		SettingsJSON::settingsData.musicVolume = 50;
 	}
-	if (settingsData.voiceVolume < 0 || settingsData.voiceVolume > 100) {
-		settingsData.voiceVolume = 50;
-	}
-
-	settingsData.selectedDevice = document["selectedDevice"].GetString();
-	settingsData.FPS = document["FPS"].GetInt();
-	if (settingsData.FPS < 0) {
-		settingsData.FPS = 0;
+	if (SettingsJSON::settingsData.voiceVolume < 0 || SettingsJSON::settingsData.voiceVolume > 100) {
+		SettingsJSON::settingsData.voiceVolume = 50;
 	}
 
-	settingsData.pointLights = document["pointLights"].GetBool();
-	settingsData.renderInfo = document["renderInfo"].GetBool();
+	SettingsJSON::settingsData.selectedDevice = document["selectedDevice"].GetString();
+	SettingsJSON::settingsData.FPS = document["FPS"].GetInt();
+	if (SettingsJSON::settingsData.FPS < 0) {
+		SettingsJSON::settingsData.FPS = 0;
+	}
 
-	tempSettings = settingsData;
+	SettingsJSON::settingsData.pointLights = document["pointLights"].GetBool();
+	SettingsJSON::settingsData.renderInfo = document["renderInfo"].GetBool();
+
+	SettingsJSON::tempSettings = SettingsJSON::settingsData;
 
 	return true;
 }
+
+
+void SettingsJSON::SettingsData::setVolume(int8_t whichVolume, uint8_t value) {
+	//ma_device_set_SoundVolume::master(&device, volume[whichVolume]);
+	//printf("setting volume %d : %.2f \n", whichVolume, value);
+
+	if (whichVolume == (uint8_t)SoundVolume::master) {
+		masterVolume = value;
+	}
+	else if (whichVolume == (uint8_t)SoundVolume::effect) {
+		effectsVolume = value;
+	}
+	else if (whichVolume == (uint8_t)SoundVolume::music) {
+		musicVolume = value;
+	}
+	else if (whichVolume == (uint8_t)SoundVolume::voice) {
+		voiceVolume = value;
+	}
+}
+const uint8_t& SettingsJSON::SettingsData::getVolume(int8_t whichVolume) {
+	if (whichVolume == (uint8_t)SoundVolume::master) {
+		return masterVolume;
+	}
+	else if (whichVolume == (uint8_t)SoundVolume::effect) {
+		return effectsVolume;
+	}
+	else if (whichVolume == (uint8_t)SoundVolume::music) {
+		return musicVolume;
+	}
+	else if (whichVolume == (uint8_t)SoundVolume::voice) {
+		return voiceVolume;
+	}
+	std::cout << "invalid volumne type " << std::endl;
+	throw std::runtime_error("invalid volume type");
+	return masterVolume;
+}
+
+
+
+
+void SettingsJSON::initializeSettings() {
+	rapidjson::Document document;
+
+	if (!std::filesystem::exists(SETTINGS_LOCATION)) {
+		//no file exist
+		std::ofstream tempFile{ SETTINGS_LOCATION };
+		generateDefaultFile();
+		tempFile.close();
+	}
+	else {
+		std::ifstream inFile;
+		inFile.open(SETTINGS_LOCATION, std::ios::binary);
+
+		// get length of file:
+		inFile.seekg(0, std::ios::end);
+		size_t length = inFile.tellg();
+		inFile.seekg(0, std::ios::beg);
+
+		// allocate memory:
+		char* buffer = new char[length + 1];
+
+		// read data as a block:
+		inFile.read(buffer, length);
+		buffer[length] = '\0';
+
+		document.Parse(buffer);
+		if (document.HasParseError() || !document.IsObject()) {
+			printf("error parsing settings at : %s \n", SETTINGS_LOCATION);
+			printf("error at %d : %s \n", static_cast<int32_t>(document.GetErrorOffset()), rapidjson::GetParseError_En(document.GetParseError()));
+			//assert(false);
+			generateDefaultFile();
+		}
+		else {
+			if (!readFromJsonFile(document)) {
+				//failed to parse correctly
+				printf("failed to read settings correctly \n");
+				//assert(false);
+				generateDefaultFile();
+			}
+		}
+		// delete temporary buffer
+		delete[] buffer;
+
+		// close filestream
+		inFile.close();
+	}
+}
+
+void SettingsJSON::generateDefaultFile() {
+	SettingsData settingsDefault{};
+	settingsData = settingsDefault;
+	tempSettings = settingsDefault;
+	printf("generating default file \n");
+	saveToJsonFile();
+}
+
 
 void SettingsJSON::saveToJsonFile() {
 	rapidjson::StringBuffer sb;
 	rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
 	writer.StartObject();
 	writer.Key("version");
-	writer.Int(CURRENT_VERSION);
+	writer.Int(CURRENT_SETTINGS_VERSION);
 	writer.Key("windowMode");
 	writer.Int(settingsData.windowMode);
-	writer.Key("screenDimensions");
-	writer.Int(settingsData.screenDimensions);
+	writer.Key("screenDimensionsX");
+	writer.Int(settingsData.screenDimensions.width);
+	writer.Key("screenDimensionsY");
+	writer.Int(settingsData.screenDimensions.height);
 	writer.Key("masterVolume");
 	writer.Uint(settingsData.masterVolume);
 	writer.Key("effectsVolume");

@@ -18,7 +18,7 @@ namespace EWE {
 
 	class LevelBuilder {
 	public:
-		LevelBuilder(ImGUIHandler* ImGuiHandler, GLFWwindow* window, EWEDevice& device, ObjectManager* objMan, EWEGameObject* cameraObj, EWECamera* EWECamera, 
+		LevelBuilder(ImGUIHandler* ImGuiHandler, GLFWwindow* window, ObjectManager* objMan, EWEGameObject* cameraObj, EWECamera* EWECamera, 
 		LightBufferObject *lbo, bool* shouldRenderPoints);
 
 		static void LBMouseCallback(GLFWwindow* window, int button, int action, int mods);
@@ -45,7 +45,7 @@ namespace EWE {
 
 		void postRender() {
 			if (wantsToResetLevel || wantsToLoadLevel) {
-				vkDeviceWaitIdle(eweDevice.device());
+				vkDeviceWaitIdle(EWEDevice::GetVkDevice());
 			}
 			destroyObjects();
 			loadLevel();
@@ -72,7 +72,6 @@ namespace EWE {
 		ImGUIHandler* imguiHandler;
 		CameraController cameraControl;
 		std::shared_ptr<EWEModel> floorGridModel;
-		EWEDevice& eweDevice;
 		ObjectManager* objectManager;
 		
 
@@ -135,7 +134,7 @@ namespace EWE {
 			if (wantsToDestroy) {
 				if (((BuilderModel*)objectList[selectedObject]->at(selectedObject).model.get())->ReadyForDeletion()) {
 					printf("destroy? \n");
-					vkDeviceWaitIdle(eweDevice.device());
+					vkDeviceWaitIdle(EWEDevice::GetVkDevice());
 					materialHandler->removeByTransform(objectList[selectedObject]->at(selectedObject).textureID, &objectList[selectedObject]->at(selectedObject).transform);
 					objectList[selectedObject]->erase(selectedObject);
 					objectList.erase(selectedObject);

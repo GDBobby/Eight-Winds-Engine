@@ -8,7 +8,6 @@
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
 
 #include "EWEngine/Systems/Rendering/advanced_render_system.h"
-#include "EWEngine/ObjectManager.h"
 //#include "LevelBuilder/LevelBuilder.h"
 #include "EWEngine/GUI/UIHandler.h"
 //#include "EWEngine/graphicsimGuiHandler.h"
@@ -17,6 +16,8 @@
 #include "EWEngine/Systems/PipelineSystem.h"
 
 #include "EWEngine/Graphics/LightBufferObject.h"
+
+#include "EWEngine/Graphics/Texture/Sampler.h"
 
 #include <functional>
 #include <memory>
@@ -45,47 +46,40 @@ namespace EWE {
 		EightWindsEngine& operator=(const EightWindsEngine&) = delete;
 
 		//uint64_t boneBufferSize;
-		float elapsedGPUMS = 0.f;
+		float elapsedGPUMS;
 		float averageElapsedGPUMS = 0.f;
 		float totalElapsedGPUMS = 0.f;
 		uint32_t averageElapsedGPUCounter = 0;
 
 		MainWindow mainWindow; //first
 		EWEDevice eweDevice; //second
+		EWECamera camera{};
 		EWERenderer eweRenderer; //third
 		//ComputeHandler computeHandler; //4th???
 
-		double renderFPS = 1.0 / 144.0;
-		bool pointLightsEnabled = false;
-		bool displayingRenderInfo = false;
-
-		AdvancedRenderSystem advancedRS;
-		SkinRenderSystem skinnedRS;
-		Texture_Manager textureManager;
-
-		std::unique_ptr<LeafSystem> leafSystem;
+		LeafSystem* leafSystem;
 
 		std::unique_ptr<std::thread> logicThread;
 		std::unique_ptr<std::thread> renderThread;
 
 
 #if BENCHMARKING_GPU
-		VkQueryPool queryPool = VK_NULL_HANDLE;
+		VkQueryPool queryPool[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		float gpuTicksPerSecond = 0;
 #endif
-
-		ObjectManager objectManager;
 		UIHandler uiHandler;
+
+		AdvancedRenderSystem advancedRS;
+
+		Image_Manager imageManager;
 		MenuManager menuManager;
+		SkinRenderSystem skinnedRS;
 
 		double timeTracker = 0.0f;
 
 		uint32_t beginRoundFrames = 0; //move this out
 
-		std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>> bufferMap;
-
-		EWECamera camera;
-		EWEGameObject viewerObject{ EWEGameObject::createGameObject() };
+		TransformComponent viewerTransform{};
 		LightBufferObject lbo;
 
 		//std::chrono::high_resolution_clock::time_point currentTime;// = std::chrono::high_resolution_clock::now();
@@ -105,35 +99,59 @@ namespace EWE {
 		double peakRenderTime = 0.0;
 		double minRenderTime = 100.0;
 
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		void initGlobalBuffers();
+		double renderFPS = 1.0 / 144.0;
+		bool pointLightsEnabled = false;
+		bool displayingRenderInfo = false;
+		bool timestampsAvailable = false;
 
-		FrameInfo beginRender();
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		void InitGlobalBuffers();
+
+		//this is changed just so that it doesnt overlap with the old name and i know to change it
+		void BeginRenderX();
+
+		bool BeginFrame();
+
+		bool BeginFrameAndRender();
 //#define RENDER_OBJECT_DEBUG
 
-		void draw2DObjects(FrameInfo& frameInfo);
-		void draw3DObjects(FrameInfo& frameInfo, double dt);
-		void drawText(FrameInfo& frameInfo, double dt);
-		void drawObjects(FrameInfo& frameInfo, double dt);
+		void Draw2DObjects();
+		void Draw3DObjects(double dt);
+		void DrawText(double dt);
+		void DrawObjects(double dt);
+		void Render2D(bool menuActive);
 
-		void endRender(FrameInfo& frameInfo);
+		void EndRender();
+		void EndFrame();
 
-		void loadingScreen();
+		void LoadingScreen();
 
-		void finishLoading();
+		void FinishLoading();
 
-		void endEngineLoadScreen() {
-			printf("~~~~ ENDING LOADING SCREEN ~~~ \n");
-			loadingEngine = false;
+		void EndEngineLoadScreen();
+		bool GetLoadingScreenProgress() {
+			return (!finishedLoadingScreen);// || (loadingTime < 2.0);
 		}
-		bool getLoadingScreenProgress() {
-			return (!finishedLoadingScreen) || (loadingTime < 2.0);
-		}
-		//bool endlessPaused = false;
+
 	private:
 		bool finishedLoadingScreen = false;
 		bool loadingEngine = true;
 		double loadingTime = 0.f;
+
+#if BENCHMARKING_GPU
+		void QueryTimestampBegin();
+		void QueryTimestampEnd();
+		void CreateQueryPool();
+		bool previouslySubmitted[MAX_FRAMES_IN_FLIGHT] = { false, false };
+
+		struct TimestampData {
+			uint64_t result;
+			uint64_t availability;
+		};
+		TimestampData timestamps[4];
+#endif
+
+
 	};
 }
 

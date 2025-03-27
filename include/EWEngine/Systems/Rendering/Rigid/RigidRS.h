@@ -1,9 +1,12 @@
 #pragma once
 
+#include "EWEngine/Systems/Rendering/Rigid/RigidBufferHandler.h"
 #include "EWEngine/Graphics/Model/Model.h"  
 #include "EWEngine/Data/EngineDataTypes.h"
 
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
+
+#include <array>
 
 //this is still a WIP
 
@@ -15,70 +18,86 @@ namespace EWE {
         //Actor_Type actorType = Actor_None;
 
         //int32_t textureID;
-        MaterialObjectInfo() {
+        MaterialObjectInfo() : 
+            ownerTransform{ nullptr },
+            meshPtr{ nullptr },
+            drawable{ nullptr } 
+        {
+#if EWE_DEBUG
             printf("Default construction of material info??? \n");
-            ownerTransform = nullptr;
-            meshPtr = nullptr;
-            //textureID = 0;
+#endif
         }
-        MaterialObjectInfo(TransformComponent* tComp, EWEModel* meshP, bool* drawable) : ownerTransform{ tComp }, meshPtr{ meshP }, drawable{ drawable } {}
+        MaterialObjectInfo(TransformComponent* tComp, EWEModel* meshP, bool* drawable) : 
+            ownerTransform{ tComp },
+            meshPtr{ meshP }, 
+            drawable{ drawable } 
+        {}
+    };
+    struct MaterialObjectByDesc {
+        std::array<VkDescriptorSet, 2> desc{VK_NULL_HANDLE, VK_NULL_HANDLE};
+        EWEDescriptorSetLayout* eDSL{ eDSL };
+        std::vector<MaterialObjectInfo> objectVec{};
+        MaterialObjectByDesc(std::array<VkDescriptorSet, 2> desc, EWEDescriptorSetLayout* eDSL, MaterialObjectInfo& objectVec);
+        MaterialObjectByDesc(MaterialObjectByDesc&&) noexcept;
+        MaterialObjectByDesc(MaterialObjectByDesc&);
+        MaterialObjectByDesc& operator=(MaterialObjectByDesc&&) noexcept;
+        MaterialObjectByDesc& operator=(MaterialObjectByDesc&);
+
+        ~MaterialObjectByDesc();
     };
 
     struct MaterialRenderInfo {
         MaterialPipelines* pipe;
-        std::unordered_map<TextureDesc, std::vector<MaterialObjectInfo>> materialMap{};
-        MaterialRenderInfo(MaterialFlags flags, EWEDevice& device) : pipe{MaterialPipelines::getMaterialPipe(flags, device)} {
+        std::vector<MaterialObjectByDesc> materialVec{};
+        MaterialRenderInfo(MaterialFlags flags) : pipe{MaterialPipelines::GetMaterialPipe(flags)} {}
+        void Render();
+    };
 
+    struct InstancedMaterialObjectInfo {
+        EWEModel* meshPtr;
+        RigidInstancedBufferHandler buffer;
+        EWEDescriptorSetLayout* eDSL{ nullptr };
+        std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets{ VK_NULL_HANDLE, VK_NULL_HANDLE };
+        //i need to combine the texture and bfufer descriptor into 1
+        InstancedMaterialObjectInfo(EWEModel* meshPtr, uint32_t entityCount, bool computedTransforms, EWEDescriptorSetLayout* eDSL, ImageID imageID);
+        InstancedMaterialObjectInfo(InstancedMaterialObjectInfo&&) noexcept;
+        InstancedMaterialObjectInfo(InstancedMaterialObjectInfo&);
+        InstancedMaterialObjectInfo& operator=(InstancedMaterialObjectInfo&);
+        InstancedMaterialObjectInfo& operator=(InstancedMaterialObjectInfo&&) noexcept;
+        ~InstancedMaterialObjectInfo();
+    };
+    struct InstancedMaterialRenderInfo {
+        MaterialPipelines* pipe;
+        std::vector<InstancedMaterialObjectInfo> instancedInfo{};
+        InstancedMaterialRenderInfo(MaterialFlags flags, uint32_t entityCount) : pipe{ MaterialPipelines::GetMaterialPipe(flags, entityCount)} {
         }
-        void render(uint8_t frameIndex);
+        void Render();
     };
 
     //singleton
-    class RigidRenderingSystem {
-    private:
-        static RigidRenderingSystem* rigidInstance;
-
-    public:
-        static RigidRenderingSystem* getRigidRSInstance() {
-            //this isn't thread safe
-            if (rigidInstance == nullptr) {
-                rigidInstance = new RigidRenderingSystem();
-            }
-            return rigidInstance;
-        }
-        static void destruct() {
-            if(rigidInstance){
-                delete rigidInstance;
-            }        
-        }
-    private:
-        //RigidRenderingSystem() {}
-
-        RigidRenderingSystem() = default;
-        //~RigidRenderingSystem() = default;
-        RigidRenderingSystem(const RigidRenderingSystem&) = delete;
-        RigidRenderingSystem& operator=(const RigidRenderingSystem&) = delete;
-
-        std::unordered_map<MaterialFlags, MaterialRenderInfo> materialMap{};
-    public:
-        ~RigidRenderingSystem() {
-        }
+    namespace RigidRenderingSystem {
+        void Initialize();
+        void Destruct();
         /*
         const std::unordered_map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& getMaterialMap() {
             return materialMap;
         }
         */
         //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& cleanAndGetMaterialMap();
-        void addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, MaterialObjectInfo& renderInfo);
-        void addMaterialObject(EWEDevice& device, MaterialTextureInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
+        void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo);
+        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
+        void AddInstancedMaterialObject(MaterialInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms);
 
-        void addMaterialObjectFromTexID(TextureDesc copyID, TransformComponent* ownerTransform, bool* drawablePtr);
+        void RemoveByTransform(TransformComponent* ownerTransform);
+        void RemoveInstancedMaterialObject(EWEModel* modelPtr);
 
-        void removeByTransform(TextureDesc textureID, TransformComponent* ownerTransform);
+        void Render();
 
-        std::vector<TextureDesc> checkAndClearTextures();
+        const EWEBuffer* GetTransformBuffer(EWEModel* meshPtr);
+        //providing the materialInfo doesn't need to iterate through every material in the map
+        const EWEBuffer* GetTransformBuffer(MaterialFlags materialFlags, EWEModel* meshPtr);
 
-        static void render(FrameInfo const& frameInfo);
-        void renderMemberMethod(FrameInfo const& frameInfo);
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr);
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr);
     };
 }

@@ -7,12 +7,24 @@
 #include <iomanip>
 
 namespace EWE {
+	void EWERenderer::BindGraphicsPipeline(VkPipeline graphicsPipeline) {
+#if EWE_DEBUG
+		assert(instance != nullptr);
+#endif
+
+		EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		EWE_VK(vkCmdSetViewport, VK::Object->GetFrameBuffer(), 0, 1, &instance->viewport);
+		EWE_VK(vkCmdSetScissor, VK::Object->GetFrameBuffer(), 0, 1, &instance->scissor);
+	}
+
+
 
 	EWERenderer* EWERenderer::instance{ nullptr };
 
-	EWERenderer::EWERenderer(MainWindow& window, EWEDevice& device, EWECamera& camera) : camera{ camera }, mainWindow{ window }, eweDevice{ device }, syncHub{ SyncHub::getSyncHubInstance() } {
+	EWERenderer::EWERenderer(MainWindow& window, EWECamera& camera) : camera{ camera }, mainWindow{ window } {
 		instance = this;
 		//printf("EWE renderer constructor \n");
+		EWEDescriptorPool::BuildGlobalPool();
 #if GPU_LOGGING
 		{
 			std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
@@ -20,7 +32,7 @@ namespace EWE {
 			logFile.close();
 		}
 #endif
-		recreateSwapChain();
+		RecreateSwapChain();
 #if GPU_LOGGING
 		{
 			std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
@@ -42,115 +54,119 @@ namespace EWE {
 #endif
 	}
 
-	void EWERenderer::recreateSwapChain() {
-
+	void EWERenderer::RecreateSwapChain() {
+#if EWE_DEBUG
 		std::cout << "recreating swap chain" << std::endl;
+#endif
 		needToReadjust = true;
 		auto extent = mainWindow.getExtent();
 		while (extent.width == 0 || extent.height == 0) {
 			extent = mainWindow.getExtent();
 			glfwWaitEvents();
 		}
-		vkDeviceWaitIdle(eweDevice.device());
+		EWE_VK(vkDeviceWaitIdle, VK::Object->vkDevice);
 
 
 		if (eweSwapChain == nullptr) {
-			eweSwapChain = std::make_unique<EWESwapChain>(eweDevice, extent, true);
+			eweSwapChain = std::make_unique<EWESwapChain>(extent, true);
 		}
 		else {
 			std::shared_ptr<EWESwapChain> oldSwapChain = std::move(eweSwapChain);
-			eweSwapChain = std::make_unique<EWESwapChain>(eweDevice, extent, true, oldSwapChain);
+			eweSwapChain = std::make_unique<EWESwapChain>(extent, true, oldSwapChain);
 
-			if (!oldSwapChain->compareSwapFormats(*eweSwapChain.get())) {
-				std::cout << "Swap chain image(or depth) format has changed!" << std::endl;
-				throw std::runtime_error("Swap chain image(or depth) format has changed!");
-			}
+			assert(oldSwapChain->CompareSwapFormats(*eweSwapChain.get()) && "Swap chain image(or depth) format has changed!");
 		}
 
 
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(eweSwapChain->getSwapChainExtent().width);
-		viewport.height = static_cast<float>(eweSwapChain->getSwapChainExtent().height);
+		viewport.width = static_cast<float>(eweSwapChain->GetSwapChainExtent().width);
+		viewport.height = static_cast<float>(eweSwapChain->GetSwapChainExtent().height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
-		scissor = { {0, 0}, eweSwapChain->getSwapChainExtent() };
+		scissor = { {0, 0}, eweSwapChain->GetSwapChainExtent() };
 	}
 
-	FrameInfo EWERenderer::beginFrame() {
-#if _DEBUG
-		if (isFrameStarted) {
-			std::cout << "frame was started, finna throw an error " << std::endl;
-		}
-#endif
+	bool EWERenderer::BeginFrame() {
+#if EWE_DEBUG
 		assert(!isFrameStarted && "cannot call begin frame while frame is in progress!");
+#endif
 
 		//std::cout << "begin frame 1" << std::endl;
-
-		auto result = eweSwapChain->acquireNextImage(&currentImageIndex);
-		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		if (eweSwapChain->AcquireNextImage(&currentImageIndex)) {
+#if EWE_DEBUG
 			std::cout << "out of date KHR " << std::endl;
-			recreateSwapChain();
-			return { VK_NULL_HANDLE, currentFrameIndex };
-		}
-		//std::cout << "begin frame 2" << std::endl;
-
-		if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-			std::cout << "failed to acquire next swap chain image " << std::endl;
-			printf("failed to acquire next swap chain image \n");
-			throw std::runtime_error("failed to acquire next swap chain image");
+#endif
+			RecreateSwapChain();
+			return false;
 		}
 		//std::cout << "begin frame 3" << std::endl;
 
 		isFrameStarted = true;
-		auto commandBuffer = syncHub->getRenderBuffer(currentFrameIndex);
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
 		//std::cout << "begin frame 4" << std::endl;
 		
 
-		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-			std::cout << "failed to begin recording command buffer " << std::endl;
-			//printf("failed to begin recording command buffer \n");
-			throw std::runtime_error("failed to begin recording command buffer!");
-		}
+		EWE_VK(vkBeginCommandBuffer, VK::Object->GetFrameBuffer(), &beginInfo);
+#if DEBUG_NAMING
+		DebugNaming::SetObjectName(VK::Object->GetVKCommandBufferDirect(), VK_OBJECT_TYPE_COMMAND_BUFFER, "graphics cmd buffer");
+#endif
 
-		return { commandBuffer, currentFrameIndex };
+		return true;
 	}
-	bool EWERenderer::endFrame() {
-		bool restartedSwap = false;
+	bool EWERenderer::EndFrame() {
 		//printf("end frame :: isFrameStarted : %d \n", isFrameStarted);
-		auto commandBuffer = syncHub->getRenderBuffer(currentFrameIndex);
 
-		VkResult vkResult = vkEndCommandBuffer(commandBuffer);
-		if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to record command buffer: " << vkResult << std::endl;
-			throw std::runtime_error("failed to record command buffer");
-		}
+		EWE_VK(vkEndCommandBuffer, VK::Object->GetFrameBuffer());
 		//printf("after end command buffer \n");
-		vkResult = eweSwapChain->submitCommandBuffers(&commandBuffer, &currentImageIndex);
+		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&currentImageIndex);
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
 			mainWindow.resetWindowResizedFlag();
-			restartedSwap = true;
-			recreateSwapChain();
-			camera.setPerspectiveProjection(glm::radians(70.0f), eweSwapChain->extentAspectRatio(), 0.1f, 10000.0f);
+			RecreateSwapChain();
+			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 1000000.0f);
+			isFrameStarted = false;
+			VK::Object->frameIndex = (VK::Object->frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+			return true;
 		}
-		else if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to present swap chain image: " << vkResult << std::endl;
-			throw std::runtime_error("failed to present swap chain image!");
-		}
+		EWE_VK_RESULT(vkResult);
 		//printf("after submitting command buffer \n");
 
 		isFrameStarted = false;
-		currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+		VK::Object->frameIndex = (VK::Object->frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
-		return restartedSwap;
+		return false;
+	}
+
+	bool EWERenderer::EndFrameAndWaitForFence() {
+
+		EWE_VK(vkEndCommandBuffer, VK::Object->GetFrameBuffer());
+		//printf("after end command buffer \n");
+		VkResult vkResult = eweSwapChain->SubmitCommandBuffers(&currentImageIndex);
+		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
+			mainWindow.resetWindowResizedFlag();
+			RecreateSwapChain();
+			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 1000000.0f);
+			SyncHub::GetSyncHubInstance()->WaitOnGraphicsFence();
+			isFrameStarted = false;
+			VK::Object->frameIndex = (VK::Object->frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+			return true;
+		}
+		EWE_VK_RESULT(vkResult);
+		//printf("after submitting command buffer \n");
+		SyncHub::GetSyncHubInstance()->WaitOnGraphicsFence();
+
+		isFrameStarted = false;
+		VK::Object->frameIndex = (VK::Object->frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+
+		return false;
 	}
 	/**/
-	void EWERenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+	void EWERenderer::BeginSwapChainRender() {
+#if EWE_DEBUG
 		assert(isFrameStarted && "Can't call beginSwapChainRenderPass if frame is not in progress!");
-		assert(commandBuffer == getCurrentCommandBuffer() && "can't begin render pass on command buffer from different frame");
+#endif
 		/*
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -169,12 +185,16 @@ namespace EWE {
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		*/
+#if DEBUG_NAMING
+		DebugNaming::QueueBegin(Queue::graphics, 0.75f, 0.1f, 0.f, "Begin Render Pass");
+#endif
+
 		VkImageMemoryBarrier image_memory_barrier{
 			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 			.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 			.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			.image = eweSwapChain->getImage(currentImageIndex),
+			.image = eweSwapChain->GetImage(currentImageIndex),
 			.subresourceRange = {
 			  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			  .baseMipLevel = 0,
@@ -184,33 +204,27 @@ namespace EWE {
 			}
 		};
 
-		if (eweDevice.getGraphicsIndex() != eweDevice.getPresentIndex()) {
-			image_memory_barrier.srcQueueFamilyIndex = eweDevice.getPresentIndex();
-			image_memory_barrier.dstQueueFamilyIndex = eweDevice.getGraphicsIndex();
-		}
+		image_memory_barrier.srcQueueFamilyIndex = VK::Object->queueIndex[Queue::present];
+		image_memory_barrier.dstQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
 
-		vkCmdPipelineBarrier(
-			commandBuffer,
+		EWE_VK(vkCmdPipelineBarrier,
+			VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  // srcStageMask
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // dstStageMask
 			0,
-			0,
-			nullptr,
-			0,
-			nullptr,
-			1, // imageMemoryBarrierCount
-			&image_memory_barrier // pImageMemoryBarriers
+			0, nullptr,
+			0, nullptr,
+			1, &image_memory_barrier
 		);
-		eweSwapChain->beginRender(commandBuffer, currentImageIndex);
+		eweSwapChain->BeginRender(currentImageIndex);
 	}
-	void EWERenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+	void EWERenderer::EndSwapChainRender() {
 		assert(isFrameStarted && "Can't call endSwapChainRenderPass if frame is not in progress!");
-		assert(commandBuffer == getCurrentCommandBuffer() && "can't end render pass on command buffer from different frame");
 
 		//vkCmdEndRenderPass(commandBuffer);
 
 		//std::cout << "before vkCmdEndRendering : " << std::endl;
-		vkCmdEndRendering(commandBuffer);
+		EWE_VK(vkCmdEndRendering, VK::Object->GetFrameBuffer());
 		//std::cout << "after vkCmdEndRendering : " << std::endl;
 		//vkCmdEndRenderingKHR
 
@@ -219,7 +233,7 @@ namespace EWE {
 			.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 			.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-			.image = eweSwapChain->getImage(currentImageIndex),
+			.image = eweSwapChain->GetImage(currentImageIndex),
 			.subresourceRange = {
 			  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			  .baseMipLevel = 0,
@@ -228,14 +242,12 @@ namespace EWE {
 			  .layerCount = 1,
 			}
 		};
-		if (eweDevice.getGraphicsIndex() != eweDevice.getPresentIndex()) {
-			image_memory_barrier.srcQueueFamilyIndex = eweDevice.getGraphicsIndex();
-			image_memory_barrier.dstQueueFamilyIndex = eweDevice.getPresentIndex();
-		}
+		image_memory_barrier.srcQueueFamilyIndex = VK::Object->queueIndex[Queue::graphics];
+		image_memory_barrier.dstQueueFamilyIndex = VK::Object->queueIndex[Queue::present];
 		//printf("end frame :: get currentCommandBuffer \n");
 
-		vkCmdPipelineBarrier(
-			commandBuffer,
+		EWE_VK(vkCmdPipelineBarrier,
+			VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,  // srcStageMask
 			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // dstStageMask
 			0,
@@ -246,10 +258,8 @@ namespace EWE {
 			1, // imageMemoryBarrierCount
 			&image_memory_barrier // pImageMemoryBarriers
 		);
+#if DEBUG_NAMING
+		DebugNaming::QueueEnd(Queue::graphics);
+#endif
 	}
-
-
-
-
-
 }

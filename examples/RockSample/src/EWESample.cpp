@@ -5,45 +5,127 @@
 //#include "GUI/ControlsMM.h"
 #include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
 #include <EWEngine/Graphics/Texture/Cube_Texture.h>
+#include <EWEngine/Systems/PipelineSystem.h>
 
 #include "GUI/MenuEnums.h"
-
+#include <EWEngine/Systems/ThreadPool.h>
 
 #include <chrono>
 
+#define THREAD_NAMING true
+#if THREAD_NAMING
+#ifdef _MSC_VER  // For MSVC compiler (Windows)
+	#include <windows.h>
+
+	void SetThreadName(const std::string& name) {
+		SetThreadDescription(GetCurrentThread(), std::wstring(name.begin(), name.end()).c_str());
+	}
+
+#elif defined(__GNUC__) || defined(__clang__)  // For GCC or Clang (Linux)
+	#include <pthread.h>
+	#include <sys/prctl.h>
+
+	void SetThreadName(const std::string& name) {
+		#ifdef __linux__
+		prctl(PR_SET_NAME, (unsigned long)name.c_str(), 0, 0, 0);
+		#else
+		pthread_setname_np(pthread_self(), name.c_str());
+		#endif
+	}
+#endif
+
+#endif
 namespace EWE {
-	EWESample::EWESample(EightWindsEngine& ewEngine) :
+	EWESample::EWESample(EightWindsEngine& ewEngine, LoadingThreadTracker& loadingThreadTracker) :
 		ewEngine{ ewEngine },
+		windowPtr{ ewEngine.mainWindow.getGLFWwindow() },
 		menuManager{ ewEngine.menuManager },
-		soundEngine{SoundEngine::getSoundEngineInstance()},
-		windowPtr{ewEngine.mainWindow.getGLFWwindow()}
+		soundEngine{SoundEngine::GetSoundEngineInstance()}
  {
-		float screenWidth = ewEngine.uiHandler.getScreenWidth();
-		float screenHeight = ewEngine.uiHandler.getScreenHeight();
 
-		std::unordered_map<uint16_t, std::string> effectsMap{};
-		effectsMap.emplace(0, "sounds/effects/click.mp3");
-		printf("loading effects \n");
-		soundEngine->loadSoundMap(effectsMap, SoundEngine::SoundType::Effect);
 
-		addModulesToMenuManager(screenWidth, screenHeight);
-		loadGlobalObjects();
-		currentScene = scene_mainmenu;
-		scenes.emplace(scene_mainmenu, std::make_unique<MainMenuScene>(ewEngine));
-		scenes.emplace(scene_shaderGen, std::make_unique<ShaderGenerationScene>(ewEngine));
+		//ThreadPool::EnqueueVoid(soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect));
+		{
+			auto loadFunc = [&]() {
+				SetThreadName("load sound map thread");
+				printf("loading sound map : %u\n", std::this_thread::get_id());
+				std::unordered_map<uint16_t, std::string> effectsMap{};
+				effectsMap.emplace(0, "sounds/effects/click.mp3");
+				soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect);
+				loadingThreadTracker.soundMapThread = true;
+			};
+			ThreadPool::EnqueueVoidFunction(loadFunc);
+		}
+
+		//addModulesToMenuManager(screenWidth, screenHeight);
+		{
+			auto loadFunc = [&]() {
+				SetThreadName("load menu modules thread");
+				printf("adding modules to menu manager : %u\n", std::this_thread::get_id());
+
+				addModulesToMenuManager();
+				loadingThreadTracker.menuModuleThread = true;
+			};
+			ThreadPool::EnqueueVoidFunction(loadFunc);
+		}
+		//loadGlobalObjects();
+		{
+			auto loadFunc = [&]() {
+				SetThreadName("load global objects thread");
+				printf("loading global objects : %u\n", std::this_thread::get_id());
+				loadGlobalObjects();
+				loadingThreadTracker.globalObjectThread = true;
+			};
+			ThreadPool::EnqueueVoidFunction(loadFunc);
+		}
+
+		scenes.emplace(scene_mainmenu, nullptr);
+		scenes.emplace(scene_shaderGen, nullptr);
+		scenes.emplace(scene_ocean, nullptr);
+		scenes.emplace(scene_LevelCreation, nullptr);
+		auto sceneLoadFunc = [&]() {
+			SetThreadName("load main scene thread");
+			printf("loading main menu scene : %u\n", std::this_thread::get_id());
+
+			scenes.at(scene_mainmenu) = Construct<MainMenuScene>({ ewEngine});
+			LoadSceneIfMatching(scene_mainmenu);
+			loadingThreadTracker.mainSceneThread = true;
+
+		}; 
+		
+		auto sceneLoadFunc2 = [&]() {
+			SetThreadName("load shader gen thread");
+			printf("loading shader gen scene : %u\n", std::this_thread::get_id());
+			scenes.at(scene_shaderGen) = Construct<ShaderGenerationScene>({ ewEngine });
+			LoadSceneIfMatching(scene_shaderGen);
+			loadingThreadTracker.shaderGenSceneThread = true;
+		};
+		auto sceneLoadFunc3 = [&]() {
+			SetThreadName("load ocean scene thread");
+			printf("loading ocean scene : %u\n", std::this_thread::get_id());
+			scenes.at(scene_ocean) = Construct<OceanScene>({ ewEngine, skyboxImgID });
+			LoadSceneIfMatching(scene_ocean);
+			loadingThreadTracker.oceanSceneThread = true;
+		};
+		ThreadPool::EnqueueVoidFunction(sceneLoadFunc);
+		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc2);
+		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc3);
+
 		//scenes.emplace(scene_)
-		currentScenePtr = scenes.at(currentScene).get();
-		currentScenePtr->load();
 
-		StaticRenderSystem::initStaticRS(ewEngine.eweDevice, 1, 1);
-		StaticRenderSystem::destructStaticRS();
+		//StaticRenderSystem::initStaticRS(1, 1);
 
-		ewEngine.endEngineLoadScreen();
+		//StaticRenderSystem::destructStaticRS();
+
 	}
 	EWESample::~EWESample() {
+		for (auto& scene : scenes) {
+			delete scene.second;
+		}
 		//explicitly deconstruct static objects that go into vulkan
 	}
 	void EWESample::mainThread() {
+
 		auto mainThreadCurrentTime = std::chrono::high_resolution_clock::now();
 		renderRefreshRate = static_cast<double>(SettingsJSON::settingsData.FPS);
 		std::chrono::high_resolution_clock::time_point newTime;
@@ -51,16 +133,17 @@ namespace EWE {
 		if (SettingsJSON::settingsData.FPS == 0) {
 			//small value, for effectively uncapped frame rate
 			//given recent games frying GPUs while frame rate is unlimited, users have to go into their settings file and change their frame rate to 0
-			//idk if that will be an issue or not, but this is intentionally obscure
+			//idk if GPU frying will be an issue or not, but this is intentionally obscure
 			renderRefreshRate = 0.00001;
 		}
 		else {
 			renderRefreshRate = 1.0 / renderRefreshRate;
 		}
 		do { //having a simple while() may cause a race condition
-			vkDeviceWaitIdle(ewEngine.eweDevice.device());
-		} while (ewEngine.getLoadingScreenProgress());
-		currentScenePtr->entry();
+			EWE_VK(vkDeviceWaitIdle, VK::Object->vkDevice);
+		} while (ewEngine.GetLoadingScreenProgress());
+
+		currentScenePtr->Entry();
 
 		while (gameRunning) {
 			glfwPollEvents();
@@ -68,36 +151,19 @@ namespace EWE {
 			mainThreadTimeTracker += std::chrono::duration<double, std::chrono::seconds::period>(newTime - mainThreadCurrentTime).count();
 			mainThreadCurrentTime = newTime;
 
-			if (swappingScenes) {
+			if (swappingScenes) [[unlikely]] {
+				SwapScenes();
+				mainThreadTimeTracker = renderRefreshRate;
 				printf("swapping scenes beginning \n");
-
-				//loading entry?
-				vkDeviceWaitIdle(ewEngine.eweDevice.device());
-				currentScenePtr->exit();
-				ewEngine.objectManager.clearSceneObjects(ewEngine.eweDevice);
-				Texture_Manager::getTextureManagerPtr()->clearSceneTextures();
-				//loading entry?
-				if (currentScene != scene_exitting) {
-					currentScenePtr = scenes.at(currentScene).get();
-					currentScenePtr->load();
-					currentScenePtr->entry();
-					lastScene = currentScene;
-					//printf("swapping scenes end \n");
-					swappingScenes = false;
-					mainThreadTimeTracker = renderRefreshRate;
-				}
-				else {
-					gameRunning = false;
-				}
 				//stop loading screen here
 			}
 			else if (mainThreadTimeTracker >= renderRefreshRate) {
-				if (processClick()) { printf("continuing on process clikc \n"); swappingScenes = true; continue; }
+				//if (processClick()) { printf("continuing on process clikc \n"); swappingScenes = true; continue; }
+
 
 				//std::cout << "currentScene at render : " << currentScene << std::endl;
-				if (currentScenePtr->render(mainThreadTimeTracker)) {
-					//resize functions here
-				}
+				//ewEngine.camera.PrintCameraPos();
+				currentScenePtr->Render(mainThreadTimeTracker);
 
 				if (mainThreadTimeTracker > ewEngine.peakRenderTime) {
 					printf("peak render time : % .5f \n", mainThreadTimeTracker);
@@ -122,10 +188,12 @@ namespace EWE {
 	}
 
 	void EWESample::loadGlobalObjects() {
-		TextureDesc skyboxID = Cube_Texture::createCubeTexture(ewEngine.eweDevice, "nasa/");
+		std::string skyboxLoc = "nasa/";
+		skyboxImgID = Cube_Texture::CreateCubeImage(skyboxLoc);
 
 		//i dont even know if the engine will work if this isnt constructed
-		ewEngine.objectManager.skybox = { Basic_Model::createSkyBox(ewEngine.eweDevice, 100.f), skyboxID };
+		ewEngine.advancedRS.skyboxModel = Basic_Model::SkyBox(10000.f);
+		ewEngine.advancedRS.CreateSkyboxDescriptor(skyboxImgID);
 
 		//point lights are off by default
 		std::vector<glm::vec3> lightColors{
@@ -153,13 +221,23 @@ namespace EWE {
 			ewEngine.objectManager.pointLights[i].transform.translation.y += 1.f;
 		}
 	}
-	void EWESample::addModulesToMenuManager(float screenWidth, float screenHeight) {
-		menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>(screenWidth, screenHeight));
-		menuManager.menuModules.at(menu_main)->labels[1].string = "1.0.0";
+	void EWESample::addModulesToMenuManager() {
+		auto& mm = menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>()).first->second;
+		mm->labels[1].string = "2.0.0";
+		mm->callbacks.push_back([&](){
+				currentScene = scene_exitting;
+				swappingScenes = true;
+
+			}
+		);
+
+		//need to add the callbacks for the graphics and audio settings MMs
+
+		
 		//menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(windowPtr, screenWidth, screenHeight));
 		//Shader::InputBox::giveGLFWCallbacks(MenuManager::staticMouseCallback, MenuManager::staticKeyCallback);
 	}
-
+/*
 	bool EWESample::processClick() {
 
 		bool wantsToChangeScene = false;
@@ -168,7 +246,7 @@ namespace EWE {
 		if (clickReturns.size() == 0) {
 			return false;
 		}
-		soundEngine->playEffect(0);
+		soundEngine->PlayEffect(0);
 		uint16_t processMCR = clickReturns.front();
 		while (clickReturns.size() > 0) {
 			clickReturns.pop();
@@ -242,7 +320,7 @@ namespace EWE {
 			}
 			case MCR_none: {
 				printf("returned MCR_Return \n");
-				throw std::runtime_error("this should nto be returned");
+				assert(false && "this should nto be returned");
 				break;
 			}
 			default: {
@@ -251,5 +329,34 @@ namespace EWE {
 			}
 		}
 		return wantsToChangeScene;
+	}
+	*/
+
+	void EWESample::SwapScenes() {
+
+		//loading entry?
+		EWE_VK(vkDeviceWaitIdle, VK::Object->vkDevice);
+		currentScenePtr->Exit();
+		ewEngine.objectManager.ClearSceneObjects();
+		//Image_Manager::GetImageManagerPtr()->ClearSceneTextures();
+		//loading entry?
+		if (currentScene != scene_exitting) {
+			currentScenePtr = scenes.at(currentScene);
+			currentScenePtr->Load();
+			currentScenePtr->Entry();
+			lastScene = currentScene;
+			//printf("swapping scenes end \n");
+			swappingScenes = false;
+		}
+		else {
+			gameRunning = false;
+		}
+	}
+	void EWESample::LoadSceneIfMatching(Scene_Enum scene) {
+		if (scene == currentScene) {
+			currentScenePtr = scenes.at(currentScene);
+
+			currentScenePtr->Load();
+		}
 	}
 }

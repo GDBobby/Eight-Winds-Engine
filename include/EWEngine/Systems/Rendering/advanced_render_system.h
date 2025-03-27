@@ -8,7 +8,7 @@
 
 #include "EWEngine/GUI/MenuManager.h"
 
-#include "EWEngine/ObjectManager.h"
+#include "EWEngine/Graphics/PointLight.h"
 
 #include <memory>
 #include <vector>
@@ -20,55 +20,53 @@ namespace EWE {
 	//descriptorsetlayouts are in a vector vector
 	//the first layert of the vector (vector<vector>>) designates a pipeline
 	//the second layer (the vector inside the vector) designates the descriptorsets in that pipeline
-		AdvancedRenderSystem(EWEDevice& device, ObjectManager& objectManager, MenuManager& menuManager);
+		AdvancedRenderSystem(MenuManager& menuManager);
 		~AdvancedRenderSystem();
 
 		AdvancedRenderSystem(const AdvancedRenderSystem&) = delete;
 		AdvancedRenderSystem& operator=(const AdvancedRenderSystem&) = delete;
 
-		void renderGameObjects(FrameInfo& frameInfo, float time);
-		void render2DGameObjects(FrameInfo const& frameInfo, bool menuActive);
+		void renderGameObjects(float time);
+		void render2DGameObjects(bool menuActive);
 
 
 #if LEVEL_BUILDER
-		void renderBuilderObjects(FrameInfo& frameInfo);
+		void renderBuilderObjects();
 #endif
 
 		bool shouldRenderPoints = false;
 		//uint32_t uiTextureID = 0;
 		void takeUIHandlerPtr(UIHandler* uiHandlerPtr) { uiHandler = uiHandlerPtr; }
 
-		ObjectManager& objectManager;
 		MenuManager& menuManager;
 
-		std::shared_ptr<EWEModel> get2DModel() {
+		EWEModel* get2DModel() {
 			return model2D;
 		}
 
 		bool drawSkybox = true;
+		EWEModel* skyboxModel{ nullptr };
+
+		void CreateSkyboxDescriptor(ImageID skyboxImgID);
+
+		std::vector<PointLight> pointLights{};
 	private:
 		UIHandler* uiHandler;
 
 		//bool globalDescriptorSetBound = false;
 
-		std::shared_ptr<EWEModel> model2D;
+		EWEModel* model2D;
 
-		void renderSkybox(FrameInfo& frameInfo);
-		void renderTexturedGameObjects(FrameInfo& frameInfo);
-		void renderVisualEffects(FrameInfo& frameInfo);
-		
-		void renderSprites(FrameInfo& frameInfo);
+		void renderSkybox();
+
 
 #if DRAWING_POINTS
-		void renderPointLights(FrameInfo& frameInfo);
+		void renderPointLights();
 #endif
-		void RenderLightning(FrameInfo const& frameInfo);
+		void RenderLightning();
 
-		void RenderGrass(FrameInfo const& frameInfo, float time);
-
-		//void RenderDynamicMaterials(FrameInfo& frameInfo);
-
-		EWEDevice& eweDevice;
-
+		
+		EWEDescriptorSetLayout* skyboxEDSL{ nullptr };
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> skyboxDescriptors{ VK_NULL_HANDLE, VK_NULL_HANDLE };
 	};
 }

@@ -7,16 +7,12 @@
 
 #include <glm/glm.hpp>
 
-#define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
-#include "EWEngine/Fonts/stb_font_consolas_24_latin1.inl"
 
 
 
 #include <iostream>
 
-#define ENABLE_VALIDATION false
-
-#define TEXTOVERLAY_MAX_CHAR_COUNT 65536
+#define ENABLE_VALIDATION false 
 
 #define DEFAULT_WIDTH 1920.f
 #define DEFAULT_HEIGHT 1080.f
@@ -28,25 +24,24 @@ namespace EWE {
 		std::string string;
 		float x{ 0.f };
 		float y{ 0.f };
-		unsigned char align{ TA_left };
+		uint8_t align{ TA_left };
 		float scale{ 1.f };
 		TextStruct() {}
-		TextStruct(std::string string, float x, float y, unsigned char align, float scale)
+		TextStruct(std::string string, float x, float y, uint8_t align, float scale)
 			: string{ string }, x{ x }, y{ y }, align{ align }, scale{ scale }
 		{}
 		TextStruct(std::string string, float x, float y, TextAlign align, float scale) 
-			: string{ string }, x{ x }, y{ y }, align{ (unsigned char)align }, scale{ scale }
+			: string{ string }, x{ x }, y{ y }, align{ static_cast<uint8_t>(align) }, scale{ scale }
 		{}
-		uint16_t getSelectionIndex(double xpos, float screenWidth);
-		float getWidth(float screenWidth);
+		uint16_t GetSelectionIndex(double xpos);
+		float GetWidth();
 	};
 
 
 	class TextOverlay {
 	private:
+		static constexpr uint32_t TEXTOVERLAY_MAX_CHAR_COUNT = 65536 / sizeof(glm::vec4);
 		static TextOverlay* textOverlayPtr;
-
-		EWEDevice& eweDevice;
 
 		float frameBufferWidth;
 		float frameBufferHeight;
@@ -54,12 +49,10 @@ namespace EWE {
 		VkSampler sampler;
 		VkImage image;
 		VkImageView view;
-		VkBuffer buffer;
-		VkDeviceMemory memory;
 		VkDeviceMemory imageMemory;
-		VkDescriptorPool descriptorPool;
+		//VkDescriptorPool descriptorPool;
 		VkDescriptorSetLayout descriptorSetLayout{};
-		VkDescriptorSet descriptorSet;
+		VkDescriptorSet descriptorSet[2];
 		VkPipelineLayout pipelineLayout;
 		VkPipelineCache pipelineCache;
 		VkPipeline pipeline;
@@ -70,43 +63,39 @@ namespace EWE {
 
 		// Pointer to mapped vertex buffer
 		glm::vec4* mapped = nullptr;
+		EWEBuffer* vertexBuffer[2] = { nullptr, nullptr };
 
 		uint32_t numLetters;
 	public:
 
-		static stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
-
 		bool visible = true;
 		float scale;
 
-		std::vector<VkCommandBuffer> cmdBuffers;
+		CommandBuffer cmdBuffers[MAX_FRAMES_IN_FLIGHT];
 
 		TextOverlay(
-			EWEDevice& device,
 			float framebufferwidth,
 			float framebufferheight,
 			VkPipelineRenderingCreateInfo const& pipelineInfo
 		);
 
 		~TextOverlay();
-		void prepareResources();
-		void preparePipeline(VkPipelineRenderingCreateInfo renderingInfo);
-		float getWidth(std::string text, float textScale = 1.f);
+		void PrepareResources();
+		void PreparePipeline(VkPipelineRenderingCreateInfo renderingInfo);
+		float GetWidth(std::string text, float textScale = 1.f);
 		//float addText(std::string text, float x, float y, TextAlign align, float textScale = 1.f);
-		void addText(TextStruct textStruct);
-		void addTextEx(TextStruct textStruct, float scaleX);
+		void AddText(TextStruct textStruct, const float scaleX = 1.f);
 
-		static void staticAddText(TextStruct textStruct);
+		static void StaticAddText(TextStruct textStruct);
 
-		void draw(VkCommandBuffer commandBuffer);
-		void addDefaultText(double time, double peakTime, double averageTime, double highTime);
-		VkCommandBuffer beginBuffer(int bufferIndex);
-		void beginTextUpdate();
-		void endTextUpdate();
+		void Draw();
+		void AddDefaultText(double time, double peakTime, double averageTime, double highTime);
+		void BeginTextUpdate();
+		void EndTextUpdate();
 
-		void windowResize(float newWidth, float newHeight) {
-			frameBufferWidth = newWidth;
-			frameBufferHeight = newHeight;
+		void WindowResize() {
+			frameBufferWidth = VK::Object->screenWidth;
+			frameBufferHeight = VK::Object->screenHeight;
 			scale = frameBufferWidth / DEFAULT_WIDTH;
 		}
 	};

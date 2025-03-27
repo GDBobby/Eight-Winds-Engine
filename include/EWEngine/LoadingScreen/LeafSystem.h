@@ -1,6 +1,4 @@
 #pragma once
-#include "EWEngine/Data/EWE_Import.h"
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
 
 #include "EWEngine/Systems/PipelineSystem.h"
 
@@ -49,53 +47,64 @@ namespace EWE {
 
 		//helix -> ellRatio~1  rotRatio~1
 		//spiral -> elLRatio~0 rotRatio~4
-		LeafSystem(EWEDevice& device);
-		~LeafSystem();
+		LeafSystem();
+		~LeafSystem() override;
 
-		void fallCalculation(float timeStep, uint8_t frameIndex);
-		void loadLeafModel(EWEDevice& device);
-		void render(FrameInfo& frameInfo);
+		void LeafPhysicsInitialization();
+		void FallCalculation(float timeStep);
 
-		std::unique_ptr<EWEModel> leafModel;
-		TextureDesc leafTextureID = 0;
+		////this should be a graphics queue command buffer
+		void InitData();
+
+		void LoadLeafModel();
+		void LoadLeafTexture();
+		void CreateDescriptor();
+
+		void Render();
+
 
 	protected:
-		void createPipeline(EWEDevice& device) final;
-		void createPipeLayout(EWEDevice& device) final;
+		void CreatePipeline() final;
+		void CreatePipeLayout() final;
 
 	private:
-		EWEDevice& device;
 		std::random_device ranDev;
 		std::mt19937 randomGen;
 		std::uniform_real_distribution<float> ellipseRatioDistribution;
 		std::uniform_real_distribution<float> rotRatioDistribution;
-		std::uniform_real_distribution<float> initTimeDistribution;
-		std::uniform_real_distribution<float> angularFrequencyDistribution;
+		std::uniform_int_distribution<int> motionDistribution;
 		std::uniform_real_distribution<float> ellipseOscDistribution;
-		std::uniform_real_distribution<float> widthVarianceDistribution;
+		std::uniform_real_distribution<float> angularFrequencyDistribution;
+		std::uniform_real_distribution<float> initTimeDistribution;
 		std::uniform_real_distribution<float> depthVarianceDistribution;
+		std::uniform_real_distribution<float> widthVarianceDistribution;
 		std::uniform_real_distribution<float> fallSwingVarianceDistribution;
 		std::uniform_real_distribution<float> initHeightVarianceDistribution;
 		std::uniform_real_distribution<float> varianceDistribution;
 		std::uniform_real_distribution<float> rockDist;
 
 
-		std::uniform_int_distribution<int> motionDistribution;
 
-		float gravity = -1.06566f;
-		float FrictionPerp = 5.f;
-		float leafWeight = 1.f; //grams
-		float leafDensity = 0.1f;
-		float leafKA = 4.f;
+		const float gravity = -1.06566f;
+		//float FrictionPerp = 5.f;
+		//float leafWeight = 1.f; //grams
+		//float leafDensity = 0.1f;
+		//float leafKA = 4.f;
 
 		std::vector<LeafStruct> leafs{};
 
-		std::vector<float*> leafBufferData{};
-		std::vector<EWEBuffer*> leafBuffer{};
-		std::vector<VkDescriptorSet> transformDescriptor{};
+		std::array<float*, MAX_FRAMES_IN_FLIGHT> leafBufferData{};
+		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> leafBuffer{};
+
+		EWEModel* leafModel;
+		//ImageInfo leafImageInfo;
+		ImageID leafImgID{IMAGE_INVALID};
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> leafDescriptor{};
 
 		VkShaderModule vertexShaderModule{VK_NULL_HANDLE};
 		VkShaderModule fragmentShaderModule{VK_NULL_HANDLE};
+
+		EWEDescriptorSetLayout* leafEDSL{};
 
 		/*
 		//POSITION:

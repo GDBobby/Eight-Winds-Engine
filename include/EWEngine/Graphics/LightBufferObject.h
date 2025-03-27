@@ -5,10 +5,19 @@
 namespace EWE {
 #define MAX_LIGHTS 10
 
+	struct GlobalUbo {
+		glm::mat4 projView;
+		//glm::mat4 inverseView{ 1.f };
+		glm::vec3 cameraPos{ 1.f }; //4 just for alignment
+
+		//alignas(16) glm::vec3 lightDirection = glm::normalize(glm::vec3{ 1.f, 3.f, -1.f });
+		//glm::vec4 ambientLightColor{ 1.f, 0.7f, 0.7f, .02f };  // w is intensity
+	};
 	struct PointLightData {
 		glm::vec4 position{}; //ignores w
 		glm::vec4 color{}; //w is intensity
 	};
+
 	struct LightBufferObject {
 		glm::vec4 ambientColor{};
 		glm::vec4 sunlightDirection{}; //w for sun power
@@ -16,13 +25,6 @@ namespace EWE {
 		PointLightData pointLights[MAX_LIGHTS];
 		uint8_t numLights;
 	};
-
-	/*
-	struct PlayerBoneObject {//CAN NOT SHORTEN, ONLY INT,BOOL, not sure if its worth the trouble of dealing with bool operation?
-		int playerIndex{};
-		int boneCount{};
-	};
-	*/
 
 	/*
 	struct SpotLightData {

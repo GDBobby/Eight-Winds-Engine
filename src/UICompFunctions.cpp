@@ -4,22 +4,22 @@
 
 namespace EWE {
 	namespace UIComp {
-		void convertTransformToClickBox(Transform2dComponent& transform, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
+		void ConvertTransformToClickBox(Transform2D& transform, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
 			clickBox.x = static_cast<int>(screenWidth + ((screenWidth / 2) * (transform.translation.x - 1.f)) - (screenWidth * transform.scale.x / 4));
 			clickBox.y = static_cast<int>(screenHeight + ((screenHeight / 2) * (transform.translation.y - 1.f)) - (screenHeight * transform.scale.y / 4));
 			clickBox.z = static_cast<int>(screenWidth + ((screenWidth / 2) * (transform.translation.x - 1.f)) + (screenWidth * transform.scale.x / 4));
 			clickBox.w = static_cast<int>(screenHeight + ((screenHeight / 2) * (transform.translation.y - 1.f)) + (screenHeight * transform.scale.y / 4));
 		}
-		bool checkClickBox(glm::ivec4& clickBox, double mouseX, double mouseY) {
+		bool CheckClickBox(glm::ivec4& clickBox, double mouseX, double mouseY) {
 			return (mouseX > clickBox.x) && (mouseX < clickBox.z) && (mouseY > clickBox.y) && (mouseY < clickBox.w);
 		}
-		void printClickBox(glm::ivec4& clickBox) {
+		void PrintClickBox(glm::ivec4& clickBox) {
 			printf("print click box - hori(%d:%d), vert(%d:%d) \n", clickBox.x, clickBox.z, clickBox.y, clickBox.w);
 		}
 
-		void TextToTransform(Transform2dComponent& transform, TextStruct& textStruct, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
+		void TextToTransform(Transform2D& transform, TextStruct& textStruct, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
 			//std::cout << "bounds of tempPRinter : " << tempPrinter.x << ":" << tempPrinter.y << ":" << tempPrinter.z << ":" << tempPrinter.w << std::endl;
-			transform.scale.x = textStruct.getWidth(screenWidth) * screenWidth / DEFAULT_WIDTH;
+			transform.scale.x = textStruct.GetWidth() * screenWidth / DEFAULT_WIDTH;
 			if (transform.scale.x < 0.0f) {
 				printf("text struct width returned less than 0, string : %s \n", textStruct.string.c_str());
 				printf("\t x, y, screenW, screenH %.1f, %.1f, %.1f, %.1f \n", textStruct.x, textStruct.y, screenWidth, screenHeight);
@@ -41,15 +41,15 @@ namespace EWE {
 			//clickBox.y = textStruct.y - textStruct.scale;
 			//clickBox.w = clickBox.y + (textStruct.scale * screenHeight / 40.f); //scale /20 and screenHeight / 2 combined to /40.f
 
-			convertTransformToClickBox(transform, clickBox, screenWidth, screenHeight);
+			ConvertTransformToClickBox(transform, clickBox, screenWidth, screenHeight);
 
 		}
-		void convertScreenTo2D(glm::ivec2 const screen, glm::vec2& coord2D, float screenWidth, float screenHeight) {
+		void ConvertScreenTo2D(glm::ivec2 const screen, glm::vec2& coord2D, float screenWidth, float screenHeight) {
 			//screen to world?
 			coord2D.x = (screen.x - (screenWidth / 2.f)) / (screenWidth / 2.f);
 			coord2D.y = (screen.y - (screenHeight / 2.f)) / (screenHeight / 2.f);
 		}
-		void convertClickToTransform(glm::ivec4& clickBox, Transform2dComponent& transform, float screenWidth, float screenHeight) {
+		void ConvertClickToTransform(glm::ivec4& clickBox, Transform2D& transform, float screenWidth, float screenHeight) {
 
 			transform.translation.x = (((clickBox.x + clickBox.z) / 2) - (screenWidth / 2.f)) / (screenWidth / 2.f);
 			transform.translation.y = (((clickBox.y + clickBox.w) / 2) - (screenHeight / 2.f)) / (screenHeight / 2.f);
@@ -125,7 +125,7 @@ namespace EWE {
 				}
 			}
 		}
-		size_t getVariableSize(VariableType vType) {
+		size_t GetVariableSize(VariableType vType) {
 			switch (vType) {
 			case VT_int64: {return sizeof(int64_t); }
 			case VT_int32: {return sizeof(int32_t); }
@@ -138,7 +138,7 @@ namespace EWE {
 			}
 			}
 		}
-		std::string getVariableString(void* data, int offset, VariableType vType) {
+		std::string GetVariableString(void* data, int offset, VariableType vType) {
 
 			switch (vType) {
 			case VT_int64: {
@@ -189,7 +189,7 @@ namespace EWE {
 
 		void SetVariableFromString(void* data, int offset, std::string& inString, VariableType vType) {
 			if (inString.length() == 0) {
-				inString = getVariableString(data, offset, vType);
+				inString = GetVariableString(data, offset, vType);
 				return;
 			}
 
@@ -269,7 +269,7 @@ namespace EWE {
 			}
 		}
 
-		void addVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType) {
+		void AddVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType) {
 			switch (vType) {
 			case VT_int64: {
 				(*(((int64_t*)firstData + firstOffset))) += (*((int64_t*)secondData + secondOffset));
@@ -302,7 +302,7 @@ namespace EWE {
 			}
 		}
 
-		void subtractVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType) {
+		void SubtractVariables(void* firstData, int32_t firstOffset, void* secondData, int32_t secondOffset, VariableType vType) {
 			switch (vType) {
 			case VT_int64: {
 				(*(((int64_t*)firstData + firstOffset))) -= (*((int64_t*)secondData + secondOffset));
@@ -335,7 +335,7 @@ namespace EWE {
 			}
 		}
 
-		glm::ivec2 convertWorldCoordinatesToScreenCoordinates(glm::vec2 worldCoord, float screenWidth, float screenHeight) {
+		glm::ivec2 ConvertWorldCoordinatesToScreenCoordinates(glm::vec2 worldCoord, float screenWidth, float screenHeight) {
 			glm::ivec2 ret{ static_cast<int>(screenWidth / 2.f), static_cast<int>(screenHeight / 2.f)};
 
 			//1 adds a quarter, 2 adds a half

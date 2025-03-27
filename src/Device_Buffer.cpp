@@ -15,7 +15,28 @@ namespace EWE {
      *
      * @return VkResult of the buffer mapping call
      */
-    VkDeviceSize EWEBuffer::getAlignment(VkDeviceSize instanceSize) {
+
+    VkDeviceSize EWEBuffer::GetAlignment(VkDeviceSize instanceSize, VkBufferUsageFlags usageFlags) {
+        VkDeviceSize minOffsetAlignment = 1;
+        if (((usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) == VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) ||
+            ((usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) == VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
+            ) {
+            minOffsetAlignment = 1;
+        }
+        else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
+            minOffsetAlignment = VK::Object->properties.limits.minUniformBufferOffsetAlignment;
+        }
+        else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
+            minOffsetAlignment = VK::Object->properties.limits.minStorageBufferOffsetAlignment;
+        }
+
+        if (minOffsetAlignment > 0) {
+            //printf("get alignment size : %zu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
+            return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
+        }
+        return instanceSize;
+    }
+    VkDeviceSize EWEBuffer::GetAlignment(VkDeviceSize instanceSize) {
 
         if (((usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) == VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) ||
             ((usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) == VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
@@ -23,34 +44,141 @@ namespace EWE {
             minOffsetAlignment = 1;
         }
         else if (((usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
-            minOffsetAlignment = eweDevice.getProperties().limits.minUniformBufferOffsetAlignment;
+            minOffsetAlignment = VK::Object->properties.limits.minUniformBufferOffsetAlignment;
+            //printf("uniform buffer alignment : %zu\n", minOffsetAlignment);
         }
         else if (((usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
-            minOffsetAlignment = eweDevice.getProperties().limits.minStorageBufferOffsetAlignment;
+            minOffsetAlignment = VK::Object->properties.limits.minStorageBufferOffsetAlignment;
         }
 
         if (minOffsetAlignment > 0) {
-            //printf("get alignment size : %lu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
+            //printf("get alignment size : %zu \n", (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1));
             return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
         }
         return instanceSize;
     }
 
-    EWEBuffer::EWEBuffer(EWEDevice& device,  VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
-        : eweDevice{ device }, usageFlags{ usageFlags }, memoryPropertyFlags{ memoryPropertyFlags } {
+    EWEBuffer::EWEBuffer(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
+        : usageFlags{usageFlags}, memoryPropertyFlags{memoryPropertyFlags} {
 
-        //buffer_info.buffer = VK_NULL_HANDLE; //not sure if necessary??
-
-        alignmentSize = getAlignment(instanceSize);
+        alignmentSize = GetAlignment(instanceSize);
         bufferSize = alignmentSize * instanceCount;
-        device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer_info.buffer, memory);
+        //printf("buffer size : %zu\n", bufferSize);
+#if USING_VMA
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = bufferSize;
+        bufferInfo.usage = usageFlags;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VmaAllocationInfo vmaAllocInfo{};
+        VmaAllocationCreateInfo vmaAllocCreateInfo{};
+        vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        vmaAllocCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT;
+#if DEBUGGING_MEMORY_WITH_VMA
+        vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+            VMA_ALLOCATION_CREATE_MAPPED_BIT;
+#else
+        switch (memoryPropertyFlags) {
+        case VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT: {
+            vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+            break;
+        }
+        case VK_MEMORY_PROPERTY_HOST_CACHED_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT: {
+            vmaAllocCreateInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT;
+            break;
+        }
+        case VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT: {
+            vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+            break;
+        }
+        }
+#endif
+        EWE_VK(vmaCreateBuffer, EWEDevice::GetAllocator(), &bufferInfo, &vmaAllocCreateInfo, &buffer_info.buffer, &vmaAlloc, nullptr);
+#else
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = bufferSize;
+        bufferInfo.usage = usageFlags;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        EWE_VK(vkCreateBuffer, VK::Object->vkDevice, &bufferInfo, nullptr, &buffer_info.buffer);
+
+        VkMemoryRequirements memRequirements;
+        EWE_VK(vkGetBufferMemoryRequirements, VK::Object->vkDevice, buffer_info.buffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, memoryPropertyFlags);
+
+        EWE_VK(vkAllocateMemory, VK::Object->vkDevice, &allocInfo, nullptr, &memory);
+
+        EWE_VK(vkBindBufferMemory, VK::Object->vkDevice, buffer_info.buffer, memory, 0);
+#endif
     }
 
     EWEBuffer::~EWEBuffer() {
-        unmap();
-        vkDestroyBuffer(eweDevice.device(), buffer_info.buffer, nullptr);
-        vkFreeMemory(eweDevice.device(), memory, nullptr);
+        Unmap();
+#if USING_VMA
+        vmaDestroyBuffer(EWEDevice::GetAllocator(), buffer_info.buffer, vmaAlloc);
+#else
+        EWE_VK(vkDestroyBuffer, VK::Object->vkDevice, buffer_info.buffer, nullptr);
+        EWE_VK(vkFreeMemory, VK::Object->vkDevice, memory, nullptr);
+#endif
     }
+    void EWEBuffer::Reconstruct(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
+        Unmap();
+#if USING_VMA
+        vmaDestroyBuffer(EWEDevice::GetAllocator(), buffer_info.buffer, vmaAlloc);
+#else
+        EWE_VK(vkDestroyBuffer, VK::Object->vkDevice, buffer_info.buffer, nullptr);
+        EWE_VK(vkFreeMemory, VK::Object->vkDevice, memory, nullptr);
+#endif
+
+        this->usageFlags = usageFlags;
+        this->memoryPropertyFlags = memoryPropertyFlags;
+
+        alignmentSize = GetAlignment(instanceSize);
+        bufferSize = alignmentSize * instanceCount;
+#if USING_VMA
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = bufferSize;
+        bufferInfo.usage = usageFlags;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VmaAllocationInfo vmaAllocInfo{};
+        VmaAllocationCreateInfo vmaAllocCreateInfo{};
+        vmaAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+#if DEBUGGING_MEMORY_WITH_VMA
+        vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+            VMA_ALLOCATION_CREATE_MAPPED_BIT;
+#endif
+        EWE_VK(vmaCreateBuffer, EWEDevice::GetAllocator(), &bufferInfo, &vmaAllocCreateInfo, &buffer_info.buffer, &vmaAlloc, nullptr);
+#else
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = bufferSize;
+        bufferInfo.usage = usageFlags;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        EWE_VK(vkCreateBuffer, VK::Object->vkDevice, &bufferInfo, nullptr, &buffer_info.buffer);
+
+        VkMemoryRequirements memRequirements;
+        EWE_VK(vkGetBufferMemoryRequirements, VK::Object->vkDevice, buffer_info.buffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, memoryPropertyFlags);
+
+        EWE_VK(vkAllocateMemory, VK::Object->vkDevice, &allocInfo, nullptr, &memory);
+
+        EWE_VK(vkBindBufferMemory, VK::Object->vkDevice, buffer_info.buffer, memory, 0);
+#endif
+        Map();
+    }
+
 
     /**
      * Map a memory range of this buffer. If successful, mapped points to the specified buffer range.
@@ -61,9 +189,16 @@ namespace EWE {
      *
      * @return VkResult of the buffer mapping call
      */
-    VkResult EWEBuffer::map(VkDeviceSize size, VkDeviceSize offset) {
+    void EWEBuffer::Map(VkDeviceSize size, VkDeviceSize offset) {
+#if USING_VMA
+        EWE_VK(vmaMapMemory, EWEDevice::GetAllocator(), vmaAlloc, &mapped));
+#else
+#if EWE_DEBUG
         assert(buffer_info.buffer && memory && "Called map on buffer before create");
-        return vkMapMemory(eweDevice.device(), memory, offset, size, 0, &mapped);
+#endif
+        EWE_VK(vkMapMemory, VK::Object->vkDevice, memory, offset, size, 0, &mapped);
+#endif
+//#endif
     }
 
     /**
@@ -71,9 +206,13 @@ namespace EWE {
      *
      * @note Does not return a result as vkUnmapMemory can't fail
      */
-    void EWEBuffer::unmap() {
+    void EWEBuffer::Unmap() {
         if (mapped) {
-            vkUnmapMemory(eweDevice.device(), memory);
+#if USING_VMA
+            EWE_VK(vmaUnmapMemory, EWEDevice::GetAllocator(), vmaAlloc);
+#else
+            EWE_VK(vkUnmapMemory, VK::Object->vkDevice, memory);
+#endif
             mapped = nullptr;
         }
     }
@@ -87,37 +226,36 @@ namespace EWE {
      * @param offset (Optional) Byte offset from beginning of mapped region
      *
      */
-    void EWEBuffer::writeToBufferAligned(void* data, VkDeviceSize size, uint64_t alignmentOffset) {
+    void EWEBuffer::WriteToBufferAligned(void* data, VkDeviceSize size, uint64_t alignmentOffset) {
         assert(mapped && "Cannot copy to unmapped buffer");
 
         char* memOffset = (char*)mapped;
-#if _DEBUG
-        uint64_t offset = alignmentOffset * alignmentSize;
+        const uint64_t offset = alignmentOffset * alignmentSize;
+#if EWE_DEBUG
         if ((offset + size) > bufferSize) {
-            printf("overflow error in buffer - %lu:%lu \n", offset + size, bufferSize);
-            throw std::exception("DATA TOO LARGE FOR BUFFER");
+            printf("overflow error in buffer - %zu:%zu \n", offset + size, bufferSize);
+            assert(false && "buffer overflow");
         }
+#endif
         memOffset += offset;
         memcpy(memOffset, data, size);
-#else
-        memOffset += alignmentOffset * alignmentSize;
-        memcpy(memOffset, data, size);
-#endif
 
         
     }
 
-    void EWEBuffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset) {
+    void EWEBuffer::WriteToBuffer(void const* data, VkDeviceSize size, VkDeviceSize offset) {
+#if EWE_DEBUG
         assert(mapped && "Cannot copy to unmapped buffer");
+#endif
 
         if (size == VK_WHOLE_SIZE) {
             memcpy(mapped, data, bufferSize);
         }
         else {
-#if _DEBUG
+#if EWE_DEBUG
             if ((offset + size) > bufferSize) {
-                printf("overflow error in buffer - %lu:%lu \n", offset+size, bufferSize);
-                throw std::exception("DATA TOO LARGE FOR BUFFER");
+                printf("overflow error in buffer - %zu:%zu \n", offset+size, bufferSize);
+                assert(false && "buffer overflow");
             }
 #endif
 
@@ -138,25 +276,34 @@ namespace EWE {
      *
      * @return VkResult of the flush call
      */
-    VkResult EWEBuffer::flush(VkDeviceSize size, VkDeviceSize offset) {
+    void EWEBuffer::Flush(VkDeviceSize size, VkDeviceSize offset) {
+#if USING_VMA
+        EWE_VK(vmaFlushAllocation, EWEDevice::GetAllocator(), vmaAlloc, offset, size);
+#else
         VkMappedMemoryRange mappedRange = {};
         mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
         mappedRange.memory = memory;
         mappedRange.offset = offset;
         mappedRange.size = size;
-        return vkFlushMappedMemoryRanges(eweDevice.device(), 1, &mappedRange);
+        EWE_VK(vkFlushMappedMemoryRanges, VK::Object->vkDevice, 1, &mappedRange);
+#endif
     }
-    VkResult EWEBuffer::flushMin(uint64_t offset) {
+    void EWEBuffer::FlushMin(uint64_t offset) {
         VkDeviceSize trueOffset = offset - (offset % minOffsetAlignment);
+#if USING_VMA
+        EWE_VK(vmaFlushAllocation, EWEDevice::GetAllocator(), vmaAlloc, trueOffset, minOffsetAlignment);
+#else
+        
         VkMappedMemoryRange mappedRange = {};
         mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
         mappedRange.memory = memory;
         mappedRange.offset = trueOffset;
         mappedRange.size = minOffsetAlignment;
-#ifdef _DEBUG
-        printf("flushing minimal : %lu \n", minOffsetAlignment);
+#if EWE_DEBUG
+        printf("flushing minimal : %zu \n", minOffsetAlignment);
 #endif
-        return vkFlushMappedMemoryRanges(eweDevice.device(), 1, &mappedRange);
+        EWE_VK(vkFlushMappedMemoryRanges, VK::Object->vkDevice, 1, &mappedRange);
+#endif
     }
 
     /**
@@ -170,13 +317,17 @@ namespace EWE {
      *
      * @return VkResult of the invalidate call
      */
-    VkResult EWEBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset) {
+    void EWEBuffer::Invalidate(VkDeviceSize size, VkDeviceSize offset) {
+#if USING_VMA
+        EWE_VK(vmaInvalidateAllocation(EWEDevice::GetAllocator(), vmaAlloc, offset, size);
+#else
         VkMappedMemoryRange mappedRange = {};
         mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
         mappedRange.memory = memory;
         mappedRange.offset = offset;
         mappedRange.size = size;
-        return vkInvalidateMappedMemoryRanges(eweDevice.device(), 1, &mappedRange);
+        EWE_VK(vkInvalidateMappedMemoryRanges, VK::Object->vkDevice, 1, &mappedRange);
+#endif
     }
 
     /**
@@ -187,7 +338,14 @@ namespace EWE {
      *
      * @return VkDescriptorBufferInfo of specified offset and range
      */
-    VkDescriptorBufferInfo* EWEBuffer::descriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
+    VkDescriptorBufferInfo EWEBuffer::DescriptorInfo(VkDeviceSize size, VkDeviceSize offset) const {
+        VkDescriptorBufferInfo ret = buffer_info;
+        ret.offset = offset;
+        ret.range = size;
+        return ret;
+    }
+
+    VkDescriptorBufferInfo* EWEBuffer::DescriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
         buffer_info.offset = offset;
         buffer_info.range = size;
         return &buffer_info;
@@ -200,7 +358,7 @@ namespace EWE {
      * @param index Used in offset calculation
      *
      */
-    VkResult EWEBuffer::flushIndex(int index) { return flush(alignmentSize, index * alignmentSize); }
+    void EWEBuffer::FlushIndex(int index) { Flush(alignmentSize, index * alignmentSize); }
 
     /**
      * Create a buffer info descriptor
@@ -209,8 +367,8 @@ namespace EWE {
      *
      * @return VkDescriptorBufferInfo for instance at index
      */
-    VkDescriptorBufferInfo* EWEBuffer::descriptorInfoForIndex(int index) {
-        return descriptorInfo(alignmentSize, index * alignmentSize);
+    VkDescriptorBufferInfo* EWEBuffer::DescriptorInfoForIndex(int index) {
+        return DescriptorInfo(alignmentSize, index * alignmentSize);
     }
 
     /**
@@ -222,16 +380,42 @@ namespace EWE {
      *
      * @return VkResult of the invalidate call
      */
-    VkResult EWEBuffer::invalidateIndex(int index) {
-        return invalidate(alignmentSize, index * alignmentSize);
+    void EWEBuffer::InvalidateIndex(int index) {
+        Invalidate(alignmentSize, index * alignmentSize);
     }
 
-    EWEBuffer* EWEBuffer::createAndInitBuffer(EWEDevice& device, void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
-        EWEBuffer* retBuffer = new EWEBuffer(device, dataSize * dataCount, 1, usageFlags, memoryPropertyFlags);
-        retBuffer->map();
-        retBuffer->writeToBuffer(data, dataSize * dataCount);
-        retBuffer->flush();
+#if CALL_TRACING
+    EWEBuffer* EWEBuffer::CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, std::source_location srcLoc) {
+        EWEBuffer* retBuffer = Construct<EWEBuffer>({ dataSize * dataCount, 1, usageFlags, memoryPropertyFlags }, srcLoc);
+
+        retBuffer->Map();
+        retBuffer->WriteToBuffer(data, dataSize * dataCount);
+        retBuffer->Flush();
         return retBuffer;
     }
+#else
+    EWEBuffer* EWEBuffer::CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) {
+        EWEBuffer* retBuffer = Construct<EWEBuffer>({dataSize * dataCount, 1, usageFlags, memoryPropertyFlags });
+        
+        retBuffer->Map();
+        retBuffer->WriteToBuffer(data, dataSize * dataCount);
+        retBuffer->Flush();
+        return retBuffer;
+    }
+#endif
 
+#if DEBUG_NAMING
+    void EWEBuffer::SetName(std::string const& name) {
+        std::string bufferName = name;
+        bufferName += ":buffer";
+        DebugNaming::SetObjectName(buffer_info.buffer, VK_OBJECT_TYPE_BUFFER, bufferName.c_str());
+        std::string memoryName = name;
+        memoryName += ":memory";
+#if USING_VMA
+        vmaSetAllocationName(EWEDevice::GetAllocator(), vmaAlloc, memoryName.c_str());
+#else
+        DebugNaming::SetObjectName(memory, VK_OBJECT_TYPE_DEVICE_MEMORY, memoryName.c_str());
+#endif
+    }
+#endif
 }  // namespace EWE

@@ -6,47 +6,59 @@ namespace EWE {
 
     class EWEBuffer {
     public:
-        EWEBuffer(EWEDevice& device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+        EWEBuffer(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+
         ~EWEBuffer();
+        void Reconstruct(VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 
         EWEBuffer(const EWEBuffer&) = delete;
         EWEBuffer& operator=(const EWEBuffer&) = delete;
 
-        VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-        void unmap();
+        void Map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        void Unmap();
 
-        void writeToBufferAligned(void* data, VkDeviceSize size, uint64_t alignmentOffset);
-        void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-        VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-        VkDescriptorBufferInfo* descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-        VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        void WriteToBufferAligned(void* data, VkDeviceSize size, uint64_t alignmentOffset);
+        void WriteToBuffer(void const* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        void Flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        VkDescriptorBufferInfo DescriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
+        VkDescriptorBufferInfo* DescriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        void Invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
-        VkResult flushMin(uint64_t offset);
-        VkResult flushIndex(int index);
-        VkDescriptorBufferInfo* descriptorInfoForIndex(int index);
-        VkResult invalidateIndex(int index);
+        void FlushMin(uint64_t offset);
+        void FlushIndex(int index);
+        VkDescriptorBufferInfo* DescriptorInfoForIndex(int index);
+        void InvalidateIndex(int index);
 
-        VkBuffer getBuffer() const { return buffer_info.buffer; } //temporarily making this non-const
-        void* getMappedMemory() const { return mapped; }
+        [[nodiscard]] VkBuffer GetBuffer() const { return buffer_info.buffer; }
+
+        [[nodiscard]] VkBuffer* GetBufferAddress() { return &buffer_info.buffer; }
+        
+        [[nodiscard]] void* GetMappedMemory() const { return mapped; }
+#if DEBUG_NAMING
+        void SetName(std::string const& name);
+#endif
+
         //uint32_t getInstanceCount() const { return instanceCount; }
         //VkDeviceSize getInstanceSize() const { return instanceSize; }
         //VkDeviceSize getAlignmentSize() const { return instanceSize; }
-        VkBufferUsageFlags getUsageFlags() const { return usageFlags; }
-        VkMemoryPropertyFlags getMemoryPropertyFlags() const { return memoryPropertyFlags; }
-        VkDeviceSize getBufferSize() const { return bufferSize; }
+        VkBufferUsageFlags GetUsageFlags() const { return usageFlags; }
+        VkMemoryPropertyFlags GetMemoryPropertyFlags() const { return memoryPropertyFlags; }
+        VkDeviceSize GetBufferSize() const { return bufferSize; }
 
         //allocated with new, up to the user to delete, or put it in a unique_ptr
+#if CALL_TRACING
+        static EWEBuffer* CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, std::source_location = std::source_location::current());
+#else
+        static EWEBuffer* CreateAndInitBuffer(void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+#endif
 
-        static EWEBuffer* createAndInitBuffer(EWEDevice& device, void* data, uint64_t dataSize, uint64_t dataCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
-
+        static VkDeviceSize GetAlignment(VkDeviceSize instanceSize, VkBufferUsageFlags usageFlags);
     private:
-        VkDeviceSize getAlignment(VkDeviceSize instanceSize);
+        VkDeviceSize GetAlignment(VkDeviceSize instanceSize);
 
-        EWEDevice& eweDevice;
         void* mapped = nullptr;
         VkDescriptorBufferInfo buffer_info;
          
-        VkDeviceMemory memory = VK_NULL_HANDLE;
 
         VkDeviceSize bufferSize;
         //uint32_t instanceCount;
@@ -54,6 +66,12 @@ namespace EWE {
         VkBufferUsageFlags usageFlags;
         VkMemoryPropertyFlags memoryPropertyFlags;
         VkDeviceSize minOffsetAlignment = 1;
+
+#if USING_VMA
+        VmaAllocation vmaAlloc{};
+#else
+        VkDeviceMemory memory = VK_NULL_HANDLE;
+#endif
     };
 
 }  // namespace EWE

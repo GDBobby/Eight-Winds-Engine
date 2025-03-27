@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EWEngine/Graphics/Preprocessor.h"
 #include "SettingsJson.h"
 #include "EWEngine/resources/howlingWind.h"
 
@@ -17,7 +18,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <stdexcept>
 #include <map>
 #include <array>
 #include <unordered_map>
@@ -39,55 +39,44 @@ namespace EWE {
 		//need to make this a singleton, and pass in the default device on construction
 
 
-		static std::shared_ptr<SoundEngine> getSoundEngineInstance() {
-			static std::shared_ptr<SoundEngine> soundEngineInstance{ new SoundEngine };
+		static std::shared_ptr<SoundEngine> GetSoundEngineInstance() {
+			static std::shared_ptr<SoundEngine> soundEngineInstance{ new SoundEngine() };
 			return soundEngineInstance;
 		}
 
 		~SoundEngine();
 
 
-		void playMusic(uint16_t whichSong, bool repeat = false);
-		void playEffect(uint16_t whichEffect, bool looping = false);
-		void stopEfect(uint16_t whichEffect);
-		void playVoice(uint16_t whichVoice) {} //idk
+		void PlayMusic(uint16_t whichSong, bool repeat = false);
+		void PlayEffect(uint16_t whichEffect, bool looping = false);
+		void StopEffect(uint16_t whichEffect);
+		void RestartEffect(uint16_t whichEffect, bool looping = false);
+		void PlayVoice(uint16_t whichVoice) {} //idk
 
-		void playNextSong() {}
-		void stopMusic() {
-			printf("stop the music pls \n");
-			if (currentSong == 65534) {
-				ma_sound_stop(&hwSound);
-				return;
-			}
+		void PlayNextSong() {}
+		void StopMusic();
 
-
-			if (music.at(selectedEngine).find(currentSong) != music.at(selectedEngine).end()) {
-				ma_sound_stop(&music.at(selectedEngine).at(currentSong));
-			}
-			else {
-				printf("attempting to stop music, failed to find it \n");
-			}
-		}
-
-		float getVolume(SoundVolume whichVolume) { return volumes[(uint8_t)whichVolume]; }
-		float getVolume(int8_t whichVolume) { return volumes[whichVolume]; }
+		float GetVolume(SoundVolume whichVolume) { return volumes[(uint8_t)whichVolume]; }
+		float GetVolume(int8_t whichVolume) { return volumes[whichVolume]; }
 
 		//0 is the default device
-		void switchDevices(uint16_t deviceIterator);
-		void setVolume(SoundVolume whichVolume, uint8_t value);
+		void SwitchDevices(uint16_t deviceIterator);
+		void SetVolume(SoundVolume whichVolume, uint8_t value);
 		//void loadEffects(std::unordered_map<uint16_t, std::string>& loadEffects);
-		void loadSoundMap(std::unordered_map<uint16_t, std::string>& loadSounds, SoundType soundType);
+		void LoadSoundMap(std::unordered_map<uint16_t, std::string>& loadSounds, SoundType soundType);
+
+		int16_t AddMusicToBack(std::string const& musicLocation);
 
 		std::vector<std::string> deviceNames;
-		uint16_t getSelectedDevice() {
+		uint16_t GetSelectedDevice() {
 			return selectedEngine;
 		}
 
 		void initVolume() {
-			setVolume(SoundVolume::master, SettingsJSON::settingsData.masterVolume);
-			setVolume(SoundVolume::effect, SettingsJSON::settingsData.effectsVolume);
-			setVolume(SoundVolume::music, SettingsJSON::settingsData.musicVolume);
-			setVolume(SoundVolume::voice, SettingsJSON::settingsData.voiceVolume);
+			SetVolume(SoundVolume::master, SettingsJSON::settingsData.masterVolume);
+			SetVolume(SoundVolume::effect, SettingsJSON::settingsData.effectsVolume);
+			SetVolume(SoundVolume::music, SettingsJSON::settingsData.musicVolume);
+			SetVolume(SoundVolume::voice, SettingsJSON::settingsData.voiceVolume);
 		}
 
 	private:
@@ -116,13 +105,11 @@ namespace EWE {
 
 		ma_device_info* pPlaybackDeviceInfos; 
 		ma_uint32 playbackDeviceCount{ 0 };
-		uint32_t availableDevice{ 0 };
-		uint32_t chosenDevice{ 0 };
 		//std::vector<ma_sound>sounds{};
 		//ma_sound* selectedSound{ nullptr };
-		void loadHowlingWind();
-		void initEngines(ma_device_info* deviceInfos, uint32_t deviceCount);
-		void reloadSounds();
+		void LoadHowlingWind();
+		void InitEngines(ma_device_info* deviceInfos, uint32_t deviceCount);
+		void ReloadSounds();
 
 		uint16_t currentSong = UINT16_MAX;
 		ma_uint64 currentPCMFrames = 0;

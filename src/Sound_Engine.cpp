@@ -1,8 +1,6 @@
 #include "EWEngine/Sound_Engine.h"
 
 #include <filesystem>
-#include <iostream>
-#include <iterator>
 
 #define EFFECTS_PATH "sounds/effects/"
 #define MUSIC_PATH "sounds/music/"
@@ -30,45 +28,42 @@ namespace EWE {
 		resourceManagerConfig.decodedSampleRate = 48000;// Using a consistent sample rate is useful for avoiding expensive resampling in the audio thread. This will result in resampling being performed by the loading thread(s).
 
 		result = ma_resource_manager_init(&resourceManagerConfig, &resourceManager);
-		if(result != MA_SUCCESS) {
-			printf("Failed to initialize resource manager.\n");
-			throw std::runtime_error("failed to init miniaudio");
-		}
+		assert(result == MA_SUCCESS && "failed to initialize resource manager");
 		result = ma_context_init(NULL, 0, NULL, &context);
-		if (result != MA_SUCCESS) {
-			printf("Failed to initialize context.\n");
-			throw std::runtime_error("failed to init miniaudio");
-		}
+		assert(result == MA_SUCCESS && "failed to initialize context");
 		result = ma_context_get_devices(&context, &pPlaybackDeviceInfos, &playbackDeviceCount, NULL, NULL);
-		if (result != MA_SUCCESS) {
-			printf("failed to get devices \n");
-			throw std::runtime_error("failed to init miniaudio");
-		}
+		assert(result == MA_SUCCESS && "failed to get devices");
+
 
 
 		engines.resize(playbackDeviceCount + 1);
 		devices.resize(engines.size());
 		deviceNames.reserve(engines.size());
+
+		//deviceNames.emplace_back("default");
+		//for(uint32_t i = 0; i < deviceCount; i++){
+		//	printf("device name[%d] : %s\n", i, deviceNames.emplace_back(pPlaybackDeviceInfos[i].name).c_str());
+		//}
+
+
+		InitEngines(pPlaybackDeviceInfos, playbackDeviceCount);
+
 		effects.resize(engines.size());
 		music.resize(engines.size());
 		voices.resize(engines.size());
-
-		initEngines(pPlaybackDeviceInfos, playbackDeviceCount);
 
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &effectGroup);
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &musicGroup);
 		//ma_sound_group_init(&engines.at(selectedEngine), 0, NULL, &voiceGroup);
 
-		bool foundMatchingDevice = false;
-
-		loadHowlingWind();
+		LoadHowlingWind();
 		initVolume();
 		if ((volumes[(uint8_t)SoundVolume::master] > 0.f) && (volumes[(uint8_t)SoundVolume::music] > 0.f)) {
 			currentSong = 65534;
 			ma_sound_start(&hwSound);
 		}
 
-		printf("end of soundengine constructor \n");
+		//printf("end of soundengine constructor \n");
 		//playMusic(0, false);
 	}
 	SoundEngine::~SoundEngine() {
@@ -89,10 +84,10 @@ namespace EWE {
 		ma_resource_manager_uninit(&resourceManager);
 	}
 
-	void SoundEngine::switchDevices(uint16_t deviceIterator) {
+	void SoundEngine::SwitchDevices(uint16_t deviceIterator) {
 		if ((deviceIterator < 0) || (deviceIterator > devices.size())) {
-#ifdef _DEBUG
-			printf("failed to switch devices - %d:%lld \n", deviceIterator, devices.size());
+#if EWE_DEBUG
+			printf("failed to switch devices - %d:%zu \n", deviceIterator, devices.size());
 #endif
 			return;
 		}
@@ -125,30 +120,56 @@ namespace EWE {
 			effects.at(selectedEngine).clear();
 			music.at(selectedEngine).clear();
 			selectedEngine = deviceIterator;
-			reloadSounds();
+			ReloadSounds();
 		}
 			
 	}
 
-	void SoundEngine::playMusic(uint16_t whichSong, bool repeat) {
-		printf("starting music \n");
+	void SoundEngine::PlayMusic(uint16_t whichSong, bool repeat) {
+		//printf("starting music \n");
+
+ 		if(selectedEngine > music.size()){
+			printf("selected engine is out of range \n");
+			return;
+		}
+		if(whichSong > music.at(selectedEngine).size()){
+			printf("selected effect is out of range \n");
+			return;
+		}
 
 		currentSong = whichSong;
 		//ma_result result = ma_sound_start(&music.at(selectedEngine).at(whichSong));
 		ma_sound_set_looping(&music.at(selectedEngine).at(whichSong), repeat);
-		printf("soudn looping : %d \n", ma_sound_is_looping(&music.at(selectedEngine).at(whichSong)));
+		//printf("soudn looping : %d \n", ma_sound_is_looping(&music.at(selectedEngine).at(whichSong)));
 
 		ma_result result = ma_sound_start(&music.at(selectedEngine).at(whichSong));
 
 		if (result != MA_SUCCESS) {
-			printf("WARNING: Failed to [load];ay sound \"%d\"", whichSong);
+			printf("WARNING: Failed to play music %d", whichSong);
 			return;
 		}
 	}
-	void SoundEngine::playEffect(uint16_t whichEffect, bool looping) {
-		printf("starting sound \n");
-		
-		if(selectedEngine > effects.size()){
+	void SoundEngine::StopMusic() {
+		printf("stop the music pls \n");
+		if (currentSong == 65534) {
+			ma_sound_stop(&hwSound);
+			return;
+		}
+
+
+		if (music.at(selectedEngine).find(currentSong) != music.at(selectedEngine).end()) {
+			ma_sound_stop(&music.at(selectedEngine).at(currentSong));
+		}
+		else {
+			printf("attempting to stop music, failed to find it \n");
+		}
+	}
+	void SoundEngine::PlayEffect(uint16_t whichEffect, bool looping) {
+#if EWE_DEBUG
+		//printf("starting sound \n");
+#endif
+
+ 		if(selectedEngine > effects.size()){
 			printf("selected engine is out of range \n");
 			return;
 		}
@@ -157,8 +178,15 @@ namespace EWE {
 			return;
 		}
 
-		printf("selectedEngine : %d:%.2f - volume of sound : %.2f \n", selectedEngine, ma_engine_get_volume(&engines.at(selectedEngine)), ma_sound_get_volume(&effects.at(selectedEngine).at(whichEffect)));
-		
+		if ((volumes[(uint8_t)SoundVolume::master] <= 0.f) && (volumes[(uint8_t)SoundVolume::effect] <= 0.f)) {
+			printf("volume is 0\n");
+			return;
+		}
+
+#if EWE_DEBUG
+		//printf("selectedEngine : %d:%.2f - volume of sound : %.2f \n", selectedEngine, ma_engine_get_volume(&engines.at(selectedEngine)), ma_sound_get_volume(&effects.at(selectedEngine).at(whichEffect)));
+#endif
+		//ma_sound
 		ma_result result = ma_sound_start(&effects.at(selectedEngine).at(whichEffect));
 		ma_sound_set_looping(&effects.at(selectedEngine).at(whichEffect), looping);
 		if (result != MA_SUCCESS) {
@@ -166,11 +194,25 @@ namespace EWE {
 			return;
 		}
 	}
-	void SoundEngine::stopEfect(uint16_t whichEffect) {
-		ma_sound_stop(&effects.at(selectedEngine).at(whichEffect));
+	void SoundEngine::StopEffect(uint16_t whichEffect) {
+		printf("stop effect : %d\n", ma_sound_stop(&effects.at(selectedEngine).at(whichEffect)));
+		ma_sound_seek_to_pcm_frame(&effects.at(selectedEngine).at(whichEffect), 0);
 	}
 
-	void SoundEngine::loadHowlingWind() {
+	void SoundEngine::RestartEffect(uint16_t whichEffect, bool looping)
+	{
+		ma_sound* soundAddr = &effects.at(selectedEngine).at(whichEffect);
+		ma_sound_stop(soundAddr);
+		ma_sound_seek_to_pcm_frame(soundAddr, 0);
+		ma_result result = ma_sound_start(soundAddr);
+		ma_sound_set_looping(soundAddr, looping);
+		if (result != MA_SUCCESS) {
+			printf("WARNING: Failed to start sound \"%d\"", whichEffect);
+			return;
+		}
+	}
+
+	void SoundEngine::LoadHowlingWind() {
 		bin2cpp::File const* hWind = &bin2cpp::getHowlingWindFile();
 		
 		ma_decoder_config decoderConfig = ma_decoder_config_init(ma_format_f32, 2, 48000);
@@ -178,7 +220,7 @@ namespace EWE {
 		decoderConfig.ppCustomBackendVTables = NULL;
 		decoderConfig.customBackendCount = 0;
 		decoderConfig.encodingFormat = ma_encoding_format_mp3;
-		printf("finna init from memory \n");
+		//printf("finna init from memory \n");
 		//ma_decoder_init();
 
 		ma_result result = ma_decoder_init_memory(hWind->getBuffer(), hWind->getSize(), NULL, &hwDecoder);
@@ -186,7 +228,7 @@ namespace EWE {
 		if (result != MA_SUCCESS) {
 			printf("decoder init from memroy failed \n");
 		}
-		printf("finna init sound from data source \n");
+		//printf("finna init sound from data source \n");
 		result = ma_sound_init_from_data_source(&engines[selectedEngine], &hwDecoder, MA_SOUND_FLAG_STREAM, NULL, &hwSound);
 
 		if (result != MA_SUCCESS) {
@@ -194,16 +236,25 @@ namespace EWE {
 
 		}
 	}
-	void SoundEngine::initEngines(ma_device_info* deviceInfos, uint32_t deviceCount) {
+	void SoundEngine::InitEngines(ma_device_info* deviceInfos, uint32_t deviceCount) {
 
-		ma_engine_config engineConfig;
-		engineConfig = ma_engine_config_init();
+		//printf("before ma_engine_config_init\n");
+		ma_engine_config engineConfig = ma_engine_config_init();
+		//printf("after ma_engine_config_init\n");
 		engineConfig.pResourceManager = &resourceManager;
 		engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
 
 		bool foundDesiredDevice = false;
-		for (uint32_t i = 0; i < deviceCount + 1; i++) {
-			ma_device_config deviceConfig; //are these disposable or do i need these for the same lifetime as the device/engine?
+		deviceNames.emplace_back("default");
+		for(uint32_t i = 0; i < deviceCount; i++){
+#if EWE_DEBUG
+			printf("device name[%d] : %s\n", i, pPlaybackDeviceInfos[i].name);
+#endif
+			deviceNames.emplace_back(pPlaybackDeviceInfos[i].name);
+		}
+
+		for (int32_t i = 0; (i < deviceCount + 1) && (deviceCount > 0); i++) {
+			ma_device_config deviceConfig;
 
 			deviceConfig = ma_device_config_init(ma_device_type_playback);
 			if (i == 0) {
@@ -220,23 +271,25 @@ namespace EWE {
 
 			ma_result result = ma_device_init(&context, &deviceConfig, &devices[i]);
 			if (result != MA_SUCCESS) {
-				if (i == 0) {
-					printf("failed to initialize the default device \n");
-					throw std::runtime_error("failed to init miniaudio device");
-				}
-				printf("Failed to initialize device for %s.\n", pPlaybackDeviceInfos[i - 1].name);
-				throw std::runtime_error("failed to init miniaudio device");
+				printf("failed to intialize sound device : %s\n", deviceNames[i].c_str());
+
+				devices.erase(devices.begin() + i);
+				engines.erase(engines.begin() + i);
+				deviceNames.erase(deviceNames.begin() + i);
+				deviceCount--;
+				i--;
+				continue;
 			}
 
-			// Now that we have the device we can initialize the engine. The device is passed into the engine's config
-			ma_engine_config engineConfig;
-			engineConfig = ma_engine_config_init();
-			engineConfig.pDevice = &devices[i];
-			engineConfig.pResourceManager = &resourceManager;
-			engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
-
+			auto& deviceName = deviceNames[i];
 			if (i == 0) {
-				auto& deviceName = deviceNames.emplace_back("default");
+				// Now that we have the device we can initialize the engine. The device is passed into the engine's config
+				ma_engine_config engineConfig;
+				engineConfig = ma_engine_config_init();
+				engineConfig.pDevice = &devices[i];
+				engineConfig.pResourceManager = &resourceManager;
+				engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
+			
 				result = ma_engine_init(&engineConfig, &engines[0]);
 				if (result != MA_SUCCESS) {
 					printf("Failed to init engine for %s\n", deviceName.c_str());
@@ -245,7 +298,9 @@ namespace EWE {
 				}
 				else if (SettingsJSON::settingsData.selectedDevice == deviceName) {
 					foundDesiredDevice = true;
+#if EWE_DEBUG
 					printf("starting default device, matched with settings \n");
+#endif
 					result = ma_engine_start(&engines[0]);
 					if (result != MA_SUCCESS) {
 						printf("Failed to start engine for DEFAULT \n");
@@ -257,10 +312,16 @@ namespace EWE {
 						selectedEngine = 0;
 					}
 				}
+			
 			}
 			else {
+				// Now that we have the device we can initialize the engine. The device is passed into the engine's config
+				ma_engine_config engineConfig;
+				engineConfig = ma_engine_config_init();
+				engineConfig.pDevice = &devices[i];
+				engineConfig.pResourceManager = &resourceManager;
+				engineConfig.noAutoStart = MA_TRUE;    /* Don't start the engine by default - we'll do that manually below. */
 
-				auto& deviceName = deviceNames.emplace_back(pPlaybackDeviceInfos[i - 1].name);
 				result = ma_engine_init(&engineConfig, &engines[i]);
 				if (result != MA_SUCCESS) {
 					printf("Failed to init engine for %s\n", deviceName.c_str());
@@ -282,8 +343,9 @@ namespace EWE {
 					}
 				}
 			}
-
+#if EWE_DEBUG
 			printf("device name - %d: %s\n", i, deviceNames[i].c_str());
+#endif
 		}
 		if (!foundDesiredDevice) {
 			printf("failed to find desired device in settings, starting default \n");
@@ -309,11 +371,12 @@ namespace EWE {
 				}
 			}
 		}
-
+#if EWE_DEBUG
 		printf("after init engines, selected device : %d \n", selectedEngine);
+#endif
 	}
 
-	void SoundEngine::loadSoundMap(std::unordered_map<uint16_t, std::string>& loadSounds, SoundType soundType) {
+	void SoundEngine::LoadSoundMap(std::unordered_map<uint16_t, std::string>& loadSounds, SoundType soundType) {
 		if (selectedEngine > engines.size()) {
 			printf("selected engine isinvalid when loading effects \n");
 			return;
@@ -338,7 +401,7 @@ namespace EWE {
 			break;
 		}
 		default: {
-			printf("loading an unsupported soudn type? : %d \n", soundType);
+			printf("loading an unsupported soudn type? : %d \n", (int)soundType);
 			return;
 			break;
 		}
@@ -348,6 +411,10 @@ namespace EWE {
 		ma_result result;
 		for (auto& sound : loadSounds) {
 			if (locations->find(sound.first) == locations->end()) {
+				if (!std::filesystem::exists(sound.second))
+				{
+					printf("failed to find sound file location : %s\n", sound.second.c_str());
+				}
 				locations->emplace(sound);
 			}
 			else {
@@ -394,12 +461,40 @@ namespace EWE {
 				}
 			}
 			else {
-				printf("trying to emplace a sound into a map key that already has a sounnd. this is being ignored - %d:%d \n", soundPath.first, soundType);
+				printf("trying to emplace a sound into a map key that already has a sounnd. this is being ignored - %d:%d \n", soundPath.first, (int)soundType);
 			}
 		}
 
 	}
-	void SoundEngine::reloadSounds() {
+
+	int16_t SoundEngine::AddMusicToBack(std::string const& musicLocation)
+	{
+		for (auto& loc : musicLocations)
+		{
+			if (loc.second == musicLocation)
+			{
+				return loc.first;
+			}
+		}
+		int16_t ret = musicLocations.size();
+		musicLocations.try_emplace(ret, musicLocation);
+
+		ma_result result;
+		music[selectedEngine].emplace(ret, ma_sound{});
+		result = ma_sound_init_from_file(&engines[selectedEngine], musicLocation.c_str(), MA_SOUND_FLAG_STREAM, NULL, NULL, &music[selectedEngine].at(ret));
+
+		ma_sound_set_volume(&music[selectedEngine].at(ret), volumes[(uint8_t)SoundVolume::music]);
+		if (result != MA_SUCCESS) {
+			printf("WARNING: Failed to load music or voice \"%s\"", musicLocation.c_str());
+			throw std::runtime_error("failed to load sound");
+			return -1;
+		}
+		printf("successfully added music to back\n");
+		return ret;
+	}
+
+
+	void SoundEngine::ReloadSounds() {
 		ma_result result;
 		//effects
 		printf("before reloading effects \n");
@@ -436,7 +531,7 @@ namespace EWE {
 		initVolume();
 		printf("after reloading music \n");
 	}
-	void SoundEngine::setVolume(SoundVolume whichVolume, uint8_t value) {
+	void SoundEngine::SetVolume(SoundVolume whichVolume, uint8_t value) {
 		auto& volume = this->volumes[(uint8_t)whichVolume];
 		volume = static_cast<float>(value) / 100.f;
 

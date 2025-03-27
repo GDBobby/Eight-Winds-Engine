@@ -20,139 +20,75 @@ namespace EWE {
 		
 	public:
 
-		SkinRenderSystem(EWEDevice& device);
+		SkinRenderSystem();
 		~SkinRenderSystem();
 		//~MonsterBoneBufferDescriptorStruct();
 
 		//void addActorToBuffer(glm::mat4* modelMatrix, void* finalBoneMatrices, uint32_t skeletonID);
-		void updateBuffers(uint8_t frameIndex);
+		void UpdateBuffers();
 
-		void flushBuffers(uint8_t frameIndex);
+		void FlushBuffers();
 
-		void render(FrameInfo frameInfo);
+		void Render();
 	protected:
-		void renderInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex);
-		void renderNonInstanced(VkCommandBuffer cmdBuf, uint8_t frameIndex);
+		void RenderInstanced();
+		void RenderNonInstanced();
 	public:
 
-		static SkeletonID getSkinID() {
+		static SkeletonID GetSkinID() {
 			return skinnedMainObject->skinID++;
 		}
 
-		static void addSkeleton(MaterialTextureInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced);
-		static void addSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, TextureDesc texID, EWEModel* modelPtr, SkeletonID skeletonID);
+		static void AddSkeleton(MaterialInfo& materialInfo, uint16_t boneCount, EWEModel* modelPtr, SkeletonID skeletonID, bool instanced);
+		static void AddSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, MaterialInfo const& materialInfo, EWEModel* modelPtr, SkeletonID skeletonID);
+		static void AddSkeletonToStructs(std::unordered_map<SkeletonID, std::vector<SkinRS::TextureMeshStruct>>& skeleRef, MaterialInfo const& materialInfo, EWEModel* modelPtr, SkeletonID weaponID, SkeletonID skeletonID);
 
-		static void addWeapon(MaterialTextureInfo& materialInfo, EWEModel* meshes, SkeletonID skeletonID, SkeletonID ownerID);
+		static void AddWeapon(MaterialInfo& materialInfo, EWEModel* meshes, SkeletonID skeletonID, SkeletonID ownerID);
 
-		static void removeSkeleton(SkeletonID skeletonID);
+		static void RemoveSkeleton(SkeletonID skeletonID);
 
-		//put this pointer in to actor classes, matching the skeleton id, only use writedata
-		void setFrameIndex(uint8_t frameIndex) {
-			for (auto& buffer : buffers) {
-				buffer.second.setFrameIndex(frameIndex);
-			}
-			for (auto& instanceBuffer : instancedBuffers) {
-				instanceBuffer.second.setFrameIndex(frameIndex);
-			}
-		}
-
-		static SkinBufferHandler* getSkinBuffer(SkeletonID skeletonID) {
-#ifdef _DEBUG
-			if (!skinnedMainObject->buffers.contains(skeletonID)) {
-				printf("trying to get a pointer to a skin buffer that doesn't exist : %d \n", skeletonID);
-				//most likely cause is its in the instanced buffer
-				throw std::exception("trying to get a pointer to a skin buffer that doesn't exist");
-			}
-#endif
-			return &skinnedMainObject->buffers.at(skeletonID);
-		}
-		InstancedSkinBufferHandler* getInstancedSkinBuffer(SkeletonID skeletonID) {
-#ifdef _DEBUG
-			if (!instancedBuffers.contains(skeletonID)) {
-				printf("trying to get a pointer to an instanced skin buffer that doesn't exist : %d \n", skeletonID);
-				//most likely cause is its in the non-instanced buffer map
-				throw std::exception("trying to get a pointer to an instanced skin buffer that doesn't exist");
-			}
-#endif
-			return &instancedBuffers.at(skeletonID);
-		}
+		static SkinBufferHandler* GetSkinBuffer(SkeletonID skeletonID);
+		InstancedSkinBufferHandler* GetInstancedSkinBuffer(SkeletonID skeletonID);
 
 		std::unordered_map<SkeletonID, SkinRS::PipelineStruct> instancedData{};
 		std::unordered_map<MaterialFlags, SkinRS::PipelineStruct> boneData{};
-		//uint8_t frameIndex = 0;
 
-		//changes memory size allocated to buffers
-		void changeActorCount(SkeletonID skeletonID, uint8_t maxActorCount) {
-#if _DEBUG
-			if (buffers.find(skeletonID) == buffers.end()) {
-				printf("trying to change the max actor count for a buffer that doesn't exist \n");
-				throw std::exception("trying to change the max actor count for a buffer that doesn't exist");
-			}
-#endif
-			buffers.at(skeletonID).changeMaxActorCount(device, maxActorCount);
 
-		}
-
-		static void setPushData(SkeletonID skeletonID, void* pushData, uint8_t pushSize) {
-			auto pushIterData = skinnedMainObject->pushConstants.find(skeletonID);
-			if (pushIterData == skinnedMainObject->pushConstants.end()) {
-				skinnedMainObject->pushConstants.emplace(skeletonID, SkinRS::PushConstantStruct{ pushData, pushSize });
-				//pushConstants[skeletonID] = { pushData, pushSize };
-			}
-			else {
-				pushIterData->second.addData(pushData, pushSize);
-			}
-		}
-		static void removePushData(SkeletonID skeletonID, void* pushRemoval) {
-			auto pushIterData = skinnedMainObject->pushConstants.find(skeletonID);
-			if (pushIterData == skinnedMainObject->pushConstants.end()) {
-				std::cout << "invalid push to remove \n";
-				throw std::runtime_error("invalid push to remove");
-			}
-			else {
-				pushIterData->second.remove(pushRemoval);
-			}
-		}
+		static void SetPushData(SkeletonID skeletonID, void* pushData, uint8_t pushSize);
+		static void RemovePushData(SkeletonID skeletonID, void* pushRemoval);
 
 	private:
 
-		void createInstancedBuffer(SkeletonID skeletonID, uint16_t boneCount) {
-#ifdef _DEBUG
-			if (instancedBuffers.contains(skeletonID)) {
-				return;
-				//printf("creating a buffer that already exist \n");
-				//throw std::exception("creating a buffer that already exist ");
-			}
+		[[nodiscard]] InstancedSkinBufferHandler* CreateInstancedBuffer(SkeletonID skeletonID, uint16_t boneCount) {
+#if EWE_DEBUG
+			assert(!instancedBuffers.contains(skeletonID));
 #endif
 			//instancedBuffersCreated += 2;
-			instancedBuffers.emplace(skeletonID, InstancedSkinBufferHandler{ device, boneCount, 2000});
+			return &instancedBuffers.try_emplace(skeletonID, boneCount, 2000).first->second;
 		}
-		void createBoneBuffer(SkeletonID skeletonID, uint16_t boneCount) {
-			if (buffers.contains(skeletonID)) {
-				return;
-				//printf("creating a buffer that already exist \n");
-				//throw std::runtime_error("creating a buffer that already exist ");
-			}
-			//buffersCreated += 2;
-#ifdef _DEBUG
-			printf("creating bone buffer \n");
+		[[nodiscard]] SkinBufferHandler* CreateBoneBuffer(SkeletonID skeletonID, uint16_t boneCount) {
+#if EWE_DEBUG
+			assert(!buffers.contains(skeletonID));
 #endif
-			buffers.emplace(skeletonID, SkinBufferHandler{ device, boneCount, 1});
-		}
-		void createReferenceBuffer(SkeletonID skeletonID, SkeletonID referenceID) {
-			if (buffers.contains(skeletonID)) {
-				return;
-				//printf("creating a buffer that already exist \n");
-				//throw std::runtime_error("creating a buffer that already exist ");
-			}
-			buffers.emplace(skeletonID, SkinBufferHandler{ 1, buffers.at(referenceID).getInnerPtr() });
+			//buffersCreated += 2;
+			return &buffers.try_emplace(skeletonID, boneCount, 2).first->second; //maxactorcount should probably be either 1 or some small number under 5 idk. too lazy to set up instancing for 2 objects so im setting it to 2
 		}
 
-		SkinRS::PipelineStruct& createInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, MaterialFlags textureFlags) {
-			return instancedData.try_emplace(instancedFlags, boneCount, textureFlags, device).first->second;
+		static std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> CreateDescriptorSets(MaterialInfo materialInfo, SkeletonID skeletonID);
+		//void CreateReferenceBuffer(SkeletonID skeletonID, SkeletonID referenceID) {
+		//	if (buffers.contains(skeletonID)) {
+		//		return;
+		//		//printf("creating a buffer that already exist \n");
+		//		//throw std::runtime_error("creating a buffer that already exist ");
+		//	}
+		//	buffers.emplace(skeletonID, SkinBufferHandler{ 1, buffers.at(referenceID).GetInnerPtr() });
+		//}
+
+		SkinRS::PipelineStruct& CreateInstancedPipe(SkeletonID instancedFlags, uint16_t boneCount, MaterialFlags textureFlags) {
+			return instancedData.try_emplace(instancedFlags, boneCount, textureFlags).first->second;
 		}
-		SkinRS::PipelineStruct& createBonePipe(MaterialFlags boneFlags) {
-			return boneData.try_emplace(boneFlags, boneFlags, device).first->second;
+		SkinRS::PipelineStruct& CreateBonePipe(MaterialFlags boneFlags) {
+			return boneData.try_emplace(boneFlags, boneFlags).first->second;
 		}
 
 		uint32_t skinID = 0;
@@ -161,8 +97,6 @@ namespace EWE {
 		std::unordered_map<SkeletonID, SkinBufferHandler> buffers{};
 		std::unordered_map<SkeletonID, InstancedSkinBufferHandler> instancedBuffers{};
 		std::unordered_map<SkeletonID, SkinRS::PushConstantStruct> pushConstants{};
-
-		EWEDevice& device;
 
 		//uint32_t buffersCreated = 0;
 		//uint32_t instancedBuffersCreated = 0;

@@ -19,12 +19,14 @@
 #endif
 
 
+
+
 //these are used for loading obj files and automatically indexing the vertices
 template <>
 struct std::hash<EWE::Vertex> {
     size_t operator()(EWE::Vertex const& vertex) const {
         size_t seed = 0;
-        EWE::hashCombine(seed, vertex.position, vertex.normal, vertex.uv, vertex.tangent);
+        EWE::HashCombine(seed, vertex.position, vertex.normal, vertex.uv, vertex.tangent);
         return seed;
     }
 };
@@ -32,15 +34,15 @@ template <>
 struct std::hash<EWE::VertexNT> {
     size_t operator()(EWE::VertexNT const& vertex) const {
         size_t seed = 0;
-        EWE::hashCombine(seed, vertex.position, vertex.normal, vertex.uv);
+        EWE::HashCombine(seed, vertex.position, vertex.normal, vertex.uv);
         return seed;
     }
 };
 template<>
-struct std::hash<EWE::simpleVertex> {
-    size_t operator()(EWE::simpleVertex const& vertex) const {
+struct std::hash<EWE::SimpleVertex> {
+    size_t operator()(EWE::SimpleVertex const& vertex) const {
         size_t seed = 0;
-        EWE::hashCombine(seed, vertex.position);
+        EWE::HashCombine(seed, vertex.position);
         return seed;
     }
 };
@@ -48,57 +50,282 @@ template<>
 struct std::hash<EWE::GrassVertex> {
     size_t operator()(EWE::GrassVertex const& vertex) const {
         size_t seed = 0;
-        EWE::hashCombine(seed, vertex.position, vertex.color);
+        EWE::HashCombine(seed, vertex.position, vertex.color);
         return seed;
     }
 };
 
 namespace EWE {
+    struct Builder {
+        std::vector<VertexNT> vertices{};
+        std::vector<uint32_t> indices{};
+
+        void LoadModel(const std::string& filepath) {
+            tinyobj::attrib_t attrib;
+            std::vector<tinyobj::shape_t> shapes;
+            std::vector<tinyobj::material_t> materials;
+            std::string warn, err;
+
+            std::string enginePath = ENGINE_DIR + filepath;
+            if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, enginePath.c_str())) {
+                printf("warning : %s - err :%s \n", warn.c_str(), err.c_str());
+                std::string errString = warn + err;
+                assert(false && errString.c_str());
+            }
+
+            vertices.clear();
+            indices.clear();
+
+            std::unordered_map<VertexNT, uint32_t> uniqueVertices{};
+            for (const auto& shape : shapes) {
+                for (const auto& index : shape.mesh.indices) {
+                    VertexNT vertex;
+
+                    if (index.vertex_index >= 0) {
+                        vertex.position = {
+                            attrib.vertices[3 * index.vertex_index + 0],
+                            attrib.vertices[3 * index.vertex_index + 1],
+                            attrib.vertices[3 * index.vertex_index + 2],
+                        };
+                        /*
+                        vertex.color = {
+                            attrib.colors[3 * index.vertex_index + 0],
+                            attrib.colors[3 * index.vertex_index + 1],
+                            attrib.colors[3 * index.vertex_index + 2],
+                        };
+                        */
+                    }
+
+                    if (index.normal_index >= 0) {
+                        vertex.normal = {
+                            attrib.normals[3 * index.normal_index + 0],
+                            attrib.normals[3 * index.normal_index + 1],
+                            attrib.normals[3 * index.normal_index + 2],
+                        };
+                    }
+
+                    if (index.texcoord_index >= 0) {
+                        vertex.uv = {
+                            attrib.texcoords[2 * index.texcoord_index + 0],
+                            attrib.texcoords[2 * index.texcoord_index + 1],
+                        };
+                    }
+                    else {
+                        vertex.uv = {
+                            0.f,
+                            0.f
+                        };
+                    }
+
+                    auto vertFind = uniqueVertices.find(vertex);
+                    if (vertFind == uniqueVertices.end()) {
+                        uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
+                        indices.push_back(static_cast<uint32_t>(vertices.size()));
+                        vertices.push_back(vertex);
+                    }
+                    else {
+                        indices.push_back(vertFind->second);
+                    }
+                }
+            }
+            //printf("vertex count after loading model from file : %d \n", vertices.size());
+            //printf("index count after loading model froom file : %d \n", indices.size());
+        }
+    };
+    struct SimpleBuilder {
+        std::vector<SimpleVertex> vertices{};
+        std::vector<uint32_t> indices{};
+
+        void LoadModel(const std::string& filepath) {
+            tinyobj::attrib_t attrib;
+            std::vector<tinyobj::shape_t> shapes;
+            std::vector<tinyobj::material_t> materials;
+            std::string warn, err;
+
+            std::string enginePath = ENGINE_DIR + filepath;
+            if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, enginePath.c_str())) {
+                throw std::runtime_error(warn + err);
+            }
+
+            vertices.clear();
+            indices.clear();
+
+            std::unordered_map<SimpleVertex, uint32_t> uniqueVertices{};
+            for (const auto& shape : shapes) {
+                for (const auto& index : shape.mesh.indices) {
+                    SimpleVertex vertex{};
+
+                    if (index.vertex_index >= 0) {
+                        vertex.position = {
+                            attrib.vertices[3 * index.vertex_index + 0],
+                            attrib.vertices[3 * index.vertex_index + 1],
+                            attrib.vertices[3 * index.vertex_index + 2],
+                        };
+                    }
+
+                    auto vertFind = uniqueVertices.find(vertex);
+                    if (vertFind == uniqueVertices.end()) {
+                        uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
+                        indices.push_back(static_cast<uint32_t>(vertices.size()));
+                        vertices.push_back(vertex);
+                    }
+                    else {
+                        indices.push_back(vertFind->second);
+                    }
+                }
+            }
+            //printf("vertex count after loading simple model from file : %d \n", vertices.size());
+            //printf("index count after loading simple model from file : %d \n", indices.size());
+        }
+    };
+    struct GrassBuilder {
+        std::vector<GrassVertex> vertices{};
+        std::vector<uint32_t> indices{};
+
+        void LoadModel(const std::string& filepath) {
+            tinyobj::attrib_t attrib;
+            std::vector<tinyobj::shape_t> shapes;
+            std::vector<tinyobj::material_t> materials;
+            std::string warn, err;
+
+            std::string enginePath = ENGINE_DIR + filepath;
+            if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, enginePath.c_str())) {
+                throw std::runtime_error(warn + err);
+            }
+
+            vertices.clear();
+            indices.clear();
+
+            std::unordered_map<GrassVertex, uint32_t> uniqueVertices{};
+            for (const auto& shape : shapes) {
+                for (const auto& index : shape.mesh.indices) {
+                    GrassVertex vertex{};
+
+                    if (index.vertex_index >= 0) {
+                        vertex.position = {
+                            attrib.vertices[3 * index.vertex_index + 0],
+                            attrib.vertices[3 * index.vertex_index + 1],
+                            attrib.vertices[3 * index.vertex_index + 2],
+                        };
 
 
-    std::unique_ptr<EWEModel> EWEModel::createModelFromFile(EWEDevice& device, const std::string& filepath) {
+                        vertex.color = {
+                            attrib.colors[3 * index.vertex_index + 0],
+                            attrib.colors[3 * index.vertex_index + 1],
+                            attrib.colors[3 * index.vertex_index + 2],
+                        };
+
+                        /*
+                        if (index.texcoord_index >= 0) {
+                            vertex.uv = {
+                                attrib.texcoords[2 * index.texcoord_index + 0]
+                            };
+                        }
+                        */
+                    }
+                    auto vertFind = uniqueVertices.find(vertex);
+                    if (vertFind == uniqueVertices.end()) {
+                        uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
+                        indices.push_back(static_cast<uint32_t>(vertices.size()));
+                        vertices.push_back(vertex);
+                    }
+                    else {
+                        indices.push_back(vertFind->second);
+                    }
+                }
+            }
+            //printf("vertex count after loading model from file : %d \n", vertices.size());
+            //printf("index count after loading model froom file : %d \n", indices.size());
+        }
+    };
+
+    EWEModel::EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex, std::vector<uint32_t> const& indices) {
+        assert(vertexCount >= 3 && "vertex count must be at least 3");
+        VertexBuffers(static_cast<uint32_t>(vertexCount), static_cast<uint32_t>(sizeOfVertex), verticesData);
+        CreateIndexBuffers(indices);
+    }
+    EWEModel::EWEModel(void const* verticesData, const std::size_t vertexCount, const std::size_t sizeOfVertex) {
+        assert(vertexCount >= 3 && "vertex count must be at least 3");
+        VertexBuffers(static_cast<uint32_t>(vertexCount), static_cast<uint32_t>(sizeOfVertex), verticesData);
+    }
+#if CALL_TRACING
+    EWEModel* EWEModel::CreateModelFromObj(const std::string& filepath, std::source_location srcLoc) {
         Builder builder{};
-        builder.loadModel(filepath);
-        return std::make_unique<EWEModel>(device, builder.vertices, builder.indices);
+        builder.LoadModel(filepath);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices}, srcLoc);
     }
-    std::unique_ptr<EWEModel> EWEModel::createSimpleModelFromFile(EWEDevice& device, const std::string& filePath) {
+    EWEModel* EWEModel::CreateSimpleModelFromObj(const std::string& filePath, std::source_location srcLoc) {
         SimpleBuilder builder{};
-        builder.loadModel(filePath);
-        return std::make_unique<EWEModel>(device, builder.vertices, builder.indices);
+        builder.LoadModel(filePath);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices}, srcLoc);
     }
-    std::unique_ptr<EWEModel> EWEModel::createGrassModelFromFile(EWEDevice& device, const std::string& filePath) {
+    EWEModel* EWEModel::CreateGrassModelFromObj(const std::string& filePath, std::source_location srcLoc) {
         GrassBuilder builder{};
-        builder.loadModel(filePath);
-        return std::make_unique<EWEModel>(device, builder.vertices, builder.indices);
+        builder.LoadModel(filePath);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices}, srcLoc);
+    }
+#else
+    EWEModel* EWEModel::CreateModelFromObj(const std::string& filepath) {
+        Builder builder{};
+        builder.LoadModel(filepath);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices});
+    }
+    EWEModel* EWEModel::CreateSimpleModelFromObj(const std::string& filePath) {
+        SimpleBuilder builder{};
+        builder.LoadModel(filePath);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices});
+    }
+    EWEModel* EWEModel::CreateGrassModelFromObj(const std::string& filePath) {
+        GrassBuilder builder{};
+        builder.LoadModel(filePath);
+        return Construct<EWEModel>({ builder.vertices.data(), builder.vertices.size(), sizeof(builder.vertices[0]), builder.indices});
+    }
+#endif
+    
+    inline void CopyModelBuffer(StagingBuffer* stagingBuffer, VkBuffer dstBuffer, const VkDeviceSize bufferSize) {
+        SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+        CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand();
+        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer->buffer, dstBuffer, bufferSize);
+
+
+        if (VK::Object->CheckMainThread() || (!VK::Object->queueEnabled[Queue::transfer])) {
+            GraphicsCommand gCommand{};
+            gCommand.command = &cmdBuf;
+            gCommand.stagingBuffer = stagingBuffer;
+            syncHub->EndSingleTimeCommandGraphics(gCommand);
+        }
+        else {
+            //transitioning from transfer to compute not supported currently
+            TransferCommand command{};
+            command.commands.push_back(&cmdBuf);
+            command.stagingBuffers.push_back(stagingBuffer);
+            syncHub->EndSingleTimeCommandTransfer(command);
+        }
     }
 
-    void EWEModel::AddInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data) {
+    void EWEModel::AddInstancing(const uint32_t instanceCount, const uint32_t instanceSize, void const* data) {
         VkDeviceSize bufferSize = instanceSize * instanceCount;
         this->instanceCount = instanceCount;
-        EWEBuffer stagingBuffer{
-            eweDevice,
-            instanceSize,
-            instanceCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
 
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer(data);
+        uint64_t alignmentSize = EWEBuffer::GetAlignment(instanceSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT) * instanceCount;
 
+#if USING_VMA
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, EWEDevice::GetAllocator(), data });
+#else
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, data });
+#endif
 
-        instanceBuffer = std::make_unique<EWEBuffer>(
-            eweDevice,
+        instanceBuffer = Construct<EWEBuffer>({
             instanceSize,
             instanceCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT 
+        });
         
-
-        eweDevice.copyBuffer(stagingBuffer.getBuffer(), instanceBuffer->getBuffer(), bufferSize);
+        CopyModelBuffer(stagingBuffer, instanceBuffer->GetBuffer(), bufferSize);
     }
     /*
-    void EWEModel::updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, VkCommandBuffer cmdBuf) {
+    void EWEModel::updateInstancing(uint32_t instanceCount, uint32_t instanceSize, void* data, uint8_t instanceIndex, CommandBuffer cmdBuf) {
         assert(instanceIndex < instanceBuffer.size());
         VkDeviceSize bufferSize = instanceSize * instanceCount;
         this->instanceCount = instanceCount;
@@ -123,352 +350,171 @@ namespace EWE {
         eweDevice.copySecondaryBuffer(stagingBuffer.getBuffer(), instanceBuffer[instanceIndex]->getBuffer(), bufferSize, cmdBuf);
     }
     */
-    void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void* data) {
+
+    void EWEModel::VertexBuffers(uint32_t vertexCount, uint32_t vertexSize, void const* data){
         VkDeviceSize bufferSize = vertexSize * vertexCount;
+        this->vertexCount = vertexCount;
 
-        EWEBuffer stagingBuffer{
-            eweDevice,
-            vertexSize,
-            vertexCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
-
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer(data);
-
-        vertexBuffer = std::make_unique<EWEBuffer>(
-            eweDevice,
+#if USING_VMA
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetAllocator(), data });
+#else
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, data });
+#endif
+#if DEBUGGING_MEMORY_WITH_VMA
+        vertexBuffer = Construct<EWEBuffer>({
             vertexSize,
             vertexCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        });
+#else
+        vertexBuffer = Construct<EWEBuffer>({
+            vertexSize,
+            vertexCount,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+        });
+#endif
 
-        eweDevice.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
+        CopyModelBuffer(stagingBuffer, vertexBuffer->GetBuffer(), bufferSize);
     }
-    void EWEModel::createGrassIndexBuffer(void* indexData, uint32_t indexCount) {
-        VkDeviceSize bufferSize = indexCount * 4;
-        uint32_t indexSize = 4;
 
-        EWEBuffer stagingBuffer{
-            eweDevice,
-            indexSize,
-            indexCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
+    void EWEModel::CreateIndexBuffer(const void* indexData, uint32_t indexCount){
+        const uint32_t indexSize = sizeof(uint32_t);
+        this->indexCount = indexCount;
+        hasIndexBuffer = true;
 
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer(indexData);
-
-        indexBuffer = std::make_unique<EWEBuffer>(
-            eweDevice,
+        VkDeviceSize bufferSize = indexSize * indexCount;
+#if USING_VMA
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetAllocator(), indexData });
+#else
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, indexData });
+#endif
+#if DEBUGGING_MEMORY_WITH_VMA
+        indexBuffer = Construct<EWEBuffer>({
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        eweDevice.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
-    }
-
-    EWEBuffer* EWEModel::createIndexBuffer(EWEDevice& device, std::vector<uint32_t> const& indices) {
-        uint32_t indexCount = static_cast<uint32_t>(indices.size());
-
-        if (indexCount == 0) {
-            std::cout << "no index" << std::endl;
-            return nullptr;
-        }
-        VkDeviceSize bufferSize = sizeof(uint32_t) * indexCount;
-        uint32_t indexSize = sizeof(uint32_t);
-
-        EWEBuffer stagingBuffer{
-            device,
-            indexSize,
-            indexCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
-
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer((void*)indices.data());
-
-        EWEBuffer* indexBuffer = new EWEBuffer(
-            device,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        });
+#else
+        indexBuffer = Construct<EWEBuffer>({
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
-
-        return indexBuffer;
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+        });
+#endif
+        CopyModelBuffer(stagingBuffer, indexBuffer->GetBuffer(), bufferSize);
     }
 
-    void EWEModel::createIndexBuffers(const std::vector<uint32_t>& indices) {
+    void EWEModel::CreateIndexBuffers(std::vector<uint32_t> const& indices){
         indexCount = static_cast<uint32_t>(indices.size());
-        hasIndexBuffer = indexCount > 0;
-
-        if (!hasIndexBuffer) {
-            std::cout << "no index" << std::endl;
-            return;
-        }
-
-        VkDeviceSize bufferSize = sizeof(uint32_t) * indexCount;
-        uint32_t indexSize = sizeof(uint32_t);
-
-        EWEBuffer stagingBuffer{
-            eweDevice,
-            indexSize,
-            indexCount,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
-
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer((void*)indices.data());
-
-        indexBuffer = std::make_unique<EWEBuffer>(
-            eweDevice,
-            indexSize,
-            indexCount,
-            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        eweDevice.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
-    }
-
-    void EWEModel::draw(VkCommandBuffer commandBuffer) {
-        if (hasIndexBuffer) {
-            //printf("Drawing indexed : %d \n", indexCount);
-            vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
-            //an error here could be due to textures or other descriptors
-        }
-        else {
-            //printf("Drawing not indexed, vertexCount : %d \n", vertexCount);
-            vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
-        }
-    }
-
-    void EWEModel::bind(VkCommandBuffer commandBuffer) {
-        // do a second buffer, and switch to it when changign the object
-        //count a couple of frames then delete the old buffer
-        VkBuffer buffers[] = { vertexBuffer->getBuffer() };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-
-        if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        }
-    }
-
-    void EWEModel::BindAndDraw(VkCommandBuffer commandBuffer) {
-        VkBuffer buffers[] = { vertexBuffer->getBuffer() };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-        if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
-        }
-        else {
-            vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
-        }
-    }
-    void EWEModel::BindAndDrawInstance(VkCommandBuffer commandBuffer) {
-        VkBuffer buffers[2] = { vertexBuffer->getBuffer(), instanceBuffer->getBuffer()};
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffers[0], offsets);
-        vkCmdBindVertexBuffers(commandBuffer, 1, 1, &buffers[1], offsets);
-        //vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets); //test this with grass later
-        //if no index buffer, indexing wont work
-        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
-    }
-    void EWEModel::BindAndDrawInstanceNoIndex(VkCommandBuffer cmdBuf) {
-        VkBuffer buffers[2] = { vertexBuffer->getBuffer(), instanceBuffer->getBuffer() };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(cmdBuf, 0, 1, &buffers[0], offsets);
-        vkCmdBindVertexBuffers(cmdBuf, 1, 1, &buffers[1], offsets);
-        //vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets); //test this with grass later
-        //if no index buffer, indexing wont work
-        //vkCmdBindIndexBuffer(cmdBuf, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDraw(cmdBuf, vertexCount, instanceCount, 0, 0);
+        CreateIndexBuffer(static_cast<const void*>(indices.data()), indexCount);
     }
 
 
-    void EWEModel::BindAndDrawInstanceNoBuffer(VkCommandBuffer commandBuffer, int instanceCount) {
-        VkBuffer buffers[] = { vertexBuffer->getBuffer() };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-        if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
-        }
-        else {
-            vkCmdDraw(commandBuffer, vertexCount, instanceCount, 0, 0);
-        }
+    void EWEModel::Draw() {
+#if EWE_DEBUG
+        assert(hasIndexBuffer);
+#endif
+        EWE_VK(vkCmdDrawIndexed, VK::Object->GetFrameBuffer(), indexCount, 1, 0, 0, 0);
+    }
+    void EWEModel::DrawNoIndex() {
+        EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), vertexCount, 1, 0, 0);
     }
 
-    void EWEModel::Builder::loadModel(const std::string& filepath) {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
-
-        std::string enginePath = ENGINE_DIR + filepath;
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, enginePath.c_str())) {
-            printf("warning : %s - err :%s \n", warn.c_str(), err.c_str());
-            throw std::runtime_error(warn + err);
-        }
-
-        vertices.clear();
-        indices.clear();
-
-        std::unordered_map<VertexNT, uint32_t> uniqueVertices{};
-        for (const auto& shape : shapes) {
-            for (const auto& index : shape.mesh.indices) {
-                VertexNT vertex;
-
-                if (index.vertex_index >= 0) {
-                    vertex.position = {
-                        attrib.vertices[3 * index.vertex_index + 0],
-                        attrib.vertices[3 * index.vertex_index + 1],
-                        attrib.vertices[3 * index.vertex_index + 2],
-                    };
-                    /*
-                    vertex.color = {
-                        attrib.colors[3 * index.vertex_index + 0],
-                        attrib.colors[3 * index.vertex_index + 1],
-                        attrib.colors[3 * index.vertex_index + 2],
-                    };
-                    */
-                }
-
-                if (index.normal_index >= 0) {
-                    vertex.normal = {
-                        attrib.normals[3 * index.normal_index + 0],
-                        attrib.normals[3 * index.normal_index + 1],
-                        attrib.normals[3 * index.normal_index + 2],
-                    };
-                }
-
-                if (index.texcoord_index >= 0) {
-                    vertex.uv = {
-                        attrib.texcoords[2 * index.texcoord_index + 0],
-                        attrib.texcoords[2 * index.texcoord_index + 1],
-                    };
-                }
-                else {
-                    vertex.uv = {
-                        0.f,
-                        0.f
-                    };
-                }
-
-                if (!uniqueVertices.contains(vertex)) {
-                    uniqueVertices.try_emplace(vertex, static_cast<uint32_t>(vertices.size()));
-                    //uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-                    vertices.push_back(vertex);
-                }
-                indices.push_back(uniqueVertices.at(vertex));
-            }
-        }
-        //printf("vertex count after loading model from file : %d \n", vertices.size());
-        //printf("index count after loading model froom file : %d \n", indices.size());
-    }
-    void EWEModel::GrassBuilder::loadModel(const std::string& filepath) {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
-
-        std::string enginePath = ENGINE_DIR + filepath;
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, enginePath.c_str())) {
-            throw std::runtime_error(warn + err);
-        }
-
-        vertices.clear();
-        indices.clear();
-
-        std::unordered_map<GrassVertex, uint32_t> uniqueVertices{};
-        for (const auto& shape : shapes) {
-            for (const auto& index : shape.mesh.indices) {
-                GrassVertex vertex{};
-
-                if (index.vertex_index >= 0) {
-                    vertex.position = {
-                        attrib.vertices[3 * index.vertex_index + 0],
-                        attrib.vertices[3 * index.vertex_index + 1],
-                        attrib.vertices[3 * index.vertex_index + 2],
-                    };
-
-                    
-                    vertex.color = {
-                        attrib.colors[3 * index.vertex_index + 0],
-                        attrib.colors[3 * index.vertex_index + 1],
-                        attrib.colors[3 * index.vertex_index + 2],
-                    };
-                    
-                    /*
-                    if (index.texcoord_index >= 0) {
-                        vertex.uv = {
-                            attrib.texcoords[2 * index.texcoord_index + 0]
-                        };
-                    }
-                    */
-                }
-
-                if (uniqueVertices.count(vertex) == 0) {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-                    vertices.push_back(vertex);
-                }
-                indices.push_back(uniqueVertices[vertex]);
-            }
-        }
-        //printf("vertex count after loading model from file : %d \n", vertices.size());
-        //printf("index count after loading model froom file : %d \n", indices.size());
+    void EWEModel::Bind() {
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
+#if EWE_DEBUG
+        assert(hasIndexBuffer);
+#endif
+        EWE_VK(vkCmdBindIndexBuffer, VK::Object->GetFrameBuffer(), indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
     }
 
-    void EWEModel::SimpleBuilder::loadModel(const std::string& filepath) {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
-
-        std::string enginePath = ENGINE_DIR + filepath;
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, enginePath.c_str())) {
-            throw std::runtime_error(warn + err);
-        }
-
-        vertices.clear();
-        indices.clear();
-
-        std::unordered_map<simpleVertex, uint32_t> uniqueVertices{};
-        for (const auto& shape : shapes) {
-            for (const auto& index : shape.mesh.indices) {
-                simpleVertex vertex{};
-
-                if (index.vertex_index >= 0) {
-                    vertex.position = {
-                        attrib.vertices[3 * index.vertex_index + 0],
-                        attrib.vertices[3 * index.vertex_index + 1],
-                        attrib.vertices[3 * index.vertex_index + 2],
-                    };
-                }
-
-                if (uniqueVertices.count(vertex) == 0) {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-                    vertices.push_back(vertex);
-                }
-                indices.push_back(uniqueVertices[vertex]);
-            }
-        }
-        //printf("vertex count after loading simple model from file : %d \n", vertices.size());
-        //printf("index count after loading simple model from file : %d \n", indices.size());
+    void EWEModel::BindNoIndex() {
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
     }
+
+    void EWEModel::BindAndDraw() {
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
+
+#if EWE_DEBUG
+        assert(hasIndexBuffer);
+#endif
+        EWE_VK(vkCmdBindIndexBuffer, VK::Object->GetFrameBuffer(), indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        EWE_VK(vkCmdDrawIndexed, VK::Object->GetFrameBuffer(), indexCount, 1, 0, 0, 0);
+        
+    }
+    void EWEModel::BindAndDrawNoIndex() {
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
+        EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), vertexCount, 1, 0, 0);
+    }
+
+    void EWEModel::BindAndDrawInstance(uint32_t instanceCount) {
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
+        EWE_VK(vkCmdBindIndexBuffer, VK::Object->GetFrameBuffer(), indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        EWE_VK(vkCmdDrawIndexed, VK::Object->GetFrameBuffer(), indexCount, instanceCount, 0, 0, 0);
+    }
+    void EWEModel::BindAndDrawInstance() {
+        VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer()};
+        VkDeviceSize offsets[2] = { 0, 0 };
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 2, buffers, offsets);
+        EWE_VK(vkCmdBindIndexBuffer, VK::Object->GetFrameBuffer(), indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        EWE_VK(vkCmdDrawIndexed, VK::Object->GetFrameBuffer(), indexCount, instanceCount, 0, 0, 0);
+    }
+    void EWEModel::BindAndDrawInstanceNoIndex() {
+        VkBuffer buffers[2] = { vertexBuffer->GetBuffer(), instanceBuffer->GetBuffer() };
+        VkDeviceSize offsets[2] = { 0, 0 };
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 2, buffers, offsets);
+        EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), vertexCount, instanceCount, 0, 0);
+    }
+
+
+    void EWEModel::BindAndDrawInstanceNoBuffer(int instanceCount) {
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
+
+#if EWE_DEBUG
+        assert(hasIndexBuffer);
+#endif
+        EWE_VK(vkCmdBindIndexBuffer, VK::Object->GetFrameBuffer(), indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        EWE_VK(vkCmdDrawIndexed, VK::Object->GetFrameBuffer(), indexCount, instanceCount, 0, 0, 0);
+    }
+    void EWEModel::BindAndDrawInstanceNoBufferNoIndex(int instanceCount) {
+        VkDeviceSize offset = 0;
+        EWE_VK(vkCmdBindVertexBuffers, VK::Object->GetFrameBuffer(), 0, 1, vertexBuffer->GetBufferAddress(), &offset);
+
+        EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), vertexCount, instanceCount, 0, 0);
+        
+    }
+
+#if DEBUG_NAMING
+    void EWEModel::SetDebugNames(std::string const& name){
+        std::string comboName{"vertex:"};
+        comboName += name;
+        DebugNaming::SetObjectName(vertexBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
+        if(hasIndexBuffer){
+            comboName = "index:";
+            comboName += name;
+            DebugNaming::SetObjectName(indexBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
+        }
+        if(hasInstanceBuffer){
+           comboName = "instance:";
+           comboName += name;   
+           DebugNaming::SetObjectName(instanceBuffer->GetBuffer(), VK_OBJECT_TYPE_BUFFER, comboName.c_str());
+        }
+    }
+#endif
 
 
     /*
-    std::unique_ptr<EWEModel> EWEModel::LoadGrassField(EWEDevice& device) {
+    EWEModel* EWEModel::LoadGrassField() {
         printf("beginning load grass field \n");
         std::ifstream grassFile{ "..//models//grassField.gs" };
         if (!grassFile.is_open()) {

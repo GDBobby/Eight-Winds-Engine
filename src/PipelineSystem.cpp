@@ -1,71 +1,72 @@
 #include "EWEngine/Systems/PipelineSystem.h"
 
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 namespace EWE {
-	std::unordered_map<PipelineID, std::unique_ptr<PipelineSystem>> PipelineSystem::pipelineSystem{};
-	uint8_t PipelineSystem::frameIndex;
-	VkCommandBuffer PipelineSystem::cmdBuf;
-#ifdef _DEBUG
+	std::unordered_map<PipelineID, PipelineSystem*> PipelineSystem::pipelineSystem{};
+#if EWE_DEBUG
 	PipelineID PipelineSystem::currentPipe;
 #endif
-
-	void PipelineSystem::setFrameInfo(FrameInfo frameInfo) {
-		cmdBuf = frameInfo.cmdBuf;
-		frameIndex = frameInfo.index;
+	
+	void PipelineSystem::Emplace(PipelineID pipeID, PipelineSystem* pipeSys) {
+#if EWE_DEBUG
+		assert(!pipelineSystem.contains(pipeID) && "attempting to emplace a pipe with an existing id");
+#endif
+		pipelineSystem.emplace(pipeID, pipeSys);
 	}
-	void PipelineSystem::destruct(EWEDevice& device) {
+
+	void PipelineSystem::Destruct() {
+
 		for (auto iter = pipelineSystem.begin(); iter != pipelineSystem.end(); iter++) {
-			vkDestroyPipelineLayout(device.device(), iter->second->pipeLayout, nullptr);
+			EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, iter->second->pipeLayout, nullptr);
+			Deconstruct(iter->second);
 		}
 
 		pipelineSystem.clear();
 	}
+	void PipelineSystem::DestructAt(PipelineID pipeID) {
 
-	PipelineSystem* PipelineSystem::at(PipelineID pipeID) {
-		if (pipelineSystem.find(pipeID) != pipelineSystem.end()) {
-#ifdef _DEBUG
-			currentPipe = pipeID;
+#if EWE_DEBUG
+		auto foundPipe = pipelineSystem.find(pipeID);
+		assert(foundPipe != pipelineSystem.end() && "destructing invalid pipe \n");
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, foundPipe->second->pipeLayout, nullptr);
+		Deconstruct(foundPipe->second);
+#else
+		auto& pipe = pipelineSystem.at(pipeID);
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipe->pipeLayout, nullptr);
+		Deconstruct(pipe);
 #endif
-			return pipelineSystem.at(pipeID).get();
-		}
-		else {
-			printf("invalid pipe ::at %d \n", pipeID);
 
-			throw std::runtime_error("searching for invlaid pipe \n");
-		}
+	}
+
+	PipelineSystem* PipelineSystem::At(PipelineID pipeID) {
+		auto foundPipe = pipelineSystem.find(pipeID);
+
+#if EWE_DEBUG
+		assert(foundPipe != pipelineSystem.end() && "searching invalid pipe \n");
+#endif
+		return foundPipe->second;
 	}
 	
-	void PipelineSystem::bindPipeline() {
-#ifdef _DEBUG
-		if (currentPipe != myID) {
-
-			printf("pipe id mismatch on bind \n");
-
-			throw std::runtime_error("pipe id mismatch on bind");
-		}
+	void PipelineSystem::BindPipeline() {
+#if EWE_DEBUG
+		currentPipe = myID;
 #endif
-		pipe->bind(cmdBuf);
-		bindedTexture = TEXTURE_UNBINDED_DESC;
+		pipe->Bind();
+		bindedTexture = VK_NULL_HANDLE;
 	}
-	void PipelineSystem::bindModel(EWEModel* model) {
+	void PipelineSystem::BindModel(EWEModel* model) {
 		bindedModel = model;
-#ifdef _DEBUG
-		if (currentPipe != myID) {
-			printf("failed model bind \n");
-			throw std::runtime_error("pipe id mismatch on model bind");
-		}
+#if EWE_DEBUG
+		assert(currentPipe == myID && "pipe id mismatch on model bind");
 #endif
-		bindedModel->bind(cmdBuf);
+		bindedModel->Bind();
 	}
-	void PipelineSystem::bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
-#ifdef _DEBUG
-		if (currentPipe != myID) {
-			printf("failed desc bind \n");
-			throw std::runtime_error("pipe id mismatch on desc bind");
-		}
+	void PipelineSystem::BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
+#if EWE_DEBUG
+		assert(currentPipe == myID && "pipe id mismatch on desc bind");
 #endif
-		vkCmdBindDescriptorSets(cmdBuf,
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			pipeLayout,
 			descSlot, 1,
@@ -74,48 +75,28 @@ namespace EWE {
 		);
 		
 	}
-	//EWETexture::getDescriptorSets(tileSet.tileSetTexture, frameIndex)
-	void PipelineSystem::bindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
-		if (bindedTexture != texID) {
-			bindDescriptor(descSlot, &texID);
-			bindedTexture = texID;
-		}
+
+	void PipelineSystem::Push(void* push) {
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, pushStageFlags, 0, pushSize, push);
 	}
 
-
-	void PipelineSystem::push(void* push) {
-		vkCmdPushConstants(cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
-	}
-
-	void PipelineSystem::pushAndDraw(void* push) {
-		vkCmdPushConstants(cmdBuf, pipeLayout, pushStageFlags, 0, pushSize, push);
+	void PipelineSystem::PushAndDraw(void* push) {
+		EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, pushStageFlags, 0, pushSize, push);
 		
-#ifdef _DEBUG
-		if (bindedModel == nullptr) {
-			printf("failed model draw \n");
-			throw std::runtime_error("attempting to draw a model while none is binded");
-		}
-		if (currentPipe != myID) {
-			printf("failed model draw \n");
-			throw std::runtime_error("pipe id mismatch on model draw");
-		}
+#if EWE_DEBUG
+		assert(bindedModel != nullptr && "attempting to draw a model while none is binded");
+		assert(currentPipe == myID && "pipe id mismatch on model draw");
 #endif
-		bindedModel->draw(cmdBuf);
+		bindedModel->Draw();
 	}
-	void PipelineSystem::drawModel() {
-#ifdef _DEBUG
-		if (bindedModel == nullptr) {
-			printf("failed model draw \n");
-			throw std::runtime_error("attempting to draw a model while none is binded");
-		}
-		if (currentPipe != myID) {
-			printf("failed model draw \n");
-			throw std::runtime_error("pipe id mismatch on model draw");
-		}
+	void PipelineSystem::DrawModel() {
+#if EWE_DEBUG
+		assert(bindedModel != nullptr && "attempting to draw a model while none is binded");
+		assert(currentPipe == myID && "pipe id mismatch on model draw");
 #endif
-		bindedModel->draw(cmdBuf);
+		bindedModel->Draw();
 	}
-	void PipelineSystem::drawInstanced(EWEModel* model) {
-		model->BindAndDrawInstance(cmdBuf);
+	void PipelineSystem::DrawInstanced(EWEModel* model) {
+		model->BindAndDrawInstance();
 	}
 }

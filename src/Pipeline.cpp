@@ -3,11 +3,9 @@
 
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Graphics/Renderer.h"
-#include "EWEngine/Graphics/PushConstants.h"
 
 
 #include <fstream>
-#include <stdexcept>
 #include <iostream>
 #include <cassert>
 
@@ -18,90 +16,95 @@
 namespace EWE {
 
 	namespace Pipeline_Helper_Functions {
-		std::vector<char> readFile(const std::string& filepath) {
+		std::vector<char> ReadFile(const std::string& filepath) {
+			//printf("reading shader file\n");
+
 			//#define ENGINE_DIR "..//shaders//"
 
 			std::string enginePath = SHADER_DIR + filepath;
 
 			//printf("readFile enginePath : %s \n", enginePath.c_str());
 
-			std::ifstream shaderFile;
+			std::ifstream shaderFile{};
 			shaderFile.open(enginePath, std::ios::binary);
+//#if EWE_DEBUG
+//			const std::string errorPrint = "failed to open shader : " + enginePath;
+//			assert(shaderFile.is_open() && errorPrint.c_str());
+//#endif
 			if(!shaderFile.is_open()){
-				printf("failed to open shader : %s\n", enginePath.c_str());
-				throw std::runtime_error("failed to open shader file");
+				printf("failed ot open shader file : %s\n", enginePath.c_str());
+				assert(shaderFile.is_open() && "failed to open shader");
 			}
 			shaderFile.seekg(0, std::ios::end);
-			size_t fileSize = (size_t)shaderFile.tellg();
-			if(fileSize == 0){
-				throw std::runtime_error("shader file length is 0");
-			}
+			std::size_t fileSize = static_cast<std::size_t>(shaderFile.tellg());
+			assert(fileSize > 0 && "shader is empty");
+
 			shaderFile.seekg(0, std::ios::beg);
 			std::vector<char> returnVec(fileSize);
 			shaderFile.read(returnVec.data(), fileSize);
 			shaderFile.close();
 			return returnVec;
 		}
-		void createShaderModule(EWEDevice& device, std::string const& file_path, VkShaderModule* shaderModule) {
-			auto data = readFile(file_path);
+		void CreateShaderModule(std::string const& file_path, VkShaderModule* shaderModule) {
+			auto data = ReadFile(file_path);
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			createInfo.pNext = nullptr;
+			createInfo.flags = 0;
 			createInfo.codeSize = data.size();
 			//printf("template data size : %d \n", data.size());
-			createInfo.pCode = (const uint32_t*)data.data();
+			createInfo.pCode = reinterpret_cast<const uint32_t*>(data.data());
 
-			if (vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
-				throw std::runtime_error("failed to create shader module");
-			}
+			EWE_VK(vkCreateShaderModule, VK::Object->vkDevice, &createInfo, nullptr, shaderModule);
 		}
-		void createShaderModule(EWEDevice& device, const std::vector<uint32_t>& data, VkShaderModule* shaderModule) {
+		void CreateShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			createInfo.pNext = nullptr;
+			createInfo.flags = 0;
 			createInfo.codeSize = data.size() * 4;
 			//printf("uint32_t data size : %d \n", data.size());
 			createInfo.pCode = data.data();
 
-			if (vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
-				throw std::runtime_error("failed to create shader module");
-			}
+			EWE_VK(vkCreateShaderModule, VK::Object->vkDevice, &createInfo, nullptr, shaderModule);
 		}
 		template <typename T>
-		void createShaderModule(EWEDevice& device, const std::vector<T>& data, VkShaderModule* shaderModule) {
+		void CreateShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule) {
+#if EWE_DEBUG
+			//printf("creating sahder module\n");
+#endif
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			createInfo.pNext = nullptr;
+			createInfo.flags = 0;
 			createInfo.codeSize = data.size() * sizeof(T);
 			//printf("template data size : %d \n", data.size());
-			createInfo.pCode = (const uint32_t*)data.data();
+			createInfo.pCode = reinterpret_cast<const uint32_t*>(data.data());
 
-			if (vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
-				throw std::runtime_error("failed to create shader module");
-			}
+			EWE_VK(vkCreateShaderModule, VK::Object->vkDevice, &createInfo, nullptr, shaderModule);
 		}
-		void createShaderModule(EWEDevice& device, const void* data, size_t dataSize, VkShaderModule* shaderModule) {
+		void CreateShaderModule(const void* data, std::size_t dataSize, VkShaderModule* shaderModule) {
 			VkShaderModuleCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			createInfo.pNext = nullptr;
+			createInfo.flags = 0;
 			createInfo.codeSize = dataSize;
-			//printf("uint32_t data size : %d \n", data.size());
 			createInfo.pCode = reinterpret_cast<const uint32_t*>(data);
-			VkResult vkResult = vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule);
-			if (vkResult != VK_SUCCESS) {
-				printf("vkResult : %d \n", vkResult);
-				throw std::runtime_error("failed to create shader module");
-			}
+			//printf("uint32_t data size : %d \n", data.size());
+			EWE_VK(vkCreateShaderModule, VK::Object->vkDevice, &createInfo, nullptr, shaderModule);
 		}
 	}
 
 	// ~~~~~~~ COMPUTE PIPELINE ~~~~~~~~~~~~~~~
-	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(EWEDevice& device, std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path) {
+	EWE_Compute_Pipeline EWE_Compute_Pipeline::CreatePipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path) {
 		EWE_Compute_Pipeline ret;
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(computeDSL.size());
 		pipelineLayoutInfo.pSetLayouts = computeDSL.data();
 
-		if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &ret.pipe_layout) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create compute pipeline layout!");
-		}
+		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &ret.pipe_layout);
+		
 
 		VkComputePipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -109,31 +112,31 @@ namespace EWE {
 
 		std::string computePath = "compute/";
 		computePath += compute_path;
-		Pipeline_Helper_Functions::createShaderModule(device, computePath, &ret.shader);
+		Pipeline_Helper_Functions::CreateShaderModule(computePath, &ret.shader);
 		VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
 		computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		computeShaderStageInfo.module = ret.shader;
 		computeShaderStageInfo.pName = "main";
 		pipelineInfo.stage = computeShaderStageInfo;
-		vkCreateComputePipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
+		EWE_VK(vkCreateComputePipelines, VK::Object->vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
 		return ret;
 	}
-	EWE_Compute_Pipeline EWE_Compute_Pipeline::createPipeline(EWEDevice& device, VkPipelineLayout pipe_layout, std::string compute_path) {
+	EWE_Compute_Pipeline EWE_Compute_Pipeline::CreatePipeline(VkPipelineLayout pipe_layout, std::string compute_path) {
 		EWE_Compute_Pipeline ret;
 		ret.pipe_layout = pipe_layout;
 
 		VkComputePipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 		pipelineInfo.layout = ret.pipe_layout;
-		Pipeline_Helper_Functions::createShaderModule(device, compute_path, &ret.shader);
+		Pipeline_Helper_Functions::CreateShaderModule(compute_path, &ret.shader);
 		VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
 		computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		computeShaderStageInfo.module = ret.shader;
-		computeShaderStageInfo.pName = "main";
+		computeShaderStageInfo.pName = "computeMain";
 		pipelineInfo.stage = computeShaderStageInfo;
-		vkCreateComputePipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
+		EWE_VK(vkCreateComputePipelines, VK::Object->vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ret.pipeline);
 		return ret;
 	}
 
@@ -142,30 +145,40 @@ namespace EWE {
 	std::map<std::string, VkShaderModule> EWEPipeline::shaderModuleMap;
 	VkPipelineRenderingCreateInfo* EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic;
 
-	EWEPipeline::EWEPipeline(EWEDevice& device, const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo) : eweDevice{ device } {
-		if (shaderModuleMap.find(vertFilepath) == shaderModuleMap.end()) {
-			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilepath);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, vertCode, &vertShaderModule);
-			shaderModuleMap[vertFilepath] = vertShaderModule;
+	EWEPipeline::EWEPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo) {
+		//printf("constructing ewe pipeline\n");
+
+
+		const auto vertFind = shaderModuleMap.find(vertFilepath);
+		if (vertFind == shaderModuleMap.end()) {
+			auto vertCode = Pipeline_Helper_Functions::ReadFile(vertFilepath);
+			Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
+			//printf("emplacing shader module vert to map\n");
+			shaderModuleMap.try_emplace(vertFilepath, vertShaderModule);
 		}
 		else {
-			vertShaderModule = shaderModuleMap[vertFilepath];
+			vertShaderModule = vertFind->second;
 		}
-		if (shaderModuleMap.find(fragFilepath) == shaderModuleMap.end()) {
-			auto fragCode = Pipeline_Helper_Functions::readFile(fragFilepath);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, fragCode, &fragShaderModule);
-			shaderModuleMap[fragFilepath] = fragShaderModule;
+
+		const auto fragFind = shaderModuleMap.find(fragFilepath);
+		if (fragFind == shaderModuleMap.end()) {
+			auto fragCode = Pipeline_Helper_Functions::ReadFile(fragFilepath);
+			Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
+			//printf("emplacing shader module frag to map\n");
+			shaderModuleMap.try_emplace(fragFilepath, fragShaderModule);
 		}
 		else {
-			fragShaderModule = shaderModuleMap[fragFilepath];
+			fragShaderModule = fragFind->second;
 		}
-		createGraphicsPipeline(configInfo);
-	}
-	EWEPipeline::EWEPipeline(EWEDevice& device, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo) : eweDevice{ device }, vertShaderModule{ vertShaderModu }, fragShaderModule{ fragShaderModu } {
-		createGraphicsPipeline(configInfo);
+		//printf("creating graphics pipeline\n");
+		CreateGraphicsPipeline(configInfo);
 	}
 
-	EWEPipeline::EWEPipeline(EWEDevice& device, uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo) : eweDevice{ device } {
+	EWEPipeline::EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo) : vertShaderModule{ vertShaderModu }, fragShaderModule{ fragShaderModu } {
+		CreateGraphicsPipeline(configInfo);
+	}
+
+	EWEPipeline::EWEPipeline(uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo) {
 		std::string vertPath = SHADER_DIR;
 		//this is always instanced???
 		bool hasNormal = (flags & MaterialF_hasNormal) > 0;
@@ -175,36 +188,38 @@ namespace EWE {
 		else {
 			vertPath += "dynamic/" + std::to_string(boneCount) + ".vert.spv";
 		}
-		if (shaderModuleMap.find(vertPath) == shaderModuleMap.end()) {
+		const auto vertFind = shaderModuleMap.find(vertPath);
+		if (vertFind == shaderModuleMap.end()) {
 			printf("creating vertex shader - %d:%d \n", boneCount, flags);
 			//auto vertCode = readFile(vertPath);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, ShaderBlock::getVertexShader(hasNormal, boneCount, true), &vertShaderModule);
-			shaderModuleMap[vertPath] = vertShaderModule;
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetVertexShader(hasNormal, boneCount, true), &vertShaderModule);
+			shaderModuleMap.try_emplace(vertPath, vertShaderModule);
 		}
 		else {
-			vertShaderModule = shaderModuleMap[vertPath];
+			vertShaderModule = vertFind->second;
 		}
 		std::string fragPath = SHADER_DIR;
 		fragPath += "dynamic/" + std::to_string(flags) + "b.frag.spv";
-		if (shaderModuleMap.find(fragPath) == shaderModuleMap.end()) {
+		const auto fragFind = shaderModuleMap.find(fragPath);
+		if (fragFind == shaderModuleMap.end()) {
 			printf("creating fragment shader : %d \n", flags);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, ShaderBlock::getFragmentShader(flags, true), &fragShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags, true), &fragShaderModule);
 			//fragPath = ENGINE_DIR + fragPath; //wtf
-			shaderModuleMap[fragPath] = fragShaderModule;
+			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 		}
 		else {
-			fragShaderModule = shaderModuleMap[fragPath];
+			fragShaderModule = fragFind->second;
 		}
 
-		createGraphicsPipeline(configInfo);
+		CreateGraphicsPipeline(configInfo);
 	}
 
-	EWEPipeline::EWEPipeline(EWEDevice& device, std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones) : eweDevice{ device } {
+	EWEPipeline::EWEPipeline(std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones) {
 
-		auto vertModuleIter = shaderModuleMap.find(vertFilePath);
+		const auto vertModuleIter = shaderModuleMap.find(vertFilePath);
 		if (vertModuleIter == shaderModuleMap.end()) {
-			auto vertCode = Pipeline_Helper_Functions::readFile(vertFilePath);
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, vertCode, &vertShaderModule);
+			auto vertCode = Pipeline_Helper_Functions::ReadFile(vertFilePath);
+			Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
 			shaderModuleMap.try_emplace(vertFilePath, vertShaderModule);
 		}
 		else {
@@ -217,9 +232,9 @@ namespace EWE {
 		}
 		fragPath += ".frag.spv";
 
-		auto fragModuleIter = shaderModuleMap.find(fragPath);
+		const auto fragModuleIter = shaderModuleMap.find(fragPath);
 		if (fragModuleIter == shaderModuleMap.end()) {
-			Pipeline_Helper_Functions::createShaderModule(eweDevice, ShaderBlock::getFragmentShader(flags, hasBones), &fragShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags, hasBones), &fragShaderModule);
 			fragPath = SHADER_DIR + fragPath;
 			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 		}
@@ -227,27 +242,29 @@ namespace EWE {
 			fragShaderModule = fragModuleIter->second;
 		}
 
-		createGraphicsPipeline(configInfo);
+		CreateGraphicsPipeline(configInfo);
 	}
 
 	EWEPipeline::~EWEPipeline() {
-		//MIGHT DESTROY THE SAME MODULE TWICE WHILE USING THE MAP COPY
-
-		//vkDestroyShaderModule(eweDevice.device(), vertShaderModule, nullptr);
-		//vkDestroyShaderModule(eweDevice.device(), fragShaderModule, nullptr);
-		vkDestroyPipeline(eweDevice.device(), graphicsPipeline, nullptr);
+		EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, graphicsPipeline, nullptr);
 	}
 
-	void EWEPipeline::bind(VkCommandBuffer commandBuffer) {
-		EWERenderer::bindGraphicsPipeline(commandBuffer, graphicsPipeline);
+	void EWEPipeline::Bind() {
+		EWERenderer::BindGraphicsPipeline(graphicsPipeline);
 	}
 
-	void EWEPipeline::createGraphicsPipeline(const PipelineConfigInfo& configInfo) {
+#if DEBUG_NAMING
+	void EWEPipeline::SetDebugName(std::string const& name) {
+		DebugNaming::SetObjectName(graphicsPipeline, VK_OBJECT_TYPE_PIPELINE, name.c_str());
+	}
+#endif
+
+	void EWEPipeline::CreateGraphicsPipeline(const PipelineConfigInfo& configInfo) {
 
 		assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no pipelineLayout provided in configInfo");
 		//assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no renderPass provided in configInfo");
 
-		VkPipelineShaderStageCreateInfo shaderStages[2];
+		std::vector<VkPipelineShaderStageCreateInfo> shaderStages{2 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE)};
 		shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
 		shaderStages[0].module = vertShaderModule;
@@ -256,14 +273,27 @@ namespace EWE {
 		shaderStages[0].pNext = nullptr;
 		shaderStages[0].pSpecializationInfo = nullptr;
 
+		if (configInfo.geomShaderModule != VK_NULL_HANDLE) {
+			auto& geomStage = shaderStages[1];
+			geomStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			geomStage.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+			geomStage.module = configInfo.geomShaderModule;
+			geomStage.pName = "main";
+			geomStage.flags = 0;
+			geomStage.pNext = nullptr;
+			geomStage.pSpecializationInfo = nullptr;
+		}
 
-		shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		shaderStages[1].module = fragShaderModule;
-		shaderStages[1].pName = "main";
-		shaderStages[1].flags = 0;
-		shaderStages[1].pNext = nullptr;
-		shaderStages[1].pSpecializationInfo = nullptr;
+
+		
+		auto& fragStage = shaderStages[1 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE)];
+		fragStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragStage.module = fragShaderModule;
+		fragStage.pName = "main";
+		fragStage.flags = 0;
+		fragStage.pNext = nullptr;
+		fragStage.pSpecializationInfo = nullptr;
 
 		auto& bindingDescriptions = configInfo.bindingDescriptions;
 		auto& attributeDescriptions = configInfo.attributeDescriptions;
@@ -271,24 +301,14 @@ namespace EWE {
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 		vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
-		if (attributeDescriptions.size() > 0) {
-			vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-		}
-		else {
-			vertexInputInfo.pVertexAttributeDescriptions = nullptr;
-		}
-		if (bindingDescriptions.size() > 0) {
-			vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
-		}
-		else {
-			vertexInputInfo.pVertexBindingDescriptions = nullptr;
-		}
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+		vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
 
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.pNext = &configInfo.pipelineRenderingInfo;
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.stageCount = 2;
-		pipelineInfo.pStages = shaderStages;
+		pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+		pipelineInfo.pStages = shaderStages.data();
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
 		pipelineInfo.pViewportState = &configInfo.viewportInfo;
@@ -311,18 +331,14 @@ namespace EWE {
 		}
 		pipelineInfo.flags = configInfo.flags;
 #endif
-		if (vkCreateGraphicsPipelines(eweDevice.device(), configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create graphics pipeline");
-		}
-
-
+		EWE_VK(vkCreateGraphicsPipelines, VK::Object->vkDevice, configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline);
 	}
 
-	void EWEPipeline::enable2DConfig(PipelineConfigInfo& configInfo) {
+	void EWEPipeline::Enable2DConfig(PipelineConfigInfo& configInfo) {
 		configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 	}
 
-	void EWEPipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo) {
+	void EWEPipeline::DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo) {
 
 		configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -412,7 +428,7 @@ namespace EWE {
 		*/
 	}
 
-	void EWEPipeline::enableAlphaBlending(PipelineConfigInfo& configInfo) {
+	void EWEPipeline::EnableAlphaBlending(PipelineConfigInfo& configInfo) {
 		configInfo.colorBlendAttachment.blendEnable = VK_TRUE;
 
 		configInfo.colorBlendAttachment.colorWriteMask =
@@ -429,6 +445,20 @@ namespace EWE {
 		configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 	}
 
+	void EWEPipeline::PipelineConfigInfo::AddGeomShaderModule(std::string const& geomFilepath) {
+
+		const auto geomFind = shaderModuleMap.find(geomFilepath);
+		if (geomFind == shaderModuleMap.end()) {
+			auto geomCode = Pipeline_Helper_Functions::ReadFile(geomFilepath);
+			Pipeline_Helper_Functions::CreateShaderModule(geomCode, &geomShaderModule);
+			shaderModuleMap.try_emplace(geomFilepath, geomShaderModule);
+
+		}
+		else {
+			geomShaderModule = geomFind->second;
+		}
+	}
+
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PIPELINE MANAGER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	/*
@@ -440,7 +470,7 @@ namespace EWE {
 	VkShaderModule PipelineManager::loadingVertShaderModule{ VK_NULL_HANDLE };
 	VkShaderModule PipelineManager::loadingFragShaderModule{ VK_NULL_HANDLE };
 	std::unique_ptr<EWEPipeline> PipelineManager::loadingPipeline{ nullptr };
-#ifdef _DEBUG
+#if EWE_DEBUG
 	std::vector<uint8_t> PipelineManager::dynamicBonePipeTracker;
 	std::vector<std::pair<uint16_t, MaterialFlags>> PipelineManager::dynamicInstancedPipeTracker;
 #endif
@@ -450,7 +480,7 @@ namespace EWE {
 	VkPipelineCache PipelineManager::instanceMaterialPipelineCache = VK_NULL_HANDLE;
 	std::map<uint8_t, std::unique_ptr<EWEPipeline>> PipelineManager::dynamicMaterialPipeline;
 
-	void PipelineManager::initDynamicPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device) {
+	void PipelineManager::initDynamicPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced) {
 		//layouts
 		//textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))
 		if (dynamicMaterialPipeLayout[dynamicPipeLayoutIndex] == VK_NULL_HANDLE) {
@@ -485,7 +515,7 @@ namespace EWE {
 
 			printf("creating dynamic pipe layout with index : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
 
-			VkResult vkResult = vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &dynamicMaterialPipeLayout[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))]);
+			VkResult vkResult = vkCreatePipelineLayout(EWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &dynamicMaterialPipeLayout[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))]);
 			if (vkResult != VK_SUCCESS) {
 				printf("failed to create dynamic mat pipelayout layout [%d] \n", textureCount);
 				throw std::runtime_error("Failed to create dynamic mat pipe layout \n");
@@ -493,10 +523,10 @@ namespace EWE {
 		}
 	}
 
-	void PipelineManager::updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
+	void PipelineManager::updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 		bool hasBones = flags & 128;
 		bool instanced = flags & 64; //curently creating an outside manager to deal with instanced skinned meshes
-#ifdef _DEBUG
+#if EWE_DEBUG
 		if (hasBones || instanced) {
 			printf("creating a material pipe with bones or instanced flag set, no longer supported \n");
 			throw std::exception("creating a material pipe with bones or instanced flag set, no longer supported");
@@ -514,7 +544,7 @@ namespace EWE {
 		uint16_t pipeLayoutIndex = textureCount;
 		printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 		if (textureCount == 0) {
 			//undesirable, but not quite a bug. only passing in an albedo texture is valid
 			printf("material pipeline, flags textureCount is 0 wtf \n");
@@ -536,7 +566,7 @@ namespace EWE {
 				VkPipelineCacheCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 
-				if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &materialPipelineCache) != VK_SUCCESS) {
+				if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &materialPipelineCache) != VK_SUCCESS) {
 					// handle error
 					printf("failed to create material pipeline cache \n");
 					throw std::runtime_error("failed to create material pipeline cache");
@@ -563,20 +593,20 @@ namespace EWE {
 			pipelineConfig.cache = materialPipelineCache;
 			if (hasBumps) {
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
-				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = AVertex::GetAttributeDescriptions();
 
 				dynamicMaterialPipeline.emplace(flags, std::make_unique<EWEPipeline>(device, "material_bump.vert.spv", flags, pipelineConfig, false));
 			}
 			else if (hasNormal) {
 				//printf("AVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertex>();
-				pipelineConfig.attributeDescriptions = AVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = AVertex::GetAttributeDescriptions();
 				dynamicMaterialPipeline.emplace(flags, std::make_unique<EWEPipeline>(device, "material_Tangent.vert.spv", flags, pipelineConfig, false));
 			}
 			else {
 				//printf("AVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertexNT>();
-				pipelineConfig.attributeDescriptions = AVertexNT::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = AVertexNT::GetAttributeDescriptions();
 				dynamicMaterialPipeline.emplace(flags, std::make_unique<EWEPipeline>(device, "material_nn.vert.spv", flags, pipelineConfig, false));
 			}
 			
@@ -585,9 +615,9 @@ namespace EWE {
 		}
 	}
 
-	std::unique_ptr<EWEPipeline> PipelineManager::createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
+	std::unique_ptr<EWEPipeline> PipelineManager::createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 		for (int i = 0; i < dynamicInstancedPipeTracker.size(); i++) {
 			if (flags == dynamicInstancedPipeTracker[i].second) {
 				if (dynamicInstancedPipeTracker[i].first == boneCount) {
@@ -626,7 +656,7 @@ namespace EWE {
 		if (instanceMaterialPipelineCache == VK_NULL_HANDLE) {
 			VkPipelineCacheCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-			if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &instanceMaterialPipelineCache) != VK_SUCCESS) {
+			if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &instanceMaterialPipelineCache) != VK_SUCCESS) {
 				// handle error
 				printf("failed to create instance material pipeline cache \n");
 				throw std::runtime_error("failed to create material pipeline cache");
@@ -636,15 +666,13 @@ namespace EWE {
 
 		//printf("boneVertex, flags:%d \n", newFlags);
 		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
-		pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
-		glslang::InitializeProcess();
+		pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
 		return std::make_unique<EWEPipeline>(device, boneCount, flags, pipelineConfig);
-		glslang::FinalizeProcess();
 		
 	}
 
-	std::unique_ptr<EWEPipeline> PipelineManager::createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device) {
-#ifdef _DEBUG
+	std::unique_ptr<EWEPipeline> PipelineManager::createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
+#if EWE_DEBUG
 		for (int i = 0; i < dynamicBonePipeTracker.size(); i++) {
 			if (flags == dynamicBonePipeTracker[i]) {
 				printf("double created remote bone pipeline, throwing error \n");
@@ -684,7 +712,7 @@ namespace EWE {
 		if (boneMaterialPipelineCache == VK_NULL_HANDLE) {
 			VkPipelineCacheCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-			if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &boneMaterialPipelineCache) != VK_SUCCESS) {
+			if (vkCreatePipelineCache(EWEDevice::GetVkDevice(), &createInfo, nullptr, &boneMaterialPipelineCache) != VK_SUCCESS) {
 				// handle error
 				printf("failed to create bone material pipeline cache \n");
 				throw std::runtime_error("failed to create bone material pipeline cache");
@@ -692,24 +720,22 @@ namespace EWE {
 		}
 		pipelineConfig.cache = boneMaterialPipelineCache;
 
-		glslang::InitializeProcess();
 		if (hasNormal) {
 			//printf("boneVertex, flags:%d \n", newFlags);
 			pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
-			pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
+			pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
 			return std::make_unique<EWEPipeline>(device, "bone_Tangent.vert.spv", flags, pipelineConfig, true);
 		}
 		else {
 			//printf("boneVertexNT, flags:%d \n", newFlags);
 			pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertexNoTangent>();
-			pipelineConfig.attributeDescriptions = boneVertexNoTangent::getAttributeDescriptions();
+			pipelineConfig.attributeDescriptions = boneVertexNoTangent::GetAttributeDescriptions();
 			return std::make_unique<EWEPipeline>(device, "bone_NT.vert.spv", flags, pipelineConfig, true);
 		}
-		glslang::FinalizeProcess();
 
 	}
 
-	void PipelineManager::createLoadingPipeline(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
+	void PipelineManager::createLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo) {
 		if (loadingPipeline.get() != nullptr) {
 			printf("trying to recreate the loading pipeline \n");
 			return;
@@ -720,22 +746,20 @@ namespace EWE {
 
 		pipelineConfig.pipelineRenderingInfo = pipeRenderInfo;
 		pipelineConfig.pipelineLayout = getPipelineLayout(PL_loading, device);
-		pipelineConfig.bindingDescriptions = LeafVertex::getBindingDescriptions();
-		pipelineConfig.attributeDescriptions = LeafVertex::getAttributeDescriptions();
+		pipelineConfig.bindingDescriptions = LeafVertex::GetBindingDescriptions();
+		pipelineConfig.attributeDescriptions = LeafVertex::GetAttributeDescriptions();
 
 		printf("before loading vert shader \n");
-		glslang::InitializeProcess();
 		Pipeline_Helper_Functions::createShaderModule(device, ShaderBlock::getLoadingVertShader(), &loadingVertShaderModule);
 
 		printf("before loading frag shader \n");
 		Pipeline_Helper_Functions::createShaderModule(device, ShaderBlock::getLoadingFragShader(), &loadingFragShaderModule);
 		printf("after loading creation shaders \n");
-		glslang::FinalizeProcess();
 
 		loadingPipeline = std::make_unique<EWEPipeline>(device, loadingVertShaderModule, loadingFragShaderModule, pipelineConfig);
 	}
 
-	VkPipelineLayout PipelineManager::getPipelineLayout(PipeLayout_Enum ple, EWEDevice& eweDevice) {
+	VkPipelineLayout PipelineManager::getPipelineLayout(PipeLayout_Enum ple) {
 		//if (pipelineLayouts[ple] == VK_NULL_HANDLE) { //this initiates the layout, which may not be equal to VK_NULL_HANDLE at initiation (probably wont -> definitiely wont)
 		//doing it like this because i have pipelayouts that are used in multiple pipelines
 		if (pipeLayouts.find(ple) != pipeLayouts.end()) {
@@ -752,7 +776,7 @@ namespace EWE {
 			pipelineLayoutInfo.pushConstantRangeCount = 1;
 			pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 			printf("finna create pipeline layout : %d \n", ple);
 #endif
 			switch (ple) {
@@ -765,7 +789,7 @@ namespace EWE {
 				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_pointLight, eweDevice);
 				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
 				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				if (vkCreatePipelineLayout(eweDevice.device(), &pipelineLayoutInfo, nullptr, &pipeLayouts[PL_pointLight]) != VK_SUCCESS) {
+				if (vkCreatePipelineLayout(eweDeviceEWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayouts[PL_pointLight]) != VK_SUCCESS) {
 					throw std::runtime_error("failed to create pipeline layout");
 				}
 				break;
@@ -869,51 +893,6 @@ namespace EWE {
 
 				break;
 			}
-			case PL_orbOverlay: {
-				
-				pushConstantRange.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-				pushConstantRange.size = sizeof(HPContainerPushData);
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-				//std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_sprite, eweDevice);
-				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_orbOverlay, eweDevice);
-				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
-				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				//printf("before orb overlay PL \n");
-				//printf("after orb overlay PL \n");
-				break;
-			}
-			case PL_ExpBar: {
-
-				pushConstantRange.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-				pushConstantRange.size = sizeof(ExpBarPushData);
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-				//std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_sprite, eweDevice);
-				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_2d, eweDevice);
-				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
-				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				//printf("before orb overlay PL \n");
-				//printf("after exp bar overlay PL \n");
-				break;
-			}
-			case PL_castleHealth: {
-
-				pushConstantRange.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-				pushConstantRange.size = sizeof(CastleHealthPushData);
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-				//std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_sprite, eweDevice);
-				std::vector<VkDescriptorSetLayout>* tempDSL = DescriptorHandler::getPipeDescSetLayout(PDSL_2d, eweDevice);
-				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL->size());
-				pipelineLayoutInfo.pSetLayouts = tempDSL->data();
-				//printf("before orb overlay PL \n");
-				//printf("after exp bar overlay PL \n");
-				break;
-			}
 
 			case PL_visualEffect: {
 				pushConstantRange.size = sizeof(ModelPushData);
@@ -942,7 +921,7 @@ namespace EWE {
 
 			}
 
-			if (vkCreatePipelineLayout(eweDevice.device(), &pipelineLayoutInfo, nullptr, &pipeLayouts[ple]) != VK_SUCCESS) {
+			if (vkCreatePipelineLayout(eweDeviceEWEDevice::GetVkDevice(), &pipelineLayoutInfo, nullptr, &pipeLayouts[ple]) != VK_SUCCESS) {
 				printf("failed to create %d pipe layout \n", ple);
 				throw std::runtime_error("Failed to create pipe layout \n");
 			}
@@ -954,7 +933,7 @@ namespace EWE {
 		}
 	}
 
-	void PipelineManager::initPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo, Pipeline_Enum pipeNeeded, EWEDevice& eweDevice) {
+	void PipelineManager::initPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo, Pipeline_Enum pipeNeeded) {
 
 		if (pipelines.find(pipeNeeded) != pipelines.end()) {
 			return;
@@ -984,7 +963,7 @@ namespace EWE {
 
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_spikyBall, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<simpleVertex>();
-				pipelineConfig.attributeDescriptions = simpleVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = simpleVertex::GetAttributeDescriptions();
 
 				vertString = "spikyball.vert.spv";
 				fragString = "spikyball.frag.spv";
@@ -993,8 +972,8 @@ namespace EWE {
 			}
 			case Pipe_grass: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_grass, eweDevice);
-				pipelineConfig.bindingDescriptions = GrassVertex::getBindingDescriptions();
-				pipelineConfig.attributeDescriptions = GrassVertex::getAttributeDescriptions();
+				pipelineConfig.bindingDescriptions = GrassVertex::GetBindingDescriptions();
+				pipelineConfig.attributeDescriptions = GrassVertex::GetAttributeDescriptions();
 
 				vertString = "grassField.vert.spv";
 				fragString = "grassField.frag.spv";
@@ -1012,7 +991,7 @@ namespace EWE {
 			case Pipe_skybox: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_skybox, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<skyVertex>();
-				pipelineConfig.attributeDescriptions = skyVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = skyVertex::GetAttributeDescriptions();
 
 				vertString = "skybox.vert.spv";
 				fragString = "skybox.frag.spv";
@@ -1022,7 +1001,7 @@ namespace EWE {
 			case Pipe_textured: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_textured, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
 
 				vertString = "texture_shader.vert.spv";
 				fragString = "texture_shader.frag.spv";
@@ -1033,7 +1012,7 @@ namespace EWE {
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_2d, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = VertexUI::GetAttributeDescriptions();
 				vertString = "2d.vert.spv";
 				fragString = "2d.frag.spv";
 				break;
@@ -1042,7 +1021,7 @@ namespace EWE {
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_nineUI, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = VertexUI::GetAttributeDescriptions();
 				//maybe i should cache UI into here
 				//printf("before nineui pipe \n");
 				vertString = "NineUI.vert.spv";
@@ -1053,7 +1032,7 @@ namespace EWE {
 			case Pipe_alpha: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_textured, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				vertString = "texture_alpha.vert.spv";
 				fragString = "texture_alpha.frag.spv";
@@ -1063,53 +1042,17 @@ namespace EWE {
 
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_sprite, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<AVertexNT>();
-				pipelineConfig.attributeDescriptions = AVertexNT::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = AVertexNT::GetAttributeDescriptions();
 				EWEPipeline::enableAlphaBlending(pipelineConfig);
 				vertString = "sprite.vert.spv";
 				fragString = "sprite.frag.spv";
-				break;
-			}
-			case Pipe_orbOverlay: {
-
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_orbOverlay, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
-				EWEPipeline::enableAlphaBlending(pipelineConfig);
-				//printf("before orb pipe \n");
-				vertString = "HPContainer.vert.spv";
-				fragString = "HPContainer.frag.spv";
-
-				//printf("after orb pipe \n");
-				break;
-			}
-			case Pipe_ExpBar: {
-
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_ExpBar, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
-				EWEPipeline::enableAlphaBlending(pipelineConfig);
-				//printf("before orb pipe \n");
-				vertString = "ExpContainer.vert.spv";
-				fragString = "ExpContainer.frag.spv";
-				//printf("after orb pipe \n");
-				break;
-			}
-			case Pipe_castleHealth: {
-				pipelineConfig.pipelineLayout = getPipelineLayout(PL_castleHealth, eweDevice);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexUI>();
-				pipelineConfig.attributeDescriptions = VertexUI::getAttributeDescriptions();
-				EWEPipeline::enableAlphaBlending(pipelineConfig);
-				//printf("before orb pipe \n");
-				vertString = "CastleHealth.vert.spv";
-				fragString = "CastleHealth.frag.spv";
-				//printf("after orb pipe \n");
 				break;
 			}
 
 			case Pipe_visualEffect: {
 				pipelineConfig.pipelineLayout = getPipelineLayout(PL_visualEffect, eweDevice);
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<EffectVertex>();
-				pipelineConfig.attributeDescriptions = EffectVertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = EffectVertex::GetAttributeDescriptions();
 				vertString = "visualEffect.vert.spv";
 				fragString = "visualEffect.frag.spv";
 				break;
@@ -1123,7 +1066,7 @@ namespace EWE {
 				pipelineConfig.depthStencilInfo.depthWriteEnable = VK_FALSE;
 
 				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
+				pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
 				vertString = "texture_alpha.vert.spv";
 				fragString = "texture_alpha.frag.spv";
 				break;
@@ -1143,17 +1086,17 @@ namespace EWE {
 		}
 	}
 
-	void PipelineManager::cleanupStaticVariables(EWEDevice& device) {
+	void PipelineManager::cleanupStaticVariables() {
 
 #if DECONSTRUCTION_DEBUG
 		printf("begin deconstructing pipeline manager \n");
 #endif
 		for (int i = 0; i < DYNAMIC_PIPE_LAYOUT_COUNT; i++) {
 			if (dynamicMaterialPipeLayout[i] != VK_NULL_HANDLE) {
-				vkDestroyPipelineLayout(device.device(), dynamicMaterialPipeLayout[i], nullptr);
+				vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), dynamicMaterialPipeLayout[i], nullptr);
 			}
 		}
-#ifdef _DEBUG
+#if EWE_DEBUG
 		for (int i = 0; i < PL_MAX_COUNT; i++) {
 			if (pipeLayouts.find((PipeLayout_Enum)i) == pipeLayouts.end()) {
 				printf("pipelayout : %d was never used! \n", i);
@@ -1161,7 +1104,7 @@ namespace EWE {
 		}
 #endif
 		for (auto iter = pipeLayouts.begin(); iter != pipeLayouts.end(); iter++) {
-			vkDestroyPipelineLayout(device.device(), iter->second, nullptr);
+			vkDestroyPipelineLayout(EWEDevice::GetVkDevice(), iter->second, nullptr);
 		}
 		pipeLayouts.clear();
 		for (int i = 0; i < Pipe_MAX_COUNT; i++) {
@@ -1173,16 +1116,16 @@ namespace EWE {
 		dynamicMaterialPipeline.clear();
 
 		if (materialPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), materialPipelineCache, nullptr);
+			vkDestroyPipelineCache(EWEDevice::GetVkDevice(), materialPipelineCache, nullptr);
 		}
 		if (boneMaterialPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), boneMaterialPipelineCache, nullptr);
+			vkDestroyPipelineCache(EWEDevice::GetVkDevice(), boneMaterialPipelineCache, nullptr);
 		}
 		if (instanceMaterialPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), instanceMaterialPipelineCache, nullptr);
+			vkDestroyPipelineCache(EWEDevice::GetVkDevice(), instanceMaterialPipelineCache, nullptr);
 		}
-		vkDestroyShaderModule(device.device(), loadingVertShaderModule, nullptr);
-		vkDestroyShaderModule(device.device(), loadingFragShaderModule, nullptr);
+		vkDestroyShaderModule(EWEDevice::GetVkDevice(), loadingVertShaderModule, nullptr);
+		vkDestroyShaderModule(EWEDevice::GetVkDevice(), loadingFragShaderModule, nullptr);
 		loadingPipeline.reset();
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstructing pipeline manager \n");

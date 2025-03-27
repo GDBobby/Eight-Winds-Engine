@@ -19,73 +19,64 @@
 
 namespace EWE {
 
+	namespace Pipe {
+		enum Pipeline_Enum : PipelineID {
+			pointLight,
+			textured,
+			skybox,
+			grid,
+			loading,
+			lightning,
 
-	enum Pipeline_Enum : PipelineID {
-		Pipe_pointLight,
-		Pipe_textured,
-		Pipe_alpha,
-		//Pipe_material,
-		Pipe_2d,
-		Pipe_NineUI,
-		//Pipe_fbx,
-		Pipe_skybox,
-		Pipe_grid,
-		//Pipe_bobTrans,
-		Pipe_sprite,
-		Pipe_boneWeapon,
-		Pipe_lightning,
-		Pipe_spikyBall,
-		Pipe_visualEffect,
-		Pipe_grass,
-		Pipe_loading,
+			ENGINE_MAX_COUNT,
+		};
+	} //namespace Pipe
+	//namespace PL{
+	//enum PipeLayout_Enum : uint32_t { //uint32_t is the same as PipelineID, but using uint32_t to avoid confusion
+	//	pointLight,
+	//	lightning,
+	//	spikyBall,
+	//	grass,
+	//	textured,
+	//	//PL_material,
+	//	twod,
+	//	boned,
+	//	//PL_fbx,
+	//	skybox,
+	//	sprite,
+	//	//PL_boneWeapon,
+	//	visualEffect,
+	//	//PL_metalRough,
+	//	loading,
 
-		Pipe_MAX_COUNT,
-	};
-	enum PipeLayout_Enum : uint32_t { //uint32_t is the same as PipelineID, but using uint32_t to avoid confusion
-		PL_pointLight,
-		PL_lightning,
-		PL_spikyBall,
-		PL_grass,
-		PL_textured,
-		//PL_material,
-		PL_2d,
-		PL_boned,
-		//PL_fbx,
-		PL_skybox,
-		PL_sprite,
-		//PL_boneWeapon,
-		PL_visualEffect,
-		//PL_metalRough,
-		PL_loading,
+	//	nineUI,
 
-		PL_nineUI,
-
-		PL_MAX_COUNT,
-	};
+	//	MAX_COUNT,
+	//};
+	//} //namespace PL
 
 	//typedef uint8_t MaterialFlags; this in engine/data/enginedatatypes.h
 
 	namespace Pipeline_Helper_Functions {
-		void createShaderModule(EWEDevice& device, std::string const& file_path, VkShaderModule* shaderModule);
-		std::vector<char> readFile(const std::string& filepath);
+		void CreateShaderModule(std::string const& file_path, VkShaderModule* shaderModule);
+		std::vector<char> ReadFile(const std::string& filepath);
 
-		void createShaderModule(EWEDevice& device, const std::vector<uint32_t>& data, VkShaderModule* shaderModule);
-		void createShaderModule(EWEDevice& device, const char* data, size_t dataSize, VkShaderModule* shaderModule);
+		void CreateShaderModule(const std::vector<uint32_t>& data, VkShaderModule* shaderModule);
+		void CreateShaderModule(const char* data, std::size_t dataSize, VkShaderModule* shaderModule);
 
 		template <typename T>
-		void createShaderModule(EWEDevice& device, const std::vector<T>& data, VkShaderModule* shaderModule);
+		void CreateShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule);
 	}
 
 	class EWE_Compute_Pipeline {
 	public:
 		VkPipelineLayout pipe_layout;
 		VkPipeline pipeline;
-		//could do some shit to prevent compute path being reused, idk
 
-		static EWE_Compute_Pipeline createPipeline(EWEDevice& device, std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path);
-		static EWE_Compute_Pipeline createPipeline(EWEDevice& device, VkPipelineLayout pipe_layout, std::string compute_path);
-		void bind(VkCommandBuffer cmdBuf) {
-			vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+		static EWE_Compute_Pipeline CreatePipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path);
+		static EWE_Compute_Pipeline CreatePipeline(VkPipelineLayout pipe_layout, std::string compute_path);
+		void Bind(CommandBuffer cmdBuf) {
+			EWE_VK(vkCmdBindPipeline, cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 		}
 	private:
 		VkShaderModule shader;
@@ -100,8 +91,12 @@ namespace EWE {
 			PipelineConfigInfo(const PipelineConfigInfo&) = delete;
 			PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
 
+			void AddGeomShaderModule(std::string const& geomFilepath);
+
 			VkViewport viewport;
 			VkRect2D scissor;
+
+			VkShaderModule geomShaderModule{ VK_NULL_HANDLE };
 
 			std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
 			std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
@@ -133,39 +128,40 @@ namespace EWE {
 			static VkPipelineRenderingCreateInfo* pipelineRenderingInfoStatic;
 		};
 
-		EWEPipeline(EWEDevice& device, std::string const& vertFilepath, std::string const& fragFilepath, PipelineConfigInfo const& configInfo);
-		EWEPipeline(EWEDevice& device, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, PipelineConfigInfo const& configInfo);
-		EWEPipeline(EWEDevice& device, std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones);
-		EWEPipeline(EWEDevice& device, uint16_t boneCount, MaterialFlags flags, PipelineConfigInfo const& configInfo);
+		EWEPipeline(std::string const& vertFilepath, std::string const& fragFilepath, PipelineConfigInfo const& configInfo);
+		EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, PipelineConfigInfo const& configInfo);
+		EWEPipeline(std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones);
+		EWEPipeline(uint16_t boneCount, MaterialFlags flags, PipelineConfigInfo const& configInfo);
 
 		~EWEPipeline();
 
 		EWEPipeline(EWEPipeline const&) = delete;
 		EWEPipeline& operator=(EWEPipeline const&) = delete;
 
-		void bind(VkCommandBuffer commandBuffer);
-		static void defaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
-		static void enable2DConfig(PipelineConfigInfo& configInfo);
-		static void enableAlphaBlending(PipelineConfigInfo& configInfo);
+		void Bind();
+		static void DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
+		static void Enable2DConfig(PipelineConfigInfo& configInfo);
+		static void EnableAlphaBlending(PipelineConfigInfo& configInfo);
 
-		static void cleanShaderModules(EWEDevice& device) {
+		static void CleanShaderModules() {
 			for (auto iter = shaderModuleMap.begin(); iter != shaderModuleMap.end(); iter++) {
-				vkDestroyShaderModule(device.device(), iter->second, nullptr);
+				EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, iter->second, nullptr);
 			}
 			shaderModuleMap.clear();
 		}
-
+#if DEBUG_NAMING
+		void SetDebugName(std::string const& name);
+#endif
 
 	private:
 		//static materials
 		static std::map<std::string, VkShaderModule> shaderModuleMap;
 
-		EWEDevice& eweDevice;
 		VkPipeline graphicsPipeline;
 		VkShaderModule vertShaderModule;
 		VkShaderModule fragShaderModule;
 
-		void createGraphicsPipeline(PipelineConfigInfo const& configInfo);
+		void CreateGraphicsPipeline(PipelineConfigInfo const& configInfo);
 
 	};
 
@@ -180,10 +176,10 @@ namespace EWE {
 		//better to pass in references every time i want something, or make an object then have the object store the reference, with static accessors? singleton?
 		//is static reference even a thing?
 		static std::map<PipeLayout_Enum, VkPipelineLayout> pipeLayouts;
-		static std::map<Pipeline_Enum, std::unique_ptr<EWEPipeline>> pipelines;
-		static std::map<MaterialFlags, std::unique_ptr<EWEPipeline>> dynamicMaterialPipeline;
+		static std::map<Pipeline_Enum, EWEPipeline*> pipelines;
+		static std::map<MaterialFlags, EWEPipeline*> dynamicMaterialPipeline;
 
-#ifdef _DEBUG
+#if EWE_DEBUG
 		static std::vector<MaterialFlags> dynamicBonePipeTracker;
 		static std::vector<std::pair<uint16_t, MaterialFlags>> dynamicInstancedPipeTracker;
 #endif
@@ -191,28 +187,28 @@ namespace EWE {
 
 		static VkShaderModule loadingVertShaderModule;
 		static VkShaderModule loadingFragShaderModule;
-		static std::unique_ptr<EWEPipeline> loadingPipeline;
+		static EWEPipeline* loadingPipeline;
 
-		static void createLoadingPipeline(EWEDevice& device, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		static void createLoadingPipeline(VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 
-		static VkPipelineLayout getPipelineLayout(PipeLayout_Enum ple, EWEDevice& eweDevice);
+		static VkPipelineLayout getPipelineLayout(PipeLayout_Enum ple);
 
-		static void initDynamicPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device);
-		static void updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device);
+		static void initDynamicPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced);
+		static void updateMaterialPipe(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 
 		//this should ALWAYS have bones
-		static std::unique_ptr<EWEPipeline> createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device);
-		static std::unique_ptr<EWEPipeline> createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo, EWEDevice& device);
+		static EWEPipeline* createInstancedRemote(MaterialFlags flags, uint16_t boneCount, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
+		static EWEPipeline* createBoneRemote(MaterialFlags flags, VkPipelineRenderingCreateInfo const& pipeRenderInfo);
 
 		static void initStaticVariables() {
 			for (int i = 0; i < DYNAMIC_PIPE_LAYOUT_COUNT; i++) {
 				dynamicMaterialPipeLayout[i] = VK_NULL_HANDLE;
 			}
 		}
-		static void cleanupStaticVariables(EWEDevice& device);
+		static void cleanupStaticVariables();
 
 
-		static void initPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo, Pipeline_Enum pipesNeeded, EWEDevice& eweDevice);
+		static void initPipelines(VkPipelineRenderingCreateInfo const& pipeRenderInfo, Pipeline_Enum pipesNeeded);
 
 
 	private:

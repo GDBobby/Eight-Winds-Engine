@@ -4,62 +4,47 @@
 
 namespace EWE {
 	class InstancedSkinBufferHandler {
-		//maybe use one buffer handler for instanced, one for non-instanced
-		//otherwise I would need a bunch of if statements in here
-		// if i go for 1 buffer handler for instanced, 1 for not instanced, i would have to specify actor type by instanced or not instanced, or have another handful of if statements in the actor
-		//put a pointer to bufferstruct pointer in each actor
-	public:
-
-		InstancedSkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint16_t maxActorCount);
-
-		void writeData(glm::mat4* modelMatrix, void* finalBoneMatrices);
-		void changeMaxActorCount(EWEDevice& device, uint16_t actorCount);
-		void flush();
-
-		void setFrameIndex(uint8_t frameIndex) {
-			//printf("setting instance count to 0 \n");
-			this->frameIndex = frameIndex;
-		}
-		void resetInstanceCount() {
-			currentInstanceCount = 0;
-		}
-		uint16_t getMaxActorCount() {
-			return maxActorCount;
-		}
-		VkDescriptorSet* getDescriptor() {
-			return &gpuData[frameIndex].descriptor;
-		}
-		uint32_t getInstanceCount() {
-			return currentInstanceCount;
-		}
-
 	private:
 		struct InnerBufferStruct {
 			EWEBuffer* model;
 			EWEBuffer* bone;
-			VkDescriptorSet descriptor{};
 
-			InnerBufferStruct(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize);
+			InnerBufferStruct(uint16_t maxActorCount, uint32_t boneBlockSize);
 			~InnerBufferStruct() {
-				delete model;
-				delete bone;
+				Deconstruct(model);
+				Deconstruct(bone);
 			}
 
-			//changeActorCount should be done extremely infrequently. like, only on scene swaps.
-			//if a more frequent change is required, instancing is recommended, even if the actor count is low.
-			//	if a frequent change from 1-2 or 1 through 3 is required, maybe, MAYBE, MAYBE, 
-			//	allocate the higher number and adjust this to ignore the additional memory when not necessary.
-			//	i don't know if additional adjustments would be required or not, benchmarking against instancing is recommended
-			void changeActorCount(EWEDevice& device, uint16_t maxActorCount, uint32_t boneBlockSize);
-			void buildDescriptor(uint16_t maxActorCount);
+			void AddDescriptorBindings(uint16_t maxActorCount, EWEDescriptorWriter& descWriter);
 
-			void flush();
+			void Flush();
 		private:
 			bool updated = false;
 		};
-		std::vector<InnerBufferStruct> gpuData{}; //model, bone
+	public:
+
+		InstancedSkinBufferHandler(uint16_t boneCount, uint16_t maxActorCount);
+
+		void WriteData(glm::mat4* modelMatrix, void* finalBoneMatrices);
+		void Flush();
+
+		void ResetInstanceCount() {
+			currentInstanceCount = 0;
+		}
+		uint16_t GetMaxActorCount() {
+			return maxActorCount;
+		}
+		uint32_t GetInstanceCount() {
+			return currentInstanceCount;
+		}
+		void AddDescriptorBindings(uint8_t whichFrame, EWEDescriptorWriter& descWriter) {
+			gpuData[whichFrame].AddDescriptorBindings(maxActorCount, descWriter);
+		}
+
+	private:
 		const uint32_t boneBlockSize;
 		uint16_t maxActorCount{ 0 };
+		std::array<InnerBufferStruct, MAX_FRAMES_IN_FLIGHT> gpuData;
 
 		uint64_t modelMemOffset = 0;
 		uint64_t boneMemOffset = 0;
@@ -68,73 +53,47 @@ namespace EWE {
 	};
 
 	class SkinBufferHandler {
-		//maybe use one buffer handler for instanced, one for non-instanced
-		//otherwise I would need a bunch of if statements in here
-		// if i go for 1 buffer handler for instanced, 1 for not instanced, i would have to specify actor type by instanced or not instanced, or have another handful of if statements in the actor
-		//put a pointer to bufferstruct pointer in each actor
 	protected:
 		struct InnerBufferStruct {
 			EWEBuffer* bone;
-			VkDescriptorSet descriptor;
 			uint16_t currentActorCount = 0;
 
-			InnerBufferStruct(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize);
+			InnerBufferStruct(uint8_t maxActorCount, uint32_t boneBlockSize);
 			~InnerBufferStruct() {
-				delete bone;
+				Deconstruct(bone);
 			}
 
-			void changeActorCount(EWEDevice& device, uint8_t maxActorCount, uint32_t boneBlockSize);
-			void buildDescriptor();
+			void AddDescriptorBindings(EWEDescriptorWriter& descWriter);
 
-			void flush() {
-				if (updated) {
-					bone->flush();
-					updated = false;
-				}
-			}
+			void Flush();
 		private:
 			bool updated = false;
 		};
 
 	public:
 
-		SkinBufferHandler(EWEDevice& device, uint16_t boneCount, uint8_t maxActorCount);
-		SkinBufferHandler(uint8_t maxActorCount, std::vector<InnerBufferStruct>* referencedData);
+		SkinBufferHandler(uint16_t boneCount, uint8_t maxActorCount);
 
-		void writeData(void* finalBoneMatrices);
-		void changeMaxActorCount(EWEDevice& device, uint8_t actorCount);
-		void flush() {
-			gpuData[frameIndex].flush();
-			boneMemOffset = 0;
-		}
-		bool CheckReference() {
-			return gpuReference != nullptr;
-		}
-		void setFrameIndex(uint8_t frameIndex) {
-			this->frameIndex = frameIndex;
-		}
-		uint16_t getMaxActorCount() {
+		void WriteData(void* finalBoneMatrices);
+
+		//changeActorCount should be done extremely infrequently. like, only on scene swaps.
+		//if a more frequent change is required, instancing is recommended, even if the actor count is low.
+		//	if a frequent change from 1-2 or 1 through 3 is required, maybe, MAYBE, MAYBE, 
+		//	allocate the higher number and adjust this to ignore the additional memory when not necessary.
+		//	i don't know if additional adjustments would be required or not, benchmarking against instancing is recommended
+		void Flush();
+		uint16_t GetMaxActorCount() {
 			return maxActorCount;
 		}
-		VkDescriptorSet* getDescriptor() {
-			if (gpuReference == nullptr) {
-				return &gpuData[frameIndex].descriptor;
-			}
-			else {
-				return &gpuReference->at(frameIndex).descriptor;
-			}
-		}
-		std::vector<InnerBufferStruct>* getInnerPtr() {
-			return &gpuData;
+		void AddDescriptorBindings(uint8_t whichFrame, EWEDescriptorWriter& descWriter) {
+			gpuData[whichFrame].AddDescriptorBindings(descWriter);
 		}
 	private:
 
-		std::vector<InnerBufferStruct>* gpuReference{nullptr};
-		std::vector<InnerBufferStruct> gpuData{};
 		const uint32_t boneBlockSize;
 		uint8_t maxActorCount{ 1 };
+		std::array<InnerBufferStruct, MAX_FRAMES_IN_FLIGHT> gpuData;
 
 		uint64_t boneMemOffset = 0;
-		uint8_t frameIndex{0};
 	};
 }

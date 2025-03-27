@@ -4,92 +4,18 @@
 
 #define MODEL_PATH "models/"
 
+#include "EWEngine/Systems/ThreadPool.h"
+
 namespace EWE {
 
-    /*
-    ImportData ImportData::loadDataThreaded(std::string importPath) {
-        ImportData returnData;
-        printf("entering static load data function \n");
-        std::thread meshThread[2];
-        std::string meshPath = importPath;
-        meshPath += "_mesh.ewe";
-
-        bool meshThreadActive[2] = { false, false };
-
-        if (std::filesystem::exists(meshPath)) {
-            meshThreadActive[0] = true;
-            meshThread[0] = std::thread(&ImportData::readData<meshEData>, std::ref(returnData.meshExport), meshPath);
-        }
-        else {
-            printf("mesh path doesn't exist : %s \n", meshPath.c_str());
-        }
-
-        meshPath = importPath + "_meshNT.ewe";
-        if (std::filesystem::exists(meshPath)) {
-            meshThreadActive[1] = true;
-            meshThread[1] = std::thread(&ImportData::readData<meshNTEData>, std::ref(returnData.meshNTExport), meshPath);
-        }
-        else {
-            printf("mesh NT path doesn't exist : %s \n", meshPath.c_str());
-        }
-
-        meshPath = importPath + "_Names.ewe";
-        if (std::filesystem::exists(meshPath)) {
-            std::ifstream inFile(meshPath, std::ifstream::binary);
-            if (!inFile.is_open()) {
-                printf("failed to open : %s \n", meshPath.c_str());
-            }
-            printf("before formatingg input file in mesh \n");
-            boost::archive::binary_iarchive binary_input_archive(inFile, boost::archive::no_header);
-            binary_input_archive& returnData.nameExport;
-            inFile.close();
-            printf("file read successfully \n");
-        }
-
-
-        for (int i = 0; i < 2; i++) {
-            if (meshThreadActive[i]) {
-                if (meshThread[i].joinable()) {
-                    meshThread[i].join();
-                }
-                meshThreadActive[i] = false;
-            }
-        }
-
-        meshPath = importPath + "_simpleMesh.ewe";
-        if (std::filesystem::exists(meshPath)) {
-            meshThreadActive[0] = true;
-            meshThread[0] = std::thread(&ImportData::readData<meshSimpleData>, std::ref(returnData.meshSimpleExport), meshPath);
-        }
-
-        meshPath = importPath + "_simpleMeshNT.ewe";
-        if (std::filesystem::exists(meshPath)) {
-            meshThreadActive[1] = true;
-            meshThread[1] = std::thread(&ImportData::readData<meshNTSimpleData>, std::ref(returnData.meshNTSimpleExport), meshPath);
-        }
-
-        for (int i = 0; i < 2; i++) {
-            if (meshThreadActive[i]) {
-                if (meshThread[i].joinable()) {
-                    meshThread[i].join();
-                }
-                meshThreadActive[i] = false;
-            }
-        }
-
-        printf("returning from static import load function \n");
-        return returnData;
-    }
-    */
-
-    ImportData ImportData::loadData(std::string importPath) {
+    ImportData ImportData::LoadData(std::string importPath) {
         ImportData returnData;
         //printf("entering static load data function \n");
-        std::thread meshThread[2];
         std::string meshPath = MODEL_PATH;
         meshPath += importPath + "_mesh.ewe";
 
         bool meshThreadActive[2] = { false, false };
+        bool meshThreadFinished[2] = { false, false };
 
 
         uint32_t testValue = 1;
@@ -97,7 +23,8 @@ namespace EWE {
 
         if (std::filesystem::exists(meshPath)) {
             meshThreadActive[0] = true;
-            meshThread[0] = std::thread(&ImportData::readData<boneVertex>, std::ref(returnData.meshExport), meshPath, endian);
+            ThreadPool::Enqueue(&ImportData::ReadData<boneVertex>, std::ref(returnData.meshExport), meshPath, endian);
+            meshThreadFinished[0] = true;
         }
         else {
             //printf("mesh NT path doesn't exist : %s \n", meshPath.c_str());
@@ -106,7 +33,8 @@ namespace EWE {
         meshPath = MODEL_PATH + importPath + "_meshNT.ewe";
         if (std::filesystem::exists(meshPath)) {
             meshThreadActive[1] = true;
-            meshThread[1] = std::thread(&ImportData::readData<boneVertexNoTangent>, std::ref(returnData.meshNTExport), meshPath, endian);
+            ThreadPool::Enqueue(&ImportData::ReadData<boneVertexNoTangent>, std::ref(returnData.meshNTExport), meshPath, endian);
+            meshThreadFinished[1] = true;
         }
         else {
             //printf("mesh NT path doesn't exist : %s \n", meshPath.c_str());
@@ -117,9 +45,10 @@ namespace EWE {
             std::ifstream inFile(meshPath, std::ifstream::binary);
             if (!inFile.is_open()) {
                 printf("failed to open : %s \n", meshPath.c_str());
+                assert(false);
             }
             // printf("before formating input file in mesh \n");
-            returnData.nameExport.readFromFile(inFile);
+            returnData.nameExport.ReadFromFile(inFile);
 
             inFile.close();
             //printf("file read successfully \n");
@@ -128,9 +57,11 @@ namespace EWE {
 
         for (int i = 0; i < 2; i++) {
             if (meshThreadActive[i]) {
-                if (meshThread[i].joinable()) {
-                    printf("waiting on mesh thread : %d \n", i);
-                    meshThread[i].join();
+                while (!meshThreadFinished[i]) {
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+#if EWE_DEBUG
+                    printf("waiting on simple mesh thread : %d \n", i);
+#endif
                 }
                 meshThreadActive[i] = false;
             }
@@ -139,20 +70,25 @@ namespace EWE {
         meshPath = MODEL_PATH + importPath + "_simpleMesh.ewe";
         if (std::filesystem::exists(meshPath)) {
             meshThreadActive[0] = true;
-            meshThread[0] = std::thread(&ImportData::readData<Vertex>, std::ref(returnData.meshSimpleExport), meshPath, endian);
+            ThreadPool::Enqueue(&ImportData::ReadData<Vertex>, std::ref(returnData.meshSimpleExport), meshPath, endian);
+            meshThreadFinished[0] = true;
         }
 
         meshPath = MODEL_PATH + importPath + "_simpleMeshNT.ewe";
         if (std::filesystem::exists(meshPath)) {
             meshThreadActive[1] = true;
-            meshThread[1] = std::thread(&ImportData::readData<VertexNT>, std::ref(returnData.meshNTSimpleExport), meshPath, endian);
+            ThreadPool::Enqueue(&ImportData::ReadData<VertexNT>, std::ref(returnData.meshNTSimpleExport), meshPath, endian);
+            meshThreadFinished[1] = true;
         }
+
 
         for (int i = 0; i < 2; i++) {
             if (meshThreadActive[i]) {
-                if (meshThread[i].joinable()) {
+                while (!meshThreadFinished[i]) {
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+#if EWE_DEBUG
                     printf("waiting on simple mesh thread : %d \n", i);
-                    meshThread[i].join();
+#endif
                 }
                 meshThreadActive[i] = false;
             }
@@ -163,12 +99,9 @@ namespace EWE {
     }
 
 
-    void ImportData::NameExportData::readFromFile(std::ifstream& inFile) {
+    void ImportData::NameExportData::ReadFromFile(std::ifstream& inFile) {
         std::getline(inFile, versionTracker, (char)0);
-        if (versionTracker != EXPECTED_IMPORT_VERSION) {
-            printf("incorrect import version \n");
-            throw std::runtime_error("incorrect import version");
-        }
+        assert(versionTracker == EXPECTED_IMPORT_VERSION);
 
         uint64_t size;
         inFile.read((char*)&size, sizeof(uint64_t));
@@ -196,11 +129,11 @@ namespace EWE {
         }
     }
 
-    void ImportData::boneEData::readFromFile(std::ifstream& inFile) {
+    void ImportData::boneEData::ReadFromFile(std::ifstream& inFile) {
         Reading::UIntFromFile(inFile, &boneID);
         Reading::GLMMat4FromFile(inFile, &boneTransform);
     }
-    void ImportData::boneEData::readFromFileSwapEndian(std::ifstream& inFile) {
+    void ImportData::boneEData::ReadFromFileSwapEndian(std::ifstream& inFile) {
         Reading::UIntFromFileSwapEndian(inFile, &boneID);
         Reading::GLMMat4FromFileSwapEndian(inFile, &boneTransform);
     }
@@ -242,12 +175,9 @@ namespace EWE {
     }
     */
 
-    void ImportData::AnimData::readFromFile(std::ifstream& inFile) {
+    void ImportData::AnimData::ReadFromFile(std::ifstream& inFile) {
         std::getline(inFile, versionTracker, (char)0);
-        if (versionTracker != EXPECTED_IMPORT_VERSION) {
-            printf("incorrect import version \n");
-            throw std::runtime_error("incorrect import version");
-        }
+        assert(versionTracker == EXPECTED_IMPORT_VERSION);
 
         uint64_t size;
         inFile.read((char*)&size, sizeof(uint64_t));
@@ -265,18 +195,15 @@ namespace EWE {
 
                 //if i pack the structure correctly, i can read it as a block. might impact runtime speed, which is the main concern.
                 for (auto& boneData : boneCount) {
-                    boneData.readFromFile(inFile);
+                    boneData.ReadFromFile(inFile);
                 }
             }
         }
         Reading::IntFromFile(inFile, &handBone);
     }
-    void ImportData::AnimData::readFromFileSwapEndian(std::ifstream& inFile) {
+    void ImportData::AnimData::ReadFromFileSwapEndian(std::ifstream& inFile) {
         std::getline(inFile, versionTracker, (char)0);
-        if (versionTracker != EXPECTED_IMPORT_VERSION) {
-            printf("incorrect import version \n");
-            throw std::runtime_error("incorrect import version");
-        }
+        assert(versionTracker == EXPECTED_IMPORT_VERSION);
 
         uint64_t size;
         Reading::UInt64FromFileSwapEndian(inFile, &size);
@@ -298,19 +225,16 @@ namespace EWE {
 
                 //if i pack the structure correctly, i can read it as a block. might impact runtime speed, which is the main concern.
                 for (auto& boneData : boneCount) {
-                    boneData.readFromFileSwapEndian(inFile);
+                    boneData.ReadFromFileSwapEndian(inFile);
                 }
             }
         }
         Reading::IntFromFileSwapEndian(inFile, &handBone);
     }
 
-    void ImportData::FullAnimData::readFromFile(std::ifstream& inFile) {
+    void ImportData::FullAnimData::ReadFromFile(std::ifstream& inFile) {
         std::getline(inFile, versionTracker, (char)0);
-        if (versionTracker != EXPECTED_IMPORT_VERSION) {
-            printf("incorrect import version \n");
-            throw std::runtime_error("incorrect import version");
-        }
+        assert(versionTracker == EXPECTED_IMPORT_VERSION);
 
         uint64_t size;
         Reading::UInt64FromFile(inFile, &size);
@@ -328,12 +252,9 @@ namespace EWE {
         }
         Reading::IntFromFile(inFile, &handBone);
     }
-    void ImportData::FullAnimData::readFromFileSwapEndian(std::ifstream& inFile) {
+    void ImportData::FullAnimData::ReadFromFileSwapEndian(std::ifstream& inFile) {
         std::getline(inFile, versionTracker);
-        if (versionTracker != EXPECTED_IMPORT_VERSION) {
-            printf("incorrect import version \n");
-            throw std::runtime_error("incorrect import version");
-        }
+        assert(versionTracker == EXPECTED_IMPORT_VERSION);
 
         uint64_t size;
         Reading::UInt64FromFileSwapEndian(inFile, &size);

@@ -12,59 +12,49 @@ namespace EWE {
 
 	class EweObject {
 	public:
-        EweObject(const EweObject& other) : transform{}, ownedTextures{ other.ownedTextures } {
-            printf("ewe copy construction \n");
-            auto matInstance = RigidRenderingSystem::getRigidRSInstance();
-            for (auto iter = ownedTextures.begin(); iter != ownedTextures.end(); iter++) {
-                //printf("adding material from tex id %d \n", *iter);
-                matInstance->addMaterialObjectFromTexID(*iter, &transform, &drawable);
-            }
-        }
-        EweObject& operator=(const EweObject&& other) noexcept {
-			printf("ewe copy operator \n");
-            if (this != &other) {
-                this->transform = other.transform;
-                this->ownedTextures = other.ownedTextures;
-                this->meshes = other.meshes;
-                this->drawable = other.drawable;
-			}
-			return *this;
-		}
-        EweObject(EweObject&& other) noexcept {
-            printf("move operation \n");
-            this->transform = other.transform;
-            this->ownedTextures = other.ownedTextures;
-            this->meshes = other.meshes;
-            this->drawable = other.drawable;
-        }
 
-        EweObject(std::string objectPath, EWEDevice& device, bool globalTextures);
-        EweObject(std::string objectPath, EWEDevice& device, bool globalTextures, SkeletonID ownerID);
+        EweObject(const EweObject& other) = delete;
+        EweObject(EweObject&& other) = default;
+        EweObject& operator=(const EweObject&& other) = delete;
+        EweObject& operator=(const EweObject& other) = delete;
+
+
+        EweObject(std::string objectPath, bool globalTextures);
+        EweObject(std::string objectPath, bool globalTextures, uint32_t instanceCount, bool computedTransforms);
+        EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, SkeletonID myID);
+        EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, SkeletonID myID, uint32_t instanceCount);
         ~EweObject();
 
 		TransformComponent transform{};
-        std::vector<std::shared_ptr<EWEModel>> meshes{};
+        std::vector<EWEModel*> meshes{};
         bool drawable = true;
-        std::unordered_set<TextureDesc> ownedTextures{};
+        std::vector<MaterialInfo> ownedTextures{};
+
 
 
         //void deTexturize();
-        uint32_t getSkeletonID() {
+        uint32_t GetSkeletonID() {
             return mySkinID;
         }
 	private:
+        bool instanced = false; //purely for deconstruction branching
+
         struct TextureMapping {
-            std::vector<MaterialTextureInfo> meshNames;
-            std::vector<MaterialTextureInfo> meshNTNames;
-            std::vector<MaterialTextureInfo> meshSimpleNames;
-            std::vector<MaterialTextureInfo> meshNTSimpleNames;
+            std::vector<MaterialInfo> meshNames;
+            std::vector<MaterialInfo> meshNTNames;
+            std::vector<MaterialInfo> meshSimpleNames;
+            std::vector<MaterialInfo> meshNTSimpleNames;
         };
 
         uint32_t mySkinID = 0;
 
-        void addToRigidRenderingSystem(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker);
-        void addToSkinHandler(EWEDevice& device, ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner);
+        void AddToRigidRenderingSystem(ImportData const& tempData, TextureMapping& textureTracker, uint32_t instanceCount, bool computedTransforms);
+        void AddToSkinHandler(ImportData& tempData, TextureMapping& textureTracker, uint32_t skeletonOwner, uint32_t instanceCount);
 
-        void loadTextures(EWEDevice& device, std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);
-	};
+        void LoadTextures(std::string objectPath, ImportData::NameExportData& importData, TextureMapping& textureTracker, bool globalTextures);
+	
+#if DEBUG_NAMING
+        void AddDebugNames(std::string const& name);
+#endif
+    };
 }

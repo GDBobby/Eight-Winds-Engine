@@ -18,21 +18,19 @@ namespace EWE {
 	class FloatingRock {
 	public:
 
-		FloatingRock(EWEDevice& device);
+		FloatingRock();
+		~FloatingRock();
 
 		FloatingRock(const FloatingRock&) = delete;
 		FloatingRock& operator=(const FloatingRock&) = delete;
 		FloatingRock(FloatingRock&&) = default;
 		FloatingRock& operator=(FloatingRock&&) = default;
 
-		void update();
-
-		void render(FrameInfo& frameInfo);
+		void Dispatch(float dt);
 	private:
-		std::unique_ptr<EWEModel> rockModel;
-		TextureDesc rockTexture{ TEXTURE_UNBINDED_DESC };
-		glm::mat4 renderModelMatrix{};
-		glm::mat3 renderNormalMatrix{};
+
+		EWEModel* rockModel;
+		MaterialInfo rockMaterial;
 
 		struct RockTrack {
 			std::vector<uint32_t> currentPosition{};
@@ -50,5 +48,23 @@ namespace EWE {
 			//sin 0 = 0
 		};
 		std::vector<RockTrack> rockField;
+
+		//compute data
+		VkPipeline compPipeline{ VK_NULL_HANDLE };
+		VkPipelineLayout compPipeLayout{ VK_NULL_HANDLE };
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> compDescriptorSet = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+		VkShaderModule compShaderModule{ VK_NULL_HANDLE };
+		struct RockCompPushData {
+			float secondsSinceBeginning{100.f};
+		};
+		RockCompPushData compPushData{};
+		EWEDescriptorSetLayout* compDSL{ nullptr };
+
+		EWEBuffer* rockBuffer{ nullptr };
+
+		VkBufferMemoryBarrier bufferBarrier[MAX_FRAMES_IN_FLIGHT * 2];
+		bool previouslySubmitted = false;
+
+		void InitComputeData();
 	};
 }

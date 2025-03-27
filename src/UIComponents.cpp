@@ -5,26 +5,27 @@ namespace EWE {
 	//end uicomp
 
 	//  ~~~~~~~~~~~~~~~~~~~ CLICKBOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	ClickTextBox::ClickTextBox(std::string string, float x, float y, unsigned char align, float scale, float screenW, float screenH) : textStruct{ string, x, y, align, scale } {
-		UIComp::TextToTransform(transform, textStruct, clickBox, screenW, screenH);
+	ClickTextBox::ClickTextBox(std::string string, float x, float y, unsigned char align, float scale) : textStruct{ string, x, y, align, scale } {
+		UIComp::TextToTransform(transform, textStruct, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
-	ClickTextBox::ClickTextBox(TextStruct textStruct, float screenW, float screenH) : textStruct{ textStruct } {
-		UIComp::TextToTransform(transform, textStruct, clickBox, screenW, screenH);
+	ClickTextBox::ClickTextBox(TextStruct textStruct) : textStruct{ textStruct } {
+		UIComp::TextToTransform(transform, textStruct, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
-	void ClickTextBox::resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
-		printf("click text resize \n");
-		textStruct.x *= rszWidth / oldWidth;
-		textStruct.y *= rszHeight / oldHeight;
-		UIComp::TextToTransform(transform, textStruct, clickBox, rszWidth, rszHeight);
+	void ClickTextBox::ResizeWindow(glm::vec2 rescalingRatio) {
+		//printf("click text resize \n");
+		textStruct.x *= rescalingRatio.x;
+		textStruct.y *= rescalingRatio.y;
+		UIComp::TextToTransform(transform, textStruct, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
 	bool ClickTextBox::Clicked(double xpos, double ypos) {
-		return UIComp::checkClickBox(clickBox, xpos, ypos);
+		return UIComp::CheckClickBox(clickBox, xpos, ypos);
 	}
-	void ClickTextBox::render(NineUIPushConstantData& push) {
-		push.offset.x = transform.translation.x;
-		push.offset.y = transform.translation.y;
-		push.scale = transform.scale;
-		Dimension2::pushAndDraw(push);
+	void ClickTextBox::Render(Array2DPushConstantData& push) {
+		push.scaleOffset.z = transform.translation.x;
+		push.scaleOffset.w = transform.translation.y;
+		push.scaleOffset.x = transform.scale.x;
+		push.scaleOffset.y = transform.scale.y;
+		Dimension2::PushAndDraw(push);
 	}
 	
 	// ~~~~~~~~~~~~~~~~~~~~~ TYPE BOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,7 +38,7 @@ namespace EWE {
 				double xpos = 0;
 				double ypos = 0;
 				glfwGetCursorPos(window, &xpos, &ypos);
-				if (UIComp::checkClickBox(textBoxPointer->clickBox, xpos, ypos)) {
+				if (UIComp::CheckClickBox(textBoxPointer->clickBox, xpos, ypos)) {
 					printf("ready for input \n");
 					textBoxPointer->readyForInput = true;
 					textBoxPointer->mouseDragging = true;
@@ -72,43 +73,45 @@ namespace EWE {
 			//textBoxPointer->textStruct.string += glfwGetKeyName(key, scancode);
 		}
 	}
-	void TypeBox::typeCallback(GLFWwindow* window, unsigned int codepoint) {
+	void TypeBox::TypeCallback(GLFWwindow* window, uint32_t codepoint) {
 		printf("key typed? - %ud \n", codepoint);
 
 		UIComp::TypeToString(textBoxPointer->textStruct.string, textBoxPointer->maxStringLength, codepoint, textBoxPointer->inputType, static_cast<uint8_t>(textBoxPointer->textStruct.string.length()));
 	}
-	TypeBox::TypeBox(TextStruct textStruct, float screenW, float screenHeight) : textStruct{ textStruct } {
-		UIComp::TextToTransform(transform, textStruct, clickBox, screenW, screenHeight);
+	TypeBox::TypeBox(TextStruct textStruct) : textStruct{ textStruct } {
+		UIComp::TextToTransform(transform, textStruct, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
-	TypeBox::TypeBox(std::string string, float x, float y, uint8_t alignment, float scale, float screenWidth, float screenHeight) : textStruct{ string, x, y, alignment, scale } {
-		UIComp::TextToTransform(transform, textStruct, clickBox, screenWidth, screenHeight);
+	TypeBox::TypeBox(std::string string, float x, float y, uint8_t alignment, float scale) : textStruct{ string, x, y, alignment, scale } {
+		UIComp::TextToTransform(transform, textStruct, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
-	void TypeBox::giveGLFWCallbacks(GLFWwindow* windowPtr, GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction) {
+	void TypeBox::GiveGLFWCallbacks(GLFWwindow* windowPtr, GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction) {
 		readyForInput = true;
 		textBoxPointer = this;
-		glfwSetCharCallback(windowPtr, typeCallback);
+		glfwSetCharCallback(windowPtr, TypeCallback);
 		glfwSetKeyCallback(windowPtr, KeyCallback);
 		glfwSetMouseButtonCallback(windowPtr, MouseCallback);
 		mouseReturnPointer = mouseReturnFunction;
 		keyReturnPointer = keyReturnFunction;
 	}
 
-	void TypeBox::resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
+	void TypeBox::ResizeWindow(glm::vec2 rescalingRatio) {
 		printf("click text resize \n");
-		textStruct.x *= rszWidth / oldWidth;
-		textStruct.y *= rszHeight / oldHeight;
-		UIComp::TextToTransform(transform, textStruct, clickBox, rszWidth, rszHeight);
+		textStruct.x *= rescalingRatio.x;
+		textStruct.y *= rescalingRatio.y;
+		UIComp::TextToTransform(transform, textStruct, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
-	void TypeBox::render(NineUIPushConstantData& push) {
-		push.offset = glm::vec4(transform.translation, 1.f, 1.f);
+	void TypeBox::Render(Array2DPushConstantData& push) {
+		push.scaleOffset.z = transform.translation.x;
+		push.scaleOffset.w = transform.translation.y;
 		//need color array
-		push.scale = transform.scale;
-		Dimension2::pushAndDraw(push);
+		push.scaleOffset.x = transform.scale.x;
+		push.scaleOffset.y = transform.scale.y;
+		Dimension2::PushAndDraw(push);
 		//printf("drawing click text \n");
 	}
 	
 	// ~~~~~~~~~~~~~~~~~~~~~ SLIDER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	void Slider::setTransform(glm::vec2 newTrans) {
+	void Slider::SetTransform(glm::vec2 newTrans) {
 		bracket.translation = newTrans;
 		slider.translation = newTrans;
 		bracketButtons.first.translation = newTrans;
@@ -116,14 +119,12 @@ namespace EWE {
 		bracketButtons.first.translation.x -= 0.1f;
 		bracketButtons.second.translation.x += 0.1f;
 	}
-	void Slider::Init(glm::vec2 initTrans, float screenHeight, float screenWidth, uint8_t currentSens) {
+	void Slider::Init(glm::vec2 initTrans, uint8_t currentSens) {
 		VolumeTrueSensFalse = false;
 		mySens = currentSens;
-		Init(initTrans, screenHeight, screenWidth, static_cast<float>(currentSens) / 100.f);
+		Init(initTrans, static_cast<float>(currentSens) / 100.f);
 	}
-	void Slider::Init(glm::vec2 initTrans, float screenHeight, float screenWidth, float currentVolume) {
-		this->screenWidth = screenWidth;
-		this->screenHeight = screenHeight;
+	void Slider::Init(glm::vec2 initTrans, float currentVolume) {
 		bracket.translation = initTrans;
 
 		bracketButtons.first.scale = { 0.1f, 0.2f };
@@ -136,8 +137,8 @@ namespace EWE {
 		bracketButtons.second.translation = initTrans;
 		bracketButtons.second.translation.x += (bracket.scale.x / 2.f) + (bracketButtons.second.scale.x / 2.f); //first and second should have idenctical scale
 
-		UIComp::convertTransformToClickBox(bracketButtons.first, click[0], screenWidth, screenHeight);
-		UIComp::convertTransformToClickBox(bracketButtons.second, click[2], screenWidth, screenHeight);
+		UIComp::ConvertTransformToClickBox(bracketButtons.first, click[0], VK::Object->screenWidth, VK::Object->screenHeight);
+		UIComp::ConvertTransformToClickBox(bracketButtons.second, click[2], VK::Object->screenWidth, VK::Object->screenHeight);
 
 		//now on to the slider
 		slidePosition = currentVolume;
@@ -146,16 +147,16 @@ namespace EWE {
 		//printf("space between, which volume ~ %.2f : %.2f \n", spaceBetween, currentVolume);
 		slider.translation.x = bracket.translation.x + (spaceBetween * (slidePosition - 0.5f));
 		slider.translation.y = initTrans.y;
-		UIComp::convertTransformToClickBox(slider, click[1], screenWidth, screenHeight);
+		UIComp::ConvertTransformToClickBox(slider, click[1], VK::Object->screenWidth, VK::Object->screenHeight);
 
 		//setActivity(false);
 	}
-	void Slider::setSliderPosition(float sliderPos) {
+	void Slider::SetSliderPosition(float sliderPos) {
 		slidePosition = sliderPos;
 		spaceBetween = (bracketButtons.second.translation.x - (bracketButtons.second.scale.x / 2)) - (bracketButtons.first.translation.x + (bracketButtons.first.scale.x / 2)) - slider.scale.x;
 		//printf("space between, which volume ~ %.2f : %.2f \n", spaceBetween, currentVolume);
 		slider.translation.x = bracket.translation.x + (spaceBetween * (slidePosition - 0.5f));
-		UIComp::convertTransformToClickBox(slider, click[1], screenWidth, screenHeight);
+		UIComp::ConvertTransformToClickBox(slider, click[1], VK::Object->screenWidth, VK::Object->screenHeight);
 	}
 	void Slider::MoveSlider(int movedAmount) {
 		//printf("moved amount %d \n", movedAmount);
@@ -171,7 +172,7 @@ namespace EWE {
 				slidePosition = 1.f;
 			}
 			slider.translation.x = bracket.translation.x + (spaceBetween * (slidePosition - 0.5f));
-			UIComp::convertTransformToClickBox(slider, click[1], screenWidth, screenHeight);
+			UIComp::ConvertTransformToClickBox(slider, click[1], VK::Object->screenWidth, VK::Object->screenHeight);
 		}
 		else {
 			//printf("sens move? \n");
@@ -186,45 +187,43 @@ namespace EWE {
 			}
 			slidePosition = static_cast<float>(mySens) / 100.f;
 			slider.translation.x = bracket.translation.x + (spaceBetween * (slidePosition - 0.5f));
-			UIComp::convertTransformToClickBox(slider, click[1], screenWidth, screenHeight);
+			UIComp::ConvertTransformToClickBox(slider, click[1], VK::Object->screenWidth, VK::Object->screenHeight);
 		}
 		//printf("slide position : %.2f \n", slidePosition);
 	}
 
-	void Slider::resizeWindow(float newWidth, float newHeight) {
+	void Slider::ResizeWindow() {
 		//printf("slider resize window \n");
-		screenWidth = newWidth;
-		screenHeight = newHeight;
-		UIComp::convertTransformToClickBox(bracketButtons.first, click[0], screenWidth, screenHeight);
-		UIComp::convertTransformToClickBox(slider, click[1], screenWidth, screenHeight);
-		UIComp::convertTransformToClickBox(bracketButtons.second, click[2], screenWidth, screenHeight);
+		UIComp::ConvertTransformToClickBox(bracketButtons.first, click[0], VK::Object->screenWidth, VK::Object->screenHeight);
+		UIComp::ConvertTransformToClickBox(slider, click[1], VK::Object->screenWidth, VK::Object->screenHeight);
+		UIComp::ConvertTransformToClickBox(bracketButtons.second, click[2], VK::Object->screenWidth, VK::Object->screenHeight);
 	}
-	void Slider::giveSens(uint8_t currentSens) {
+	void Slider::GiveSens(uint8_t currentSens) {
 		VolumeTrueSensFalse = false;
 		mySens = currentSens;
 		slidePosition = mySens / 100.f;
 		slider.translation.x = bracket.translation.x + (spaceBetween * (slidePosition - 0.5f));
-		UIComp::convertTransformToClickBox(slider, click[1], screenWidth, screenHeight);
+		UIComp::ConvertTransformToClickBox(slider, click[1], VK::Object->screenWidth, VK::Object->screenHeight);
 		//MoveSlider();
 	}
 	int8_t Slider::Clicked(double xpos, double ypos) {
 		//printf("active click check ~ %.3f : %.3f \n", xpos, ypos);
 		//printf("check the click box, xzyw ~ %d:%d:%d:%d \n", click[0].x, click[0].y, click[0].z, click[0].w);
-		if (UIComp::checkClickBox(click[0], xpos, ypos)) {
-			buttonClicked(false);
+		if (UIComp::CheckClickBox(click[0], xpos, ypos)) {
+			ButtonClicked(false);
 			return 0;
 		}
-		else if (UIComp::checkClickBox(click[1], xpos, ypos)) {
+		else if (UIComp::CheckClickBox(click[1], xpos, ypos)) {
 			return 1;
 		}
-		else if (UIComp::checkClickBox(click[2], xpos, ypos)) {
-			buttonClicked(true);
+		else if (UIComp::CheckClickBox(click[2], xpos, ypos)) {
+			ButtonClicked(true);
 			return 2;
 		}
 
 		return -1;
 	}
-	void Slider::buttonClicked(bool leftFalseRightTrue) {
+	void Slider::ButtonClicked(bool leftFalseRightTrue) {
 		if (leftFalseRightTrue) {
 			//right button clicked
 			slidePosition += 0.01f;
@@ -241,9 +240,9 @@ namespace EWE {
 			}
 		}
 		slider.translation.x = bracket.translation.x + (spaceBetween * (slidePosition - 0.5f));
-		UIComp::convertTransformToClickBox(slider, click[1], screenWidth, screenHeight);
+		UIComp::ConvertTransformToClickBox(slider, click[1], VK::Object->screenWidth, VK::Object->screenHeight);
 	}
-	void Slider::render(Simple2DPushConstantData& push, uint8_t drawID) {
+	void Slider::Render(Array2DPushConstantData& push, uint8_t drawID) {
 		switch (drawID) {
 		case 0: {
 			push.scaleOffset = glm::vec4(slider.scale, slider.translation);
@@ -251,7 +250,7 @@ namespace EWE {
 		}
 		case 1: {
 			push.scaleOffset = glm::vec4(bracketButtons.first.scale, bracketButtons.first.translation);
-			Dimension2::pushAndDraw(push);
+			Dimension2::PushAndDraw(push);
 			push.scaleOffset = glm::vec4(bracketButtons.second.scale, bracketButtons.second.translation);
 			break;
 		}
@@ -260,24 +259,24 @@ namespace EWE {
 			break;
 		}
 		}
-		Dimension2::pushAndDraw(push);
+		Dimension2::PushAndDraw(push);
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~ COMBOBOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	ComboBox::ComboBox(TextStruct textStruct, float screenWidth, float screenHeight) {
+	ComboBox::ComboBox(TextStruct textStruct) {
 		//printf("COMBOBOX CONSTRUCTION GIVEN ? %s  %.2f:%.2f\n", textStruct.string.c_str(), textStruct.x, textStruct.y);
 		activeOption.textStruct = textStruct;
-		UIComp::TextToTransform(activeOption.transform, activeOption.textStruct, activeOption.clickBox, screenWidth, screenHeight);
+		UIComp::TextToTransform(activeOption.transform, activeOption.textStruct, activeOption.clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 		//printf("COMBOBOX CONSTRUCTION CONSTRUCTED : %s  %.2f:%.2f\n", activeOption.textStruct.string.c_str(), activeOption.textStruct.x, activeOption.textStruct.y);
 		scale = activeOption.textStruct.scale;
 	}
 
-	void ComboBox::pushOption(std::string string, float screenWidth, float screenHeight) {
+	void ComboBox::PushOption(std::string string) {
 		//printf("pushing option, comboX:comboY:scale - %.3f:%.3f:%.1f \n", activeOption.textStruct.x, activeOption.textStruct.y, scale);
-		comboOptions.emplace_back(TextStruct{ string, activeOption.textStruct.x, activeOption.textStruct.y + (comboOptions.size() + 1) * (19.f * scale) * screenHeight / DEFAULT_HEIGHT, align, scale }, screenWidth, screenHeight);
+		comboOptions.emplace_back(TextStruct{ string, activeOption.textStruct.x, activeOption.textStruct.y + (comboOptions.size() + 1) * (19.f * scale) * VK::Object->screenHeight / DEFAULT_HEIGHT, align, scale });
 		//comboOptions.back().clickBox = activeOption.clickBox;
-		if (comboOptions.back().clickBox.z - comboOptions.back().clickBox.x > activeOption.clickBox.z - activeOption.clickBox.x) {
+		if ((comboOptions.back().clickBox.z - comboOptions.back().clickBox.x) > (activeOption.clickBox.z - activeOption.clickBox.x)) {
 			activeOption.clickBox.z = activeOption.clickBox.x + comboOptions.back().clickBox.z - comboOptions.back().clickBox.x;
 			for (int i = 0; i < comboOptions.size() - 1; i++) {
 				comboOptions[i].clickBox.z = activeOption.clickBox.z;
@@ -286,28 +285,28 @@ namespace EWE {
 
 		comboOptions.back().clickBox.x = activeOption.clickBox.x;
 		comboOptions.back().clickBox.z = activeOption.clickBox.z;
-		UIComp::convertScreenTo2D(glm::ivec2{ (comboOptions.back().clickBox.x + comboOptions.back().clickBox.z) / 2 ,
-			(comboOptions.back().clickBox.y + comboOptions.back().clickBox.w) / 2 }, comboOptions.back().transform.translation, screenWidth, screenHeight);
+		UIComp::ConvertScreenTo2D(glm::ivec2{ (comboOptions.back().clickBox.x + comboOptions.back().clickBox.z) / 2 ,
+			(comboOptions.back().clickBox.y + comboOptions.back().clickBox.w) / 2 }, comboOptions.back().transform.translation, VK::Object->screenWidth, VK::Object->screenHeight);
 		comboOptions.back().transform.scale.x = activeOption.transform.scale.x;
 	}
 
-	void ComboBox::setSelection(int8_t selection) {
+	void ComboBox::SetSelection(int8_t selection) {
 		currentlySelected = selection;
 		activeOption.textStruct.string = comboOptions[currentlySelected].textStruct.string;
 	}
 
 	bool ComboBox::Clicked(double xpos, double ypos) {
 		if (!currentlyDropped) {
-			if (UIComp::checkClickBox(activeOption.clickBox, xpos, ypos)) {
-				UIComp::printClickBox(activeOption.clickBox);
+			if (UIComp::CheckClickBox(activeOption.clickBox, xpos, ypos)) {
+				UIComp::PrintClickBox(activeOption.clickBox);
 				currentlyDropped = true;
 				return true;
 			}
 		}
 		else {
 			for (int i = 0; i < comboOptions.size(); i++) {
-				if (UIComp::checkClickBox(comboOptions[i].clickBox, xpos, ypos)) {
-					UIComp::printClickBox(comboOptions[i].clickBox);
+				if (UIComp::CheckClickBox(comboOptions[i].clickBox, xpos, ypos)) {
+					UIComp::PrintClickBox(comboOptions[i].clickBox);
 					currentlyDropped = false;
 					activeOption.textStruct.string = comboOptions[i].textStruct.string;
 					currentlySelected = i;
@@ -318,20 +317,20 @@ namespace EWE {
 		}
 		return false;
 	}
-	void ComboBox::resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
+	void ComboBox::ResizeWindow(glm::vec2 rescalingRatio) {
 
-		activeOption.resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+		activeOption.ResizeWindow(rescalingRatio);
 		for (int i = 0; i < comboOptions.size(); i++) {
-			comboOptions[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			comboOptions[i].ResizeWindow(rescalingRatio);
 			comboOptions[i].textStruct.x = activeOption.textStruct.x;
-			comboOptions[i].textStruct.y = activeOption.textStruct.y + (i + 1) * (19.f * scale) * rszHeight / DEFAULT_HEIGHT;
+			comboOptions[i].textStruct.y = activeOption.textStruct.y + (i + 1) * (19.f * scale) * VK::Object->screenHeight / DEFAULT_HEIGHT;
 
 			if ((comboOptions[i].clickBox.z - comboOptions[i].clickBox.x) > (activeOption.clickBox.z - activeOption.clickBox.x)) {
 				activeOption.clickBox.z = activeOption.clickBox.x + comboOptions[i].clickBox.z - comboOptions[i].clickBox.x;
 				for (int j = 0; j < i; j++) {
 					comboOptions[j].clickBox.z = activeOption.clickBox.z;
-					UIComp::convertScreenTo2D(glm::ivec2{ (comboOptions[j].clickBox.x + comboOptions[j].clickBox.z) / 2 ,
-						(comboOptions[j].clickBox.y + comboOptions[j].clickBox.w) / 2 }, comboOptions[j].transform.translation, rszWidth, rszHeight);
+					UIComp::ConvertScreenTo2D(glm::ivec2{ (comboOptions[j].clickBox.x + comboOptions[j].clickBox.z) / 2 ,
+						(comboOptions[j].clickBox.y + comboOptions[j].clickBox.w) / 2 }, comboOptions[j].transform.translation, VK::Object->screenWidth, VK::Object->screenHeight);
 				}
 			}
 			else {
@@ -339,89 +338,87 @@ namespace EWE {
 			}
 		}
 	}
-	void ComboBox::render(NineUIPushConstantData& push) {
-		push.offset.x = activeOption.transform.translation.x;
-		push.offset.y = activeOption.transform.translation.y;
+	void ComboBox::Render(Array2DPushConstantData& push) {
+		push.scaleOffset.z = activeOption.transform.translation.x;
+		push.scaleOffset.w = activeOption.transform.translation.y;
 		//need color array
-		push.scale = activeOption.transform.scale;
-		Dimension2::pushAndDraw(push);
+		push.scaleOffset.x = activeOption.transform.scale.x;
+		push.scaleOffset.y = activeOption.transform.scale.y;
+		Dimension2::PushAndDraw(push);
 		if (currentlyDropped) {
 			for (int j = 0; j < comboOptions.size(); j++) {
-				push.offset.x = comboOptions[j].transform.translation.x;
-				push.offset.y = comboOptions[j].transform.translation.y;
-				push.scale = comboOptions[j].transform.scale;
+				push.scaleOffset.z = comboOptions[j].transform.translation.x;
+				push.scaleOffset.w = comboOptions[j].transform.translation.y;
+				push.scaleOffset.x = comboOptions[j].transform.scale.x;
+				push.scaleOffset.y = comboOptions[j].transform.scale.y;
 				if (j == currentlySelected) {
 					push.color = glm::vec3{ .4f, .4f, 1.f };
-					Dimension2::pushAndDraw(push);
+					Dimension2::PushAndDraw(push);
 					push.color = glm::vec3{ .5f, .35f, .25f };
 				}
 				else {
-					Dimension2::pushAndDraw(push);
+					Dimension2::PushAndDraw(push);
 				}
 			}
 		}
 	}
-	void ComboBox::move(float xDiff, float yDiff, float screenWidth, float screenHeight) {
+	void ComboBox::Move(float xDiff, float yDiff) {
 		activeOption.textStruct.x += xDiff;
 		activeOption.textStruct.y += yDiff;
-		activeOption.clickBox.x += xDiff;
-		activeOption.clickBox.z += xDiff;
-		activeOption.clickBox.y += yDiff;
-		activeOption.clickBox.w += yDiff;
-		UIComp::convertClickToTransform(activeOption.clickBox, activeOption.transform, screenWidth, screenHeight);
+		activeOption.clickBox.x += static_cast<int>(xDiff);
+		activeOption.clickBox.z += static_cast<int>(xDiff);
+		activeOption.clickBox.y += static_cast<int>(yDiff);
+		activeOption.clickBox.w += static_cast<int>(yDiff);
+		UIComp::ConvertClickToTransform(activeOption.clickBox, activeOption.transform, VK::Object->screenWidth, VK::Object->screenHeight);
 
 		for (auto& cOption : comboOptions) {
 			cOption.textStruct.x += xDiff;
 			cOption.textStruct.y += yDiff;
-			cOption.clickBox.x += xDiff;
-			cOption.clickBox.z += xDiff;
-			cOption.clickBox.y += yDiff;
-			cOption.clickBox.w += yDiff;
-			UIComp::convertClickToTransform(cOption.clickBox, cOption.transform, screenWidth, screenHeight);
+			cOption.clickBox.x += static_cast<int>(xDiff);
+			cOption.clickBox.z += static_cast<int>(xDiff);
+			cOption.clickBox.y += static_cast<int>(yDiff);
+			cOption.clickBox.w += static_cast<int>(yDiff);
+			UIComp::ConvertClickToTransform(cOption.clickBox, cOption.transform, VK::Object->screenWidth, VK::Object->screenHeight);
 		}
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~~ DROPBOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	void DropBox::pushOption(std::string pushString) {
+	void DropBox::PushOption(std::string pushString) {
 		dropOptions.push_back(dropper.textStruct);
 		dropOptions.back().string = pushString;
+		Init();
 	}
-	void DropBox::pushOption(std::string pushString, float screenWidth, float screenHeight) {
-		dropOptions.push_back(dropper.textStruct);
-		dropOptions.back().string = pushString;
-		init(screenWidth, screenHeight);
-	}
-	void DropBox::init(float screenWidth, float screenHeight) {
+	void DropBox::Init() {
 		//if dropOptions.size == 0, this will crash
 
 		if (dropOptions.size() != clickBoxes.size() && (dropOptions.size() != 0)) {
 			clickBoxes.resize(dropOptions.size());
 		}
-		UIComp::TextToTransform(dropper.transform, dropper.textStruct, dropper.clickBox, screenWidth, screenHeight);
+		UIComp::TextToTransform(dropper.transform, dropper.textStruct, dropper.clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 
 		float biggestWidth = 0.f;
 		for (int i = 0; i < dropOptions.size(); i++) {
 			dropOptions[i].x = dropper.textStruct.x;
-			dropOptions[i].y = dropper.textStruct.y + 13.f + (i + 1) * (26.f * scale) * screenHeight / DEFAULT_HEIGHT;
+			dropOptions[i].y = dropper.textStruct.y + 13.f + (i + 1) * (26.f * scale) * VK::Object->screenHeight / DEFAULT_HEIGHT;
 
-			float tempWidth = dropOptions[i].getWidth(screenWidth);
+			float tempWidth = dropOptions[i].GetWidth();
 			if (tempWidth > biggestWidth) { biggestWidth = tempWidth; }
 
 			clickBoxes[i].y = static_cast<int>(dropOptions[i].y);
-			clickBoxes[i].w = static_cast<int>(dropOptions[i].y + (26.f * scale) * screenHeight / DEFAULT_HEIGHT);
+			clickBoxes[i].w = static_cast<int>(dropOptions[i].y + (26.f * scale) * VK::Object->screenHeight / DEFAULT_HEIGHT);
 		}
 		for (int i = 0; i < dropOptions.size(); i++) {
 			if (align == TA_center) {
-				clickBoxes[i].x = static_cast<int>(dropper.textStruct.x - biggestWidth * screenWidth / 4.f);
-				clickBoxes[i].z = static_cast<int>(dropper.textStruct.x + biggestWidth * screenWidth / 4.f);
+				clickBoxes[i].x = static_cast<int>(dropper.textStruct.x - biggestWidth * VK::Object->screenWidth / 4.f);
+				clickBoxes[i].z = static_cast<int>(dropper.textStruct.x + biggestWidth * VK::Object->screenWidth / 4.f);
 			}
 			else if (align == TA_left) {
 				clickBoxes[i].x = static_cast<int>(dropper.textStruct.x);
-				clickBoxes[i].z = static_cast<int>(dropper.textStruct.x + biggestWidth * screenWidth / 2.f);
+				clickBoxes[i].z = static_cast<int>(dropper.textStruct.x + biggestWidth * VK::Object->screenWidth / 2.f);
 				//printf("x z clickbox - %d:%d \n", clickBoxes[i].x, clickBoxes[i].z);
 			}
 			else if (align == TA_right) {
-				clickBoxes[i].x = static_cast<int>(dropper.textStruct.x - biggestWidth * screenWidth / 2.f);
+				clickBoxes[i].x = static_cast<int>(dropper.textStruct.x - biggestWidth * VK::Object->screenWidth / 2.f);
 				clickBoxes[i].z = static_cast<int>(dropper.textStruct.x);
 			}
 		}
@@ -437,18 +434,18 @@ namespace EWE {
 		screenPosition.x = (bigBox.x + bigBox.z) / 2;
 		screenPosition.y = (bigBox.y + bigBox.w) / 2;
 
-		UIComp::convertScreenTo2D(screenPosition, dropBackground.translation, screenWidth, screenHeight);
+		UIComp::ConvertScreenTo2D(screenPosition, dropBackground.translation, VK::Object->screenWidth, VK::Object->screenHeight);
 		printf("translation - %.2f : %.2f \n", dropBackground.translation.x, dropBackground.translation.y);
 
-		dropBackground.scale = glm::vec2(biggestWidth * screenWidth / DEFAULT_WIDTH, scale * clickBoxes.size() / 19.f);
+		dropBackground.scale = glm::vec2(biggestWidth * VK::Object->screenWidth / DEFAULT_WIDTH, scale * clickBoxes.size() / 19.f);
 	}
 
 	int8_t DropBox::Clicked(double xpos, double ypos) {
 		printf("checking dropbox click \n");
 		if (!currentlyDropped) {
-			UIComp::printClickBox(dropper.clickBox);
-			if (UIComp::checkClickBox(dropper.clickBox, xpos, ypos)) {
-				UIComp::printClickBox(dropper.clickBox);
+			UIComp::PrintClickBox(dropper.clickBox);
+			if (UIComp::CheckClickBox(dropper.clickBox, xpos, ypos)) {
+				UIComp::PrintClickBox(dropper.clickBox);
 				printf("clicked the dropper\n");
 				currentlyDropped = true;
 				return -1;
@@ -456,7 +453,7 @@ namespace EWE {
 		}
 		else {
 			for (int i = 0; i < clickBoxes.size(); i++) {
-				if (UIComp::checkClickBox(clickBoxes[i], xpos, ypos)) {
+				if (UIComp::CheckClickBox(clickBoxes[i], xpos, ypos)) {
 					//UIComp::printClickBox(clickBoxes[i]);
 					currentlyDropped = false;
 					return i;
@@ -466,36 +463,40 @@ namespace EWE {
 		}
 		return -2;
 	}
-	void DropBox::render(NineUIPushConstantData& push) {
-		push.offset = glm::vec4(dropper.transform.translation, 1.f, 1.f);
+	void DropBox::Render(Array2DPushConstantData& push) {
+		push.scaleOffset.z = dropper.transform.translation.x;
+		push.scaleOffset.w = dropper.transform.translation.y;
 		//need color array
 		if (currentlyDropped) {
 			push.color = glm::vec3{ .75f, .35f, .25f };
 		}
-		push.scale = dropper.transform.scale;
-		Dimension2::pushAndDraw(push);
+		push.scaleOffset.x = dropper.transform.scale.x;
+		push.scaleOffset.y = dropper.transform.scale.y;
+		Dimension2::PushAndDraw(push);
 		push.color = glm::vec3{ .5f, .35f, .25f };
 		if (currentlyDropped) {
-			push.offset = glm::vec4(dropBackground.translation, 0.5f, 1.f);
-			push.scale = dropBackground.scale;
-			Dimension2::pushAndDraw(push);
+			push.scaleOffset.z = dropBackground.translation.x;
+			push.scaleOffset.w = dropBackground.translation.y;
+			push.scaleOffset.x = dropBackground.scale.x;
+			push.scaleOffset.y = dropBackground.scale.y;
+			Dimension2::PushAndDraw(push);
 		}
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~ BUTTON ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	Button::Button(glm::vec2 translation, float screenWidth, float screenHeight) {
+	Button::Button(glm::vec2 translation) {
 		transform.translation = translation;
 		transform.scale.y = 1.f / 20.f;
-		transform.scale.x = transform.scale.y * screenHeight / screenWidth;
-		UIComp::convertTransformToClickBox(transform, clickBox, screenWidth, screenHeight);
+		transform.scale.x = transform.scale.y * VK::Object->screenHeight / VK::Object->screenWidth;
+		UIComp::ConvertTransformToClickBox(transform, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
-	void Button::render(Simple2DPushConstantData& push) {
+	void Button::Render(Array2DPushConstantData& push) {
 		push.scaleOffset = glm::vec4(transform.scale, transform.translation);
-		Dimension2::pushAndDraw(push);
+		Dimension2::PushAndDraw(push);
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~ CHECKBOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	Checkbox::Checkbox(std::string labelString, glm::vec2 translation, DefaultOffsets labelOffset, float screenW, float screenH) : button{ translation, screenW, screenH } {
+	Checkbox::Checkbox(std::string labelString, glm::vec2 translation, DefaultOffsets labelOffset) : button{ translation } {
 		TextAlign alignment = TA_center;
 
 		glm::vec2 textPos = glm::vec2{ (button.clickBox.x + button.clickBox.z) / 2, button.clickBox.y };
@@ -524,13 +525,13 @@ namespace EWE {
 
 		label = TextStruct{ labelString, textPos.x, textPos.y, alignment, 1.f };
 	}
-	Checkbox::Checkbox(std::string labelString, glm::vec2 translation, glm::vec2 labelOffset, TextAlign alignment, float screenW, float screenH) : button{ translation, screenW, screenH } {
+	Checkbox::Checkbox(std::string labelString, glm::vec2 translation, glm::vec2 labelOffset, TextAlign alignment) : button{ translation} {
 		label = TextStruct{ labelString, button.transform.translation.x + labelOffset.x, button.transform.translation.y + labelOffset.y, (unsigned char)alignment, 1.f };
 	}
-	void Checkbox::resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
-		label.x *= rszWidth / oldWidth;
-		label.y *= rszHeight / oldHeight;
-		button.resizeWindow(rszWidth, rszHeight);
+	void Checkbox::ResizeWindow(glm::vec2 rescalingRatio) {
+		label.x *= rescalingRatio.x;
+		label.y *= rescalingRatio.y;
+		button.ResizeWindow();
 	}
 
 	bool Checkbox::Clicked(double xpos, double ypos) {
@@ -540,9 +541,9 @@ namespace EWE {
 		}
 		return false;
 	}
-	void Checkbox::render(Simple2DPushConstantData& push) {
+	void Checkbox::Render(Array2DPushConstantData& push) {
 		push.scaleOffset = glm::vec4(button.transform.scale, button.transform.translation);
-		Dimension2::pushAndDraw(push);
+		Dimension2::PushAndDraw(push);
 	}
 
 }

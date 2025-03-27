@@ -3,16 +3,6 @@
 #include <cstdint>
 
 namespace EWE{
-	enum MenuClickReturn : uint16_t {
-		MCR_none = 0,
-		MCR_ExitProgram,
-		MCR_switchToLB, //LB = levelBuilder
-		MCR_SaveReturn,
-		MCR_DiscardReturn,
-		MCR_EscapePressed,
-
-		MCR_engine_size,
-	};
 	enum MenuStates : uint16_t {
 		menu_main = 0,
 		//menu_controls,
@@ -20,8 +10,6 @@ namespace EWE{
 		menu_graphics_settings,
 
 		menu_level_builder,
-
-		menu_controls,
 
 		menu_engine_size, //oversize check? idk if i need this
 	};

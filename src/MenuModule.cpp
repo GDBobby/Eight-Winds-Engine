@@ -1,47 +1,32 @@
 #include "EWEngine/GUI/MenuModule.h"
 
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 namespace EWE {
 
-	std::unique_ptr<EWEModel> MenuModule::model2D;
-	std::unique_ptr<EWEModel> MenuModule::nineUIModel;
+	MenuModule::UIImageStruct::UIImageStruct(ImageID imgID, Transform2D& transform) : imgID{ imgID }, transform{ transform }, descriptor{ Image_Manager::CreateSimpleTexture(imgID, VK_SHADER_STAGE_FRAGMENT_BIT) } {}
 
-	std::map<MenuTextureEnum, TextureDesc> MenuModule::textures{};
+	EWEModel* MenuModule::model2D;
 
-	std::queue<uint16_t> MenuModule::clickReturns{};
+	void (*MenuModule::ChangeMenuStateFromMM)(uint8_t, uint8_t);
+	std::function<void(SceneKey)> MenuModule::ChangeSceneFromMM;
 
-	void (*MenuModule::changeMenuStateFromMM)(uint8_t, unsigned char);
+	void MenuModule::initTextures() {
 
-	void MenuModule::initTextures(EWEDevice& eweDevice) {
-		//these textures are deleted in EWETexture, when the program is cleaning itself up on close
-
-		textures.emplace(MT_NineUI, Texture_Builder::createSimpleTexture( "UI/NineUI.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textures.emplace(MT_NineFade, Texture_Builder::createSimpleTexture( "UI/NineFade.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textures.emplace(MT_Slider, Texture_Builder::createSimpleTexture( "UI/clickyBox.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textures.emplace(MT_BracketButton, Texture_Builder::createSimpleTexture( "UI/bracketButton.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textures.emplace(MT_Bracket, Texture_Builder::createSimpleTexture( "UI/bracketSlide.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textures.emplace(MT_Unchecked, Texture_Builder::createSimpleTexture( "UI/unchecked.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		textures.emplace(MT_Checked, Texture_Builder::createSimpleTexture( "UI/checked.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		//textureIDs.emplace(MT_background, Texture_Builder::createSimpleTexture( "UI/mainPageBG.png"));
-		textures.emplace(MT_Button, Texture_Builder::createSimpleTexture( "UI/ButtonUp.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		
-		textures.emplace(MT_Base, Texture_Builder::createSimpleTexture("UI/menuBase.png", true, false, VK_SHADER_STAGE_FRAGMENT_BIT));
-		
-
-		model2D = Basic_Model::generate2DQuad(eweDevice);
-		nineUIModel = Basic_Model::generateNineUIQuad(eweDevice);
+		model2D = Basic_Model::Quad2D();
 	}
 
-	std::pair<UIComponentTypes, int16_t> MenuModule::checkClick(double xpos, double ypos) {
+	std::pair<UIComponentTypes, int16_t> MenuModule::CheckClick(double xpos, double ypos) {
 		std::pair<UIComponentTypes, int16_t> returnVal = { UIT_none, -1 };
 		if (selectedComboBox >= 0) {
+#if EWE_DEBUG
 			printf("checking click for selected combobox : %d \n", selectedComboBox);
+#endif
 			//one combo box is unraveled
 			for (int i = 0; i < comboBoxes[selectedComboBox].comboOptions.size(); i++) {
 				if (comboBoxes[selectedComboBox].comboOptions[i].Clicked(xpos, ypos)) {
-					comboBoxes[selectedComboBox].setSelection(i);
+					comboBoxes[selectedComboBox].SetSelection(i);
 					//UIComp::TextToTransform(comboBoxes[selectedComboBox].activeOption.transform, comboBoxes[selectedComboBox].activeOption.textStruct, comboBoxes[selectedComboBox].activeOption.clickBox, screenWidth, screenHeight);
 					return { UIT_Combobox, i };
 				}
@@ -54,7 +39,9 @@ namespace EWE {
 			//int16_t comboClick = comboBoxes[i]; //not finished yet
 			//return comboClick + sliders.size() * 3;
 			if (comboBoxes[i].Clicked(xpos, ypos)) {
+#if EWE_DEBUG
 				printf("clicked a combo box? :%d - xpos:ypos %.1f:%.1f \n", i, xpos, ypos);
+#endif
 
 				selectedComboBox = i;
 				return { UIT_Combobox, -1 };
@@ -63,7 +50,9 @@ namespace EWE {
 		for (int i = 0; i < dropBoxes.size(); i++) {
 			int8_t clickBuffer = dropBoxes[i].Clicked(xpos, ypos);
 			if (clickBuffer > -2) {
+#if EWE_DEBUG
 				printf("clicked a drop box? :%d:%d - xpos:ypos %.1f:%.1f \n", i, clickBuffer, xpos, ypos);
+#endif
 				selectedDropBox = i;
 				return { UIT_Dropbox, -1 };
 			}
@@ -106,212 +95,215 @@ namespace EWE {
 			}
 		}
 
+#if EWE_DEBUG
 		printf("before checking menu bar click \n");
+#endif
 		for (int i = 0; i < menuBars.size(); i++) {
 			int16_t ret = menuBars[i].Clicked(xpos, ypos);
 			if (ret > -1) {
 				return { UIT_MenuBar, ret };
 			}
 		}
+#if EWE_DEBUG
 		printf("after checking menu bar click \n");
+#endif
 
 		return returnVal;
 	}
 
-	void MenuModule::drawNewObjects() {
-		Simple2DPushConstantData push{};
+	void MenuModule::DrawNewObjects() {
+		Dimension2::BindDefaultDesc();
+		Array2DPushConstantData push{};
 		if (checkBoxes.size() > 0) {
 			push.color = glm::vec3{ 1.f };
 			for (auto& object : checkBoxes) {
 				if (object.isChecked) {
-					Dimension2::bindTexture2DUI(textures[MT_Checked]);
-					object.render(push);
+					push.textureID = MT_Checked;
+					object.Render(push);
 				}
 			}
 			for (auto& object : checkBoxes) {
 				if (!object.isChecked) {
-					Dimension2::bindTexture2DUI(textures[MT_Unchecked]);
-					object.render(push);
+					push.textureID = MT_Unchecked;
+					object.Render(push);
 				}
 			}
 		}
 
 		if (sliders.size() > 0) {
 			push.color = glm::vec3(1.f);
-			Dimension2::bindTexture2DUI(textures[MT_Slider]);
-
+			push.textureID = MT_BracketButton;
 			for (auto& object : sliders) {
-				object.render(push, 0);
+				object.Render(push, 1);
 			}
-			Dimension2::bindTexture2DUI(textures[MT_BracketButton]);
+			push.textureID = MT_Bracket;
 			for (auto& object : sliders) {
-				object.render(push, 1);
+				object.Render(push, 2);
 			}
-			Dimension2::bindTexture2DUI(textures[MT_Bracket]);
+			push.textureID = MT_Slider;
 			for (auto& object : sliders) {
-				object.render(push, 2);
+				object.Render(push, 0);
 			}
 		}
 
 		if (controlBoxes.size() > 0) {
 			//printf("before draw objects control boxes \n");
 			push.color = glm::vec3(1.f);
-			Dimension2::bindTexture2DUI(textures[MT_Button]);
+			push.textureID = MT_Button;
 			for (auto& object : controlBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 
 
 			//printf("after control boxes \n");
 		}
-		if (images.size() > 0) {
-			//not considering for texture ordering
-			push.color = glm::vec3(1.f);
-			for (int i = 0; i < images.size(); i++) {
-				Dimension2::bindTexture2DUI(images[i].texture);
-				push.scaleOffset = glm::vec4(images[i].transform.scale, images[i].transform.translation);
-				Dimension2::pushAndDraw(push);
-			}
-		}
 	}
-	void MenuModule::drawNewNine() {
-		NineUIPushConstantData push{};
+	void MenuModule::DrawNewNine() {
+
+		Dimension2::BindDefaultDesc();
+		Array2DPushConstantData push{};
+		push.depth = 0.9f;
+		push.textureID = MT_NineUI;
 		if (comboBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : comboBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 		}
 
 		if (dropBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : dropBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 		}
 
 		if (clickText.size() > 0) {
-
-			push.offset.z = 1.f;
-			push.offset.w = 1.f;
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : clickText) {
-				object.render(push);
+				object.Render(push);
 			}
 		}
 
 		if (typeBoxes.size() > 0) {
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : typeBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 		}
 		if (controlBoxes.size() > 0) {
-			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : controlBoxes) {
-				object.render(push);
+				object.Render(push);
 			}
 			//printf("after nine ui control boxes \n");
 		}
 
 		if (menuBars.size() > 0) {
+			push.textureID = MT_NineUI;
 			push.color = glm::vec3{ .5f, .35f, .25f };
-			Dimension2::bindTexture9(textures[MT_NineUI]);
 			for (auto& object : menuBars) {
-				object.render(push, 0);
+				object.Render(push, 0);
 			}
-
-			Dimension2::bindTexture9(textures[MT_NineFade]);
+			push.textureID = MT_NineFade;
 			for (auto& object : menuBars) {
-				object.render(push, 1);
+				object.Render(push, 1);
 			}
 		}
 
 	}
 
-	void MenuModule::resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
+	void MenuModule::ResizeWindow(glm::vec2 resizeRatio) {
 		//i think its just clickboxes?
 		for (int i = 0; i < sliders.size(); i++) {
-			sliders[i].resizeWindow(rszWidth, rszHeight); //ok why is this given a pointer to window size
+			sliders[i].ResizeWindow(); //ok why is this given a pointer to window size
 		}
 		for (int i = 0; i < comboBoxes.size(); i++) {
-			comboBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			comboBoxes[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < checkBoxes.size(); i++) {
-			checkBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			checkBoxes[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < labels.size(); i++) {
-			labels[i].x *= rszWidth / oldWidth;
-			labels[i].y *= rszHeight / oldHeight;
+			labels[i].x *= resizeRatio.x;
+			labels[i].y *= resizeRatio.y;
 		}
 		for (int i = 0; i < clickText.size(); i++) {
-			clickText[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			clickText[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < dropBoxes.size(); i++) {
-			dropBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			dropBoxes[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < typeBoxes.size(); i++) {
-			typeBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			typeBoxes[i].ResizeWindow(resizeRatio);
 		}
 		for (int i = 0; i < controlBoxes.size(); i++) {
-			controlBoxes[i].resizeWindow(rszWidth, oldWidth, rszHeight, oldHeight);
+			controlBoxes[i].ResizeWindow(resizeRatio);
 		}
 		//printf("initializing menu bars \n");
 		for (int i = 0; i < menuBars.size(); i++) {
-			menuBars[i].init(rszWidth, rszHeight);
+			menuBars[i].init();
 		}
 		//printf("after initializing menu bars \n");
 	}
+	void MenuModule::DrawImages() {
+		Single2DPushConstantData push;
+		if (images.size() > 0) {
+			//not considering for texture ordering
+			push.color = glm::vec3(1.f);
+			for (int i = 0; i < images.size(); i++) {
+				Dimension2::BindSingleDescriptor(&images[i].descriptor);
+				push.transform = images[i].transform.MatrixNoRotation();
+				
+				Dimension2::PushAndDraw(push);
+			}
+		}
+	}
 
-	void MenuModule::drawText(TextOverlay* textOverlay) {
+	void MenuModule::DrawText() {
 		for (int i = 0; i < comboBoxes.size(); i++) {
-			textOverlay->addText(comboBoxes[i].activeOption.textStruct);
+			TextOverlay::StaticAddText(comboBoxes[i].activeOption.textStruct);
 			if (comboBoxes[i].currentlyDropped) {
 				for (int j = 0; j < comboBoxes[i].comboOptions.size(); j++) {
-					textOverlay->addText(comboBoxes[i].comboOptions[j].textStruct);
+					TextOverlay::StaticAddText(comboBoxes[i].comboOptions[j].textStruct);
 				}
 			}
 		}
 		for (int i = 0; i < dropBoxes.size(); i++) {
-			textOverlay->addText(dropBoxes[i].dropper.textStruct);
+			TextOverlay::StaticAddText(dropBoxes[i].dropper.textStruct);
 			if (dropBoxes[i].currentlyDropped) {
 				for (int j = 0; j < dropBoxes[i].dropOptions.size(); j++) {
-					textOverlay->addText(dropBoxes[i].dropOptions[j]);
+					TextOverlay::StaticAddText(dropBoxes[i].dropOptions[j]);
 				}
 			}
 		}
 		for (int i = 0; i < checkBoxes.size(); i++) {
-			textOverlay->addText(checkBoxes[i].label);
+			TextOverlay::StaticAddText(checkBoxes[i].label);
 		}
 		for (int i = 0; i < labels.size(); i++) {
-			textOverlay->addText(labels[i]);
+			TextOverlay::StaticAddText(labels[i]);
 		}
 		for (int i = 0; i < clickText.size(); i++) {
-			textOverlay->addText(clickText[i].textStruct);
+			TextOverlay::StaticAddText(clickText[i].textStruct);
 		}
 		for (int i = 0; i < typeBoxes.size(); i++) {
-			textOverlay->addText(typeBoxes[i].textStruct);
+			TextOverlay::StaticAddText(typeBoxes[i].textStruct);
 		}
 		for (int i = 0; i < controlBoxes.size(); i++) {
-			textOverlay->addText(controlBoxes[i].label);
+			TextOverlay::StaticAddText(controlBoxes[i].label);
 			for (int j = 0; j < controlBoxes[i].variableControls.size(); j++) {
 				for (int k = 0; k < controlBoxes[i].variableControls[j].typeBoxes.size(); k++) {
-					textOverlay->addText(controlBoxes[i].variableControls[j].typeBoxes[k].textStruct);
+					TextOverlay::StaticAddText(controlBoxes[i].variableControls[j].typeBoxes[k].textStruct);
 				}
-				textOverlay->addText(controlBoxes[i].variableControls[j].dataLabel);
+				TextOverlay::StaticAddText(controlBoxes[i].variableControls[j].dataLabel);
 			}
 		}
 		//printf("drawing menu bar text \n");
 		for (int i = 0; i < menuBars.size(); i++) {
 			for (int j = 0; j < menuBars[i].dropBoxes.size(); j++) {
-				textOverlay->addText(menuBars[i].dropBoxes[j].dropper.textStruct);
+				TextOverlay::StaticAddText(menuBars[i].dropBoxes[j].dropper.textStruct);
 				if (menuBars[i].dropBoxes[j].currentlyDropped) {
 					for (int k = 0; k < menuBars[i].dropBoxes[j].dropOptions.size(); k++) {
-						textOverlay->addText(menuBars[i].dropBoxes[j].dropOptions[k]);
+						TextOverlay::StaticAddText(menuBars[i].dropBoxes[j].dropOptions[k]);
 					}
 				}
 			}
@@ -319,7 +311,7 @@ namespace EWE {
 		//printf("aftter drawing menu bar text \n");
 	}
 
-	std::string MenuModule::getInputName(int keyCode) {
+	std::string MenuModule::GetInputName(int keyCode) {
 		//std::cout << "get mouse? : " << keyCode << std::endl;
 		//std::cout << "get mouse key : " << keyCode << std::endl;
 		if (keyCode == 0) {

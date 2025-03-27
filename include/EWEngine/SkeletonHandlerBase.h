@@ -9,19 +9,25 @@ namespace EWE {
     public:
         static uint32_t nextSkeletonID;
 
-        SkeletonBase(std::string importPath, EWEDevice& device, std::string texturePath, bool instanced = false);
+        SkeletonBase(std::string importPath, std::string texturePath, bool instanced = false);
 #if DECONSTRUCTION_DEBUG
         ~SkeletonBase() {
             printf("Deconstructing player skeleton \n");
+            for (auto& mesh : meshes) {
+                delete mesh;
+            }
+            for (auto& mesh : meshesNT) {
+                delete mesh;
+            }
         }
 #endif
-        std::vector<std::unique_ptr<EWEModel>> meshes{}; //this will hold the vertex/index buffers
-        std::vector<std::unique_ptr<EWEModel>> meshesNT{};
-        std::vector<TextureDesc> textureIDs{};
-        std::vector<TextureDesc> textureNTIDs{};
+        std::vector<EWEModel*> meshes{}; //this will hold the vertex/index buffers
+        std::vector<EWEModel*> meshesNT{};
+        std::vector<ImageID> textureIDs{};
+        std::vector<ImageID> textureNTIDs{};
 
         std::vector<std::pair<MaterialFlags, //pipeline flags
-            std::vector<std::pair<TextureDesc, //texture
+            std::vector<std::pair<ImageID, //texture
             std::vector<EWEModel* //meshPtr
             >>>>> pipePairs{};
 
@@ -35,11 +41,11 @@ namespace EWE {
        // std::unordered_map<uint8_t, std::vector<std::pair<uint8_t, int32_t>>> pipelinePairsNT; //2 pairs or an if statement to branch between mesh and meshNT?
         //struct for tangent mesh and meshNT?
 
-        virtual void* getFinalBones(uint8_t animState, uint16_t animFrames) = 0;
-        const glm::mat4& getSwordMatrix() { return swordMatrix; }
+        virtual void* GetFinalBones(uint8_t animState, uint16_t animFrames) = 0;
+        const glm::mat4& GetSwordMatrix() { return swordMatrix; }
 
-        uint32_t getBoneCount() { return boneCount; }
-        uint32_t getSkeletonID() { return mySkeletonID; }
+        uint32_t GetBoneCount() { return boneCount; }
+        uint32_t GetSkeletonID() { return mySkeletonID; }
 
     protected:
         std::vector< //which animation
@@ -58,7 +64,7 @@ namespace EWE {
         uint16_t boneCount = 0;
         int32_t handBone = -1;
 
-        void readAnimData(std::string filePath, EWEDevice& device, bool partial, bool endian);
-        void loadTextures(EWEDevice& device, std::string filePath, std::pair<std::vector<MaterialTextureInfo>, std::vector<MaterialTextureInfo>>& textureTracker, std::string texturePath);
+        void ReadAnimData(std::string filePath, bool partial, bool endian);
+        void LoadTextures(std::string filePath, std::pair<std::vector<MaterialInfo>, std::vector<MaterialInfo>>& textureTracker, std::string texturePath);
     };
 }

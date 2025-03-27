@@ -13,17 +13,15 @@ namespace EWE {
         CameraController(GLFWwindow* wndw) {
             window = wndw;
             inputPtr = this;
-            glfwSetKeyCallback(wndw, staticKeyCallback);
-            glfwSetScrollCallback(window, scroll_callback);
         }
         ~CameraController() {
             inputPtr = nullptr;
         }
-        void giveFocus() {
-            glfwSetKeyCallback(window, staticKeyCallback);
-            glfwSetScrollCallback(window, scroll_callback);
+        void GiveFocus() {
+            glfwSetKeyCallback(window, StaticKeyCallback);
+            glfwSetScrollCallback(window, Scroll_callback);
         }
-        static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+        static void Scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
             //printf("%.2f stored zoom \n", yoffset);
             //ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
             //ImGuiIO& io = ImGui::GetIO();
@@ -34,7 +32,7 @@ namespace EWE {
         }
 
 
-        static void staticKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+        static void StaticKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
             //ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
             //ImGuiIO& io = ImGui::GetIO();
             //if (io.WantCaptureKeyboard) {
@@ -47,17 +45,17 @@ namespace EWE {
             //std::string tempString = glfwGetKeyName(codepoint, 0);
 
             if (inputPtr->selectedKey >= 0) {
-                inputPtr->setKey(key);
+                inputPtr->SetKey(key);
             }
             if ((inputPtr->selectedKey == -2) && (action == 1)) {
-                inputPtr->type(key);
+                inputPtr->Type(key);
             }
         }
 
         static CameraController* inputPtr;
-        short selectedKey = -1;
-        void setKey(int keyCode);
-        void type(int keyCode);
+        int16_t selectedKey = -1;
+        void SetKey(int keyCode);
+        void Type(int keyCode);
         std::string typedString;
         bool textSent = false;
 
@@ -82,13 +80,13 @@ namespace EWE {
         };
         
 
-        void moveInPlaneXZ(EWEGameObject& gameObject);
-        void move2DPlaneXZ(float dt, Transform2dComponent& transform2d);
-        void zoom(EWEGameObject* gameObject);
-        void rotateCam(EWEGameObject& gameObject);
+        void Move(TransformComponent& transform);
+        void Move2DPlaneXZ(float dt, Transform2D& transform2d);
+        void Zoom(TransformComponent& transform);
+        void RotateCam(TransformComponent& transform);
 
-        glm::vec2 menuOperation();
-        void disableMenu(GLFWwindow* window);
+        //glm::vec2 MenuOperation();
+        void DisableCursor(GLFWwindow* window);
 
         KeyMappings keys{};
 

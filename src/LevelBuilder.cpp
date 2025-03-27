@@ -20,7 +20,7 @@ namespace EWE {
 	}
 
 
-	LevelBuilder::LevelBuilder(ImGUIHandler* ImGuiHandler, GLFWwindow* window, EWEDevice& device, ObjectManager* objMan, EWEGameObject* cameraObj, EWECamera* EWECamera, LightBufferObject* lbo, bool* shouldRenderPoints) : EWEDevice{ device }, cameraControl{ window } {
+	LevelBuilder::LevelBuilder(ImGUIHandler* ImGuiHandler, GLFWwindow* window, ObjectManager* objMan, EWEGameObject* cameraObj, EWECamera* EWECamera, LightBufferObject* lbo, bool* shouldRenderPoints) : cameraControl{ window } {
 		printf("constructing level builderr \n");
 		imguiHandler = ImGuiHandler;
 		cameraObject = cameraObj;
@@ -66,7 +66,7 @@ namespace EWE {
 		//main controls
 		cameraControl.moveInPlaneXZ(*cameraObject);
 		cameraControl.rotateCam(*cameraObject);
-		camera->setViewYXZ(cameraObject->transform.translation, cameraObject->transform.rotation);
+		camera->SetViewYXZ(cameraObject->transform.translation, cameraObject->transform.rotation);
 		cameraControl.zoom(cameraObject);
 		addMainControls();
 	}

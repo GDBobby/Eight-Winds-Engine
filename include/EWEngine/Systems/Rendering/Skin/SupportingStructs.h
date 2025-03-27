@@ -7,10 +7,11 @@
 namespace EWE {
 	namespace SkinRS {
 		struct TextureMeshStruct {
-			TextureDesc texture;
+			std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets;
+			ImageID imageID;
 			std::vector<EWEModel*> meshes;
-			TextureMeshStruct(TextureDesc texture) : texture{ texture }, meshes{} {}
-			TextureMeshStruct(TextureDesc texture, std::vector<EWEModel*> meshes) : texture{ texture }, meshes{ meshes } {}
+			TextureMeshStruct(std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets, ImageID imgID) : descriptorSets{ descriptorSets }, imageID{ imgID }, meshes {} {}
+			TextureMeshStruct(std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets, std::vector<EWEModel*> meshes, ImageID imgID) : descriptorSets{ descriptorSets }, imageID{ imgID }, meshes{ meshes } {}
 		};
 		struct PushConstantStruct {
 			std::vector<void*> data{};
@@ -19,17 +20,14 @@ namespace EWE {
 			PushConstantStruct(void* data, uint8_t size) : data{ data }, size{ size } {
 				count++;
 			}
-			void addData(void* data, uint8_t pushSize) {
-#ifdef _DEBUG
-				if (pushSize != size) {
-					printf("misaligned push size between skeletons of the same id \n");
-					throw std::exception("misaligned push size between skeletons of the same id");
-				}
+			void AddData(void* data, uint8_t pushSize) {
+#if EWE_DEBUG
+				assert(pushSize == size && "misaligned push size");
 #endif
 				count++;
 				this->data.emplace_back(data);
 			}
-			void remove(void* removalData) {
+			void Remove(void* removalData) {
 
 				auto findVal = std::find(data.cbegin(), data.cend(), removalData);
 				if (findVal != data.cend()) {
@@ -47,16 +45,16 @@ namespace EWE {
 			MaterialPipelines* pipeline;
 			std::unordered_map<SkeletonID, std::vector<TextureMeshStruct>> skeletonData; //key is skeletonID
 
-			PipelineStruct(uint16_t boneCount, MaterialFlags materialFlags, EWEDevice& device) :
+			PipelineStruct(uint16_t boneCount, MaterialFlags materialFlags) :
 				//pipeline{ PipelineManager::createInstancedRemote(textureFlags, boneCount, pipeRenderInfo, device) }, 
-				pipeline{ MaterialPipelines::getInstancedSkinMaterialPipe(boneCount, materialFlags, device) },
+				pipeline{ MaterialPipelines::GetMaterialPipe(materialFlags, boneCount) },
 				skeletonData{}
 				//instanced
 			{}
 
-			PipelineStruct(MaterialFlags materialFlags, EWEDevice& device) :
+			PipelineStruct(MaterialFlags materialFlags) :
 				//pipeline{ PipelineManager::createBoneRemote(textureFlags, pipeRenderInfo, device) }, 
-				pipeline{ MaterialPipelines::getMaterialPipe(materialFlags, device) },
+				pipeline{ MaterialPipelines::GetMaterialPipe(materialFlags) },
 				skeletonData{}
 				//non instanced
 			{

@@ -12,18 +12,19 @@
 
 #define EXPECTED_IMPORT_VERSION "2.1.0" //need to do some SHA256 key or some shit
 
+#define DEBUGGING_MESH_LOAD false
+
 namespace EWE {
     class ImportData {
     public:
-#pragma 
         struct boneEData {
             uint32_t boneID{ 69420 };
             glm::mat4 boneTransform;
 
             boneEData() {}
 
-            void readFromFile(std::ifstream& inFile);
-            void readFromFileSwapEndian(std::ifstream& inFile);
+            void ReadFromFile(std::ifstream& inFile);
+            void ReadFromFileSwapEndian(std::ifstream& inFile);
 
         };
 
@@ -31,40 +32,44 @@ namespace EWE {
         struct TemplateMeshData {
             std::string versionTracker{ "" };
             std::vector<MeshData<V_Type>> meshes;
+            static constexpr size_t vertex_size = sizeof(V_Type);
 
             TemplateMeshData(std::vector<V_Type>& vertex, std::vector<uint32_t>& index) {
                 meshes.emplace_back(vertex, index);
             }
             TemplateMeshData() {}
 
-            void readFromFile(std::ifstream& inFile) {
+            void ReadFromFile(std::ifstream& inFile) {
                 std::getline(inFile, versionTracker, (char)0);
                 if (strcmp(versionTracker.c_str(), EXPECTED_IMPORT_VERSION)) {
                     printf("incorrect import version : %s \n", versionTracker.c_str());
-                    throw std::runtime_error("incorrect import version");
+                    assert(false && "incorrect import version");
                 }
                 if (inFile.peek() == '\n') {
+#if DEBUGGING_MESH_LOAD
                     printf(" foudn null after version \n");
+#endif
                     inFile.seekg(1, std::ios::cur);
                 }
-                printf("after reading version file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
+#if DEBUGGING_MESH_LOAD
+                printf("after reading version file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
+#endif
 
                 uint64_t size;
                 Reading::UInt64FromFile(inFile, &size);
-                printf("after reading mesh count file pos : %lu \n", static_cast<std::streamoff>(inFile.tellg()));
-                printf("size of meshes : %lu \n", size);
+#if DEBUGGING_MESH_LOAD
+                printf("after reading mesh count file pos : %zu \n", static_cast<std::streamoff>(inFile.tellg()));
+                printf("size of meshes : %zu \n", size);
+#endif
                 meshes.resize(size);
                 for (auto& mesh : meshes) {
                     mesh.readFromFile(inFile);
                 }
 
             }
-            void readFromFileSwapEndian(std::ifstream& inFile) {
+            void ReadFromFileSwapEndian(std::ifstream& inFile) {
                 std::getline(inFile, versionTracker);
-                if (versionTracker != EXPECTED_IMPORT_VERSION) {
-                    printf("incorrect import version \n");
-                    throw std::runtime_error("incorrect import version");
-                }
+                assert(versionTracker == EXPECTED_IMPORT_VERSION && "incorrect import version");
 
                 uint64_t size;
                 Reading::UInt64FromFileSwapEndian(inFile, &size);
@@ -91,8 +96,8 @@ namespace EWE {
                 boneEData>>> //{bone id, bone transform}, bone ID will keep track of which bone as i clear useless bones. i could also use a map, might be better
                 animations;
 
-            void readFromFile(std::ifstream& inFile);
-            void readFromFileSwapEndian(std::ifstream& inFile);
+            void ReadFromFile(std::ifstream& inFile);
+            void ReadFromFileSwapEndian(std::ifstream& inFile);
 
         };
         struct FullAnimData {
@@ -105,8 +110,8 @@ namespace EWE {
                 glm::mat4>>> animations;
 
 
-            void readFromFile(std::ifstream& inFile);
-            void readFromFileSwapEndian(std::ifstream& inFile);
+            void ReadFromFile(std::ifstream& inFile);
+            void ReadFromFileSwapEndian(std::ifstream& inFile);
         };
         struct NameExportData {
             std::string versionTracker = "";
@@ -115,7 +120,7 @@ namespace EWE {
             std::vector<std::string> meshSimpleNames;
             std::vector<std::string> meshNTSimpleNames;
 
-            void readFromFile(std::ifstream& inFile);
+            void ReadFromFile(std::ifstream& inFile);
         };
 
         TemplateMeshData<boneVertex> meshExport{};
@@ -126,19 +131,19 @@ namespace EWE {
         NameExportData nameExport;
 
         template <typename T>
-        static void readData(TemplateMeshData<T>& data, std::string meshPath, bool endian) {
+        static void ReadData(TemplateMeshData<T>& data, std::string meshPath, bool endian) {
             //printf("starting up mesh thread :%s \n", meshPath.c_str());
             std::ifstream inFile(meshPath, std::ifstream::binary);
             //inFile.open();
-            if (!inFile.is_open()) {
-                printf("failed to open : %s \n", meshPath.c_str());
-                //std throw
-            }
+            assert(inFile.is_open() && "failed to open file");
             if (endian) {
-                data.readFromFile(inFile);
+#if EWE_DEBUG
+                printf("reading templatemeshdata : %s\n", meshPath.c_str());
+#endif
+                data.ReadFromFile(inFile);
             }
             else {
-                data.readFromFileSwapEndian(inFile);
+                data.ReadFromFileSwapEndian(inFile);
             }
             inFile.close();
             //printf("file read successfully \n");
@@ -146,7 +151,7 @@ namespace EWE {
 
         //static ImportData loadDataThreaded(std::string importPath);
 
-        static ImportData loadData(std::string importPath);
+        static ImportData LoadData(std::string importPath);
 
     };
 }

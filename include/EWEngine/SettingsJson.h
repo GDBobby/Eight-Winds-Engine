@@ -1,9 +1,5 @@
 #pragma once
 
-#include <include/rapidjson/document.h>
-#include <include/rapidjson/prettywriter.h>// for stringify JSON
-#include <include/rapidjson/error/en.h>
-
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -13,9 +9,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <type_traits>
 
 
-#define CURRENT_VERSION 10
+#define CURRENT_SETTINGS_VERSION 11
 #define SETTINGS_LOCATION "settings.json"
 
 
@@ -29,26 +26,35 @@ enum class SoundVolume {
 };
 
 namespace SettingsInfo {
-	enum ScreenDimension_Enum {
-		//wide screen dimensions
-		SD_1920W,
-		SD_1536W,
-		SD_1366W,
-		SD_1280W,
-		SD_800W,
-		SD_640W,
+	struct ScreenDimensionsFloat {
+		float width;
+		float height;
 
-		//narrwo? 4:3 dimensions
-		SD_1280,
-		SD_800,
-		SD_640,
-
-
-		SD_size //default to this,
+		bool operator==(ScreenDimensionsFloat const other) const {
+			return (width == other.width) && (height == other.height);
+		}
+		bool operator!=(ScreenDimensionsFloat const other) const {
+			return !this->operator==(other);
+		}
 	};
-	std::pair<uint32_t, uint32_t> getScreenDimensions(ScreenDimension_Enum SD_E);
-	std::string getScreenDimensionString(ScreenDimension_Enum SD_E);
-	std::vector<std::string> getScreenDimensionStringVector();
+
+	struct ScreenDimensions {
+		uint32_t width;
+		uint32_t height;
+
+		static std::vector<ScreenDimensions> commonDimensions;
+		static void FixCommonDimensionsToScreenSize(int width, int height);
+
+		ScreenDimensionsFloat ConvertToFloat();
+		bool operator==(ScreenDimensions const other) const {
+			return (width == other.width) && (height == other.height);
+		}
+		bool operator!=(ScreenDimensions const other) const {
+			return !this->operator==(other);
+		}
+
+		std::string GetString() const;
+	};
 
 	enum WindowMode_Enum {
 		WT_windowed,
@@ -80,10 +86,10 @@ namespace SettingsInfo {
 class SettingsJSON {
 public:
 	struct SettingsData {
-		int versionKey = CURRENT_VERSION; //i dont think i can use periods, maybe somethin else like X
+		int versionKey = CURRENT_SETTINGS_VERSION; //i dont think i can use periods, maybe somethin else like X
 
 		SettingsInfo::WindowMode_Enum windowMode{ SettingsInfo::WT_borderless };
-		SettingsInfo::ScreenDimension_Enum screenDimensions = SettingsInfo::SD_size; //keyd to a set of dimensions, that ill enum above
+		SettingsInfo::ScreenDimensions screenDimensions{1920, 1080};
 
 		//swapping to uint8_t, with no 0 - 100
 		uint8_t masterVolume{ 50 }; //volume is 0 ~ 1, 1 being 100%
@@ -98,12 +104,9 @@ public:
 		void setVolume(int8_t whichVolume, uint8_t value);
 		const uint8_t& getVolume(int8_t whichVolume);
 
-		[[nodiscard]] std::pair<uint32_t, uint32_t> getDimensions() {
-			return getScreenDimensions(screenDimensions);
-		}
-		SettingsInfo::ScreenDimension_Enum setDimensions(int width, int height);
-		std::string getDimensionsString() {
-			return SettingsInfo::getScreenDimensionString(screenDimensions);
+
+		std::string GetDimensionsString() {
+			return screenDimensions.GetString();
 		}
 		std::string getWindowModeString() {
 			return SettingsInfo::getWindowModeString(windowMode);
@@ -128,6 +131,5 @@ public:
 	static void initializeSettings();
 
 	static void generateDefaultFile();
-	static bool readFromJsonFile(rapidjson::Document& document);
 	static void saveToJsonFile();
 };

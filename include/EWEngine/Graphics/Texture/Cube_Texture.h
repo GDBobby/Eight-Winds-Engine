@@ -1,19 +1,9 @@
 #pragma once
-
-#include <EWEngine/Graphics/Texture/Texture_Manager.h>
+#include "EWEngine/Graphics/VulkanHeader.h"
 
 namespace EWE {
-	class Cube_Texture {
-	private:
-
-	protected:
-		static void createCubeImage(ImageInfo& cubeTexture, EWEDevice& device, std::vector<PixelPeek>& pixelPeek);
-
-		static void createCubeImageView(ImageInfo& cubeTexture, EWEDevice& device);
-		static void createCubeSampler(ImageInfo& cubeTexture, EWEDevice& device);
-
-	public:
-		static TextureDesc createCubeTexture(EWEDevice& device, std::string texPath);
+	namespace Cube_Texture {
+		ImageID CreateCubeImage(std::string texPath, std::string extension = ".png");
 	};
 }
 

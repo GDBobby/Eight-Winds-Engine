@@ -4,39 +4,29 @@
 #include "UIComponentsHigher.h"
 #include "EWEngine/Graphics/Model/Basic_Model.h"
 #include "EWEngine/GUI/MenuEnums.h"
-//#include "../../Game/InputHandler.h"
-
-#include <queue>
 
 namespace EWE {
-
-	//big ol enum to key the menu??
-
-
 	//holds an entire menu and handles all components
 	//interaction between moduels and engine is handled in UIHandler
 	class MenuModule {
 	public:
 		struct UIImageStruct {
-			TextureDesc texture{TEXTURE_UNBINDED_DESC};
-			Transform2dComponent transform{};
+			ImageID imgID{IMAGE_INVALID};
+			Transform2D transform{};
+			VkDescriptorSet descriptor{ VK_NULL_HANDLE };
 			UIImageStruct() {}
-			UIImageStruct(TextureDesc texture, Transform2dComponent& transform) : texture{ texture }, transform{ transform } {}
+			UIImageStruct(ImageID imgID, Transform2D& transform);
 		};
-		static std::unique_ptr<EWEModel> model2D;
-		static std::unique_ptr<EWEModel> nineUIModel;
+		static EWEModel* model2D;
 
 
-		static void (*changeMenuStateFromMM)(uint8_t, unsigned char);
-		static void changeMenuState(uint8_t menuStates, unsigned char gameState = 255) {
-			changeMenuStateFromMM(menuStates, gameState);
+		static void (*ChangeMenuStateFromMM)(uint8_t, uint8_t);
+		static void ChangeMenuState(uint8_t menuStates, uint8_t gameState = 255) {
+			ChangeMenuStateFromMM(menuStates, gameState);
 		}
+		static std::function<void(SceneKey)> ChangeSceneFromMM; //might be more practical to use a C style func pointer
 
-		static std::map<MenuTextureEnum, TextureDesc> textures;
-
-		static std::queue<uint16_t> clickReturns;
-
-		static void initTextures(EWEDevice& eweDevice);
+		static void initTextures();
 
 		MenuModule() {
 			//printf("SHOULD NOT BE USING THE DEFAULT CONSTRUCTOR OF MENU MODULE \n");
@@ -52,8 +42,7 @@ namespace EWE {
 		}
 
 		static void cleanup() {
-			model2D.reset();
-			nineUIModel.reset();
+			Deconstruct(model2D);
 		}
 
 		//thread pool functions repurposed, not sure if i need these yet?
@@ -103,6 +92,8 @@ namespace EWE {
 
 		std::vector<UIImageStruct> images;
 
+		std::vector<std::function<void()>> callbacks{};
+
 		//one function per UI button
 		/* this is on hold for a little while
 		std::vector<std::function<void(uint8_t)>> clickComboCallback;
@@ -136,54 +127,22 @@ namespace EWE {
 
 		bool hasBackground = false;
 		glm::vec3 backgroundColor = { .1f, .1f, .1f };
-		Transform2dComponent backgroundTransform{};
-		/* on hold fornow
-		void processClickCallbacks(double xpos, double ypos) {
+		Transform2D backgroundTransform{};
+		virtual void ProcessClick(double xpos, double ypos) = 0;
+		std::pair<UIComponentTypes, int16_t> CheckClick(double xpos, double ypos);
 
-			std::pair<UIComponentTypes, int16_t> returnValues = MenuModule::checkClick(xpos, ypos);
-			if (returnValues.second < 0) {
-				return;
-			}
-			switch (returnValues.first) {
-			case UIT_Combobox: {
-				clickComboCallback[selectedComboBox](returnValues.second);
-				break;
-			}
-			case UIT_Dropbox: {
-				printf("no drop box is currently implemented, MAJOR BUG IF HERE \n");
-				throw std::exception("drop box not currently used, might need to remove");
-				clickDropCallback[selectedDropBox](returnValues.second);
-				break;
-			}
-			case UIT_ClickTextBox: {
-				clickTextCallback[returnValues.second]();
-				break;
-			}
-			case UIT_Checkbox: {
-				clickCheckCallback[returnValues.second]();
-				break;
-			}
-			default: {
-				printf("this type isn't currently supported (needs support asap) : %d \n", returnValues.first);
-				break;
-			}
-			}
-		}
-		*/
-		virtual void processClick(double xpos, double ypos) = 0;
-		std::pair<UIComponentTypes, int16_t> checkClick(double xpos, double ypos);
+		void ResizeWindow(glm::vec2 rescalingRatio);
 
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
-
-		virtual void drawText(TextOverlay* textOverlay);
-		virtual void drawNewObjects();
+		virtual void DrawText();
+		virtual void DrawNewObjects();
 		//void drawObjects(FrameInfo2D& frameInfo);
 
-		bool drawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0) || (menuBars.size() > 0); }
-		virtual void drawNewNine();
+		bool DrawingNineUI() { return (clickText.size() > 0) || (comboBoxes.size() > 0) || (menuBars.size() > 0); }
+		virtual void DrawNewNine();
+		virtual void DrawImages();
 		//void drawNineUI(FrameInfo2D& frameInfo);
 
 
-		static std::string getInputName(int keycode);
+		static std::string GetInputName(int keycode);
 	};
 }

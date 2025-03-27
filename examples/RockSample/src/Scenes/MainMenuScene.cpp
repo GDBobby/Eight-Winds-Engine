@@ -6,53 +6,67 @@ namespace EWE {
 	MainMenuScene::MainMenuScene(EightWindsEngine& ewEngine)
 		: ewEngine{ ewEngine }, 
 			menuManager{ ewEngine.menuManager }, 
-			soundEngine{ SoundEngine::getSoundEngineInstance() },
-			rockSystem{ ewEngine.eweDevice }
-		{}
+			soundEngine{ SoundEngine::GetSoundEngineInstance() },
+			rockSystem{},
+			windowPtr{ ewEngine.mainWindow.getGLFWwindow() },
+			camControl{ windowPtr }
+	{}
+
 	MainMenuScene::~MainMenuScene() {
-		printf("deconstructing main menu \n");
+#if DECONSTRUCTION_DEBUG
+		printf("deconstructing main menu scene \n");
+#endif
 	}
 
 
-	void MainMenuScene::load() {
+	void MainMenuScene::Load() {
 		menuManager.giveMenuFocus();
-		PipelineSystem::emplace(Pipe_textured, new Pipe_SimpleTextured(ewEngine.eweDevice));
 	}
-	void MainMenuScene::entry() {
-		soundEngine->stopMusic();
+	void MainMenuScene::Entry() {
+		soundEngine->StopMusic();
 		//soundEngine->playMusic(Music_Menu);
 
-		menuManager.changeMenuState(menu_main, 0);
+		menuManager.ChangeMenuState(menu_main, 0);
+		ewEngine.camera.SetPerspectiveProjection(glm::radians(70.0f), ewEngine.eweRenderer.GetAspectRatio(), 0.1f, 1000000.0f);
 
 		//old method
-		/*
-		ewEngine.camera.setViewTarget({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			ewEngine.camera.bindUBO(i);
-		}
-		*/
-		//new camera method
-		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			ewEngine.camera.updateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
-		}
+		//why is this done twice?
+		//for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f });
+		//}
+		
 
 		//handle threads in this scene, or a game specific class
 	}
-	void MainMenuScene::exit() {
+	void MainMenuScene::Exit() {
 		ewEngine.objectManager.eweObjects.clear();
 	}
-	bool MainMenuScene::render(double dt) {
+	bool MainMenuScene::Render(double dt) {
 		//printf("render main menu scene \n");
-
+		if (!paused && (glfwGetKey(windowPtr, GLFW_KEY_P) == GLFW_PRESS)) {
+			paused = true;
+		}
+		if (paused && (glfwGetKey(windowPtr, GLFW_KEY_U) == GLFW_PRESS)) {
+			paused = false;
+		}
+		camControl.Move(camTransform);
+		camControl.RotateCam(camTransform);
+		camControl.Zoom(camTransform);
+		ewEngine.camera.SetViewYXZ(camTransform.translation, camTransform.rotation);
 		
-		auto frameInfo = ewEngine.beginRender();
-		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
+		if (ewEngine.BeginFrame()) {
 			//printf("drawing \n");
-			ewEngine.drawObjects(frameInfo, dt);
-			rockSystem.update();
-			rockSystem.render(frameInfo);
+			if (!paused) {
+				rockSystem.Dispatch(dt);
+			}
+			ewEngine.camera.BindUBO();
+			ewEngine.BeginRenderX();
+			ewEngine.DrawObjects(dt);
+
+			//rockSystem.Render();
 			//printf("after displaying render info \n");
-			ewEngine.endRender(frameInfo);
+			ewEngine.EndRender();
+			ewEngine.EndFrame();
 			//std::cout << "after ending render \n";
 			return false;
 		}

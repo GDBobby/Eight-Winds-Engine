@@ -1,588 +1,488 @@
 #include "EWEngine/Systems/SyncHub.h"
-
+#include "EWEngine/Graphics/Texture/ImageFunctions.h"
 
 #include <future>
-#include <assert.h>
+#include <cassert>
 
 namespace EWE {
-	void SyncHub::initialize(VkDevice device, VkQueue graphicsQueue, VkQueue presentQueue, VkQueue computeQueue, VkQueue transferQueue, VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool) {
-		this->graphicsQueue = graphicsQueue;
-		this->presentQueue = presentQueue;
-		this->computeQueue = computeQueue;
-		this->transferQueue = transferQueue;
+	SyncHub* SyncHub::syncHubSingleton{ nullptr };
 
-		this->device = device;
-
-		bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-		transferSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-		computeSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		computeSubmitInfo.pNext = nullptr;
-		computeSubmitInfo.commandBufferCount = 1;
-		computeSubmitInfo.pCommandBuffers = &computeBuffer;
-		/* swapping to a SIGNLE TIME compute dispatch method
-		computeSubmitInfo.waitSemaphoreCount = 1;
-		computeSubmitInfo.pWaitSemaphores = &graphicsSemaphore;
-
-		computeSubmitInfo.signalSemaphoreCount = 1;
-		computeSubmitInfo.pSignalSemaphores = &computeSemaphore;
-		*/
-		computeSubmitInfo.waitSemaphoreCount = 0;
-		computeSubmitInfo.pWaitSemaphores = nullptr;
-		computeSubmitInfo.signalSemaphoreCount = 0;
-		computeSubmitInfo.pSignalSemaphores = nullptr;
-
-		computeSubmitInfo.pWaitDstStageMask = &computeWaitStageMask;
-
-		initOceanSubmitInfo();
-
-		createBuffers(renderCommandPool, computeCommandPool, transferCommandPool);
-
-		setMaxFramesInFlight();
-
-		createSyncObjects();
-
-		initEvents();
-		initWaitMask();
-		initSignalMask();
-
+	SyncHub::SyncHub() :
+		qSyncPool{ 32 }, 
+		renderSyncData{}
+	{
+#if EWE_DEBUG
+		printf("CONSTRUCTING SYNCHUB\n");
+#endif
 	}
-	void SyncHub::destroy(VkCommandPool renderPool, VkCommandPool computePool, VkCommandPool transferPool) {
+#if EWE_DEBUG
+	SyncHub::~SyncHub() {
+#if DECONSTRUCTION_DEBUG
+		printf("DECONSTRUCTING SYNCHUB\n");
+#endif
+	}
+#endif
+
+	void SyncHub::Initialize() {
+		syncHubSingleton = Construct<SyncHub>({});
+
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
+		syncHubSingleton->transferSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		syncHubSingleton->transferSubmitInfo.pNext = nullptr;
+#endif
+
+		syncHubSingleton->CreateBuffers();
+	}
+	void SyncHub::Destroy() {
+		assert(syncHubSingleton != nullptr);
 #if DECONSTRUCTION_DEBUG
 		printf("beginniing synchub destroy \n");
 #endif
+		std::array<VkCommandBuffer, MAX_FRAMES_IN_FLIGHT> cmdBufs{
+			VK::Object->renderCommands[0].cmdBuf,
+			VK::Object->renderCommands[1].cmdBuf
+		};
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(device, inFlightFences[i], nullptr);
-		}
-		vkDestroySemaphore(device, computeSemaphore, nullptr);
-		vkDestroySemaphore(device, graphicsSemaphore, nullptr);
-
-		vkDestroySemaphore(device, computeToGraphicsTransferSemaphore, nullptr);
-		vkDestroySemaphore(device, graphicsToComputeTransferSemaphore, nullptr);
-		if (singleTimeFence != VK_NULL_HANDLE) {
-			vkDestroyFence(device, singleTimeFence, nullptr);
-		}
-		if (oceanFlightFence != VK_NULL_HANDLE) {
-			vkDestroyFence(device, oceanFlightFence, nullptr);
+			EWE_VK(vkFreeCommandBuffers, VK::Object->vkDevice, VK::Object->renderCmdPool, MAX_FRAMES_IN_FLIGHT, cmdBufs.data());
 		}
 
-		vkDestroyFence(device, computeInFlightFence, nullptr);
-		if (renderBuffers.size() > 0) {
-			vkFreeCommandBuffers(device, renderPool, static_cast<uint32_t>(renderBuffers.size()), renderBuffers.data());
-		}
-		vkFreeCommandBuffers(device, computePool, 1, &oceanTransferBuffers[0]);
-		vkFreeCommandBuffers(device, renderPool, 1, &oceanTransferBuffers[1]);
+		Deconstruct(syncHubSingleton);
+		syncHubSingleton = nullptr;
 
-
-		vkFreeCommandBuffers(device, computePool, 1, &computeBuffer);
-		vkFreeCommandBuffers(device, computePool, 5, &oceanBuffers[0]);		
-		for (uint8_t i = 0; i < 5; i++) {
-			vkDestroySemaphore(device, oceanSemaphores[i], nullptr);
-		}
-
-		for (int i = 0; i < transferBuffers.size(); i++) {
-			if (transferBuffers[i].size() > 0) {
-				vkFreeCommandBuffers(device, transferPool, static_cast<uint32_t>(transferBuffers[i].size()), transferBuffers[i].data());
-			}
-		}
 #if DECONSTRUCTION_DEBUG
 		printf("end synchub destroy \n");
 #endif
 	}
 
-	void SyncHub::setMaxFramesInFlight() {
-		imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-	}
-	void SyncHub::createBuffers(VkCommandPool renderCommandPool, VkCommandPool computeCommandPool, VkCommandPool transferCommandPool) {
-		this->transferCommandPool = transferCommandPool;
-		renderBuffers.clear();
-		renderBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	void SyncHub::CreateBuffers() {
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.pNext = nullptr;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = renderCommandPool;
-		allocInfo.commandBufferCount = static_cast<uint32_t>(renderBuffers.size());
-		if (vkAllocateCommandBuffers(device, &allocInfo, renderBuffers.data()) != VK_SUCCESS) {
-			std::cout << "failed to allocate command buffers " << std::endl;
-			throw std::runtime_error("failed to allocate command buffers!");
-		}
-		if (vkAllocateCommandBuffers(device, &allocInfo, &oceanTransferBuffers[1]) != VK_SUCCESS) {
-			std::cout << "failed to allocate command buffers " << std::endl;
-			throw std::runtime_error("failed to allocate command buffers!");
-		}
-
-		allocInfo.commandPool = computeCommandPool;
-		allocInfo.commandBufferCount = 1;
-		if (vkAllocateCommandBuffers(device, &allocInfo, &computeBuffer) != VK_SUCCESS) {
-			std::cout << "failed to allocate command buffers " << std::endl;
-			throw std::runtime_error("failed to allocate command buffers!");
-		}
-		if (vkAllocateCommandBuffers(device, &allocInfo, &oceanTransferBuffers[0]) != VK_SUCCESS) {
-			std::cout << "failed to allocate command buffers " << std::endl;
-			throw std::runtime_error("failed to allocate command buffers!");
-		}
-
-		allocInfo.commandBufferCount = 5;
-		if (vkAllocateCommandBuffers(device, &allocInfo, &oceanBuffers[0]) != VK_SUCCESS) {
-			std::cout << "failed to allocate command buffers " << std::endl;
-			throw std::runtime_error("failed to allocate command buffers!");
-		}
-	}
-	void SyncHub::waitOnTransferFence() {
-		VkResult vkResult = vkWaitForFences(device, 1, &singleTimeFence, VK_TRUE, UINT64_MAX);
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to wait for fences : %d \n", vkResult);
-			throw std::runtime_error("Failed to wait for fence in endSingleTimeCommands");
-		}
-	}
-	void SyncHub::createSyncObjects() {
-		VkSemaphoreCreateInfo semaphoreInfo = {};
-		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-		VkFenceCreateInfo fenceInfo = {};
-		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		vkCreateFence(device, &fenceInfo, nullptr, &singleTimeFence);
-		vkCreateFence(device, &fenceInfo, nullptr, &oceanFlightFence);
-		for (uint8_t i = 0; i < 5; i++) {
-			if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &oceanSemaphores[i]) != VK_SUCCESS) {
-				std::cout << "OCEAN SEMAPHORE CREATE FAILURE \n";
-				throw std::runtime_error("ocean create semaphore fialrue \n");
-			}
-		}
-
-		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &computeToGraphicsTransferSemaphore) != VK_SUCCESS ||
-			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &graphicsToComputeTransferSemaphore) != VK_SUCCESS
-			) {
-			std::cout << "failed to create compute graphics transfer fence \n";
-			throw std::runtime_error("fence creation failure \n");
-		}
-		
-
-		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-				vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-				vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-				std::cout << "failed to create rendering semaphores" << std::endl;
-				throw std::runtime_error("failed to create synchronization objects for a frame!");
-			}
-			//printf("in flight fences handle id : %llu \n", reinterpret_cast<uint64_t>(inFlightFences[i]));
-		}
-		if(vkCreateFence(device, &fenceInfo, nullptr, &computeInFlightFence) != VK_SUCCESS){
-			std::cout << "failed to create compute fence" << std::endl;
-			throw std::runtime_error("failed to create compute fence!");
-		}
-		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &graphicsSemaphore) != VK_SUCCESS) {
-			std::cout << "failed to create graphics semaphore \n" << std::endl;
-			throw std::runtime_error("failed to create graphics semaphore");
-		}
-
-		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &computeSemaphore) != VK_SUCCESS) {
-			std::cout << "failed to create compute semaphore \n" << std::endl;
-			throw std::runtime_error("failed to create compute semaphore");
-		}
+		allocInfo.commandPool = VK::Object->renderCmdPool;
+		allocInfo.commandBufferCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		std::array<VkCommandBuffer, MAX_FRAMES_IN_FLIGHT> tempCmdBuf{};
+		EWE_VK(vkAllocateCommandBuffers, VK::Object->vkDevice, &allocInfo, &tempCmdBuf[0]);
+		VK::Object->renderCommands[0].cmdBuf = tempCmdBuf[0];
+		VK::Object->renderCommands[1].cmdBuf = tempCmdBuf[1];
 	}
 
-	std::array<VkCommandBuffer, 5> SyncHub::beginOceanBuffers() {
-		VkResult vkResult;
-
-		vkResult = vkWaitForFences(device, 1, &oceanFlightFence, VK_TRUE, UINT64_MAX);
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to wait for fences : %d \n", vkResult);
-			throw std::runtime_error("Failed to wait for compute fence");
-		}
-		vkResetFences(device, 1, &oceanFlightFence);
-
-		for (uint8_t i = 0; i < 5; i++) {
-			//std::cout << "before beginning command buffer " << +i << std::endl;
-			vkResult = vkBeginCommandBuffer(oceanBuffers[i], &bufferBeginInfo);
-			if (vkResult != VK_SUCCESS) {
-				//std::cout << "failed to begin compute command buffer " << std::endl;
-				throw std::runtime_error("failed to begin compute command buffer!");
-			}
-			//std::cout << "after beginning command buffer " << +i << std::endl;
-			/*
-			if (i > 0) {
-				vkCmdWaitEvents(oceanBuffers[i],
-					1, &oceanWaitEvents[i - 1],
-					VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-					0, nullptr, 0, nullptr, 0, nullptr);
-			}
-			*/
-		}
-
-		return oceanBuffers;
-	}
-	void SyncHub::endOceanBuffers() {
-		for (uint8_t i = 0; i < 5; i++) {
-			//vkCmdSetEvent(oceanBuffers[i], oceanWaitEvents[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			//std::cout << "before ending command buffer " << +i << std::endl;
-			vkEndCommandBuffer(oceanBuffers[i]);
-			//std::cout << "after ending command buffer " << +i << std::endl;
-		}
-		//std::cout << "before ending command buffer 4" << std::endl;
-		//vkEndCommandBuffer(oceanBuffers[4]);
-		//std::cout << "after ending command buffer 4" << std::endl;
-		oceanComputing = true;
-	}
-	void SyncHub::oceanSubmission() {
-		VkResult vkResult;
-		if (graphicsSemaphoreIndex < MAX_FRAMES_IN_FLIGHT) {
-			oceanSubmitInfo[0].pWaitSemaphores = nullptr;
-			oceanSubmitInfo[0].waitSemaphoreCount = 0;
-		}
-		else {
-			//oceanSubmitInfo[0].pWaitSemaphores = &graphicsToComputeTransferSemaphore;
-			oceanSubmitInfo[0].pWaitSemaphores = &graphicsSemaphore;
-			oceanSubmitInfo[0].waitSemaphoreCount = 1;
-		}
-		for (uint8_t i = 0; i < 4; i++) {
-			//std::cout << "before submitting ocean command buffers " << std::endl;
-			vkResult = vkQueueSubmit(computeQueue, 1, &oceanSubmitInfo[i], nullptr);
-			//std::cout << "after submitting ocean command buffers " << std::endl;
-			if (vkResult != VK_SUCCESS) {
-				std::cout << "failed to submit compute command buffer: " << vkResult << std::endl;
-				throw std::runtime_error("failed to submit compute command buffer");
-			}
-		}
-		//std::cout << "before submitting command buffer " << 4 << std::endl;
-		vkResult = vkQueueSubmit(computeQueue, 1, &oceanSubmitInfo[4], oceanFlightFence);
-		//std::cout << "after submitting command buffer " << 4 << std::endl;
-		//if (vkResult != VK_SUCCESS) {
-		//	std::cout << "failed to submit compute command buffer: " << vkResult << std::endl;
-		//	throw std::runtime_error("failed to submit compute command buffer");
-		//}
-	}
-	VkCommandBuffer SyncHub::beginComputeBuffer() {
-		VkResult vkResult = vkWaitForFences(device, 1, &computeInFlightFence, VK_TRUE, UINT64_MAX);
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to wait for fences : %d \n", vkResult);
-			throw std::runtime_error("Failed to wait for compute fence");
-		}
-		vkResetFences(device, 1, &computeInFlightFence);
-
-		if (vkBeginCommandBuffer(computeBuffer, &bufferBeginInfo) != VK_SUCCESS) {
-			std::cout << "failed to begin compute command buffer " << std::endl;
-			throw std::runtime_error("failed to begin compute command buffer!");
-		}
-		return computeBuffer;
-	}
-	void SyncHub::endComputeBuffer() {
-		vkEndCommandBuffer(computeBuffer);
-		submitCompute();
-		//computing = true;
-	}
-	VkCommandBuffer SyncHub::beginSingleTimeCommands() {
-		VkCommandBufferAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = transferCommandPool;
-		allocInfo.commandBufferCount = 1;
-
-		VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
-		{
-			std::lock_guard<std::mutex> lock(transferPoolMutex);
-			vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
-		}
-
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-		vkBeginCommandBuffer(commandBuffer, &beginInfo);
-		return commandBuffer;
-	}
-	void SyncHub::prepTransferSubmission(VkCommandBuffer transferBuffer) {
-
-		//std::cout << "pushing for transfer submission \n";
-		transferBuffers[transferFlipFlop].push_back(transferBuffer);
-
-		if (readyForNextTransmit) {
-			readyForNextTransmit = false;
-			transferFlipFlop = !transferFlipFlop;
-			auto future = std::async(&SyncHub::submitTransferBuffers, this);
-		}
-
-	}
-	void SyncHub::submitTransferBuffers() {
-
-		VkResult vkResult;
-		//printf("begin submit transfer \n");
-#ifdef _DEBUG
-		assert(transferBuffers[!transferFlipFlop].size() > 0);
+	CommandBuffer& SyncHub::BeginSingleTimeCommandGraphics() {
+#if DEBUG_NAMING
+		CommandBuffer& ret = qSyncPool.GetCmdBufSingleTime(Queue::graphics);
+		DebugNaming::SetObjectName(ret.cmdBuf, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[graphics]");
+		return ret;
+#else
+		return qSyncPool.GetCmdBufSingleTime(Queue::graphics);
 #endif
-		vkResetFences(device, 1, &singleTimeFence);
-
-		//std::cout << "submitting transfer buffers : " << transferBuffers[!transferFlipFlop].size() << std::endl;
-		transferSubmitInfo.commandBufferCount = static_cast<uint32_t>(transferBuffers[!transferFlipFlop].size());
-		transferSubmitInfo.pCommandBuffers = transferBuffers[!transferFlipFlop].data();
-		//std::cout << "before transfer submit \n";
-		vkResult = vkQueueSubmit(transferQueue, 1, &transferSubmitInfo, singleTimeFence);
-		//std::cout << "after transfer submit \n";
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to queue submit : %d \n", vkResult);
-			throw std::runtime_error("Failed to queue submit in endSingleTimeCommands");
-		}
-		vkResult = vkWaitForFences(device, 1, &singleTimeFence, VK_TRUE, UINT64_MAX);
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to wait for fences : %d \n", vkResult);
-			throw std::runtime_error("Failed to wait for fence in endSingleTimeCommands");
-		}
-		vkResetFences(device, 1, &singleTimeFence);
-
-		vkResult = vkQueueWaitIdle(transferQueue);
-		if (vkResult != VK_SUCCESS) {
-			printf("failed to queue wait idle : %d \n", vkResult);
-			throw std::runtime_error("Failed to wait idle in endSingleTimeCommands");
-		}
-
-		{
-			std::lock_guard<std::mutex> lock(transferPoolMutex);
-			vkFreeCommandBuffers(device, transferCommandPool, static_cast<uint32_t>(transferBuffers[!transferFlipFlop].size()), transferBuffers[!transferFlipFlop].data());
-		}
-		//std::cout << "after successful submission \n";
-		transferBuffers[!transferFlipFlop].clear();
-		readyForNextTransmit = true;
-
-
-		//need to sync between threads before clearing
-
 	}
-	void SyncHub::submitCompute() {
-		/* this fixes the INITIAL submission but im swapping to a ONE TIME compute dispatch method
-		if (graphicsSemaphoreIndex < MAX_FRAMES_IN_FLIGHT) {
-			computeSubmitInfo.pWaitSemaphores = nullptr;
-			computeSubmitInfo.waitSemaphoreCount = 0;
+	CommandBuffer& SyncHub::BeginSingleTimeCommandTransfer() {
+		assert(VK::Object->queueEnabled[Queue::transfer]);
+#if DEBUG_NAMING
+		CommandBuffer& ret = qSyncPool.GetCmdBufSingleTime(Queue::transfer);
+		DebugNaming::SetObjectName(ret.cmdBuf, VK_OBJECT_TYPE_COMMAND_BUFFER, "single time cmd buf[transfer]");
+		return ret;
+#else
+		return qSyncPool.GetCmdBufSingleTime(Queue::transfer);
+#endif
+	}
+
+	CommandBuffer& SyncHub::BeginSingleTimeCommand() {
+		if (VK::Object->CheckMainThread()) {
+			return BeginSingleTimeCommandGraphics();
+		}
+		else if (!VK::Object->queueEnabled[Queue::transfer]) {
+			return BeginSingleTimeCommandGraphics();
 		}
 		else {
-			computeSubmitInfo.pWaitSemaphores = &graphicsSemaphore;
-			computeSubmitInfo.waitSemaphoreCount = 1;
+			return BeginSingleTimeCommandTransfer();
 		}
-		*/
-
-		//std::cout << "immediately before queue submit in compute handler \n";
-		VkResult vkResult = vkQueueSubmit(computeQueue, 1, &computeSubmitInfo, computeInFlightFence);
-		//std::cout << "immediately after queue submit in compute \n";
-
-		if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to submit compute command buffer: " << vkResult << std::endl;
-			throw std::runtime_error("failed to submit compute command buffer");
-		}
-		//std::cout << "immediately after queue submit in compute handler \n";
 	}
 
-	void SyncHub::submitGraphics(VkSubmitInfo& submitInfo, uint8_t frameIndex, uint32_t* imageIndex) {
-		/* swapping to a single time compute dispatch method
-		if (computing) {
-			submitCompute();
-			computing = false;
-
-			graphicsSemaphoreIndex = frameIndex + MAX_FRAMES_IN_FLIGHT;
-			std::cout << "currently computing : " << computing << std::endl;
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
+	void SyncHub::RunGraphicsCallbacks() {
+		qSyncPool.CheckFencesForCallbacks();
+#if DEBUG_NAMING
+		DebugNaming::QueueBegin(VK::Object->queues[Queue::graphics], 1.f, 0.f, 0.f, "graphics callbacks");
+#endif
+		qSyncPool.graphicsAsyncMut.lock();
+		if (qSyncPool.graphicsSTCGroup.size() == 0) {
+			qSyncPool.graphicsAsyncMut.unlock();
+			return;
 		}
-		else 
-		*/
-		if (oceanComputing) {
-			//std::cout << "OCEAN SUBMISSION \n";
-			oceanSubmission();
-			graphicsSemaphoreIndex = frameIndex + MAX_FRAMES_IN_FLIGHT;
-			//std::cout << "AFTER OCEAN SUBMISISON \n";
-			//std::cout << "currently ocean computing : " << oceanComputing << std::endl;
-			/*
-			oceanTransfersSubmitInfo[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			oceanTransfersSubmitInfo[0].pNext = nullptr;
-			oceanTransfersSubmitInfo[0].commandBufferCount = 1;
-			oceanTransfersSubmitInfo[0].pCommandBuffers = &oceanTransferBuffers[0];
-			oceanTransfersSubmitInfo[0].waitSemaphoreCount = 1;
-			oceanTransfersSubmitInfo[0].pWaitSemaphores = &oceanSemaphores[4];
-			oceanTransfersSubmitInfo[0].signalSemaphoreCount = 1;
-			oceanTransfersSubmitInfo[0].pSignalSemaphores = &computeToGraphicsTransferSemaphore;
-			oceanTransfersSubmitInfo[0].pWaitDstStageMask = &computeWaitStageMask;
-			std::cout << "before OTG 0 submit :" << oceanTransfersSubmitInfo[0].sType << std::endl;
-			if (oceanTransfersSubmitInfo[0].sType != VK_STRUCTURE_TYPE_SUBMIT_INFO) {
-				std::cout << "incorrect submit info??? \n";
-				throw std::exception("WHY?");
+
+		std::vector<Semaphore*> semaphores{};
+		std::vector<CommandBuffer*> submittedAsyncBuffers{};
+		std::vector<ImageInfo*> imageInfos{};
+		for (int i = 0; i < qSyncPool.graphicsSTCGroup.size(); i++) {
+			submittedAsyncBuffers.push_back(qSyncPool.graphicsSTCGroup[i].cmdBuf);
+			if (qSyncPool.graphicsSTCGroup[i].semaphores.size() > 0) {
+				semaphores.insert(semaphores.end(), qSyncPool.graphicsSTCGroup[i].semaphores.begin(), qSyncPool.graphicsSTCGroup[i].semaphores.end());
+				imageInfos.insert(imageInfos.end(), qSyncPool.graphicsSTCGroup[i].imageInfos.begin(), qSyncPool.graphicsSTCGroup[i].imageInfos.end());
 			}
-			vkQueueSubmit(computeQueue, 1, &oceanTransfersSubmitInfo[0], nullptr);
-			std::cout << "after OTG 0 submit :" << oceanTransfersSubmitInfo[0].sType << std::endl;
-			*/
+		}
+		qSyncPool.graphicsSTCGroup.clear();
+		qSyncPool.graphicsAsyncMut.unlock();
+
+		std::vector<VkSemaphore> waitSems{};
+		std::vector<VkPipelineStageFlags> waitStages{};
+		for (int i = 0; i < semaphores.size(); i++) {
+			waitSems.push_back(semaphores[i]->vkSemaphore);
+			waitStages.push_back(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+		}
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext = nullptr;
+		submitInfo.commandBufferCount = submittedAsyncBuffers.size();
+		assert(submitInfo.commandBufferCount != 0 && "had graphics callbacks but don't have any command buffers");
+
+		std::vector<VkCommandBuffer> cmds{};
+		cmds.reserve(submittedAsyncBuffers.size());
+		for (auto& command : submittedAsyncBuffers) {
+#if COMMAND_BUFFER_TRACING
+			cmds.push_back(command->cmdBuf);
+#else
+			cmds.push_back(*command);
+#endif
+		}
+		submitInfo.pCommandBuffers = cmds.data();
+
+		submitInfo.waitSemaphoreCount = waitSems.size();
+		submitInfo.pWaitSemaphores = waitSems.data();
+
+		Semaphore* signalSemaphore = qSyncPool.GetSemaphoreForSignaling();
+
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &signalSemaphore->vkSemaphore;
+		submitInfo.pWaitDstStageMask = waitStages.data();
+		
+		GraphicsFence& graphicsFence = qSyncPool.GetGraphicsFence();
+		graphicsFence.fence.waitSemaphores = std::move(semaphores);
+		graphicsFence.imageInfos = std::move(imageInfos);
+		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, graphicsFence.fence.vkFence);
+
+		/*
+		* this is bad, but currently I'm just going to use VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT regardless
+		* ideally, i could take the data from the object being uploaded
+		** for example, if an image is only used in the fragment stage i could use VK_PIPELINE_STAGE_FRAGMENT_BIT,
+		** or for a vertex/index/instancing buffer I could use VK_PIPELINE_STAGE_VERTEX_BIT,
+		** or for a barrier I could use VK_PIPELINE_STAGE_TRANSFER_BIT
+		* but I believe this would require a major overhaul (for the major overhaul I haven't even gotten working yet)
+		*/
+		renderSyncData.AddWaitSemaphore(signalSemaphore, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+		graphicsFence.commands = submittedAsyncBuffers;
+#if DEBUGGING_FENCES
+		graphicsFence.fence.log.push_back("setting graphics fence to submitted");
+#endif
+		graphicsFence.fence.submitted = true;
+#if DEBUG_NAMING
+		DebugNaming::QueueEnd(VK::Object->queues[Queue::graphics]);
+#endif
+	}
+#else
+	void SyncHub::RunGraphicsCallbacks() {
+		qSyncPool.CheckFencesForCallbacks();
+	}
+#endif
+	void SyncHub::EndSingleTimeCommandGraphics(GraphicsCommand& graphicsCommand) {
+
+		EWE_VK(vkEndCommandBuffer, *graphicsCommand.command);
+
+		if (std::this_thread::get_id() == VK::Object->mainThreadID) {
+
+			VkSubmitInfo submitInfo{};
+			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submitInfo.pNext = nullptr;
+			submitInfo.commandBufferCount = 1;
+			submitInfo.pCommandBuffers = &graphicsCommand.command->cmdBuf;
+			submitInfo.signalSemaphoreCount = 1;
+			Semaphore* semaphore = qSyncPool.GetSemaphoreForSignaling();
+			submitInfo.pSignalSemaphores = &semaphore->vkSemaphore;
+
+			GraphicsFence& fence = qSyncPool.GetMainThreadGraphicsFence();
+			fence.signalSemaphore = semaphore;
+			fence.gCommand = graphicsCommand;
+
+			VK::Object->queueMutex[Queue::graphics].lock();
+			EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, fence.fence.vkFence);
+			renderSyncData.AddWaitSemaphore(semaphore, graphicsCommand.waitStage);
+			VK::Object->queueMutex[Queue::graphics].unlock();
+			fence.fence.submitted = true;
 		}
 		else {
-			graphicsSemaphoreIndex = frameIndex;
+			VkSubmitInfo graphicsSubmitInfo{};
+			graphicsSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			graphicsSubmitInfo.pNext = nullptr;
+			graphicsSubmitInfo.commandBufferCount = 1;
+			graphicsSubmitInfo.pCommandBuffers = &graphicsCommand.command->cmdBuf;
+
+			graphicsSubmitInfo.waitSemaphoreCount = 0;
+			graphicsSubmitInfo.pWaitSemaphores = nullptr;
+
+			Semaphore* graphicsSemaphore = qSyncPool.GetSemaphoreForSignaling();
+			graphicsSubmitInfo.signalSemaphoreCount = 1;
+			graphicsSubmitInfo.pSignalSemaphores = &graphicsSemaphore->vkSemaphore;
+
+			VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+			graphicsSubmitInfo.pWaitDstStageMask = &waitStage;
+
+			Fence& graphicsFence = qSyncPool.GetFence();
+			VK::Object->queueMutex[Queue::graphics].lock();
+			EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &graphicsSubmitInfo, graphicsFence.vkFence);
+			renderSyncData.AddWaitSemaphore(graphicsSemaphore, waitStage);
+			VK::Object->queueMutex[Queue::graphics].unlock();
+
+			graphicsFence.submitted = true;
+
+			while (!graphicsFence.CheckReturn(0)) {
+				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+			}
+			if (graphicsCommand.stagingBuffer != nullptr) {
+				graphicsCommand.stagingBuffer->Free();
+				Deconstruct(graphicsCommand.stagingBuffer);
+			}
+			if (graphicsCommand.imageInfo != nullptr) {
+				graphicsCommand.imageInfo->descriptorImageInfo.imageLayout = graphicsCommand.imageInfo->destinationImageLayout;
+			}
+			graphicsCommand.command->Reset();
+			graphicsFence.submitted = false;
+			graphicsFence.inUse = false;
+			
 		}
+	}
+
+
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
+	void SyncHub::EndSingleTimeCommandTransfer() {
+
+		/*
+		* i suspect its possible for transfer commands to hang without being submitted
+		*havent had the issue yet
+		* potential solution is to have a dedicated thread just run submittransferbuffers on a loop
+		* second potential solution is to have the RunGraphicsCallback function check for available commands, then spawn a thread that has a singular run thru of SubmitTransferBuffers every time commands exist, and SubmitTransferBuffers isn't currently active.
+
+		* example of hang, SubmitTransferBuffers locks the TCM mutex with ::Empty
+		* this function attempts to lock the TCM mutex with ::FinalizeCommand
+		* SubmitTransferBuffer attempts to exit, but lags a little bit
+		* this function completes ::FinalizeCommand and moves to try_lock, and fails to acquire lock, exits
+		* SubmitTransferBuffers exits, and unlocks the transferSubmissionMut, with 1 command submitted to TCM
+
+		* Might be exceptionally rare for this function to attempt the transferSubmissionMut lock before SubmitTransferBuffer
+		* I'll worry about it when it becomes an issue, or I'll just fix it at some point later idk
+		*/
+		TransferCommandManager::FinalizeCommand();
+		if(transferSubmissionMut.try_lock()){
+				SubmitTransferBuffers();
+				transferSubmissionMut.unlock();
+		}
+	}
+#else
+	void SyncHub::EndSingleTimeCommandTransfer(TransferCommand& transferCommand) {
+		assert(VK::Object->queueEnabled[Queue::transfer]);
+
+
+		Fence& transferFence = qSyncPool.GetFence();
+		VkSubmitInfo transferSubmitInfo{};
+		transferSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		transferSubmitInfo.pNext = nullptr;
+		transferSubmitInfo.commandBufferCount = 1;
+#if 0//GROUPING_SUBMITS
+		std::vector<VkCommandBuffer> cmdBufs(transferCommand.commands.size());
+		for (uint32_t i = 0; i < cmdBufs.size(); i++) {
+			EWE_VK(vkEndCommandBuffer, *transferCommand.commands[i]);
+			cmdBufs[i] = transferCommand.commands[i]->cmdBuf
+		}
+		transferSubmitInfo.pCommandBuffers = cmdBufs.data();
+#else
+		EWE_VK(vkEndCommandBuffer, *transferCommand.commands[0]);
+		assert(transferCommand.commands.size() == 1);
+		transferSubmitInfo.pCommandBuffers = &transferCommand.commands[0]->cmdBuf;
+#endif
+
+		Semaphore* transferSemaphore = nullptr; 
+
+		if ((transferCommand.images.size() > 0) || (transferCommand.pipeBarriers.size() > 0)) {
+			transferSemaphore = qSyncPool.GetSemaphoreForSignaling();
+			PipelineBarrier::SimplifyVector(transferCommand.pipeBarriers);
+			transferSubmitInfo.signalSemaphoreCount = 1;
+			transferSubmitInfo.pSignalSemaphores = &transferSemaphore->vkSemaphore;
+		}
+		else {
+			transferSubmitInfo.pSignalSemaphores = nullptr;
+			transferSubmitInfo.signalSemaphoreCount = 0;
+		}
+
+		VK::Object->queueMutex[Queue::transfer].lock();
+		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::transfer], 1, &transferSubmitInfo, transferFence.vkFence);
+		VK::Object->queueMutex[Queue::transfer].unlock();
+
+#if DEBUGGING_FENCES
+		transferFence.fence.log.push_back("setting transfer fence to submitted");
+#endif
+		transferFence.submitted = true;
+
+		if (transferSemaphore == nullptr) {
+			while (!transferFence.CheckReturn(0)) {
+				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+			}
+			for (auto& sb : transferCommand.stagingBuffers) {
+				sb->Free();
+				Deconstruct(sb);
+			}
+			for (auto& cmd : transferCommand.commands) {
+				cmd->Reset();
+			}
+			transferFence.inUse = false;
+		}
+		else {
+			CommandBuffer& graphicsCmdBuf = qSyncPool.GetCmdBufSingleTime(Queue::graphics);
+			std::vector<ImageInfo*> genMipImages{};
+			for (auto& img : transferCommand.images) {
+				if (img->descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+					genMipImages.push_back(img);
+				}
+			}
+			if (genMipImages.size() > 1) {
+				Image::GenerateMipMapsForMultipleImagesTransferQueue(graphicsCmdBuf, genMipImages);
+			}
+			else if (genMipImages.size() == 1) {
+				Image::GenerateMipmaps(graphicsCmdBuf, genMipImages[0], Queue::transfer);
+			}
+
+			for (auto& barrier : transferCommand.pipeBarriers) {
+				barrier.Submit(graphicsCmdBuf);
+			}
+			EWE_VK(vkEndCommandBuffer, graphicsCmdBuf);
+
+			VkSubmitInfo graphicsSubmitInfo{};
+			graphicsSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			graphicsSubmitInfo.pNext = nullptr;
+			graphicsSubmitInfo.commandBufferCount = 1;
+			graphicsSubmitInfo.pCommandBuffers = &graphicsCmdBuf.cmdBuf;
+
+			graphicsSubmitInfo.waitSemaphoreCount = 1;
+			transferSemaphore->BeginWaiting();
+			graphicsSubmitInfo.pWaitSemaphores = &transferSemaphore->vkSemaphore;
+
+			Semaphore* graphicsSemaphore = qSyncPool.GetSemaphoreForSignaling();
+			graphicsSubmitInfo.signalSemaphoreCount = 1;
+			graphicsSubmitInfo.pSignalSemaphores = &graphicsSemaphore->vkSemaphore;
+
+			VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+			graphicsSubmitInfo.pWaitDstStageMask = &waitStage;
+
+			Fence& graphicsFence = qSyncPool.GetFence();
+			VK::Object->queueMutex[Queue::graphics].lock();
+			EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &graphicsSubmitInfo, graphicsFence.vkFence);
+			renderSyncData.AddWaitSemaphore(graphicsSemaphore, waitStage);
+			VK::Object->queueMutex[Queue::graphics].unlock();
+
+			graphicsFence.submitted = true;
+#if DEBUGGING_FENCES
+			graphicsFence.fence.log.push_back("setting graphics fence to submitted");
+#endif
+
+
+			while (!transferFence.CheckReturn(0)) {
+				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+			}
+			for (auto& sb : transferCommand.stagingBuffers) {
+				sb->Free();
+				Deconstruct(sb);
+			}
+			for (auto& cmd : transferCommand.commands) {
+				cmd->Reset();
+			}
+			transferFence.inUse = false;
+			while (!graphicsFence.CheckReturn(0)) {
+				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+			}
+			transferSemaphore->FinishWaiting();
+			graphicsCmdBuf.Reset();
+			for (auto& image : transferCommand.images) {
+				image->descriptorImageInfo.imageLayout = image->destinationImageLayout;
+			}
+			graphicsFence.inUse = false;
+			graphicsFence.submitted = false;
+		}
+
+	}
+#endif
+		
+#if ONE_SUBMISSION_THREAD_PER_QUEUE
+	void SyncHub::SubmitTransferBuffers() {
+		assert(!TransferCommandManager::Empty());
+		while (!TransferCommandManager::Empty()) {
+
+			TransferFence& transferFence = qSyncPool.GetTransferFence();
+			transferFence.callbacks = TransferCommandManager::PrepareSubmit();
+
+			transferSubmitInfo.commandBufferCount = static_cast<uint32_t>(transferFence.callbacks.commands.size());
+			std::vector<VkCommandBuffer> cmds{};
+			cmds.reserve(transferFence.callbacks.commands.size());
+
+			for (auto& command : transferFence.callbacks.commands) {
+#if COMMAND_BUFFER_TRACING
+				cmds.push_back(command->cmdBuf);
+#else
+				cmds.push_back(*command);
+#endif
+			}
+			transferSubmitInfo.pCommandBuffers = cmds.data();
+
+			std::vector<VkSemaphore> sigSems{};
+			if ((transferFence.callbacks.images.size() > 0) || (transferFence.callbacks.pipeBarriers.size() > 0)) {
+				transferFence.signalSemaphoreForGraphics = qSyncPool.GetSemaphoreForSignaling();
+				PipelineBarrier::SimplifyVector(transferFence.callbacks.pipeBarriers);
+				transferFence.callbacks.semaphore = transferFence.signalSemaphoreForGraphics;
+				transferSubmitInfo.signalSemaphoreCount = 1;
+				transferSubmitInfo.pSignalSemaphores = &transferFence.signalSemaphoreForGraphics->vkSemaphore;
+			}
+			else {
+				transferSubmitInfo.pSignalSemaphores = nullptr;
+				transferSubmitInfo.signalSemaphoreCount = 0;
+			}
+			transferSubmitInfo.pWaitSemaphores = nullptr;
+			transferSubmitInfo.waitSemaphoreCount = 0;
+
+			VK::Object->queueMutex[Queue::transfer].lock();
+			EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::transfer], 1, &transferSubmitInfo, transferFence.fence.vkFence);
+			VK::Object->queueMutex[Queue::transfer].unlock();
+
+#if DEBUGGING_FENCES
+			transferFence.fence.log.push_back("setting transfer fence to submitted");
+#endif
+			transferFence.fence.submitted = true;
+		}
+	}
+#endif
+
+	void SyncHub::SubmitGraphics(VkSubmitInfo& submitInfo, uint32_t* imageIndex) {
 
 		if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
-			vkWaitForFences(device, 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
+			EWE_VK(vkWaitForFences, VK::Object->vkDevice, 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
 		}
-		imagesInFlight[*imageIndex] = inFlightFences[frameIndex];
+		imagesInFlight[*imageIndex] = renderSyncData.inFlight[VK::Object->frameIndex];
 
-		submitInfo.waitSemaphoreCount = static_cast<uint32_t>(graphicsWait[graphicsSemaphoreIndex].size());
-		submitInfo.pWaitSemaphores = graphicsWait[graphicsSemaphoreIndex].data();
+		renderSyncData.SetWaitData(submitInfo);
 
-		submitInfo.pSignalSemaphores = graphicsSignal[graphicsSemaphoreIndex].data();
-		submitInfo.signalSemaphoreCount = static_cast<uint32_t>(graphicsSignal[graphicsSemaphoreIndex].size());
+		std::vector<VkSemaphore> signalSemaphores = renderSyncData.GetSignalData();
+		submitInfo.pSignalSemaphores = signalSemaphores.data();
+		submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
 
-		VkResult vkResult = vkResetFences(device, 1, &inFlightFences[frameIndex]);
-		if (vkResult != VK_SUCCESS) {
-			std::cout << "failed to reset fence : " << vkResult << std::endl;
-		}
-		//std::cout << "immediately before submitting graphics \n";
-		vkResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]);
-		//std::cout << "immediately after submitting graphics \n";
+		EWE_VK(vkResetFences, VK::Object->vkDevice, 1, &renderSyncData.inFlight[VK::Object->frameIndex]);
 
-		if (vkResult != VK_SUCCESS) {
-			std::string errorString = "failed to submit draw command buffer : ";
-			errorString += std::to_string(vkResult);
-			std::cout << errorString << std::endl;
-
-
-			throw std::runtime_error(errorString);
-		}
-		/*
-		if (oceanComputing) {
-			oceanComputing = false;
-			std::cout << "before GTO 1 submit \n";
-			oceanTransfersSubmitInfo[1].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			oceanTransfersSubmitInfo[1].pNext = nullptr;
-			oceanTransfersSubmitInfo[1].commandBufferCount = 1;
-			oceanTransfersSubmitInfo[1].pCommandBuffers = &oceanTransferBuffers[1];
-			oceanTransfersSubmitInfo[1].waitSemaphoreCount = 1;
-			oceanTransfersSubmitInfo[1].pWaitSemaphores = &graphicsSemaphore;
-			oceanTransfersSubmitInfo[1].signalSemaphoreCount = 1;
-			oceanTransfersSubmitInfo[1].pSignalSemaphores = &graphicsToComputeTransferSemaphore;
-			oceanTransfersSubmitInfo[1].pWaitDstStageMask = &graphicsToComputeWaitStageMask;
-			vkQueueSubmit(computeQueue, 1, &oceanTransfersSubmitInfo[1], nullptr);
-			std::cout << "before GTO 1 submit \n";
-		}
-		*/
-		//std::cout << "immediately after submitting graphics \n";
+		VK::Object->queueMutex[Queue::graphics].lock();
+		EWE_VK(vkQueueSubmit, VK::Object->queues[Queue::graphics], 1, &submitInfo, renderSyncData.inFlight[VK::Object->frameIndex]);
+		VK::Object->queueMutex[Queue::graphics].unlock();
 	}
-	VkResult SyncHub::presentKHR(VkPresentInfoKHR& presentInfo, uint8_t currentFrame) {
+
+	VkResult SyncHub::PresentKHR(VkPresentInfoKHR& presentInfo) {
 
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
-		//std::cout << "imeddiately before presenting \n";
-		VkResult ret = vkQueuePresentKHR(presentQueue, &presentInfo);
-		//std::cout << "imediately after presenting \n";
-		return ret;
-	}
-
-	void SyncHub::initOceanSubmitInfo() {
-		oceanSubmitInfo[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		oceanSubmitInfo[0].pNext = nullptr;
-		oceanSubmitInfo[0].commandBufferCount = 1;
-		oceanSubmitInfo[0].pCommandBuffers = &oceanBuffers[0];
-		oceanSubmitInfo[0].waitSemaphoreCount = 1; //testing
-		oceanSubmitInfo[0].pWaitSemaphores = &graphicsToComputeTransferSemaphore; //testing
-
-		oceanSubmitInfo[0].signalSemaphoreCount = 1;
-		oceanSubmitInfo[0].pSignalSemaphores = &oceanSemaphores[0];
-		oceanSubmitInfo[0].pWaitDstStageMask = &computeWaitStageMask;
-
-
-		for (uint8_t i = 1; i < 4; i++) {
-			oceanSubmitInfo[i].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			oceanSubmitInfo[i].pNext = nullptr;
-			oceanSubmitInfo[i].commandBufferCount = 1;
-			oceanSubmitInfo[i].pCommandBuffers = &oceanBuffers[i];
-			oceanSubmitInfo[i].waitSemaphoreCount = 1;
-			oceanSubmitInfo[i].pWaitSemaphores = &oceanSemaphores[i - 1];
-
-			oceanSubmitInfo[i].signalSemaphoreCount = 1;
-			oceanSubmitInfo[i].pSignalSemaphores = &oceanSemaphores[i];
-
-			oceanSubmitInfo[i].pWaitDstStageMask = &computeWaitStageMask;
-		}
-
-		oceanSubmitInfo[4].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		oceanSubmitInfo[4].pNext = nullptr;
-		oceanSubmitInfo[4].commandBufferCount = 1;
-		oceanSubmitInfo[4].pCommandBuffers = &oceanBuffers[4];
-		oceanSubmitInfo[4].waitSemaphoreCount = 1;
-		oceanSubmitInfo[4].pWaitSemaphores = &oceanSemaphores[3];
-
-		oceanSubmitInfo[4].signalSemaphoreCount = 0;
-		oceanSubmitInfo[4].pSignalSemaphores = nullptr;
-		oceanSubmitInfo[4].signalSemaphoreCount = 1;
-		oceanSubmitInfo[4].pSignalSemaphores = &oceanSemaphores[4];
-		oceanSubmitInfo[4].pWaitDstStageMask = &computeWaitStageMask;
-
-
-		std::cout << "initializing ocean transfer submit info \n";
-		oceanTransfersSubmitInfo[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		oceanTransfersSubmitInfo[0].pNext = nullptr;
-		oceanTransfersSubmitInfo[0].commandBufferCount = 1;
-		oceanTransfersSubmitInfo[0].pCommandBuffers = &oceanTransferBuffers[0];
-		oceanTransfersSubmitInfo[0].waitSemaphoreCount = 1;
-		oceanTransfersSubmitInfo[0].pWaitSemaphores = &oceanSemaphores[4];
-		oceanTransfersSubmitInfo[0].signalSemaphoreCount = 1;
-		oceanTransfersSubmitInfo[0].pSignalSemaphores = &computeToGraphicsTransferSemaphore;
-		oceanTransfersSubmitInfo[0].pWaitDstStageMask = &computeWaitStageMask;
-
-		oceanTransfersSubmitInfo[1].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		oceanTransfersSubmitInfo[1].pNext = nullptr;
-		oceanTransfersSubmitInfo[1].commandBufferCount = 1;
-		oceanTransfersSubmitInfo[1].pCommandBuffers = &oceanTransferBuffers[1];
-		oceanTransfersSubmitInfo[1].waitSemaphoreCount = 1;
-		oceanTransfersSubmitInfo[1].pWaitSemaphores = &graphicsSemaphore;
-		oceanTransfersSubmitInfo[1].signalSemaphoreCount = 1;
-		oceanTransfersSubmitInfo[1].pSignalSemaphores = &graphicsToComputeTransferSemaphore;
-		oceanTransfersSubmitInfo[1].pWaitDstStageMask = &graphicsToComputeWaitStageMask;
-		std::cout << "after initializing ocean transfer submit info \n";
-
-	}
-
-	void SyncHub::initSignalMask() {
-		graphicsSignal.resize(MAX_FRAMES_IN_FLIGHT * 2);
-
-		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			graphicsSignal[i] = { renderFinishedSemaphores[i] };
-			//graphicsSignal[i + MAX_FRAMES_IN_FLIGHT] = { renderFinishedSemaphores[i], graphicsToComputeTransferSemaphore };
-			graphicsSignal[i + MAX_FRAMES_IN_FLIGHT] = { renderFinishedSemaphores[i], graphicsSemaphore };
-		}
-
-	}
-	void SyncHub::initWaitMask() {
-		graphicsWait.resize(MAX_FRAMES_IN_FLIGHT * 2);
-		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			graphicsWait[i] = { imageAvailableSemaphores[i] };
-			//graphicsWait[i + MAX_FRAMES_IN_FLIGHT] = { computeToGraphicsTransferSemaphore, imageAvailableSemaphores[i] };
-			graphicsWait[i + MAX_FRAMES_IN_FLIGHT] = { oceanSemaphores[4], imageAvailableSemaphores[i] };
-		}
-	}
-
-	void SyncHub::domDemand() {
-		{
-			std::unique_lock<std::mutex> cuckLock(domCuckSync.cuckMutex);
-			domCuckSync.cuckCondition.wait(cuckLock, [this]
-				{ return !domCuckSync.cuckConditionHeld; }
-			);
-		}
-		std::unique_lock<std::mutex> renderLock(domCuckSync.domMutex);
-		domCuckSync.domConditionHeld = true;
-	}
-	void SyncHub::domRelease() {
-		domCuckSync.domConditionHeld = false;
-		domCuckSync.domCondition.notify_one();
-	}
-	void SyncHub::cuckRequest() {
-		{
-			domCuckSync.cuckConditionHeld = true;
-			std::unique_lock<std::mutex> cuckLock(domCuckSync.cuckMutex);
-			std::unique_lock<std::mutex> domLock(domCuckSync.domMutex);
-
-			domCuckSync.domCondition.wait(domLock, [this]
-				{ return !domCuckSync.domConditionHeld; }
-			);
-		}
-	}
-	void SyncHub::cuckSubmit() {
-		domCuckSync.cuckConditionHeld = false;
-		domCuckSync.cuckCondition.notify_one();
+		presentInfo.pWaitSemaphores = &renderSyncData.renderFinishedSemaphore[VK::Object->frameIndex];
+		std::unique_lock<std::mutex> queueLock{VK::Object->queueMutex[Queue::graphics]};
+		return vkQueuePresentKHR(VK::Object->queues[Queue::present], &presentInfo);
 	}
 }

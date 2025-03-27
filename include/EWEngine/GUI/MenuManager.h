@@ -16,17 +16,17 @@ namespace EWE {
 		bool isActive = true;
 		bool escapePressed = false;
 		bool windowWasResized = false;
-		std::shared_ptr<TextOverlay> textOverlay;
+		TextOverlay* textOverlay;
 	public:
-
+		void SetCurrentMenu(uint8_t currentState);
 		std::unordered_map<uint16_t, std::unique_ptr<MenuModule>> menuModules;
-		float screenWidth, screenHeight;
+		MenuModule* currentModule = nullptr;
 		GLFWwindow* windowPtr;
 		uint8_t* currentScene;
 		//std::queue<MenuClickReturn> clickReturns;
 		uint8_t currentMenuState = 0;
 
-		MenuManager(float screenWidth, float screenHeight, EWEDevice& eweDevice, GLFWwindow* windowPtr, std::shared_ptr<TextOverlay> textOverlay);
+		MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay);
 		int8_t whichScene = -1;
 		/*
 		static void DiscardReturnCallback() {
@@ -41,21 +41,17 @@ namespace EWE {
 		*/
 		void closeMenu() {
 			isActive = false;
-			glfwSetCursorPosCallback(windowPtr, nullptr);
+			//glfwSetCursorPosCallback(windowPtr, nullptr);
 		}
 		void escapeMenu() {
 			isActive = false;
 			escapePressed = true;
-			glfwSetCursorPosCallback(windowPtr, nullptr);
+			//glfwSetCursorPosCallback(windowPtr, nullptr);
 		}
 
-		std::pair<float, float> getScreenDimensions() {
-			return { screenWidth, screenHeight };
-		}
-
-		void changeMenuState(uint8_t newState, uint8_t newGameState = 255);
-		static void changeMenuStateFromMM(uint8_t newState, unsigned char newGameState = 255) {
-			menuManagerPtr->changeMenuState(newState, newGameState);
+		void ChangeMenuState(uint8_t newState, uint8_t newGameState = 255);
+		static void ChangeMenuStateFromMM(uint8_t newState, unsigned char newGameState = 255) {
+			menuManagerPtr->ChangeMenuState(newState, newGameState);
 		}
 		void giveMenuFocus() {
 			//glfwFocusWindow(windowPtr);
@@ -67,24 +63,27 @@ namespace EWE {
 			isActive = true;
 		}
 
-		static void windowResize(std::pair<uint32_t, uint32_t> windowDim);
+		static void WindowResize(SettingsInfo::ScreenDimensions windowDim);
 
 		void drawNewMenuObejcts();
 		//void drawMenuObjects(FrameInfo& frameInfo, bool menuActive);
+		void drawNewNine() { if (isActive) { currentModule->DrawNewNine(); } }
+		bool DrawingImages() { return currentModule->images.size() > 0; }
+		void DrawImages() { currentModule->DrawImages(); }
 
-		bool getMenuActive() {
+		bool getMenuActive() const {
 			return isActive;
 		}
 
 		void drawText() {
 			if (isActive) {
-				menuModules[currentMenuState]->drawText(textOverlay.get());
+				currentModule->DrawText();
 			}
 		}
-		bool drawingNineUI() { return menuModules[currentMenuState]->drawingNineUI(); }
-		void drawNewNine() { menuModules[currentMenuState]->drawNewNine(); }
 
 		static void staticKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void staticMouseCallback(GLFWwindow* window, int button, int action, int mods);
+
+		std::function<void()> escapeCallback{ nullptr };
 	};
 }

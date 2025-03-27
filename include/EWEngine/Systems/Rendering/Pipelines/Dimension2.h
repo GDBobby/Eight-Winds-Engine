@@ -9,37 +9,61 @@ namespace EWE {
 	class Dimension2 {
 	private: //protected? no dif
 		static Dimension2* dimension2Ptr;
-		Dimension2(EWEDevice& device);
+		Dimension2();
 
 		enum WhichPipe {
 			Pipe_2D,
 			Pipe_NineUI,
 		};
 
-		std::unique_ptr<EWEPipeline> pipe2d;
-		std::unique_ptr<EWEPipeline> pipe9;
-		VkPipelineLayout PL_2d;
-		VkPipelineLayout PL_9;
-		TextureDesc bindedTexture;
+		EWEPipeline* pipe_array;
+		VkPipelineLayout PL_array;
+		EWEPipeline* pipe_single;
+		VkPipelineLayout PL_single;
+
+		//VkPipelineLayout PL_9;
+		ImageID bindedTexture;
 		VkPipelineCache cache;
-		std::unique_ptr<EWEModel> model2D;
-		std::unique_ptr<EWEModel> nineUIModel;
-		VkCommandBuffer cmdBuffer;
-		uint8_t frameIndex;
+		EWEModel* model2D;
+		VkDescriptorSet defaultDesc;
+		EWEDescriptorSetLayout* eDSL{ nullptr };
+		//EWEModel* nineUIModel;
+
+		ImageID uiArrayID;
+		void CreateDefaultDesc();
 
 	public:
-		static void init(EWEDevice& device);
-		static void destruct(EWEDevice& device);
+		~Dimension2() {}
+		static void Init();
+		static void Destruct();
 
-		static void bindNineUI(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
-		static void bind2D(VkCommandBuffer cmdBuffer, uint8_t frameIndex);
+		//static void BindNineUI(CommandBuffer cmdBuffer, uint8_t frameIndex);
+		static void BindModel() {
+			dimension2Ptr->model2D->Bind();
+		}
+		static void DrawModel() {
+			dimension2Ptr->model2D->Draw();
+		}
+		static EWEModel* GetModel() {
+			return dimension2Ptr->model2D;
+		}
+		static void BindArrayPipeline();
+		static void BindSingularPipeline();
 
-		static void bindTexture2DUI(TextureDesc texture);
-		static void bindTexture2D(TextureDesc texture);
-		static void bindTexture9(TextureDesc texture);
+		static void BindDefaultDesc();
+		static void BindSingleDescriptor(VkDescriptorSet* desc);
+		static void BindArrayDescriptor(VkDescriptorSet* desc);
+		//static void BindTexture2DUI(ImageID texture);
+		//static void BindTexture2D(ImageID texture);
+		//static void BindTexture9(TextureDesc texture);
 
-		static void pushAndDraw(Simple2DPushConstantData& push);
-		static void pushAndDraw(NineUIPushConstantData& push);
+		static void PushAndDraw(Array2DPushConstantData& push);
+		static void PushAndDraw(Single2DPushConstantData& push);
+
+		static EWEDescriptorSetLayout* GetDSL() {
+			return dimension2Ptr->eDSL;
+		}
+		//static void PushAndDraw(NineUIPushConstantData& push);
 
 
 	};

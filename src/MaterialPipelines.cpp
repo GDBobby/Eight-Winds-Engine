@@ -1,342 +1,85 @@
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
-#include "EWEngine/Graphics/Texture/Texture_Manager.h"
+#include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 #include "EWEngine/Graphics/PushConstants.h"
 
 namespace EWE {
-	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, EWEPipeline* pipeline) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ pipeline } {}
-	MaterialPipelines::~MaterialPipelines() {
-		delete pipeline;
-	}
 
-	void MaterialPipelines::bindPipeline() {
-		pipeline->bind(cmdBuf);
-		bindedTexture = TEXTURE_UNBINDED_DESC;
-		bindedModel = nullptr;
-	}
-	void MaterialPipelines::bindModel(EWEModel* model) {
-		bindedModel = model;
-		bindedModel->bind(cmdBuf);
-	}
-	void MaterialPipelines::bindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
-		vkCmdBindDescriptorSets(cmdBuf,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			materialPipeLayout[pipeLayoutIndex].pipeLayout,
-			descSlot, 1,
-			descSet,
-			0, nullptr
-		);
-	}
+	struct MaterialPipeLayoutInfo {
+		VkPipelineLayout pipeLayout{ VK_NULL_HANDLE };
+		uint32_t pushSize;
+		VkShaderStageFlags pushStageFlags;
 
-	void MaterialPipelines::bindTextureDescriptor(uint8_t descSlot, TextureDesc texID) {
-		if (bindedTexture != texID) {
-			bindDescriptor(descSlot, &texID);
-			bindedTexture = texID;
+		void Push(void* pushData) {
+			EWE_VK(vkCmdPushConstants, VK::Object->GetFrameBuffer(), pipeLayout, pushStageFlags, 0, pushSize, pushData);
 		}
-	}
-	void MaterialPipelines::push(void* push) {
-		materialPipeLayout[pipeLayoutIndex].push(cmdBuf, push);
-	}
+	};
 
-	void MaterialPipelines::pushAndDraw(void* push) {
-		materialPipeLayout[pipeLayoutIndex].push(cmdBuf, push);
+	VkPipelineCache materialPipelineCache{ VK_NULL_HANDLE };
+	VkPipelineCache instanceMaterialPipelineCache{ VK_NULL_HANDLE };
+	VkPipelineCache skinPipelineCache{ VK_NULL_HANDLE };
+	VkPipelineCache instanceSkinPipelineCache{ VK_NULL_HANDLE };
+	std::array<MaterialPipeLayoutInfo, MATERIAL_PIPE_LAYOUT_COUNT> materialPipeLayout;
+	std::array<EWEDescriptorSetLayout*, MATERIAL_PIPE_LAYOUT_COUNT> eDSLs;
 
-#ifdef _DEBUG
-		if (bindedModel == nullptr) {
-			printf("failed model draw \n");
-			throw std::runtime_error("attempting to draw a model while none is binded");
-		}
+	EWEDescriptorSetLayout* MaterialPipelines::GetDSL(uint16_t pipeLayoutIndex) {
+#if EWE_DEBUG
+		assert(eDSLs[pipeLayoutIndex] != VK_NULL_HANDLE);
 #endif
-		bindedModel->draw(cmdBuf);
+		return eDSLs[pipeLayoutIndex];
 	}
-	void MaterialPipelines::drawModel() {
-#ifdef _DEBUG
-		if (bindedModel == nullptr) {
-			printf("failed model draw \n");
-			throw std::runtime_error("attempting to draw a model while none is binded");
-		}
-#endif
-		bindedModel->draw(cmdBuf);
-	}
-	void MaterialPipelines::drawInstanced(EWEModel* model) {
-		model->BindAndDrawInstance(cmdBuf);
+	EWEDescriptorSetLayout* MaterialPipelines::GetDSLFromFlags(MaterialFlags flags) {
+		return GetDSL(MaterialPipelines::GetPipeLayoutIndex(flags));
 	}
 
-
-
-//~~~~~~~~~~~~~~~~~~~ STATIC PORTION ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-	uint8_t MaterialPipelines::frameIndex;
-	VkCommandBuffer MaterialPipelines::cmdBuf;
-#ifdef _DEBUG
-	MaterialPipelines* MaterialPipelines::currentPipe;
-#endif
-
-	VkPipelineCache MaterialPipelines::materialPipelineCache{ VK_NULL_HANDLE };
-	VkPipelineCache MaterialPipelines::skinPipelineCache{ VK_NULL_HANDLE };
-	VkPipelineCache MaterialPipelines::instanceSkinPipelineCache{ VK_NULL_HANDLE };
-	MaterialPipelines::MaterialPipeLayoutInfo MaterialPipelines::materialPipeLayout[DYNAMIC_PIPE_LAYOUT_COUNT];
-	std::unordered_map<MaterialFlags, MaterialPipelines*> MaterialPipelines::materialPipelines;
-	std::unordered_map<SkinInstanceKey, MaterialPipelines*> MaterialPipelines::instancedBonePipelines;
-
-	MaterialPipelines* MaterialPipelines::at(MaterialFlags flags) {
-#ifdef _DEBUG
-		currentPipe = materialPipelines.at(flags);
-		return currentPipe;
-#endif
-		return materialPipelines.at(flags);
-	}
-	MaterialPipelines* MaterialPipelines::at(SkinInstanceKey skinInstanceKey) {
-#ifdef _DEBUG
-		currentPipe = instancedBonePipelines.at(skinInstanceKey);
-		return currentPipe;
-#endif
-		return instancedBonePipelines.at(skinInstanceKey);
-	}
-	MaterialPipelines* MaterialPipelines::at(uint16_t boneCount, MaterialFlags flags) {
-		SkinInstanceKey key{ boneCount, flags };
-#ifdef _DEBUG
-		currentPipe = instancedBonePipelines.at(key);
-		return currentPipe;
-#endif
-		return instancedBonePipelines.at(key);
-	}
-
-	void MaterialPipelines::setFrameInfo(FrameInfo const& frameInfo) {
-		cmdBuf = frameInfo.cmdBuf;
-		frameIndex = frameInfo.index;
-	}
-
-	void MaterialPipelines::initMaterialPipeLayout(uint16_t dynamicPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device, bool hasBump) {
-		//layouts
-		//textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))
-		if (materialPipeLayout[dynamicPipeLayoutIndex].pipeLayout == VK_NULL_HANDLE) {
-
-
-
-
-			VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-
-			pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			VkPushConstantRange pushConstantRange{};
-			if (instanced) {
-				pipelineLayoutInfo.pPushConstantRanges = nullptr;
-				pipelineLayoutInfo.pushConstantRangeCount = 0;
-			}
-			else {
-				pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-				pushConstantRange.offset = 0;
-				if (hasBones) {
-					pushConstantRange.size = sizeof(PlayerPushConstantData);
-				}
-				else {
-					pushConstantRange.size = sizeof(SimplePushConstantData);
-				}
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-				pipelineLayoutInfo.pushConstantRangeCount = 1;
-			}
-
-			std::vector<VkDescriptorSetLayout> tempDSL{ getPipeDSL(textureCount, hasBones, instanced, device, hasBump) };
-			pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(tempDSL.size());
-			pipelineLayoutInfo.pSetLayouts = tempDSL.data();
-
-			printf("creating dynamic pipe layout with index : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
-
-			MaterialPipeLayoutInfo& pipeLayoutInfo = materialPipeLayout[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))];
-			pipeLayoutInfo.pushSize = pushConstantRange.size;
-			pipeLayoutInfo.pushStageFlags = pushConstantRange.stageFlags;
-
-			VkResult vkResult = vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout);
-			if (vkResult != VK_SUCCESS) {
-				printf("failed to create dynamic mat pipelayout layout [%d] \n", textureCount);
-				throw std::runtime_error("Failed to create dynamic mat pipe layout \n");
-			}
-		}
-	}
-
-	MaterialPipelines* MaterialPipelines::getMaterialPipe(MaterialFlags flags, EWEDevice& device) {
-		{
-			auto foundPipe = materialPipelines.find(flags);
-			if (foundPipe != materialPipelines.end()) {
-				return foundPipe->second;
-			}
-		}
-
-
-		bool hasBones = flags & MaterialF_hasBones;
-		bool instanced = flags & MaterialF_instanced; //curently creating an outside manager to deal with instanced skinned meshes
-#ifdef _DEBUG
-		if (instanced) {
-			printf("creating a material pipe with bones or instanced flag set, no longer supported \n");
-			throw std::exception("creating a material pipe with instanced flag set, which needs to be created using constructInstancedMaterial");
-		}
-#endif
-
-		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
-		bool hasBumps = flags & MaterialF_hasBump;
-		bool hasNormal = flags & MaterialF_hasNormal;
-		bool hasRough = flags & MaterialF_hasRough;
-		bool hasMetal = flags & MaterialF_hasMetal;
-		bool hasAO = flags & MaterialF_hasAO;
-
-		uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * hasBones);
-		printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
-
-#ifdef _DEBUG
-		if (textureCount == 0) {
-			//undesirable, but not quite a bug. only passing in an albedo texture is valid
-			printf("material pipeline, flags textureCount is 0 \n");
-		}
-#endif
-
-		initMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, device, hasBumps);
-
-		//printf("creating new pipeline, dynamicShaderFinding, (key value:%d)-(bones:%d)-(normal:%d)-(rough:%d)-(metal:%d)-(ao:%d) \n", newFlags, hasBones, hasNormal, hasRough, hasMetal, hasAO );
-		EWEPipeline::PipelineConfigInfo pipelineConfig{};
-		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
-		pipelineConfig.pipelineLayout = materialPipeLayout[pipeLayoutIndex].pipeLayout;
-
-		getPipeCache(device, hasBones, instanced, pipelineConfig.cache);
-	
-		return createPipe(device, pipeLayoutIndex, pipelineConfig, hasBones, hasNormal, hasBumps, flags);
-
-		//printf("after dynamic shader finding \n");
-	}
-
-	void MaterialPipelines::initStaticVariables() {
-		for (int i = 0; i < DYNAMIC_PIPE_LAYOUT_COUNT; i++) {
-			materialPipeLayout[i].pipeLayout = VK_NULL_HANDLE;
-		}
-	}
-
-	void MaterialPipelines::cleanupStaticVariables(EWEDevice& device) {
-
-#if DECONSTRUCTION_DEBUG
-		printf("begin deconstructing material pipelines \n");
-#endif
-		for(auto& pipe : materialPipelines) {
-			delete pipe.second;
-		}
-		materialPipelines.clear();
-		for (auto& pipe : instancedBonePipelines) {
-			delete pipe.second;
-		}
-		instancedBonePipelines.clear();
-
-		for (auto& plInfo : materialPipeLayout) {
-			if (plInfo.pipeLayout != VK_NULL_HANDLE) {
-				vkDestroyPipelineLayout(device.device(), plInfo.pipeLayout, nullptr);
-			}
-		}
-
-		if (materialPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), materialPipelineCache, nullptr);
-		}
-		if (skinPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), skinPipelineCache, nullptr);
-		}
-		if (instanceSkinPipelineCache != VK_NULL_HANDLE) {
-			vkDestroyPipelineCache(device.device(), instanceSkinPipelineCache, nullptr);
-		}
-
-#if DECONSTRUCTION_DEBUG
-		printf("end deconstructing pipeline manager \n");
-#endif
-	}
-
-	std::vector<VkDescriptorSetLayout> MaterialPipelines::getPipeDSL(uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device, bool hasBump) {
+	void InitPipeDSL(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
 		//printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
 
-		std::vector<VkDescriptorSetLayout> returnLayouts{};
+		//might be relevant to only build these once, not sure if its a big deal
+		if (eDSLs[pipeLayoutIndex] != VK_NULL_HANDLE) {
+			return;
+		}
 
-		returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_global, device));
-#ifdef _DEBUG
-		printf("getting dynamic PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
+		EWEDescriptorSetLayout::Builder builder{};
+		builder.AddGlobalBindings();
+#if EWE_DEBUG
+		printf("getting material PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
 #endif
 		if (hasBones && instanced) {
-			returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_largeInstance, device));
-
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
 		}
 		else if (hasBones) {
-			returnLayouts.push_back(DescriptorHandler::getDescSetLayout(LDSL_boned, device));
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
 		}
 		else if (instanced) {
-			printf("currrently not supporting instancing without bones, THROWING ERROR \n");
-			throw std::runtime_error("instanced but doesn't have bones?");
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
 		}
-		TextureDSLInfo dslInfo{};
 		if (hasBump) {
-			dslInfo.setStageTextureCount(VK_SHADER_STAGE_VERTEX_BIT, 1);
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 		}
-		dslInfo.setStageTextureCount(VK_SHADER_STAGE_FRAGMENT_BIT, textureCount - hasBump + 1); //+1 for the albedo, which isnt incldued in textureCount
-		returnLayouts.push_back(dslInfo.getDescSetLayout(device)->getDescriptorSetLayout());
-		//if (instanced) {
-			//printf("returning instanced PDSL size : %d \n", dynamicMaterialPipeDescSetLayouts[textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))].size());
-		//}
-		return returnLayouts;
+		else {
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+		}
+
+		eDSLs[pipeLayoutIndex] = builder.Build();
+#if DEBUG_NAMING
+		std::string materialDSLName = "material DSL[" + std::to_string(pipeLayoutIndex) + ']';
+		printf("materialDSLName : %s\n", materialDSLName.c_str());
+		DebugNaming::SetObjectName(*eDSLs[pipeLayoutIndex]->GetDescriptorSetLayout(), VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, materialDSLName.c_str());
+#endif
 	}
 
-	MaterialPipelines* MaterialPipelines::getInstancedSkinMaterialPipe(uint16_t boneCount, MaterialFlags flags, EWEDevice& device) {
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilepath, std::string const& fragFilepath, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertFilepath, fragFilepath, configInfo } {}
 
-		SkinInstanceKey skinInstanceKey{ boneCount, flags };
-		if(instancedBonePipelines.contains(skinInstanceKey)){
-			//printf("creating new instanced skin pipeline \n");
-			return instancedBonePipelines.at(skinInstanceKey);
-		}
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertShaderModu, fragShaderModu, configInfo } {}
 
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilePath, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo, bool hasBones) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertFilePath, flags, configInfo, hasBones } {}
 
-		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
-		bool hasBumps = flags & MaterialF_hasBump;
-		bool hasNormal = flags & MaterialF_hasNormal;
-		bool hasRough = flags & MaterialF_hasRough;
-		bool hasMetal = flags & MaterialF_hasMetal;
-		bool hasAO = flags & MaterialF_hasAO;
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, uint16_t boneCount, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ boneCount, flags, configInfo } {}
 
-		uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-
-		if (hasBumps) {
-			printf("HAS BONES AND BUMP, SHOULD NOT HAPPEN \n");
-		}
-
-		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * 3);
-		initMaterialPipeLayout(pipeLayoutIndex, textureCount, true, true, device, hasBumps);
-
-
-		EWEPipeline::PipelineConfigInfo pipelineConfig{};
-		EWEPipeline::defaultPipelineConfigInfo(pipelineConfig);
-		pipelineConfig.pipelineLayout = materialPipeLayout[pipeLayoutIndex].pipeLayout;
-
-
-		printf("initiating remote instanced pipeline : %d \n", flags);
-
-		if (instanceSkinPipelineCache == VK_NULL_HANDLE) {
-			VkPipelineCacheCreateInfo createInfo{};
-			createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-			if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &instanceSkinPipelineCache) != VK_SUCCESS) {
-				// handle error
-				printf("failed to create instance skinned material pipeline cache \n");
-				throw std::runtime_error("failed to create instanced skin material pipeline cache");
-			}
-		}
-		pipelineConfig.cache = instanceSkinPipelineCache;
-
-		//printf("boneVertex, flags:%d \n", newFlags);
-		pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
-		pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
-		glslang::InitializeProcess();
-		
-		//EWEPipeline* retPipe = new EWEPipeline(device, boneCount, flags, pipelineConfig);
-		SkinInstanceKey key(boneCount, flags);
-
-		auto ret = instancedBonePipelines.try_emplace(key, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, boneCount, flags, pipelineConfig))).first->second;
-
-		glslang::FinalizeProcess();
-		return ret;
-	}
-
-	void MaterialPipelines::getPipeCache(EWEDevice& device, bool hasBones, bool instanced, VkPipelineCache& outCache) {
+	void GetPipeCache(bool hasBones, bool instanced, VkPipelineCache& outCache) {
 
 		VkPipelineCache retCache;
 		if (instanced) {
@@ -344,9 +87,8 @@ namespace EWE {
 				retCache = instanceSkinPipelineCache;
 			}
 			else {
-				printf("instancing without skin not yet implemented \n");
-				throw std::runtime_error("invalid material pipe cache");
-				//retCache = instanceMaterialPipelineCache;
+				//assert(hasBones);
+				retCache = instanceMaterialPipelineCache;
 			}
 		}
 		else if (hasBones) {
@@ -367,15 +109,12 @@ namespace EWE {
 		}
 		VkPipelineCacheCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+		createInfo.pNext = nullptr;
+		createInfo.initialDataSize = 0;
+		createInfo.flags = 0;
+		createInfo.pInitialData = nullptr;
 
-		if (vkCreatePipelineCache(device.device(), &createInfo, nullptr, &retCache) != VK_SUCCESS) {
-			// handle error
-			printf("failed to create material pipeline cache \n");
-			throw std::runtime_error("failed to create material pipeline cache");
-		}
-		else {
-			printf("material pipe line cache creating \n");
-		}
+		EWE_VK(vkCreatePipelineCache, VK::Object->vkDevice, &createInfo, nullptr, &retCache);
 #if PIPELINE_DERIVATIVES
 		pipelineConfig.basePipelineHandle = nullptr;
 		pipelineConfig.basePipelineIndex = -1;
@@ -387,41 +126,365 @@ namespace EWE {
 		return;
 	}
 
-	MaterialPipelines* MaterialPipelines::createPipe(EWEDevice& device, uint16_t pipeLayoutIndex, EWEPipeline::PipelineConfigInfo& pipelineConfig, bool hasBones, bool hasNormal, bool hasBumps, MaterialFlags flags) {
+
+	void InitMaterialPipelineConfig(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags) {
+		bool hasBones = flags & MaterialF_hasBones;
+		bool instanced = flags & MaterialF_instanced;
+#if EWE_DEBUG
+		if (instanced) {
+			//probably going to need a breakpoint here for debugging
+		}
+#endif
+		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
+		bool hasBumps = flags & MaterialF_hasBump;
+		bool hasNormal = flags & MaterialF_hasNormal;
+		bool hasRough = flags & MaterialF_hasRough;
+		bool hasMetal = flags & MaterialF_hasMetal;
+		bool hasAO = flags & MaterialF_hasAO;
+		if (hasBones && hasBumps) {
+			printf("ERROR: HAS BONES AND BUMP, NOT CURRENTLY SUPPORTED \n");
+			assert(false);
+		}
+
+		uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
+		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + 2 * instanced));
+
+#if EWE_DEBUG
+		printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
+		if (textureCount == 0) {
+			//undesirable, but not quite a bug. only passing in an albedo texture is valid
+			printf("material pipeline, flags textureCount is 0 \n");
+		}
+#endif
+
+		MaterialPipelines::InitMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, hasBumps);
+
+		//printf("creating pipeline, dynamicShaderFinding, (key value:%d)-(bones:%d)-(normal:%d)-(rough:%d)-(metal:%d)-(ao:%d) \n", newFlags, hasBones, hasNormal, hasRough, hasMetal, hasAO );
+		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
+		pipelineConfig.pipelineLayout = materialPipeLayout[pipeLayoutIndex].pipeLayout;
+
+		GetPipeCache(hasBones, instanced, pipelineConfig.cache);
+	}
+
+	MaterialPipelines::~MaterialPipelines() {
+	}
+
+	void MaterialPipelines::BindPipeline() {
+		pipeline.Bind();
+		bindedModel = nullptr;
+	}
+	void MaterialPipelines::BindModel(EWEModel* model) {
+		bindedModel = model;
+		bindedModel->Bind();
+	}
+	void MaterialPipelines::BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			materialPipeLayout[pipeLayoutIndex].pipeLayout,
+			descSlot, 1,
+			descSet,
+			0, nullptr
+		);
+	}
+	void MaterialPipelines::BindDescriptor(uint8_t descSlot, const VkDescriptorSet* descSet) {
+		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			materialPipeLayout[pipeLayoutIndex].pipeLayout,
+			descSlot, 1,
+			descSet,
+			0, nullptr
+		);
+	}
+	void MaterialPipelines::Push(void* push) {
+		materialPipeLayout[pipeLayoutIndex].Push(push);
+	}
+
+	void MaterialPipelines::PushAndDraw(void* push) {
+		materialPipeLayout[pipeLayoutIndex].Push(push);
+
+#if EWE_DEBUG
+		assert(bindedModel != nullptr && "failed model draw");
+#endif
+		bindedModel->Draw();
+	}
+	void MaterialPipelines::DrawModel() {
+#if EWE_DEBUG
+		assert(bindedModel != nullptr && "failed model draw");
+#endif
+		bindedModel->Draw();
+	}
+	void MaterialPipelines::DrawInstanced(EWEModel* model) {
+		model->BindAndDrawInstance();
+	}
+	void MaterialPipelines::DrawInstanced(EWEModel* model, uint32_t instanceCount) {
+		model->BindAndDrawInstance(instanceCount);
+	}
+
+
+
+//~~~~~~~~~~~~~~~~~~~ STATIC PORTION ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#if EWE_DEBUG
+	MaterialPipelines* MaterialPipelines::currentPipe;
+#endif
+
+	std::unordered_map<MaterialFlags, MaterialPipelines*> MaterialPipelines::materialPipelines;
+	std::unordered_map<SkinInstanceKey, MaterialPipelines*> MaterialPipelines::instancedBonePipelines;
+
+	MaterialPipelines* MaterialPipelines::At(MaterialFlags flags) {
+#if EWE_DEBUG
+		currentPipe = materialPipelines.at(flags);
+		return currentPipe;
+#endif
+		return materialPipelines.at(flags);
+	}
+	MaterialPipelines* MaterialPipelines::At(SkinInstanceKey skinInstanceKey) {
+#if EWE_DEBUG
+		currentPipe = instancedBonePipelines.at(skinInstanceKey);
+		return currentPipe;
+#endif
+		return instancedBonePipelines.at(skinInstanceKey);
+	}
+	MaterialPipelines* MaterialPipelines::At(uint16_t boneCount, MaterialFlags flags) {
+		SkinInstanceKey key{ boneCount, flags };
+#if EWE_DEBUG
+		currentPipe = instancedBonePipelines.at(key);
+		return currentPipe;
+#endif
+		return instancedBonePipelines.at(key);
+	}
+
+	void MaterialPipelines::InitMaterialPipeLayout(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
+		//layouts
+		//textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))
+		if (materialPipeLayout[pipeLayoutIndex].pipeLayout == VK_NULL_HANDLE) {
+
+			VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+
+			pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+			pipelineLayoutInfo.pNext = nullptr;
+			VkPushConstantRange pushConstantRange{};
+			if (instanced) {
+				pipelineLayoutInfo.pPushConstantRanges = nullptr;
+				pipelineLayoutInfo.pushConstantRangeCount = 0;
+			}
+			else {
+				pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+				pushConstantRange.offset = 0;
+				if (hasBones) {
+					pushConstantRange.size = sizeof(PlayerPushConstantData);
+				}
+				else {
+					pushConstantRange.size = sizeof(ModelAndNormalPushData);
+				}
+				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+				pipelineLayoutInfo.pushConstantRangeCount = 1;
+			}
+
+			InitPipeDSL(pipeLayoutIndex, textureCount, hasBones, instanced, hasBump);
+			pipelineLayoutInfo.setLayoutCount = 1;
+			pipelineLayoutInfo.pSetLayouts = eDSLs[pipeLayoutIndex]->GetDescriptorSetLayout();
+
+#if EWE_DEBUG
+			printf("creating material pipe layout with index : %d \n", pipeLayoutIndex);
+#endif
+
+			MaterialPipeLayoutInfo& pipeLayoutInfo = materialPipeLayout[pipeLayoutIndex];
+			pipeLayoutInfo.pushSize = pushConstantRange.size;
+			pipeLayoutInfo.pushStageFlags = pushConstantRange.stageFlags;
+
+			EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayoutInfo.pipeLayout);
+		}
+	}
+
+	MaterialPipelines* MaterialPipelines::GetMaterialPipe(MaterialFlags flags) {
+		{
+			const auto foundPipe = materialPipelines.find(flags);
+			if (foundPipe != materialPipelines.end()) {
+				return foundPipe->second;
+			}
+		}
+		EWEPipeline::PipelineConfigInfo pipelineConfig;
+		InitMaterialPipelineConfig(pipelineConfig, flags);
+
+		MaterialPipelines* ret = CreatePipe(pipelineConfig, flags);
+#if DEBUG_NAMING
+		std::string pipeName = "material pipeline[";
+		pipeName += std::to_string(flags) + ']';
+		ret->pipeline.SetDebugName(pipeName);
+#endif
+		return ret;
+
+		//printf("after dynamic shader finding \n");
+	}
+
+	MaterialPipelines* MaterialPipelines::GetMaterialPipe(MaterialFlags flags, uint16_t boneCount) {
+
+		if (flags & MaterialF_hasBones) {
+
+			SkinInstanceKey skinInstanceKey{ boneCount, flags };
+			auto findRet = instancedBonePipelines.find(skinInstanceKey);
+			if (findRet != instancedBonePipelines.end()) {
+				return findRet->second;
+			}
+		}
+		else {
+			const auto foundPipe = materialPipelines.find(flags);
+			if (foundPipe != materialPipelines.end()) {
+				return foundPipe->second;
+			}
+		}
+		EWEPipeline::PipelineConfigInfo pipelineConfig;
+		InitMaterialPipelineConfig(pipelineConfig, flags);
+
+		MaterialPipelines* ret;
+		if (flags & MaterialF_hasBones) {
+
+			//printf("boneVertex, flags:%d \n", newFlags);
+			pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
+			pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
+
+			const SkinInstanceKey key(boneCount, flags);
+
+			uint16_t pipeLayoutIndex = GetPipeLayoutIndex(flags);
+
+			ret = instancedBonePipelines.try_emplace(key, Construct<MaterialPipelines>({ pipeLayoutIndex, boneCount, flags, pipelineConfig })).first->second;
+
+#if DEBUG_NAMING
+			std::string pipeName = "material pipeline[";
+			pipeName += std::to_string(flags) + ']';
+			ret->pipeline.SetDebugName(pipeName);
+#endif
+			return ret;
+		}
+		else {
+			const uint16_t entityCount = boneCount;
+			assert(entityCount <= 1024 && "currently dont have the systems set up for a storage buffer in rigid instancing");
+
+			MaterialPipelines* ret = CreatePipe(pipelineConfig, flags);
+
+#if DEBUG_NAMING
+			std::string pipeName = "material pipeline[";
+			pipeName += std::to_string(flags) + ']';
+			ret->pipeline.SetDebugName(pipeName);
+#endif
+			return ret;
+		}
+	}
+
+	void MaterialPipelines::InitStaticVariables() {
+		for (int i = 0; i < MATERIAL_PIPE_LAYOUT_COUNT; i++) {
+			materialPipeLayout[i].pipeLayout = VK_NULL_HANDLE;
+			eDSLs[i] = VK_NULL_HANDLE;
+		}
+	}
+
+	void MaterialPipelines::CleanupStaticVariables() {
+
+#if DECONSTRUCTION_DEBUG
+		printf("begin deconstructing material pipelines \n");
+#endif
+		for(auto& pipe : materialPipelines) {
+
+			Deconstruct(pipe.second);
+		}
+		materialPipelines.clear();
+		for (auto& pipe : instancedBonePipelines) {
+			Deconstruct(pipe.second);
+		}
+		instancedBonePipelines.clear();
+
+		for (uint8_t i = 0; i < MATERIAL_PIPE_LAYOUT_COUNT; i++) {
+			if (materialPipeLayout[i].pipeLayout != VK_NULL_HANDLE) {
+				EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, materialPipeLayout[i].pipeLayout, nullptr);
+			}
+			if (eDSLs[i] != VK_NULL_HANDLE) {
+				Deconstruct(eDSLs[i]);
+			}
+		}
+
+		if (materialPipelineCache != VK_NULL_HANDLE) {
+			EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, materialPipelineCache, nullptr);
+		}
+		if (skinPipelineCache != VK_NULL_HANDLE) {
+			EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, skinPipelineCache, nullptr);
+		}
+		if (instanceSkinPipelineCache != VK_NULL_HANDLE) {
+			EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, instanceSkinPipelineCache, nullptr);
+		}
+		if (instanceMaterialPipelineCache != VK_NULL_HANDLE) {
+			EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, instanceMaterialPipelineCache, nullptr);
+		}
+
+#if DECONSTRUCTION_DEBUG
+		printf("end deconstructing pipeline manager \n");
+#endif
+	}
+
+
+	MaterialPipelines* MaterialPipelines::CreatePipe(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags) {
+
+		uint16_t pipeLayoutIndex = GetPipeLayoutIndex(flags);
+
+		const bool hasBones = flags & MaterialF_hasBones;
+		const bool hasNormal = flags & MaterialF_hasNormal;
+		const bool hasBumps = flags & MaterialF_hasBump;
+		const bool instanced = flags & MaterialF_instanced;
+
 		if (hasBones) {
 			if (hasNormal) {
 				//printf("boneVertex, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertex>();
-				pipelineConfig.attributeDescriptions = boneVertex::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "bone_Tangent.vert.spv", flags, pipelineConfig, true))).first->second;
+				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
+				pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
+				return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "bone_Tangent.vert.spv", flags, pipelineConfig, true })).first->second;
 
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<boneVertexNoTangent>();
-				pipelineConfig.attributeDescriptions = boneVertexNoTangent::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "bone_NT.vert.spv", flags, pipelineConfig, true))).first->second;
+				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertexNoTangent>();
+				pipelineConfig.attributeDescriptions = boneVertexNoTangent::GetAttributeDescriptions();
+				return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "bone_NT.vert.spv", flags, pipelineConfig, true })).first->second;
 			}
 		}
 		else {
-			if (hasBumps) {
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
+			if (instanced) {
 
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_bump.vert.spv", flags, pipelineConfig, false))).first->second;
-			}
-			else if (hasNormal) {
-				//printf("AVertex, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<Vertex>();
-				pipelineConfig.attributeDescriptions = Vertex::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_Tangent.vert.spv", flags, pipelineConfig, false))).first->second;
+				if (hasBumps) {
+					assert(false && "not supported yet");
+				}
+				else if (hasNormal) {
+					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
+					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
+					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_tangent_instance.vert.spv", flags, pipelineConfig, false })).first->second;
+				}
+				else {
+					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
+					pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
+					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_nn_instance.vert.spv", flags, pipelineConfig, false })).first->second;
+				}
 			}
 			else {
-				//printf("AVertexNT, flags:%d \n", newFlags);
-				pipelineConfig.bindingDescriptions = EWEModel::getBindingDescriptions<VertexNT>();
-				pipelineConfig.attributeDescriptions = VertexNT::getAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, new MaterialPipelines(pipeLayoutIndex, new EWEPipeline(device, "material_nn.vert.spv", flags, pipelineConfig, false))).first->second;
+				if (hasBumps) {
+					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
+					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
+					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_bump.vert.spv", flags, pipelineConfig, false })).first->second;
+				}
+				else if (hasNormal) {
+					//printf("AVertex, flags:%d \n", newFlags);
+					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
+					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
+					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_Tangent.vert.spv", flags, pipelineConfig, false })).first->second;
+				}
+				else {
+					//printf("AVertexNT, flags:%d \n", newFlags);
+					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
+					pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
+					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_nn.vert.spv", flags, pipelineConfig, false })).first->second;
+				}
 			}
 		}
+		//in a release build, tag this unreachable
+		assert(false);
+		return nullptr;
 	}
 }

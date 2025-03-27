@@ -5,47 +5,47 @@ namespace EWE {
 	ShaderGenerationScene::ShaderGenerationScene(EightWindsEngine& ewEngine)
 		: ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
-		soundEngine{ SoundEngine::getSoundEngineInstance() }
+		soundEngine{ SoundEngine::GetSoundEngineInstance() }
 	{}
 	ShaderGenerationScene::~ShaderGenerationScene() {
-		printf("deconstructing main menu \n");
+		printf("deconstructing shader scene \n");
 	}
 
-	void ShaderGenerationScene::load() {
+	void ShaderGenerationScene::Load() {
 		menuManager.giveMenuFocus();
 
 		printf("after updating pipelines load menu objects, returning \n");
 	}
-	void ShaderGenerationScene::entry() {
-		soundEngine->stopMusic();
+	void ShaderGenerationScene::Entry() {
+		soundEngine->StopMusic();
 		//soundEngine->playMusic(Music_Menu);
 
-		menuManager.changeMenuState(menu_ShaderGen, 0);
+		menuManager.ChangeMenuState(menu_ShaderGen, 0);
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			ewEngine.camera.updateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
+			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
 		}
 	}
-	void ShaderGenerationScene::exit() {
+	void ShaderGenerationScene::Exit() {
 	}
 
-	bool ShaderGenerationScene::render(double dt) {
+	bool ShaderGenerationScene::Render(double dt) {
 		//printf("render main menu scene \n");
 
 
-		auto frameInfo = ewEngine.beginRender();
-		if (frameInfo.cmdBuf != VK_NULL_HANDLE) {
+		if (ewEngine.BeginFrameAndRender()) {
 			//printf("drawing \n");
-			ewEngine.draw2DObjects(frameInfo);
-			ewEngine.drawText(frameInfo, dt);
+			ewEngine.Draw2DObjects();
+			ewEngine.DrawText(dt);
 
 			currentTime += dt;
 			if (currentTime >= saveTime) {
 				SaveShader();
 			}
 
-			ewEngine.endRender(frameInfo);
+			ewEngine.EndRender();
+			ewEngine.EndFrame();
 			return false;
 		}
 		return true;

@@ -47,7 +47,11 @@ namespace EWE {
 		static bool checkIfStillGrounded(std::array<float, 3>& translation, float radius);
 		static bool checkForWallCollision(std::array<float, 3>& translationA, glm::vec3 intendedMovement, float radius, float height);
 
-		static std::vector<std::vector<EWEGameObject>*> collisionObjects;
+		static void AddFloor(TransformComponent& transform);
+		static void AddWall(TransformComponent& transform);
+
+		static void ClearCollision();
+		static void RemoveCollider(TransformComponent& transform);
 
 	private:
 

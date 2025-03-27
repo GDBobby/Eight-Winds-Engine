@@ -13,13 +13,13 @@ namespace EWE{
 	public:
 		bool resyncingNetPlay = false;
 
-		UIHandler(std::pair<uint32_t, uint32_t> dimensions, EWEDevice& eweDevice, GLFWwindow* window, TextOverlay* txtOverlay);
+		UIHandler(SettingsInfo::ScreenDimensions dimensions, GLFWwindow* window, TextOverlay* txtOverlay);
 
 		~UIHandler() {
 #if DECONSTRUCTION_DEBUG
 			printf("beg of uihandler deconstructor \n");
 #endif
-			textOverlay.reset();
+			Deconstruct(textOverlay);
 #if DECONSTRUCTION_DEBUG
 			printf("uihandler deconstructor \n");
 #endif
@@ -43,51 +43,29 @@ namespace EWE{
 		bool escapePressed = false;
 
 		void Benchmarking(double time, double peakTime, double averageTime, double highTime, double avgLogic, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU);
-		void drawOverlayText(VkCommandBuffer commandBuffer, bool displayingRenderInfo);
+		void DrawOverlayText(bool displayingRenderInfo);
 
-		void beginTextRender() {
-			textOverlay->beginTextUpdate();
+		void BeginTextRender() {
+			textOverlay->BeginTextUpdate();
 		}
-		void endTextRender(VkCommandBuffer cmdBuf) {
-			textOverlay->endTextUpdate();
-			textOverlay->draw(cmdBuf);
-		}
-
-		unsigned int* activeTargets = 0;
-		unsigned int* maxTargets = 0;
-
-		GameObject2D backgroundObject{ GameObject2D::createGameObject() };
-
-
-		float getScreenWidth() {
-			return screenWidth;
-		}
-		float getScreenHeight() {
-			return screenHeight;
+		void EndTextRender() {
+			textOverlay->EndTextUpdate();
 		}
 
-		std::shared_ptr<TextOverlay> getTextOverlay() {
-			//static uint8_t returnCount = 0;
-			//returnCount++;
-			//if (returnCount > 1) {
-				//im sure there's a better way to do this?
-				//throw std::exception("only copy this once, to MenuManager");
-			//}
+		uint32_t* activeTargets = 0;
+		uint32_t* maxTargets = 0;
+
+		GameObject2D backgroundObject{};
+
+		TextOverlay* GetTextOverlay() {
+			//throw std::exception("only copy this once, to MenuManager");
 			return textOverlay;
 		}
 
 	private:
-		std::shared_ptr<TextOverlay> textOverlay;
-		enum menu_objects {
-			combo_objects,
-			uiobjects,
-			slider_object,
-			sbracket_object,
-		};
+		TextOverlay* textOverlay;
 		//float timeElapsed = 0.0f;
 
-		float screenWidth;
-		float screenHeight;
 
 		std::shared_ptr<SoundEngine> soundEngine;
 

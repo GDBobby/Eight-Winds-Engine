@@ -5,8 +5,8 @@
 namespace EWE {
 	class MainMenuMM : public MenuModule {
 	public:
-		MainMenuMM(float screenWidth, float screenHeight);
+		MainMenuMM();
 
-		void processClick(double xpos, double ypos);
+		void ProcessClick(double xpos, double ypos) final;
 	};
 }

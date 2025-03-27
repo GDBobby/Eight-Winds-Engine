@@ -30,7 +30,7 @@ namespace EWE {
 
 		"fragPosWorld = positionWorld.xyz;fragNormalWorld = normal;fragTexCoord = uv;}"
 	};
-	static const std::vector < std::string> LoadingFragString = {
+	static const std::vector<std::string> LoadingFragString = {
 		"layout(location = 0) in vec3 fragPosWorld;layout(location = 1) in vec3 fragNormalWorld;layout(location = 2) in vec2 fragTexCoord;layout(location = 0) out vec4 outColor;",
 		"struct PointLight { vec4 position; vec4 color; };",
 

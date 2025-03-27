@@ -2,14 +2,25 @@
 #include <EWEngine/imgui/imGuiHandler.h>
 
 #include <EWEngine/Graphics/Pipeline.h>
+#include <EWEngine/Systems/ThreadPool.h>
+
+void check_vk_result(VkResult err) {
+	if (err == 0) {
+		return;
+	}
+	fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+	if (err < 0) {
+		abort();
+	}
+}
 
 namespace EWE {
-	ImGUIHandler::ImGUIHandler(GLFWwindow* window, EWEDevice& device, uint32_t imageCount) : device{ device } {
+	ImGUIHandler::ImGUIHandler(GLFWwindow* window, uint32_t imageCount) {
 		//printf("imgui handler constructor \n");
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		ImGui::StyleColorsDark();
 
@@ -18,11 +29,11 @@ namespace EWE {
 
 		ImGui_ImplGlfw_InitForVulkan(window, true);
 		ImGui_ImplVulkan_InitInfo init_info = {};
-		init_info.Instance = device.getInstance();
-		init_info.PhysicalDevice = device.getPhysicalDevice();
-		init_info.Device = device.device();
-		init_info.QueueFamily = device.getGraphicsIndex();
-		init_info.Queue = device.graphicsQueue();
+		init_info.Instance = VK::Object->instance;
+		init_info.PhysicalDevice = VK::Object->physicalDevice;
+		init_info.Device = VK::Object->vkDevice;
+		init_info.QueueFamily = VK::Object->queueIndex[Queue::graphics];
+		init_info.Queue = VK::Object->queues[Queue::graphics];
 		init_info.PipelineCache = nullptr;
 		init_info.Allocator = nullptr;
 		init_info.MinImageCount = imageCount;
@@ -37,10 +48,19 @@ namespace EWE {
 
 		ImGui_ImplVulkan_Init(&init_info);
 
+		ImPlot::CreateContext();
+		ImNodes::CreateContext();
+
+
+
+		
 		//uploadFonts();
 		//printf("end of imgui constructor \n");
 	}
 	ImGUIHandler::~ImGUIHandler() {
+
+		ImNodes::DestroyContext();
+		ImPlot::DestroyContext();
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
@@ -53,9 +73,9 @@ namespace EWE {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 	}
-	void ImGUIHandler::endRender(VkCommandBuffer cmdBuf) {
+	void ImGUIHandler::endRender() {
 		ImGui::Render();
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf);
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), VK::Object->GetVKCommandBufferDirect());
 	}
 
 
@@ -75,15 +95,37 @@ namespace EWE {
 		};
 		VkDescriptorPoolCreateInfo pool_info = {};
 		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.pNext = nullptr;
 		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+		pool_info.poolSizeCount = static_cast<uint32_t>(IM_ARRAYSIZE(pool_sizes));
 		pool_info.maxSets = 0;
-		for (int i = 0; i < pool_info.poolSizeCount; i++) {
+		for (uint32_t i = 0; i < pool_info.poolSizeCount; i++) {
 			pool_info.maxSets += pool_sizes[i].descriptorCount;
 		}
 		//pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
 		pool_info.pPoolSizes = pool_sizes;
-		EWEDescriptorPool::AddPool(DescriptorPool_imgui, device, pool_info);
+		EWEDescriptorPool::AddPool(DescriptorPool_imgui, pool_info);
 	}
+
+	void ImGUIHandler::InitializeRenderGraph() {
+		scrollingBuffers.resize(2);
+	}
+	void ImGUIHandler::AddEngineGraph() {
+		auto taskDetails = &ThreadPool::GetThreadTasks();
+	}
+
+
+	void ImGUIHandler::AddRenderData(float x, float y) {
+		assert(scrollingBuffers.size() > 0);
+		scrollingBuffers[0].AddPoint(x, y);
+	}
+	void ImGUIHandler::AddLogicData(float x, float y) {
+		assert(scrollingBuffers.size() > 1);
+		scrollingBuffers[1].AddPoint(x, y);
+	}
+	void ImGUIHandler::ClearRenderGraphs() {
+		scrollingBuffers.clear();
+	}
+
 }

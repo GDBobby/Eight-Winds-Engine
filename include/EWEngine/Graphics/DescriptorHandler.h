@@ -3,63 +3,150 @@
 
 #include "EWEngine/Graphics/Descriptors.h"
 #include "EWEngine/Graphics/Device_Buffer.h"
+#include "EWEngine/Graphics/LightBufferObject.h"
 
 #include <unordered_map>
 
 
 namespace EWE {
-    enum DescSet_Enum : uint16_t {
-        DS_global,
-        DS_pointLight,
 
-        DS_MAX_COUNT,
-    };
-    /*
-    enum PipeDescSetLayouts_Enum {
-#if DRAWING_POINTS
-        PDSL_pointLight,
-#endif
-        PDSL_global,
-        PDSL_textured,
-        PDSL_boned,
-        PDSL_2d,
-        PDSL_visualEffect,
-        PDSL_grass,
-        PDSL_loading,
-        PDSL_orbOverlay,
+    namespace DescriptorHandler {
 
-        PSL_MAX_COUNT,
-    };
-    */
-	enum LDSL_Enum : uint16_t {
-		LDSL_global,
-		LDSL_pointLight,
-		LDSL_boned,
-        LDSL_smallInstance,
-        LDSL_largeInstance,
-	};
-	enum Buffer_Enum : uint16_t {
-		Buff_ubo,
-		Buff_gpu,
-	};
+        void Cleanup();
+        //VkDescriptorSetLayout* GetGlobalDSL();
+        void InitGlobalDescriptors(LightBufferObject& lbo);
+        //VkDescriptorSet* GetGlobalDescSet();
 
-    class DescriptorHandler {
-    private:
-        DescriptorHandler() {}
+        void SetCameraBuffers(std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT>*& cameraBuffers);
 
-        static std::unordered_map<LDSL_Enum, EWEDescriptorSetLayout*> descriptorSetLayouts;
-        static std::unordered_map<DescSet_Enum, std::vector<VkDescriptorSet>> descriptorSets;
-        //static std::unordered_map<PipeDescSetLayouts_Enum, std::vector<VkDescriptorSetLayout>> pipeDescSetLayouts;
+        void WriteToLightBuffer(LightBufferObject& lbo);
+        void AddCameraDataToDescriptor(EWEDescriptorWriter& descWriter, uint8_t whichFrame);
+        void AddGlobalsToDescriptor(EWEDescriptorWriter& descWriter, uint8_t whichFrame);
 
-    public:
-        static void cleanup(EWEDevice& device);
-        static EWEDescriptorSetLayout& getLDSL(LDSL_Enum whichLDSL);
-        static void initGlobalDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap, EWEDevice& device);
-        
-        static void initDescriptors(std::unordered_map<Buffer_Enum, std::vector<EWEBuffer*>>& bufferMap);
-        static VkDescriptorSetLayout getDescSetLayout(LDSL_Enum whichDescSet, EWEDevice& device);
-        //static std::vector<VkDescriptorSetLayout>* getPipeDescSetLayout(PipeDescSetLayouts_Enum PDLe, EWEDevice& device);
-        //static std::vector<VkDescriptorSetLayout>* getDynamicPipeDescSetLayout(uint8_t textureCount, bool hasBones, bool instanced, EWEDevice& device);
-        static VkDescriptorSet* getDescSet(DescSet_Enum whichDescSet, int8_t whichFrameIndex);
+        VkDescriptorBufferInfo* GetCameraDescriptorBufferInfo(uint8_t whichFrame);
+        VkDescriptorBufferInfo* GetLightingDescriptorBufferInfo(uint8_t whichFrame);
+
+        VkDescriptorSet* GetGlobalDescSet();
+
+        /*
+        namespace Template_Helper {
+            void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, std::array<VkDescriptorBufferInfo*, MAX_FRAMES_IN_FLIGHT>& arg) {
+                descWriter.WriteBuffer(whichBinding, arg[whichFrame]);
+                whichBinding++;
+            }
+            void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, std::array<VkDescriptorBufferInfo*, MAX_FRAMES_IN_FLIGHT>&& arg) {
+                descWriter.WriteBuffer(whichBinding, std::forward<VkDescriptorBufferInfo*>(arg[whichFrame]));
+                whichBinding++;
+            }
+            void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, std::array<VkDescriptorImageInfo*, MAX_FRAMES_IN_FLIGHT>& arg) {
+                descWriter.WriteImage(whichBinding, arg[whichFrame]);
+                whichBinding++;
+            }
+            void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, std::array<VkDescriptorImageInfo*, MAX_FRAMES_IN_FLIGHT>&& arg) {
+                descWriter.WriteImage(whichBinding, std::forward<VkDescriptorImageInfo*>(arg[whichFrame]));
+                whichBinding++;
+            }
+            void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, VkDescriptorBufferInfo*& arg) {
+                descWriter.WriteBuffer(whichBinding, arg);
+                whichBinding++;
+            }
+            void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, VkDescriptorBufferInfo*&& arg) {
+                descWriter.WriteBuffer(whichBinding, std::forward<VkDescriptorBufferInfo*>(arg));
+                whichBinding++;
+            }
+            void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, VkDescriptorImageInfo*& arg) {
+                descWriter.WriteImage(whichBinding, arg);
+                whichBinding++;
+            }
+            void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, VkDescriptorImageInfo*&& arg) {
+                descWriter.WriteImage(whichBinding, std::forward< VkDescriptorImageInfo*>(arg));
+                whichBinding++;
+            }
+        }
+
+        namespace Template_Helper {
+            template<typename Arg, typename = std::enable_if_t<
+                std::is_same_v<std::decay_t<Arg>, VkDescriptorBufferInfo*> ||
+                std::is_same_v<std::decay_t<Arg>, VkDescriptorImageInfo*>
+            >
+            >
+            void AddInfo(EWEDescriptorSetLayout * eDSL, EWEDescriptorWriter & descWriter, uint8_t whichFrame, uint8_t & whichBinding, std::array<Arg, MAX_FRAMES_IN_FLIGHT> const& arg) {
+                if constexpr (std::is_same_v<std::decay_t<Arg>, VkDescriptorBufferInfo*>) {
+                    descWriter.WriteBuffer(whichBinding, std::forward<Arg>(arg[whichFrame]));
+                }
+                else if constexpr (std::is_same_v<std::decay_t<Arg>, VkDescriptorImageInfo*>) {
+                    descWriter.WriteImage(whichBinding, std::forward<Arg>(arg[whichFrame]));
+                }
+                else {
+                    static_assert(false);
+                }
+            }
+
+            template<typename Arg,
+                typename = std::enable_if_t<
+                std::is_same_v<std::decay_t<Arg>, VkDescriptorBufferInfo*> ||
+                std::is_same_v<std::decay_t<Arg>, VkDescriptorImageInfo*>
+                >
+            >
+            void AddInfo(EWEDescriptorSetLayout* eDSL, EWEDescriptorWriter& descWriter, uint8_t whichFrame, uint8_t& whichBinding, Arg&& arg) {
+                if constexpr (std::is_same_v<std::decay_t<Arg>, VkDescriptorBufferInfo*>) {
+                    descWriter.WriteBuffer(whichBinding, std::forward<Arg>(arg));
+                }
+                else if constexpr (std::is_same_v<std::decay_t<Arg>, VkDescriptorImageInfo*>) {
+                    descWriter.WriteImage(whichBinding, std::forward<Arg>(arg));
+                }
+                else {
+                    static_assert(false);
+                }
+            }
+        }
+
+        template<typename T, typename... Args>
+            requires(
+                std::is_same_v<std::decay_t<T>, std::array<VkDescriptorBufferInfo*, MAX_FRAMES_IN_FLIGHT>>
+                || std::is_same_v<std::decay_t<T>, std::array<VkDescriptorImageInfo*, MAX_FRAMES_IN_FLIGHT>>
+                || std::is_same_v<std::decay_t<T>, VkDescriptorBufferInfo*>
+                || std::is_same_v<std::decay_t<T>, VkDescriptorImageInfo*>
+            )
+        [[nodiscard]] std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> CreateDescriptorSets(EWEDescriptorSetLayout* eDSL, T&& first, Args const&... args) {
+            std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> ret;
+            for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                EWEDescriptorWriter descWriter(eDSL, DescriptorPool_Global);
+
+                
+                uint8_t whichBinding = 0;
+                Template_Helper::AddInfo(eDSL, descWriter, i, whichBinding, std::forward<T>(first));
+
+                if constexpr (sizeof...(args) > 0) {
+                    (Template_Helper::AddInfo(eDSL, descWriter, i, whichBinding, std::forward<Args>(args)), ...);
+                }
+                ret[i] = descWriter.Build();
+            }
+            return ret;
+        }
+
+        template<typename T, typename... Args>
+            requires(
+                std::is_same_v<std::decay_t<T>, std::array<VkDescriptorBufferInfo*, MAX_FRAMES_IN_FLIGHT>>
+                || std::is_same_v<std::decay_t<T>, std::array<VkDescriptorImageInfo*, MAX_FRAMES_IN_FLIGHT>>
+                || std::is_same_v<std::decay_t<T>, VkDescriptorBufferInfo*>
+                || std::is_same_v<std::decay_t<T>, VkDescriptorImageInfo*>
+            )
+        [[nodiscard]] std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> CreateDescriptorSetsWithGlobals(EWEDescriptorSetLayout* eDSL, T&& first, Args&&... args) {
+            std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> ret;
+            for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                EWEDescriptorWriter descWriter(eDSL, DescriptorPool_Global);
+                AddGlobalsToDescriptor(descWriter, i);
+
+                uint8_t whichBinding = 2;
+                Template_Helper::AddInfo(eDSL, descWriter, i, whichBinding, std::forward<T>(first));
+                if constexpr (sizeof...(args) > 0) {
+                    (Template_Helper::AddInfo(eDSL, descWriter, i, whichBinding, std::forward<Args>(args)), ...);
+                }
+                ret[i] = descWriter.Build();
+            }
+            return ret;
+        }
+        */
     };
 }

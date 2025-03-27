@@ -3,49 +3,54 @@
 namespace EWE {
 	MenuManager* MenuManager::menuManagerPtr = nullptr;
 
-	MenuManager::MenuManager(float screenWidth, float screenHeight, EWEDevice& eweDevice, GLFWwindow* windowPtr, std::shared_ptr<TextOverlay> textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay }, screenWidth{ screenWidth }, screenHeight{ screenHeight } {
-		if (menuManagerPtr != nullptr) {
-			printf("created two menu managers? \n");
-			throw std::runtime_error("created two menu managers?");
-		}
+	MenuManager::MenuManager(GLFWwindow* windowPtr, TextOverlay* textOverlay) : windowPtr{ windowPtr }, textOverlay{ textOverlay } {
+		assert(menuManagerPtr == nullptr && "created two menu managers?");
+#if EWE_DEBUG
+		printf("beginning menu manager construction\n");
+#endif
+
 		menuManagerPtr = this;
 		currentScene = 0;
-		//menuModules[menu_controls_temp] = std::make_unique<ControlsTempMM>(screenWidth, screenHeight);
-		MenuModule::initTextures(eweDevice);
 
-		//MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
+		MenuModule::initTextures();
 
-		printf("passing device to menu module constructor \n");		
-		menuModules[menu_audio_settings] = std::make_unique<AudioMM>(screenWidth, screenHeight, windowPtr);
-		printf("after audio \n");
-		menuModules[menu_graphics_settings] = std::make_unique<GraphicsMM>(screenWidth, screenHeight);
-		printf("after graphics \n");
+		menuModules.try_emplace(menu_audio_settings, std::make_unique<AudioMM>(windowPtr));
+		menuModules.try_emplace(menu_graphics_settings, std::make_unique<GraphicsMM>());
 
 
-		MenuModule::changeMenuStateFromMM = changeMenuStateFromMM;
-		//menuRef.clickTextCallback.push_back(&MenuManager::DiscardReturnCallback);
+		MenuModule::ChangeMenuStateFromMM = ChangeMenuStateFromMM;
 
 	}
-	void MenuManager::windowResize(std::pair<uint32_t, uint32_t> windowDim) {
+	void MenuManager::WindowResize(SettingsInfo::ScreenDimensions windowDim) {
 		menuManagerPtr->windowWasResized = true;
-		float rszWidth = static_cast<float>(windowDim.first);
-		float rszHeight = static_cast<float>(windowDim.second);
-		menuManagerPtr->textOverlay->windowResize(rszWidth, rszHeight);
+		const float nextWidth = static_cast<float>(windowDim.width);
+		const float nextHeight = static_cast<float>(windowDim.height);
+		glm::vec2 resizeRatio{
+			nextWidth / VK::Object->screenWidth,
+			nextHeight / VK::Object->screenHeight
+		};
+		VK::Object->screenWidth = nextWidth;
+		VK::Object->screenHeight = nextHeight;
+
+		menuManagerPtr->textOverlay->WindowResize();
 
 		for (auto iter = menuManagerPtr->menuModules.begin(); iter != menuManagerPtr->menuModules.end(); iter++) {
-			iter->second->resizeWindow(rszWidth, menuManagerPtr->screenWidth, rszHeight, menuManagerPtr->screenHeight);
+			iter->second->ResizeWindow(resizeRatio);
 		}
-		menuManagerPtr->screenWidth = rszWidth;
-		menuManagerPtr->screenHeight = rszHeight;
 	}
 	void MenuManager::drawNewMenuObejcts() {
 		if (isActive) {
 			//printf("Drawing menu \n");
-			menuModules[currentMenuState]->drawNewObjects();//(gameState == 0));
+			menuModules.at(currentMenuState)->DrawNewObjects();//(gameState == 0));
 		}
 	}
 
-	void MenuManager::changeMenuState(uint8_t nextMenu, uint8_t nextScene) { //nextScene is really just turning on mouse or not
+	void MenuManager::SetCurrentMenu(uint8_t currentMenu) {
+		assert(menuModules.contains(currentMenu));
+		currentMenuState = currentMenu;
+		currentModule = menuModules.at(currentMenuState).get();
+	}
+	void MenuManager::ChangeMenuState(uint8_t nextMenu, uint8_t nextScene) { //nextScene is really just turning on mouse or not
 		printf("beginning of change menu state \n");
 		//std::cout << "newcurrentScene : " << +newcurrentScene << std::endl;
 		if (nextScene != 255) {
@@ -63,6 +68,7 @@ namespace EWE {
 			glfwSetInputMode(windowPtr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 		currentMenuState = nextMenu;
+		currentModule = menuModules.at(currentMenuState).get();
 		printf("end of change menu state \n");
 	}
 
@@ -72,20 +78,15 @@ namespace EWE {
 			//return;
 		//}
 
-		if ((button == GLFW_MOUSE_BUTTON_1) && (action == GLFW_PRESS)) {
+		if ((menuManagerPtr->isActive) && (button == GLFW_MOUSE_BUTTON_1) && (action == GLFW_PRESS)) {
 			double xpos = 0;
 			double ypos = 0;
 			glfwGetCursorPos(window, &xpos, &ypos);
 			printf("%.0f, %.0f  ~ mouse coords \n", xpos, ypos);
 			//menuManagerPtr->lastClicked = menuManagerPtr->anythingClicked(xpos, ypos);
 			//printf("last clicked pair - %d:%d \n", menuManagerPtr->lastClicked.first, menuManagerPtr->lastClicked.second);
-
-			menuManagerPtr->menuModules[menuManagerPtr->currentMenuState]->processClick(xpos, ypos);
-			//menuManagerPtr->clickReturns.emplace(menuManagerPtr->menuModules[menuManagerPtr->currentMenuState]->processClick(xpos, ypos));
-			 
-			if (MenuModule::clickReturns.size() > 0) {
-				printf("clickReturns front : %d \n", MenuModule::clickReturns.front());
-			}
+			
+			menuManagerPtr->menuModules.at(menuManagerPtr->currentMenuState)->ProcessClick(xpos, ypos);
 		}
 		/*
 		else if ((button == GLFW_MOUSE_BUTTON_1) && (action == GLFW_RELEASE) && (menuManagerPtr->callbackSlider != -1)) {
@@ -114,7 +115,9 @@ namespace EWE {
 			//menuManagerPtr->isActive = false;
 			//menuManagerPtr->escapePressed = true;
 			//glfwSetCursorPosCallback(menuManagerPtr->windowPtr, nullptr);
-			MenuModule::clickReturns.push(MCR_EscapePressed);
+			//MenuModule::clickReturns.push(MCR_EscapePressed);
+			menuManagerPtr->escapeCallback();
+			//menuManagerPtr->escapeMenu();
 			//menuManagerPtr->inputHandler->returnFocus();
 		}
 

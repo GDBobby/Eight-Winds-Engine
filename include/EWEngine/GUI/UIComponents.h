@@ -25,22 +25,22 @@ namespace EWE {
 	struct ClickTextBox { //i.e. menu options
 		TextStruct textStruct{};
 		glm::ivec4 clickBox{ 0 };
-		Transform2dComponent transform{};
+		Transform2D transform{};
 		bool isActive = false;
 
-		ClickTextBox(std::string string, float x, float y, unsigned char align, float scale, float screenW, float screenH);
+		ClickTextBox(std::string string, float x, float y, unsigned char align, float scale);
 		ClickTextBox(){}
-		ClickTextBox(TextStruct textStruct, float screenW, float screenH);
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
+		ClickTextBox(TextStruct textStruct);
+		void ResizeWindow(glm::vec2 rescalingRatio);
 		bool Clicked(double xpos, double ypos);
 
-		void render(NineUIPushConstantData& push);
+		void Render(Array2DPushConstantData& push);
 
 	};
 	struct TypeBox { //keybinds
 		TextStruct textStruct;
 		glm::ivec4 clickBox{ 0 };
-		Transform2dComponent transform;
+		Transform2D transform;
 		bool isActive = false;
 		bool mouseDragging = false;
 		bool readyForInput = false;
@@ -56,46 +56,44 @@ namespace EWE {
 
 		static void MouseCallback(GLFWwindow* window, int button, int action, int mods);
 		static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-		static void typeCallback(GLFWwindow* window, unsigned int codepoint);
+		static void TypeCallback(GLFWwindow* window, uint32_t codepoint);
 
-		TypeBox(TextStruct textStruct, float screenW, float screenHeight);
-		TypeBox(std::string string, float x, float y, uint8_t alignment, float scale, float screenWidth, float screenHeight);
+		TypeBox(TextStruct textStruct);
+		TypeBox(std::string string, float x, float y, uint8_t alignment, float scale);
 
-		void giveGLFWCallbacks(GLFWwindow* windowPtr, GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction);
+		void GiveGLFWCallbacks(GLFWwindow* windowPtr, GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction);
 
-		bool Clicked(double xpos, double ypos) { return UIComp::checkClickBox(clickBox, xpos, ypos); }
+		bool Clicked(double xpos, double ypos) { return UIComp::CheckClickBox(clickBox, xpos, ypos); }
 
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
+		void ResizeWindow(glm::vec2 rescalingRatio);
 
-		void render(NineUIPushConstantData& push);
+		void Render(Array2DPushConstantData& push);
 	};
 
 	struct Slider {
-		std::pair<Transform2dComponent, Transform2dComponent> bracketButtons;
-		Transform2dComponent bracket{};
-		Transform2dComponent slider{};
+		std::pair<Transform2D, Transform2D> bracketButtons;
+		Transform2D bracket{};
+		Transform2D slider{};
 		float slidePosition{0.5f}; //can be translated to volume
 		glm::ivec4 click[3] = { glm::ivec4{0},glm::ivec4{0},glm::ivec4{0} }; //left, slide, right
 		float spaceBetween{};
 		bool VolumeTrueSensFalse = true;
 		uint8_t mySens = 100; //sens short for sensitivity
 		bool isActive = false;
-		float screenHeight{};
-		float screenWidth{};
 		Slider() {}
-		void setTransform(glm::vec2 newTrans);
-		void Init(glm::vec2 initTrans, float screenHeight, float screenWidth, uint8_t currentSens);
+		void SetTransform(glm::vec2 newTrans);
+		void Init(glm::vec2 initTrans, uint8_t currentSens);
 
-		void Init(glm::vec2 initTrans, float screenHeight, float screenWidth, float currentVolume);
-		void setSliderPosition(float sliderPos);
+		void Init(glm::vec2 initTrans, float currentVolume);
+		void SetSliderPosition(float sliderPos);
 
 		void MoveSlider(int movedAmount);
-		void resizeWindow(float newWidth, float newHeight);
-		void giveSens(uint8_t currentSens);
+		void ResizeWindow();
+		void GiveSens(uint8_t currentSens);
 		int8_t Clicked(double xpos, double ypos);
-		void buttonClicked(bool leftFalseRightTrue);
+		void ButtonClicked(bool leftFalseRightTrue);
 
-		void render(Simple2DPushConstantData& push, uint8_t drawID);
+		void Render(Array2DPushConstantData& push, uint8_t drawID);
 	};
 
 	struct ComboBox {
@@ -109,17 +107,17 @@ namespace EWE {
 		std::vector<ClickTextBox> comboOptions;
 		int8_t currentlySelected = 0;
 
-		ComboBox(TextStruct textStruct, float screenWidth, float screenHeight);
+		ComboBox(TextStruct textStruct);
 
-		void pushOption(std::string string, float screenWidth, float screenHeight);
+		void PushOption(std::string string);
 
-		void setSelection(int8_t selection);
+		void SetSelection(int8_t selection);
 
 		bool Clicked(double xpos, double ypos);
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
+		void ResizeWindow(glm::vec2 rescalingRatio);
 
-		void render(NineUIPushConstantData& push);
-		void move(float xDiff, float yDiff, float screenWidth, float screenHeight);
+		void Render(Array2DPushConstantData& push);
+		void Move(float xDiff, float yDiff);
 	};
 
 	struct DropBox {
@@ -135,20 +133,19 @@ namespace EWE {
 		std::vector<TextStruct> dropOptions;
 		std::vector<glm::ivec4> clickBoxes;
 
-		Transform2dComponent dropBackground;
+		Transform2D dropBackground;
 
-		void pushOption(std::string pushString);
-		void pushOption(std::string pushString, float screenWidth, float screenHeight);
+		void PushOption(std::string pushString);
 
-		void init(float screenWidth, float screenHeight);
+		void Init();
 
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) { 
-			init(rszWidth, rszHeight); 
+		void ResizeWindow(glm::vec2 rescalingRatio) {
+			Init(); 
 		}
 
 		int8_t Clicked(double xpos, double ypos);
 
-		void render(NineUIPushConstantData& push);
+		void Render(Array2DPushConstantData& push);
 	};
 	/*
 	struct SideList {
@@ -167,7 +164,7 @@ namespace EWE {
 		Transform2dComponent dropBackground;
 
 		void pushOption(std::string pushString);
-		void pushOption(std::string pushString, float screenWidth, float screenHeight);
+		void pushOption(std::string pushString);
 
 		void init(float screenWidth, float screenHeight);
 
@@ -180,18 +177,17 @@ namespace EWE {
 	*/
 
 	struct Button {
-		Transform2dComponent transform;
+		Transform2D transform;
 		glm::ivec4 clickBox;
 
-		Button(glm::vec2 translation, float screenWidth, float screenHeight);
+		Button(glm::vec2 translation);
 
-		void resizeWindow(float rszWidth, float rszHeight) 
-			{ UIComp::convertTransformToClickBox(transform, clickBox, rszWidth, rszHeight); }
+		void ResizeWindow() { UIComp::ConvertTransformToClickBox(transform, clickBox, VK::Object->screenWidth, VK::Object->screenHeight); }
 
 		bool Clicked(double xpos, double ypos) 
-			{ return UIComp::checkClickBox(clickBox, xpos, ypos); }
+			{ return UIComp::CheckClickBox(clickBox, xpos, ypos); }
 
-		void render(Simple2DPushConstantData& push);
+		void Render(Array2DPushConstantData& push);
 	};
 
 	struct Checkbox {
@@ -209,15 +205,15 @@ namespace EWE {
 		bool isChecked = false;
 		bool isActive = false;
 
-		Checkbox(std::string labelString, glm::vec2 translation, DefaultOffsets labelOffset, float screenW, float screenH);
+		Checkbox(std::string labelString, glm::vec2 translation, DefaultOffsets labelOffset);
 
-		Checkbox(std::string labelString, glm::vec2 translation, glm::vec2 labelOffset, TextAlign alignment, float screenW, float screenH);
+		Checkbox(std::string labelString, glm::vec2 translation, glm::vec2 labelOffset, TextAlign alignment);
 
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
+		void ResizeWindow(glm::vec2 rescalingRatio);
 
 		bool Clicked(double xpos, double ypos);
 
-		void render(Simple2DPushConstantData& push);
+		void Render(Array2DPushConstantData& push);
 	};
 
 

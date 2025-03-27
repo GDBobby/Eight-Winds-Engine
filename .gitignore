@@ -23,8 +23,6 @@ build/
 x64/
 .vs/
 .vscode/
-buildCopy/
-build_backup
 CmakeFiles/
 release/
 debug/
@@ -36,3 +34,8 @@ build/
 Projects/
 debuggers/
 external/
+compile.bat
+*.dll
+*.json
+*.TMP
+examples/RockSample/shaders/materials/debugging/compileDebugger.bat

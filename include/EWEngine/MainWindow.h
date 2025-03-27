@@ -9,6 +9,7 @@
 #include <vulkan/vulkan_win32.h>
 #endif
 */
+#include "EWEngine/Graphics/VulkanHeader.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -54,7 +55,7 @@ namespace EWE {
 		int width;
 		int height;
 		bool frameBufferResized = false;
-		SettingsInfo::ScreenDimension_Enum screenDimensions;
+		SettingsInfo::ScreenDimensions screenDimensions;
 		SettingsInfo::WindowMode_Enum windowMode;
 		//static HWND hWnd;
 

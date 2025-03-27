@@ -6,6 +6,9 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#if DESCRIPTOR_TRACING
+#include <stacktrace>
+#endif
 
 namespace EWE {
 
@@ -15,33 +18,34 @@ namespace EWE {
     public:
         class Builder {
         public:
-            Builder(EWEDevice& eweDevice) : eweDevice{ eweDevice } {}
+            Builder() {}
 
-            Builder& addBinding(
-                uint32_t binding,
-                VkDescriptorType descriptorType,
-                VkShaderStageFlags stageFlags,
-                uint32_t count = 1);
-            EWEDescriptorSetLayout* build() const;
+            Builder& AddBinding(VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count = 1);
+            Builder& AddGlobalBindingForCompute();
+            Builder& AddGlobalBindings();
+#if EWE_DEBUG
+            EWEDescriptorSetLayout* Build(std::source_location = std::source_location::current());
+#else
+            EWEDescriptorSetLayout* Build();
+#endif
 
         private:
-            EWEDevice& eweDevice;
-            std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
+            std::vector<VkDescriptorSetLayoutBinding> bindings{};
+            uint8_t currentBindingCount = 0;
         };
 
-        EWEDescriptorSetLayout(EWEDevice& eweDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> const& bindings);
+        EWEDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>& bindings);
         ~EWEDescriptorSetLayout();
         EWEDescriptorSetLayout(const EWEDescriptorSetLayout&) = delete;
         EWEDescriptorSetLayout& operator=(const EWEDescriptorSetLayout&) = delete;
 
-        VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
-
+        [[nodiscard]] VkDescriptorSetLayout* GetDescriptorSetLayout() { return &descriptorSetLayout; }
     private:
-        EWEDevice& eweDevice;
         VkDescriptorSetLayout descriptorSetLayout;
-        std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
+        std::vector<VkDescriptorSetLayoutBinding> bindings;
 
         friend class EWEDescriptorWriter;
+        friend class EWEDescriptorPool;
     };
 
     enum DescriptorPool_ID : uint16_t {
@@ -54,62 +58,82 @@ namespace EWE {
     public:
         class Builder {
         public:
-            Builder(EWEDevice& eweDevice) : eweDevice{ eweDevice } {}
+            Builder() {}
 
-            Builder& addPoolSize(VkDescriptorType descriptorType, uint32_t count);
-            Builder& setPoolFlags(VkDescriptorPoolCreateFlags flags);
-            Builder& setMaxSets(uint32_t count);
-            std::shared_ptr<EWEDescriptorPool> build() const;
-
+            Builder& AddPoolSize(VkDescriptorType descriptorType, uint32_t count);
+            Builder& SetPoolFlags(VkDescriptorPoolCreateFlags flags);
+            Builder& SetMaxSets(uint32_t count);
+#if EWE_DEBUG
+            EWEDescriptorPool* Build(std::source_location srcLoc = std::source_location::current()) const;
+#else
+            EWEDescriptorPool* Build() const;
+#endif
 
         private:
-            EWEDevice& eweDevice;
             std::vector<VkDescriptorPoolSize> poolSizes{};
             uint32_t maxSets = 1000;
             VkDescriptorPoolCreateFlags poolFlags = 0;
         };
 
-        EWEDescriptorPool(EWEDevice& eweDevice, uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize>& poolSizes);
-        EWEDescriptorPool(EWEDevice& eweDevice, VkDescriptorPoolCreateInfo& pool_info);
+        EWEDescriptorPool(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize>& poolSizes);
+        EWEDescriptorPool(VkDescriptorPoolCreateInfo& pool_info);
         ~EWEDescriptorPool();
         EWEDescriptorPool(const EWEDescriptorPool&) = delete;
         EWEDescriptorPool& operator=(const EWEDescriptorPool&) = delete;
 
-        static bool allocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor);
-        bool allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) const;
+        static void AllocateDescriptor(DescriptorPool_ID poolID, const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor);
+        void AllocateDescriptor(const VkDescriptorSetLayout* descriptorSetLayout, VkDescriptorSet& descriptor);
+        void AllocateDescriptor(EWEDescriptorSetLayout* eDSL, VkDescriptorSet& descriptor);
 
-        static void freeDescriptors(DescriptorPool_ID poolID, std::vector<VkDescriptorSet>& descriptors);
-        void freeDescriptors(std::vector<VkDescriptorSet>& descriptors) const;
+        static void FreeDescriptors(DescriptorPool_ID poolID, EWEDescriptorSetLayout* eDSL, std::vector<VkDescriptorSet>& descriptors);
+        void FreeDescriptors(EWEDescriptorSetLayout* eDSL, std::vector<VkDescriptorSet>& descriptors);
+        static void FreeDescriptor(DescriptorPool_ID poolID, EWEDescriptorSetLayout* eDSL, const VkDescriptorSet* descriptors);
+        void FreeDescriptor(EWEDescriptorSetLayout* eDSL, const VkDescriptorSet* descriptor);
 
-        static void freeDescriptor(DescriptorPool_ID poolID, VkDescriptorSet* descriptors);
-        void freeDescriptor(VkDescriptorSet* descriptor) const;
+        static void FreeDescriptorWithoutTracker(DescriptorPool_ID poolID, const VkDescriptorSet* descriptors);
+        void FreeDescriptorWithoutTracker(const VkDescriptorSet* descriptor);
 
         //void getPool(); maybe later for imGuiHandler, not rn
 
-        void resetPool();
-        static void BuildGlobalPool(EWEDevice& device);
-        //static void BuildComputePool(EWEDevice& device);
+        void ResetPool();
+        static void BuildGlobalPool();
 
         static void DestructPools();
         static void DestructPool(DescriptorPool_ID poolID);
-        static void AddPool(DescriptorPool_ID poolID, EWEDevice& device, VkDescriptorPoolCreateInfo& pool_info);
+        static void AddPool(DescriptorPool_ID poolID, VkDescriptorPoolCreateInfo& pool_info);
+
+        //only using it to create a descriptor set in textoverlay right now
+        static VkDescriptorPool GetPool(DescriptorPool_ID poolID);
 
     private:
         struct DescriptorTracker {
             uint32_t current = 0;
             uint32_t max;
             std::vector<VkDescriptorSet*> descriptors{};
+
             DescriptorTracker(uint32_t maxCount) : max{ maxCount } {}
 
-            bool addDescriptor(uint32_t count);
+            void RemoveDescriptor(uint32_t count);
+            bool AddDescriptor(uint32_t count);
         };
+#if DESCRIPTOR_TRACING
+        struct FakeEntry {
+            std::string description;
+            std::string source_file;
+            std::uint32_t source_line;
+            FakeEntry(std::string const& description, std::string const& source_file, uint32_t source_line) : description{ description }, source_file{ source_file }, source_line{ source_line } {}
+        };
+
+        std::unordered_map<VkDescriptorSet, std::vector<FakeEntry>> descTracer{};
+#endif
 
         std::unordered_map<VkDescriptorType, DescriptorTracker> trackers;
 
-        EWEDevice& eweDevice;
         VkDescriptorPool descriptorPool;
+        std::mutex mutex{};
 
-        void addDescriptorToTrackers(VkDescriptorType descType, uint32_t count);
+        void AddDescriptorToTrackers(VkDescriptorType descType, uint32_t count);
+
 
         static std::unordered_map<uint16_t, EWEDescriptorPool> pools;
         friend class EWEDescriptorWriter;
@@ -117,18 +141,18 @@ namespace EWE {
 
     class EWEDescriptorWriter {
     public:
-        EWEDescriptorWriter(EWEDescriptorSetLayout& setLayout, EWEDescriptorPool& pool);
-        EWEDescriptorWriter(EWEDescriptorSetLayout& setLayut, DescriptorPool_ID poolID);
+        EWEDescriptorWriter(EWEDescriptorSetLayout* setLayout, EWEDescriptorPool& pool);
+        EWEDescriptorWriter(EWEDescriptorSetLayout* setLayout, DescriptorPool_ID poolID);
 
-        EWEDescriptorWriter& writeBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
-        EWEDescriptorWriter& writeImage(uint32_t binding, VkDescriptorImageInfo* imageInfo);
-
-        VkDescriptorSet build();
-        void overwrite(VkDescriptorSet& set);
+        EWEDescriptorWriter& WriteBuffer(VkDescriptorBufferInfo* bufferInfo);
+        EWEDescriptorWriter& WriteImage(VkDescriptorImageInfo* imgInfo);
+        EWEDescriptorWriter& WriteImage(ImageID imageID);
+        VkDescriptorSet Build();
+        void Overwrite(VkDescriptorSet& set);
 
     private:
-        VkDescriptorSet buildPrint();
-        EWEDescriptorSetLayout& setLayout;
+        VkDescriptorSet BuildPrint();
+        EWEDescriptorSetLayout* setLayout;
         EWEDescriptorPool& pool;
         std::vector<VkWriteDescriptorSet> writes;
     };

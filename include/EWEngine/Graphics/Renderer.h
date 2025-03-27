@@ -17,68 +17,48 @@ namespace EWE {
 
 	public:
 
-		static void bindGraphicsPipeline(VkCommandBuffer commandBuffer, VkPipeline graphicsPipeline) {
-#if _DEBUG
-			if (instance == nullptr) {
-				std::cout << "ewe renderer was nullptr \n";
-				std::cout << "ewe renderer was nullptr \n";
-				std::cout << "ewe renderer was nullptr \n";
-			}
-			assert(instance != nullptr);
-#endif
+		static void BindGraphicsPipeline(VkPipeline graphicsPipeline);
 
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-			vkCmdSetViewport(commandBuffer, 0, 1, &instance->viewport);
-			vkCmdSetScissor(commandBuffer, 0, 1, &instance->scissor);
-		}
-
-		EWERenderer(MainWindow& window, EWEDevice& device, EWECamera& camera);
+		EWERenderer(MainWindow& window, EWECamera& camera);
 		~EWERenderer();
 
 		EWERenderer(const EWERenderer&) = delete;
 		EWERenderer& operator=(const EWERenderer&) = delete;
 
 		//VkRenderPass getSwapChainRenderPass() const { return eweSwapChain->getRenderPass(); }
-		float getAspectRatio() const { return eweSwapChain->extentAspectRatio(); }
+		float GetAspectRatio() const { return eweSwapChain->ExtentAspectRatio(); }
 
-		std::pair<uint32_t, uint32_t> getExtent() { 
+		VkExtent2D GetExtent() { 
 			needToReadjust = false;
-			return eweSwapChain->getExtent(); 
+			return eweSwapChain->GetExtent(); 
 		}
 
-		bool isFrameInProgresss() const { return isFrameStarted; }
-		VkCommandBuffer getCurrentCommandBuffer() const { 
-			assert(isFrameStarted && "Cannot get command buffer when frame is not in progress!");
-			//printf("currentFrameIndex: commandBuffers size, maxFIF - %d:%d:%d \n", currentFrameIndex, commandBuffers.size(), MAX_FRAMES_IN_FLIGHT);
-			return syncHub->getRenderBuffer(currentFrameIndex);
-		}
-		int getFrameIndex() const {
-			assert(isFrameStarted && "Cannot get frameindex when frame is not in progress!");
-			return currentFrameIndex;
-		}
+		bool IsFrameInProgresss() const { return isFrameStarted; }
 
-		FrameInfo beginFrame();
-		bool endFrame();
+		bool BeginFrame();
+		bool EndFrame();
+		bool EndFrameAndWaitForFence();
 
-		void beginSecondarySwapChainRenderPass(std::pair<VkCommandBuffer, VkCommandBuffer> commandBufferPair);
-		void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
-		void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
-		TextOverlay* makeTextOverlay() {
+		void BeginSwapChainRender();
+		void EndSwapChainRender();
+		TextOverlay* MakeTextOverlay() {
 			//assert(!loadingState && "text overlay being made in loading screen renderer?");
 			assert(!hasTextOverlayBeenMade && "textoverlay has already been made?");
 			hasTextOverlayBeenMade = true;
 			printf("CREATING TEXT OVERLAY\n");
 
-			return new TextOverlay{ eweDevice, static_cast<float>(eweSwapChain->width()), static_cast<float>(eweSwapChain->height()), *eweSwapChain->getPipelineInfo()};
+			return Construct<TextOverlay>({static_cast<float>(eweSwapChain->Width()), static_cast<float>(eweSwapChain->Height()), *eweSwapChain->GetPipelineInfo()});
 		}
 
-		//void updateTextOverlay(float time, float peakTime, float averageTime, float minTime, float highTime, VkCommandBuffer commandBuffer);
-		//std::unique_ptr<TextOverlay> textOverlay;
 
 		bool needToReadjust = false;
 
 		VkPipelineRenderingCreateInfo* getPipelineInfo() {
-			return eweSwapChain->getPipelineInfo();
+			return eweSwapChain->GetPipelineInfo();
+		}
+
+		void ChangeClearValues(float r, float g, float b, float a) {
+			eweSwapChain->ChangeClearValues(r, g, b, a);
 		}
 
 	private:
@@ -86,23 +66,19 @@ namespace EWE {
 		VkRect2D scissor{};
 
 		
-		void createCommandBuffers();
-		void freeCommandBuffers();
+		//void createCommandBuffers();
+		//void freeCommandBuffers();
 
-		void recreateSwapChain();
+		void RecreateSwapChain();
 
 		bool hasTextOverlayBeenMade = false;
 		
 		EWECamera& camera;
 		MainWindow& mainWindow;
-		EWEDevice& eweDevice;
 		std::unique_ptr<EWESwapChain> eweSwapChain;
 
 		uint32_t currentImageIndex;
-		uint8_t currentFrameIndex{0};
 		bool isFrameStarted{false};
-
-		std::shared_ptr<SyncHub> syncHub;
 
 	};
 }

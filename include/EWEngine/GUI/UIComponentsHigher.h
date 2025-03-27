@@ -1,6 +1,6 @@
 #pragma once
 
-#include "UIComponents.h"
+#include "EWEngine/GUI/UIComponents.h"
 
 namespace EWE {
 	enum HigherLevelControl_ClickReturn {
@@ -27,8 +27,6 @@ namespace EWE {
 		float width = 100.f;
 
 		std::pair<float, float> position;
-		float screenWidth;
-		float screenHeight;
 
 		std::vector<std::pair<Button, Button>> buttons; //add subtract
 		std::vector<TypeBox> typeBoxes;
@@ -38,7 +36,7 @@ namespace EWE {
 		//void setPosition(float x, float y, float screenWidth, float screenHeight);
 
 
-		VariableControl(GLFWwindow* windowPtr, float posX, float posY, float width, float screenWidth, float screenHeight, std::string dataLabelString, void* dataPointer, UIComp::VariableType dataType, uint8_t dataCount, void* steps);
+		VariableControl(GLFWwindow* windowPtr, float posX, float posY, float width, std::string dataLabelString, void* dataPointer, UIComp::VariableType dataType, uint8_t dataCount, void* steps);
 		~VariableControl()
 		{
 			free(steps);
@@ -50,7 +48,7 @@ namespace EWE {
 			return checkSelection == selectedTypeBox;
 		}
 
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
+		void ResizeWindow(glm::vec2 resizeRatio);
 
 		void moveBox(int freshX, int freshY);
 		void giveGLFWCallbacks(GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction);
@@ -59,8 +57,8 @@ namespace EWE {
 			this->lastPos = lastPos;
 		}
 
-		void render(NineUIPushConstantData& push);
-		void render(Simple2DPushConstantData& push);
+		//void render(NineUIPushConstantData& push);
+		void Render(Array2DPushConstantData& push);
 
 
 	private:
@@ -90,7 +88,7 @@ namespace EWE {
 		float width = 100.f;
 
 		TextStruct label;
-		Transform2dComponent transform; //the background box
+		Transform2D transform; //the background box
 		glm::ivec4 dragBox; //height is about the size of the label string, width is the width of the full background box
 
 		ControlBox(GLFWwindow* windowPtr, std::string labelString, float x, float y, float width, float screenWidth, float screenHeight);
@@ -101,16 +99,16 @@ namespace EWE {
 
 		bool Clicked(double xpos, double ypos);
 
-		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight);
+		void ResizeWindow(glm::vec2 resizeRatio);
 
 		std::vector<VariableControl> variableControls;
 		void giveGLFWCallbacks(GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction);
 		GLFWmousebuttonfun mouseReturnPointer;
 		GLFWkeyfun keyReturnPointer;
 
-		void render(Simple2DPushConstantData& push);
+		void Render(Array2DPushConstantData& push);
 
-		void render(NineUIPushConstantData& push);
+		//void render(NineUIPushConstantData& push);
 
 	private:
 		//UIComp::VariableType variableType;
@@ -134,18 +132,18 @@ namespace EWE {
 		MenuBar(float x, float y, float width, float height, float screenWidth, float screenHeight);
 		std::pair<float, float> screenCoordinates;
 		std::pair<float, float> screenDimensions;
-		Transform2dComponent transform;
+		Transform2D transform;
 
 		void pushDropper(std::string dropperName, std::vector<std::string>& options, float screenWidth, float screenHeight);
 		std::vector<DropBox> dropBoxes{};
 
-		void init(float screenWidth, float screenHeight);
+		void init();
 
 		void resizeWindow(float rszWidth, float oldWidth, float rszHeight, float oldHeight) {
-			init(rszWidth, rszHeight);
+			init();
 		}
 
 		int16_t Clicked(double xpos, double ypos);
-		void render(NineUIPushConstantData& push, uint8_t drawID);
+		void Render(Array2DPushConstantData& push, uint8_t drawID);
 	};
 }
