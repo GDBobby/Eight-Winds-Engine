@@ -38,13 +38,14 @@ namespace EWE {
 		static void Destruct();
 
 		//static void BindNineUI(CommandBuffer cmdBuffer, uint8_t frameIndex);
-		static void BindModel()
-		{
+		static void BindModel() {
 			dimension2Ptr->model2D->Bind();
 		}
-		static void DrawModel()
-		{
+		static void DrawModel() {
 			dimension2Ptr->model2D->Draw();
+		}
+		static EWEModel* GetModel() {
+			return dimension2Ptr->model2D;
 		}
 		static void BindArrayPipeline();
 		static void BindSingularPipeline();
