@@ -206,10 +206,9 @@ namespace EWE {
 		};
 		//NEED LESS THAN 10 POINT LIGHTS
 		//shaders will only support 10
-
+		/*
 		for (int i = 0; i < lightColors.size(); i++) {
 			ewEngine.objectManager.pointLights.push_back(PointLight::makePointLight(5.0f, 0.1f, lightColors[i]));
-			//pointLight.color = lightColors[i];
 			auto rotateLight = glm::rotate(
 				glm::mat4(2.f),
 				(i * glm::two_pi<float>()) / lightColors.size(),
@@ -220,6 +219,7 @@ namespace EWE {
 			ewEngine.objectManager.pointLights[i].transform.translation.z *= 5.f;
 			ewEngine.objectManager.pointLights[i].transform.translation.y += 1.f;
 		}
+		*/
 	}
 	void EWESample::addModulesToMenuManager() {
 		auto& mm = menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>()).first->second;
@@ -337,8 +337,6 @@ namespace EWE {
 		//loading entry?
 		EWE_VK(vkDeviceWaitIdle, VK::Object->vkDevice);
 		currentScenePtr->Exit();
-		ewEngine.objectManager.ClearSceneObjects();
-		//Image_Manager::GetImageManagerPtr()->ClearSceneTextures();
 		//loading entry?
 		if (currentScene != scene_exitting) {
 			currentScenePtr = scenes.at(currentScene);

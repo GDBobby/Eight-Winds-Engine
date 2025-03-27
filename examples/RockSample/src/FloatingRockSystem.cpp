@@ -58,7 +58,7 @@ namespace EWE {
 	}
 
 
-	FloatingRock::FloatingRock() :rockMaterial{ Material_Image::CreateMaterialImage("eye/", true, true) } {
+	FloatingRock::FloatingRock() :rockMaterial{ Material_Image::CreateMaterialImage("textures/eye/", true, true) } {
 		//rockModel = EWEModel::CreateModelFromFile("rock1.obj", Queue::transfer);
 		rockMaterial.materialFlags |= MaterialF_instanced;
 
@@ -100,8 +100,8 @@ namespace EWE {
 	}
 	FloatingRock::~FloatingRock() {
 		Deconstruct(rockModel);
-		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &compDescriptorSet[0]);
-		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, &compDescriptorSet[1]);
+		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, compDSL, &compDescriptorSet[0]);
+		EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, compDSL, &compDescriptorSet[1]);
 
 		EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, compPipeline, nullptr);
 		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, compPipeLayout, nullptr);

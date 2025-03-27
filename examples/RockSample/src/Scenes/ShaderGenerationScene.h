@@ -4,7 +4,7 @@
 #include "EWEngine/Scene.h"
 
 namespace EWE {
-	class ShaderGenerationScene : public Scene {
+	class ShaderGenerationScene : public SceneBase {
 		EightWindsEngine& ewEngine;
 		MenuManager& menuManager;
 		std::shared_ptr<SoundEngine> soundEngine;
