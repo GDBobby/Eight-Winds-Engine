@@ -78,7 +78,7 @@ namespace EWE{
 			//printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
 			return pipeLayoutIndex;
 #else
-			return textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced));
+			return textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced)));
 #endif
 		}
 

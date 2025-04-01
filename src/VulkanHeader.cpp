@@ -202,6 +202,9 @@ namespace EWE {
     void StagingBuffer::Map(void*& data){
             EWE_VK(vkMapMemory, VK::Object->vkDevice, memory, 0, bufferSize, 0, &data);
     }
+    void StagingBuffer::Unmap() {
+        EWE_VK(vkUnmapMemory, VK::Object->vkDevice, memory);
+    }
 
 
 

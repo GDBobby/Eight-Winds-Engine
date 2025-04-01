@@ -33,26 +33,52 @@ namespace EWE {
 		}
 	}
 
-	void InitBuffers(EWEBuffer*& rockBuffer, std::vector<RockData>& rockData) {
-		const std::size_t rockBufferSize = rockData.size() * sizeof(RockData);
+	void InitBuffers(EWEBuffer*& transformRockBuffer, EWEModel* rockModel, std::vector<RockData>& rockData) {
 
-		rockBuffer = Construct<EWEBuffer>({rockBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT});
-
-		StagingBuffer* rockStagingBuffer = Construct<StagingBuffer>({ rockBufferSize });
-
-		rockStagingBuffer->Stage(rockData.data(), rockBufferSize);
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 		CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommandTransfer();
 		EWEDevice* eweDevice = EWEDevice::GetEWEDevice();
-		eweDevice->CopyBuffer(cmdBuf, rockStagingBuffer->buffer, rockBuffer->GetBuffer(), rockBufferSize);
+		const std::size_t rockTransformBufferSize = rockData.size() * sizeof(RockData);
+		StagingBuffer* rockStagingBuffer = Construct<StagingBuffer>({ rockTransformBufferSize });
+		const std::size_t rockMaterialBufferSize = rockData.size() * sizeof(MaterialBuffer);
+		StagingBuffer* rockMatStagingBuffer = Construct<StagingBuffer>({ rockMaterialBufferSize });
 
-		//TransferCommandManager::AddCommand(cmdBuf);
-		//TransferCommandManager::AddPropertyToCommand(rockStagingBuffer);
+		{
+			transformRockBuffer = Construct<EWEBuffer>({ rockTransformBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
+
+			rockStagingBuffer->Stage(rockData.data(), rockTransformBufferSize);
+
+			eweDevice->CopyBuffer(cmdBuf, rockStagingBuffer->buffer, transformRockBuffer->GetBuffer(), rockTransformBufferSize);
+		}
+		{
+			//materialRockBuffer = Construct<EWEBuffer>({ rockMaterialBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
+			const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> materialBuffers = RigidRenderingSystem::GetBothMaterialBuffers(rockModel);
+
+			MaterialBuffer matData;
+			matData.albedo.r = 1.f;
+			matData.albedo.g = 1.f;
+			matData.albedo.b = 1.f;
+			matData.albedo.a = 1.f;
+			matData.metal = 0.f;
+			matData.rough = 0.5f;
+
+			rockMatStagingBuffer->Stage(rockData.data(), rockMaterialBufferSize);
+			void* stagingData;
+			rockMatStagingBuffer->Map(stagingData);
+			for (uint64_t i = 0; i < rockData.size(); i++) {
+				memcpy(reinterpret_cast<void*>(reinterpret_cast<std::size_t>(stagingData) + (i * sizeof(MaterialBuffer))), &matData, sizeof(MaterialBuffer));
+			}
+			rockMatStagingBuffer->Unmap();
+
+			eweDevice->CopyBuffer(cmdBuf, rockMatStagingBuffer->buffer, materialBuffers[0]->GetBuffer(), rockMaterialBufferSize);
+			eweDevice->CopyBuffer(cmdBuf, rockMatStagingBuffer->buffer, materialBuffers[1]->GetBuffer(), rockMaterialBufferSize);
+		}
 
 		TransferCommand transferCommand{};
 		transferCommand.commands.push_back(&cmdBuf);
 		transferCommand.stagingBuffers.push_back(rockStagingBuffer);
+		transferCommand.stagingBuffers.push_back(rockMatStagingBuffer);
 
 		syncHub->EndSingleTimeCommandTransfer(transferCommand);
 	}
@@ -93,8 +119,9 @@ namespace EWE {
 
 		InitRockData(rockData, randomGen);
 
+		RigidRenderingSystem::AddInstancedMaterialObject(rockMaterial, rockModel, rock_count, true);
 		//buffers
-		InitBuffers(rockBuffer, rockData);
+		InitBuffers(rockTransformBuffer, rockModel, rockData);
 
 		InitComputeData();
 	}
@@ -144,7 +171,6 @@ namespace EWE {
 		);
 	}
 	void FloatingRock::InitComputeData(){
-		RigidRenderingSystem::AddInstancedMaterialObject(rockMaterial, rockModel, rock_count, true);
 		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(rockModel);
 
 		bufferBarrier[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -180,7 +206,7 @@ namespace EWE {
 		for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			EWEDescriptorWriter descWriter{ compDSL, DescriptorPool_Global };
 			DescriptorHandler::AddCameraDataToDescriptor(descWriter, i);
-			descWriter.WriteBuffer(rockBuffer->DescriptorInfo());
+			descWriter.WriteBuffer(rockTransformBuffer->DescriptorInfo());
 			descWriter.WriteBuffer(transformBuffers[i]->DescriptorInfo());
 			compDescriptorSet[i] = descWriter.Build();
 		}

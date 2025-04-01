@@ -97,7 +97,11 @@ namespace EWE {
 #if THREAD_NAMING
                             NameThread(task.name.c_str());
 #endif
+#if EWE_DEBUG
                             task.func();
+#else
+                            task();
+#endif
 #if DEBUGGING_THREADS
                             printf("thread[%u] finished task\n", std::this_thread::get_id());
 #endif

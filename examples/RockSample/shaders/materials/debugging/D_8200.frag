@@ -49,8 +49,8 @@ MaterialBuffer mbo[];
 }
 ;
 layout (set = 0, binding = 4) uniform sampler2DArray materialTextures;
-const int albedoIndex = 1;
-const int normalIndex = 2;
+const int albedoIndex = 0;
+const int normalIndex = 1;
 vec3 calculateNormal() {
 vec3 tangentNormal = texture(materialTextures, vec3(fragTexCoord, normalIndex)).rgb * 2.0 - 1.0;
 const vec3 N = normalize(fragNormalWorld);

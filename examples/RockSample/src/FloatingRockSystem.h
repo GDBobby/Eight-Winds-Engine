@@ -60,7 +60,7 @@ namespace EWE {
 		RockCompPushData compPushData{};
 		EWEDescriptorSetLayout* compDSL{ nullptr };
 
-		EWEBuffer* rockBuffer{ nullptr };
+		EWEBuffer* rockTransformBuffer{ nullptr };
 
 		VkBufferMemoryBarrier bufferBarrier[MAX_FRAMES_IN_FLIGHT * 2];
 		bool previouslySubmitted = false;

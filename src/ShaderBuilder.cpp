@@ -55,7 +55,7 @@ namespace EWE {
 			retBuf += std::to_string(currentBinding);
 			retBuf += FragmentShaderText::secondHalfBinding;
 
-			uint8_t texIndex = hasBumps + 1;
+			uint8_t texIndex = hasBumps;
 
 			retBuf += "const int albedoIndex = ";
 			retBuf += std::to_string(texIndex++);
