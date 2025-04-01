@@ -12,7 +12,6 @@
 //[1][x] is a material with bones but no instancing
 //[2][x] is a material with instancing
 //[3][x] is a material with instancing and bones
-
 #endif
 
 namespace EWE {
@@ -64,13 +63,13 @@ namespace EWE{
 		void DrawInstanced(EWEModel* model, uint32_t instanceCount);
 
 		static constexpr uint16_t GetPipeLayoutIndex(const MaterialFlags flags) {
-			const bool hasBones = flags & MaterialF_hasBones;
-			const bool instanced = flags & MaterialF_instanced;
-			const bool hasBumps = flags & MaterialF_hasBump;
-			const bool hasNormal = flags & MaterialF_hasNormal;
-			const bool hasRough = flags & MaterialF_hasRough;
-			const bool hasMetal = flags & MaterialF_hasMetal;
-			const bool hasAO = flags & MaterialF_hasAO;
+			const bool hasBones = flags & Material::Bones;
+			const bool instanced = flags & Material::Instanced;
+			const bool hasBumps = flags & Material::Bump;
+			const bool hasNormal = flags & Material::Normal;
+			const bool hasRough = flags & Material::Rough;
+			const bool hasMetal = flags & Material::Metal;
+			const bool hasAO = flags & Material::AO;
 			//assert(!(hasBones && hasBumps));
 
 			const uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
@@ -79,7 +78,7 @@ namespace EWE{
 			//printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
 			return pipeLayoutIndex;
 #else
-			return textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced)));
+			return textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced));
 #endif
 		}
 
@@ -101,9 +100,9 @@ namespace EWE{
 		static void InitStaticVariables();
 		static void CleanupStaticVariables();
 
-		static MaterialPipelines* At(MaterialFlags flags);
+		static MaterialPipelines* At(Material::Flags flags);
 		static MaterialPipelines* At(SkinInstanceKey skinInstanceKey);
-		static MaterialPipelines* At(uint16_t boneCount, MaterialFlags flags);
+		static MaterialPipelines* At(uint16_t boneCount, Material::Flags flags);
 
 		static EWEDescriptorSetLayout* GetDSL(uint16_t pipeLayoutIndex);
 		static EWEDescriptorSetLayout* GetDSLFromFlags(MaterialFlags flags);
@@ -114,7 +113,7 @@ namespace EWE{
 
 #if EWE_DEBUG
 		static std::vector<MaterialFlags> bonePipeTracker;
-		static std::vector<std::pair<uint16_t, MaterialFlags>> instancedBonePipeTracker;
+		static std::vector<std::pair<uint16_t, Material::Flags>> instancedBonePipeTracker;
 		static MaterialPipelines* currentPipe;
 #endif
 		static MaterialPipelines* CreatePipe(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags);

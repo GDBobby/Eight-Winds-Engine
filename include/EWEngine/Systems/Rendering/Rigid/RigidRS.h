@@ -99,5 +99,12 @@ namespace EWE {
 
         std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr);
         std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(MaterialFlags materialFlags, EWEModel* meshPtr);
+
+        const EWEBuffer* GetMaterialBuffer(EWEModel* meshPtr);
+        //providing the materialInfo doesn't need to iterate through every material in the map
+        const EWEBuffer* GetMaterialBuffer(MaterialFlags materialFlags, EWEModel* meshPtr);
+
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothMaterialBuffers(EWEModel* meshPtr);
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothMaterialBuffers(MaterialFlags materialFlags, EWEModel* meshPtr);
     };
 }

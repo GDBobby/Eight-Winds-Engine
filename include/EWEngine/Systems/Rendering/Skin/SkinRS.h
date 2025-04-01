@@ -22,11 +22,8 @@ namespace EWE {
 
 		SkinRenderSystem();
 		~SkinRenderSystem();
-		//~MonsterBoneBufferDescriptorStruct();
 
-		//void addActorToBuffer(glm::mat4* modelMatrix, void* finalBoneMatrices, uint32_t skeletonID);
 		void UpdateBuffers();
-
 		void FlushBuffers();
 
 		void Render();

@@ -9,6 +9,7 @@ layout(location = 0) out vec3 fragPosWorld;
 layout(location = 1) out vec3 fragNormalWorld;
 layout(location = 2) out vec2 fragTexCoord;
 layout(location = 3) out vec3 fragTangentWorld;
+layout(location = 4) out float instanceIndex;
 
 struct PointLight{
 	vec4 position; //ignore w
@@ -43,4 +44,6 @@ void main(){
 	
 	fragTexCoord = uv;
 	fragTangentWorld = normalize(trans3 * tangent);
+	
+	instanceIndex = float(gl_InstanceIndex);
 }

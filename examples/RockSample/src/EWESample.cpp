@@ -12,29 +12,6 @@
 
 #include <chrono>
 
-#define THREAD_NAMING true
-#if THREAD_NAMING
-#ifdef _MSC_VER  // For MSVC compiler (Windows)
-	#include <windows.h>
-
-	void SetThreadName(const std::string& name) {
-		SetThreadDescription(GetCurrentThread(), std::wstring(name.begin(), name.end()).c_str());
-	}
-
-#elif defined(__GNUC__) || defined(__clang__)  // For GCC or Clang (Linux)
-	#include <pthread.h>
-	#include <sys/prctl.h>
-
-	void SetThreadName(const std::string& name) {
-		#ifdef __linux__
-		prctl(PR_SET_NAME, (unsigned long)name.c_str(), 0, 0, 0);
-		#else
-		pthread_setname_np(pthread_self(), name.c_str());
-		#endif
-	}
-#endif
-
-#endif
 namespace EWE {
 	EWESample::EWESample(EightWindsEngine& ewEngine, LoadingThreadTracker& loadingThreadTracker) :
 		ewEngine{ ewEngine },
@@ -44,39 +21,32 @@ namespace EWE {
  {
 
 
-		//ThreadPool::EnqueueVoid(soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect));
 		{
 			auto loadFunc = [&]() {
-				SetThreadName("load sound map thread");
 				printf("loading sound map : %u\n", std::this_thread::get_id());
 				std::unordered_map<uint16_t, std::string> effectsMap{};
 				effectsMap.emplace(0, "sounds/effects/click.mp3");
 				soundEngine->LoadSoundMap(effectsMap, SoundEngine::SoundType::Effect);
 				loadingThreadTracker.soundMapThread = true;
 			};
-			ThreadPool::EnqueueVoidFunction(loadFunc);
+			ThreadPool::EnqueueVoidFunction("load sound map thread", loadFunc);
 		}
-
-		//addModulesToMenuManager(screenWidth, screenHeight);
 		{
 			auto loadFunc = [&]() {
-				SetThreadName("load menu modules thread");
 				printf("adding modules to menu manager : %u\n", std::this_thread::get_id());
 
 				addModulesToMenuManager();
 				loadingThreadTracker.menuModuleThread = true;
 			};
-			ThreadPool::EnqueueVoidFunction(loadFunc);
+			ThreadPool::EnqueueVoidFunction("load menu modules thread", loadFunc);
 		}
-		//loadGlobalObjects();
 		{
 			auto loadFunc = [&]() {
-				SetThreadName("load global objects thread");
 				printf("loading global objects : %u\n", std::this_thread::get_id());
 				loadGlobalObjects();
 				loadingThreadTracker.globalObjectThread = true;
 			};
-			ThreadPool::EnqueueVoidFunction(loadFunc);
+			ThreadPool::EnqueueVoidFunction("load global objects thread", loadFunc);
 		}
 
 		scenes.emplace(scene_mainmenu, nullptr);
@@ -84,30 +54,29 @@ namespace EWE {
 		scenes.emplace(scene_ocean, nullptr);
 		scenes.emplace(scene_LevelCreation, nullptr);
 		auto sceneLoadFunc = [&]() {
-			SetThreadName("load main scene thread");
 			printf("loading main menu scene : %u\n", std::this_thread::get_id());
 
 			scenes.at(scene_mainmenu) = Construct<MainMenuScene>({ ewEngine});
 			LoadSceneIfMatching(scene_mainmenu);
 			loadingThreadTracker.mainSceneThread = true;
 
-		}; 
+		};
+		ThreadPool::EnqueueVoidFunction("load main scene thread", sceneLoadFunc);
 		
 		auto sceneLoadFunc2 = [&]() {
-			SetThreadName("load shader gen thread");
+			//SetThreadName("load shader gen thread");
 			printf("loading shader gen scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_shaderGen) = Construct<ShaderGenerationScene>({ ewEngine });
 			LoadSceneIfMatching(scene_shaderGen);
 			loadingThreadTracker.shaderGenSceneThread = true;
 		};
 		auto sceneLoadFunc3 = [&]() {
-			SetThreadName("load ocean scene thread");
+			//SetThreadName("load ocean scene thread");
 			printf("loading ocean scene : %u\n", std::this_thread::get_id());
 			scenes.at(scene_ocean) = Construct<OceanScene>({ ewEngine, skyboxImgID });
 			LoadSceneIfMatching(scene_ocean);
 			loadingThreadTracker.oceanSceneThread = true;
 		};
-		ThreadPool::EnqueueVoidFunction(sceneLoadFunc);
 		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc2);
 		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc3);
 

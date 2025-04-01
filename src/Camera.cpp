@@ -34,26 +34,7 @@ namespace EWE {
 	}
 
 	void EWECamera::SetViewDirection(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 cameraUp) {
-#if COORDINATE_SYSTEM == CS_PosXPosY
-		const glm::vec3 right = glm::normalize(glm::cross(forward, cameraUp));
-		const glm::vec3 up = glm::normalize(glm::cross(right, forward));
 
-		view[0][0] = forward.x;
-		view[1][0] = forward.y;
-		view[2][0] = forward.z;
-
-		view[0][1] = up.x;
-		view[1][1] = up.y;
-		view[2][1] = up.z;
-
-		view[0][2] = right.x;
-		view[1][2] = right.y;
-		view[2][2] = right.z;
-
-		view[3][0] = -glm::dot(forward, position);
-		view[3][1] = -glm::dot(up, position);
-		view[3][2] = -glm::dot(right, position);
-#elif COORDINATE_SYSTEM == CS_NegZNegY
 		const glm::vec3 right{ normalize(glm::cross(cameraUp, forward)) }; //up needs to be passed in normalized
 		const glm::vec3 up{ normalize(glm::cross(forward, right)) };
 
@@ -72,9 +53,6 @@ namespace EWE {
 		view[3][0] = -glm::dot(right, position);
 		view[3][1] = glm::dot(up, position);
 		view[3][2] = glm::dot(forward, position);
-#else
-		static_assert(false && "incorrect coordinate system");
-#endif
 
 		ubo.projView = projection * view;
 		//ubo.projection = projection;

@@ -2,6 +2,7 @@ layout (location = 0) in vec3 fragPosWorld;
 layout (location = 1) in vec3 fragNormalWorld;
 layout (location = 2) in vec2 fragTexCoord;
 layout (location = 3) in vec3 fragTangentWorld;
+layout (location = 4) in float instanceIndex;
 layout (location = 0) out vec4 outColor;
 struct PointLight{
 vec4 position;
@@ -37,9 +38,19 @@ return g_v * g_l;
 vec3 FresnelSchlick (float cosTheta, vec3 F0) {
 return F0 + (vec3(1.0) - F0) * pow (1.0 - cosTheta, 5.0);
  }
-layout (set = 0, binding = 3) uniform sampler2DArray materialTextures;
-const int albedoIndex = 0;
-const int normalIndex = 1;
+struct MaterialBuffer{
+vec4 albedoColor;
+float rough;
+float metal;
+}
+;
+layout(std430, set = 0, binding = 3) readonly buffer MaterialBufferObject{
+MaterialBuffer mbo[];
+}
+;
+layout (set = 0, binding = 4) uniform sampler2DArray materialTextures;
+const int albedoIndex = 1;
+const int normalIndex = 2;
 vec3 calculateNormal() {
 vec3 tangentNormal = texture(materialTextures, vec3(fragTexCoord, normalIndex)).rgb * 2.0 - 1.0;
 const vec3 N = normalize(fragNormalWorld);
@@ -52,8 +63,9 @@ void main(){
 vec3 albedo = texture(materialTextures, vec3(fragTexCoord, albedoIndex)).rgb;
 vec3 viewDirection = normalize(ubo.cameraPos.xyz - fragPosWorld);
 vec3 normal = calculateNormal();
-float roughness = 0.5;
-float metal = 0.0;
+int instanceIndexInt = int(instanceIndex);
+float roughness = mbo[instanceIndexInt].rough;
+float metal = mbo[instanceIndexInt].metal;
 float NdotV = max(dot(normal, viewDirection), 0.0);
 vec3 F0 = vec3(0.04);
 F0 = mix(F0, albedo, metal);
@@ -86,7 +98,7 @@ vec3 sunFres = FresnelSchlick(max(dot(sunHalfAngle, viewDirection), 0.0), F0);
 vec3 sunKd = (vec3(1.0) - sunFres) * 1.0 - metal;
 vec3 sunSpecular = (sunNDF * sunGeo * sunFres) / (4.0 * NdotV * sunNdotL + .0001);
 Lo += (sunKd * albedo / PI + sunSpecular) * lbo.sunlightColor.rgb * lbo.sunlightColor.w * sunNdotL;
-vec3 ambient = vec3(0.05) * albedo;
+vec3 ambient = lbo.ambientColor.rgb * albedo;
 vec3 color = ambient + Lo;
 color /= (color + vec3(1.0));
 color = pow(color, vec3(1.0/2.2));

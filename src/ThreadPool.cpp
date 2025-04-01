@@ -4,6 +4,27 @@
 
 #define DEBUGGING_THREADS true
 
+#if THREAD_NAMING
+#if WIN32
+#include <windows.h>
+void NameThread(const char* name) {
+    size_t len = std::mbstowcs(nullptr, name, 0);
+    if (len == static_cast<size_t>(-1)) {
+        throw std::runtime_error("Conversion failed");
+    }
+
+    std::wstring wstr(len, L'\0');
+    std::mbstowcs(&wstr[0], name, len);
+    SetThreadDescription(GetCurrentThread(), wstr.c_str());
+}
+#else
+#include <pthread.h>
+void NameThread(const char* name) {
+    pthread_setname_np(pthread_self(), name);
+}
+#endif
+#endif
+
 namespace EWE {
     ThreadPool* ThreadPool::singleton{ nullptr };
 
@@ -71,18 +92,17 @@ namespace EWE {
                             this->tasks.pop();
                             lock.unlock();
 #if DEBUGGING_THREADS
-                            printf("thread[%u] doing a task\n", std::this_thread::get_id());
+                            printf("thread[%u] beginning task\n", std::this_thread::get_id());
 #endif
-
-                            task();
+#if THREAD_NAMING
+                            NameThread(task.name.c_str());
+#endif
+                            task.func();
 #if DEBUGGING_THREADS
                             printf("thread[%u] finished task\n", std::this_thread::get_id());
 #endif
-
-                            // Increment the number of tasks completed
                             std::unique_lock<std::mutex> counterLock(this->counterMutex);
                             this->numTasksCompleted++;
-
 #if DEBUGGING_THREADS
                             printf("task completed:enqueued - %zu:%zu\n", this->numTasksCompleted, this->numTasksEnqueued);
 #endif
@@ -123,7 +143,7 @@ namespace EWE {
     void ThreadPool::WaitForCompletion() {
 #if EWE_DEBUG
         std::thread::id thisThreadID = std::this_thread::get_id();
-        for (auto& eachThread : threads) {
+        for (auto& eachThread : singleton->threads) {
             assert(eachThread.get_id() != thisThreadID);
         }
 #endif
@@ -152,13 +172,33 @@ namespace EWE {
         {
             std::unique_lock<std::mutex> lock(singleton->queueMutex);
             assert(!singleton->stop && "enqueue on stopped threadpool");
+#if THREAD_NAMING
+            singleton->tasks.emplace("", task);
+#else
             singleton->tasks.emplace(task);
+#endif
 
             // Increment the number of tasks enqueued
             std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
             ++singleton->numTasksEnqueued;
         }
         singleton->condition.notify_one();
+    }
+    void ThreadPool::EnqueueVoidFunction(std::string const& threadName, std::function<void()> task) {
+#if THREAD_NAMING
+        {
+            std::unique_lock<std::mutex> lock(singleton->queueMutex);
+            assert(!singleton->stop && "enqueue on stopped threadpool");
+            singleton->tasks.emplace(threadName, task);
+
+            // Increment the number of tasks enqueued
+            std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
+            ++singleton->numTasksEnqueued;
+        }
+        singleton->condition.notify_one();
+#else
+        EnqueueVoidFunction(task);
+#endif
     }
 
     void ThreadPool::GiveTaskToAThread(std::thread::id id, std::function<void()> task) {

@@ -12,31 +12,47 @@ namespace EWE {
 		RigidInstancedBufferHandler& operator=(RigidInstancedBufferHandler&& other);
 		~RigidInstancedBufferHandler();
 
-		void WritePartialData(glm::mat4* transform, std::size_t offset);
+		void WritePartialTransformData(glm::mat4* transform, std::size_t offset);
 		//this is for sequential writing only, it's recommended to write to the entire buffer
-		void WritePartialData(glm::mat4* transform);
-		void WriteFullData(glm::mat4* transformData);
+		void WritePartialTransformData(glm::mat4* transform);
+		void WriteFullTransformData(glm::mat4* transformData);
+
+		void WritePartialMaterialData(MaterialBuffer* material, std::size_t offset);
+		//this is for sequential writing only, it's recommended to write to the entire buffer
+		void WritePartialMaterialData(MaterialBuffer* material);
+		void WriteFullMaterialData(MaterialBuffer* material);
 		void ChangeEntityCount(uint32_t entity_count);
 		void Flush();
 
-		VkDescriptorBufferInfo* GetDescriptorBufferInfo(uint8_t whichFrame) {
+		VkDescriptorBufferInfo* GetTransformDescriptorBufferInfo(uint8_t whichFrame) {
 			return transformBuffer[whichFrame]->DescriptorInfo();
+		}
+		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers() const {
+			return transformBuffer;
+		}
+		const EWEBuffer* GetTransformBuffer() const {
+			return transformBuffer[VK::Object->frameIndex];
+		}
+		VkDescriptorBufferInfo* GetMaterialDescriptorBufferInfo(uint8_t whichFrame) {
+			return materialBuffer[whichFrame]->DescriptorInfo();
+		}
+		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothMaterialBuffers() const {
+			return materialBuffer;
+		}
+		const EWEBuffer* GetMaterialBuffer() const {
+			return materialBuffer[VK::Object->frameIndex];
+		}
+
+		bool GetComputing() const {
+			return computedTransforms;
 		}
 		uint32_t GetCurrentEntityCount() const {
 			return currentEntityCount;
 		}
-		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothBuffers() const {
-			return transformBuffer;
-		}
-		const EWEBuffer* GetBuffer() const {
-			return transformBuffer[VK::Object->frameIndex];
-		}
-		bool GetComputing() const {
-			return computedTransforms;
-		}
 
 	private:
 		std::array<EWEBuffer*, 2> transformBuffer{ nullptr, nullptr };
+		std::array<EWEBuffer*, 2> materialBuffer{ nullptr, nullptr };
 
 		std::size_t currentMemOffset{ 0 };
 

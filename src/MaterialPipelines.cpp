@@ -47,15 +47,23 @@ namespace EWE {
 		printf("getting material PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
 #endif
 		if (hasBones && instanced) {
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);//bone buffer
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT); //transform buffer
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //material buffer, storage if instanced
 		}
 		else if (hasBones) {
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT); //bone buffer
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //the material bfufer, uniform if not instanced
 		}
 		else if (instanced) {
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT); //transform buffer
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //material buffer, storage if instanced
 		}
+		else {
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //the material bfufer, uniform if not instanced
+		}
+
+
 		if (hasBump) {
 			builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 		}
@@ -128,19 +136,19 @@ namespace EWE {
 
 
 	void InitMaterialPipelineConfig(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags) {
-		bool hasBones = flags & MaterialF_hasBones;
-		bool instanced = flags & MaterialF_instanced;
+		bool hasBones = flags & Material::Bones;
+		bool instanced = flags & Material::Instanced;
 #if EWE_DEBUG
 		if (instanced) {
 			//probably going to need a breakpoint here for debugging
 		}
 #endif
-		//bool finalSlotBeforeNeedExpansion = MaterialFlags & 32;
-		bool hasBumps = flags & MaterialF_hasBump;
-		bool hasNormal = flags & MaterialF_hasNormal;
-		bool hasRough = flags & MaterialF_hasRough;
-		bool hasMetal = flags & MaterialF_hasMetal;
-		bool hasAO = flags & MaterialF_hasAO;
+		//bool finalSlotBeforeNeedExpansion = Material::Flags & 32;
+		bool hasBumps = flags & Material::Bump;
+		bool hasNormal = flags & Material::Normal;
+		bool hasRough = flags & Material::Rough;
+		bool hasMetal = flags & Material::Metal;
+		bool hasAO = flags & Material::AO;
 		if (hasBones && hasBumps) {
 			printf("ERROR: HAS BONES AND BUMP, NOT CURRENTLY SUPPORTED \n");
 			assert(false);
@@ -231,7 +239,7 @@ namespace EWE {
 	std::unordered_map<MaterialFlags, MaterialPipelines*> MaterialPipelines::materialPipelines;
 	std::unordered_map<SkinInstanceKey, MaterialPipelines*> MaterialPipelines::instancedBonePipelines;
 
-	MaterialPipelines* MaterialPipelines::At(MaterialFlags flags) {
+	MaterialPipelines* MaterialPipelines::At(Material::Flags flags) {
 #if EWE_DEBUG
 		currentPipe = materialPipelines.at(flags);
 		return currentPipe;
@@ -245,7 +253,7 @@ namespace EWE {
 #endif
 		return instancedBonePipelines.at(skinInstanceKey);
 	}
-	MaterialPipelines* MaterialPipelines::At(uint16_t boneCount, MaterialFlags flags) {
+	MaterialPipelines* MaterialPipelines::At(uint16_t boneCount, Material::Flags flags) {
 		SkinInstanceKey key{ boneCount, flags };
 #if EWE_DEBUG
 		currentPipe = instancedBonePipelines.at(key);
@@ -320,7 +328,7 @@ namespace EWE {
 
 	MaterialPipelines* MaterialPipelines::GetMaterialPipe(MaterialFlags flags, uint16_t boneCount) {
 
-		if (flags & MaterialF_hasBones) {
+		if (flags & Material::Bones) {
 
 			SkinInstanceKey skinInstanceKey{ boneCount, flags };
 			auto findRet = instancedBonePipelines.find(skinInstanceKey);
@@ -338,7 +346,7 @@ namespace EWE {
 		InitMaterialPipelineConfig(pipelineConfig, flags);
 
 		MaterialPipelines* ret;
-		if (flags & MaterialF_hasBones) {
+		if (flags & Material::Bones) {
 
 			//printf("boneVertex, flags:%d \n", newFlags);
 			pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
@@ -426,10 +434,10 @@ namespace EWE {
 
 		uint16_t pipeLayoutIndex = GetPipeLayoutIndex(flags);
 
-		const bool hasBones = flags & MaterialF_hasBones;
-		const bool hasNormal = flags & MaterialF_hasNormal;
-		const bool hasBumps = flags & MaterialF_hasBump;
-		const bool instanced = flags & MaterialF_instanced;
+		const bool hasBones = flags & Material::Bones;
+		const bool hasNormal = flags & Material::Normal;
+		const bool hasBumps = flags & Material::Bump;
+		const bool instanced = flags & Material::Instanced;
 
 		if (hasBones) {
 			if (hasNormal) {

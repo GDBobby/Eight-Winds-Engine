@@ -7,6 +7,7 @@ layout(location = 2) in vec2 uv;
 layout(location = 0) out vec3 fragPosWorld;
 layout(location = 1) out vec3 fragNormalWorld;
 layout(location = 2) out vec2 fragTexCoord;
+layout(location = 3) out float instanceIndex;
 
 struct PointLight{
 	vec4 position; //ignore w
@@ -39,4 +40,5 @@ void main(){
 	fragNormalWorld = normalize(transpose(inverse(mat3(transformMatrices[gl_InstanceIndex]))) * normal);
 	
 	fragTexCoord = uv;
+	instanceIndex = float(gl_InstanceIndex);
 }

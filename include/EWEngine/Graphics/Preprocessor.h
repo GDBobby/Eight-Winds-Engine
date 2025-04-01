@@ -54,6 +54,8 @@
 
 #define MIPMAP_ENABLED true
 
+#define THREAD_NAMING (true && EWE_DEBUG)
+
 #if EWE_DEBUG
     #define EWE_UNREACHABLE assert(false)
 #else
@@ -64,4 +66,19 @@
     #else
         #define EWE_UNREACHABLE throw std::runtime_error("unreachable code")
     #endif
+#endif
+
+
+#if CALL_TRACING
+#define SRC_HEADER_FIRST_PARAM std::source_location srcLoc = std::source_location::current()
+#define SRC_HEADER_PARAM , SRC_HEADER_FIRST_PARAM
+#define SRC_FIRST_PARAM std::source_location srcLoc
+#define SRC_PARAM , SRC_FIRST_PARAM
+#define SRC_PASS , srcLoc
+#else
+#define SRC_HEADER_FIRST_PARAM
+#define SRC_HEADER_PARAM
+#define SRC_PARAM
+#define SRC_SHORT_PARAM
+#define SRC_PASS
 #endif

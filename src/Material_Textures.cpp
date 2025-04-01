@@ -44,9 +44,9 @@ namespace EWE {
             //foundTypes[i] = true;
             for (int j = 0; j < matImgTypes[i].size(); j++) {
                 auto& empRet = matPaths.emplace_back(TEXTURE_DIR);
-                empRet += texPath + '_' + matImgTypes[i][j];
+                empRet += texPath + matImgTypes[i][j];
 
-                //printf("smart material path : %s \n", materialPath.c_str());
+                printf("smart material path : %s \n", matPaths.back().c_str());
 
                 if (std::filesystem::exists(matPaths.back() + ".png")) {
                     empRet += ".png";
@@ -81,7 +81,7 @@ namespace EWE {
         ImageID imgID = imPtr->CreateImageArray(pixelPeeks, mipmapping);
 
         //flags = normal, metal, rough, ao
-        MaterialFlags flags = (foundTypes[MT_bump] * MaterialF_hasBump) + (foundTypes[MT_metal] * MaterialF_hasMetal) + (foundTypes[MT_rough] * MaterialF_hasRough) + (foundTypes[MT_ao] * MaterialF_hasAO) + ((foundTypes[MT_normal] * MaterialF_hasNormal));
+        MaterialFlags flags = (foundTypes[MT_bump] * Material::Bump) + (foundTypes[MT_metal] * Material::Metal) + (foundTypes[MT_rough] * Material::Rough) + (foundTypes[MT_ao] * Material::AO) + ((foundTypes[MT_normal] * Material::Normal));
         //printf("flag values : %d \n", flags);
 
 #if EWE_DEBUG
