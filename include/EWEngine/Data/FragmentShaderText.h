@@ -2,18 +2,11 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 namespace FragmentShaderText {
 	const std::string version = { "#version 450 \n" };
-	/*
-	std::vector<std::string> fragTangentEntry = {
-		{"layout (location = 0) in vec2 fragTexCoord;"},
-		{"layout(location = 1) in vec3 TangentViewPos; "},
-		{"layout(location = 2) in vec3 TangentFragPos; "},
-		{"layout(location = 3) in mat3 TBN; "},
-		{"layout (location = 0) out vec4 outColor;"},
-	};
-	*/
+
 	const std::vector<std::string> fragNNEntry = {
 		"layout (location = 0) in vec3 fragPosWorld;",
 		"layout (location = 1) in vec3 fragNormalWorld;",
@@ -62,8 +55,18 @@ namespace FragmentShaderText {
 
 	//first index is no bones, second index is with bones
 
-	const std::string firstHalfBinding{ "layout (set = 0, binding = " };
+	const std::string materialBufferInstancedPartOne = "struct MaterialBuffer{vec4 albedoColor;float rough;float metal;};";
+	const std::string materialBufferInstancedPartTwo = "layout(std430, set = 0, binding = ";
+	const std::string materialBufferInstancedPartThree = ") readonly buffer MaterialBufferObject{MaterialBuffer mbo[];};";
+
+
+	const std::string firstHalfBinding =  "layout (set = 0, binding = ";
 	const std::string secondHalfBinding = { ") uniform sampler2DArray materialTextures;" };
+	std::vector<std::string> MBOSecondHalf = {
+		{") uniform MaterialBufferObject{"},
+		{"vec4 albedoColor;float rough;float metal;" },
+		{"}mbo;"}
+	};
 
 	const std::vector<std::string> calcNormalFunction = {
 		"vec3 calculateNormal() {",

@@ -11,7 +11,7 @@
 //#include <chrono>
 
 //open in vscode if having intellisense issues in Visual Studio
-#define SHADER_VERSION_ID "1.0.0_"
+#define SHADER_VERSION_ID "1.0.1_"
 
 namespace EWE {
 	bool glslangInitialized = false;
@@ -28,61 +28,74 @@ namespace EWE {
 		}
 	} //namespace ShaderBlock
 
-	void AddBindings(std::string& retBuf, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones, bool instanced) {
+	void AddBindings(std::string& retBuf, bool hasAlbedo, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones, bool instanced) {
 		uint8_t currentBinding = 2 + instanced + hasBones;
 
-		//shaderString += firstHalfBinding[hasBones];
-		retBuf += FragmentShaderText::firstHalfBinding;
-		//shaderString += std::to_string(currentBinding);
-		//retVec.emplace_back(std::to_string(currentBinding).c_str());
-
-		retBuf += std::to_string(currentBinding);
-		retBuf += FragmentShaderText::secondHalfBinding;
-
-		currentBinding = hasBumps;
-
-		retBuf += "const int albedoIndex = ";
-		retBuf += std::to_string(currentBinding++);
-		retBuf += ';';
-
-
-		if (hasNormal) {
-			retBuf += "const int normalIndex = ";
-			retBuf += std::to_string(currentBinding++);
-			retBuf += ';';
+		if (instanced) {
+			retBuf += FragmentShaderText::materialBufferInstancedPartOne;
+			retBuf += FragmentShaderText::materialBufferInstancedPartTwo;
+			retBuf += std::to_string(currentBinding);
+			retBuf += FragmentShaderText::materialBufferInstancedPartThree;
 		}
-		if (hasRough) {
-			retBuf += "const int roughIndex = ";
-			retBuf += std::to_string(currentBinding++);
-			retBuf += ';';
+		else{
+			retBuf += FragmentShaderText::firstHalfBinding;
+			retBuf += std::to_string(currentBinding);
+			for (auto const& tempStr : FragmentShaderText::MBOSecondHalf) {
+				retBuf += tempStr;
+			}
 		}
+		currentBinding++;
 
-		if (hasMetal) {
-			retBuf += "const int metalIndex = ";
-			retBuf += std::to_string(currentBinding++);
+		if (hasAlbedo) {
+			//shaderString += firstHalfBinding[hasBones];
+			retBuf += FragmentShaderText::firstHalfBinding;
+			//shaderString += std::to_string(currentBinding);
+			//retVec.emplace_back(std::to_string(currentBinding).c_str());
+
+			retBuf += std::to_string(currentBinding);
+			retBuf += FragmentShaderText::secondHalfBinding;
+
+			uint8_t texIndex = hasBumps;
+
+			retBuf += "const int albedoIndex = ";
+			retBuf += std::to_string(texIndex++);
 			retBuf += ';';
-		}
-		if (hasAO) {
-			retBuf += "const int aoIndex = ";
-			retBuf += std::to_string(currentBinding++);
-			retBuf += ';';
+
+
+			if (hasNormal) {
+				retBuf += "const int normalIndex = ";
+				retBuf += std::to_string(texIndex++);
+				retBuf += ';';
+			}
+			if (hasRough) {
+				retBuf += "const int roughIndex = ";
+				retBuf += std::to_string(texIndex++);
+				retBuf += ';';
+			}
+
+			if (hasMetal) {
+				retBuf += "const int metalIndex = ";
+				retBuf += std::to_string(texIndex++);
+				retBuf += ';';
+			}
+			if (hasAO) {
+				retBuf += "const int aoIndex = ";
+				retBuf += std::to_string(texIndex++);
+				retBuf += ';';
+			}
 		}
 	}
 
 	std::string BuildFragmentShader(MaterialFlags flags, bool hasBones) {
-		//printf("building fragment shader :%d \n", flags);
-		//bool hasTangents = flags & 32; //if it has a normal map, it has tangents
-		//bool hasBones = flags & 128;
-		//bool instanced = MaterialFlags & 64;
 
 		std::string retBuf{};
 
-		bool instanced = flags & 64;
-		bool hasBumps = flags & 16;
-		bool hasNormal = flags & 8;
-		bool hasRough = flags & 4;
-		bool hasMetal = flags & 2;
-		bool hasAO = flags & 1;
+		bool instanced = flags & Material::Instanced;
+		bool hasBumps = flags & Material::Bump;
+		bool hasNormal = flags & Material::Normal;
+		bool hasRough = flags & Material::Rough;
+		bool hasMetal = flags & Material::Metal;
+		bool hasAO = flags & Material::AO;
 
 		if (!hasBumps) {
 			for (int i = 0; i < FragmentShaderText::fragNNEntry.size(); i++) {
@@ -90,6 +103,12 @@ namespace EWE {
 			}
 			if (hasNormal) {
 				retBuf += "layout (location = 3) in vec3 fragTangentWorld;";
+				if (instanced) {
+					retBuf += "layout (location = 4) in float instanceIndex;";
+				}
+			}
+			else if (instanced) {
+				retBuf += "layout (location = 3) in float instanceIndex;";
 			}
 			retBuf += FragmentShaderText::fragExit;
 
@@ -100,7 +119,7 @@ namespace EWE {
 				retBuf += FragmentShaderText::functionBlock[i];
 			}
 
-			AddBindings(retBuf, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
+			AddBindings(retBuf, flags != Material::no_texture, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
 
 			if (hasNormal) {
 				for (int i = 0; i < FragmentShaderText::calcNormalFunction.size(); i++) {
@@ -120,17 +139,34 @@ namespace EWE {
 			else {
 				retBuf += "vec3 normal = normalize(fragNormalWorld);";
 			}
+
+			bool initializedInstanceIndex = false;
 			if (hasRough) {
 				retBuf += "float roughness = texture(materialTextures, vec3(fragTexCoord, roughIndex)).r;";
 			}
 			else {
-				retBuf += "float roughness = 0.5;";
+				if (instanced) {
+					retBuf += "int instanceIndexInt = int(instanceIndex);";
+					initializedInstanceIndex = true;
+					retBuf += "float roughness = mbo[instanceIndexInt].rough;";
+				}
+				else {
+					retBuf += "float roughness = mbo.rough;";
+				}
 			}
 			if (hasMetal) {
 				retBuf += "float metal = texture(materialTextures, vec3(fragTexCoord, metalIndex)).r;";
 			}
-			else {;
-				retBuf += "float metal = 0.0;";
+			else {
+				if (instanced) {
+					if (!initializedInstanceIndex) {
+						retBuf += "int instanceIndexInt = int(instanceIndex);";
+					}
+					retBuf += "float metal = mbo[instanceIndexInt].metal;";
+				}
+				else {
+					retBuf += "float metal = mbo.metal;";
+				}
 			}
 			for (int i = 0; i < FragmentShaderText::mainThirdBlock.size(); i++) {
 				retBuf += FragmentShaderText::mainThirdBlock[i];
@@ -143,10 +179,10 @@ namespace EWE {
 			}
 
 			if (hasAO) {
-				retBuf += "vec3 ambient = vec3(0.05) * albedo * texture(materialTextures, vec3(fragTexCoord, aoIndex)).r;";
+				retBuf += "vec3 ambient = lbo.ambientColor.rgb * albedo * texture(materialTextures, vec3(fragTexCoord, aoIndex)).r;";
 			}
 			else {
-				retBuf += "vec3 ambient = vec3(0.05) * albedo;";
+				retBuf += "vec3 ambient = lbo.ambientColor.rgb * albedo;";
 			}
 			retBuf += "vec3 color = ambient + Lo;";
 			retBuf += "color /= (color + vec3(1.0));";
@@ -166,7 +202,7 @@ namespace EWE {
 				retBuf += FragmentShaderText::functionBlock[i];
 			}
 			//bump map should not have bones, but leaving it in regardless
-			AddBindings(retBuf, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
+			AddBindings(retBuf, flags != Material::no_texture, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
 
 			for (int i = 0; i < FragmentShaderText::parallaxMapping.size(); i++) {
 				retBuf += FragmentShaderText::parallaxMapping[i];
@@ -180,17 +216,33 @@ namespace EWE {
 				printf("BUMP FRAGMENT SHADER SHOULD ALWAYS HAVE NORMAL \n");
 				retBuf += "vec3 surfaceNormal = normalize(fragNormalWorld);";
 			}
+			bool initializedInstanceIndex;
 			if (hasRough) {
 				retBuf += "float roughness = texture(materialTextures, vec3(fragTexCoord, roughIndex)).r;";
 			}
 			else {
-				retBuf += "float roughness = 0.5;";
+				if (instanced) {
+					retBuf += "int instanceIndexInt = int(instanceIndex);";
+					initializedInstanceIndex = true;
+					retBuf += "float roughness = mbo[instanceIndexInt].rough;";
+				}
+				else {
+					retBuf += "float roughness = mbo.rough;";
+				}
 			}
 			if (hasMetal) {
 				retBuf += "float metal = texture(materialTextures, vec3(fragTexCoord, metalIndex)).r;";
 			}
 			else {
-				retBuf += "float metal = 0.0;";
+				if (instanced) {
+					if (!initializedInstanceIndex) {
+						retBuf += "int instanceIndexInt = int(instanceIndex);";
+					}
+					retBuf += "float metal = mbo[instanceIndexInt].metal;";
+				}
+				else {
+					retBuf += "float metal = mbo.metal;";
+				}
 			}
 			for (int i = 0; i < FragmentShaderText::mainThirdBlock.size(); i++) {
 				retBuf += FragmentShaderText::mainThirdBlock[i];
@@ -201,10 +253,10 @@ namespace EWE {
 			}
 
 			if (hasAO) {
-				retBuf += "vec3 ambient = vec3(0.05) * albedo * texture(materialTextures, vec3(fragTexCoord, aoIndex)).r;";
+				retBuf += "vec3 ambient = lbo.ambientColor.rgb * albedo * texture(materialTextures, vec3(fragTexCoord, aoIndex)).r;";
 			}
 			else {
-				retBuf += "vec3 ambient = vec3(0.05) * albedo;";
+				retBuf += "vec3 ambient = lbo.ambientColor.rgb * albedo;";
 			}
 			retBuf += "vec3 color = ambient + Lo;";
 			retBuf += "color /= (color + vec3(1.0));";
@@ -447,6 +499,44 @@ namespace EWE {
 			Resources.limits.generalConstantMatrixVectorIndexing = 1;
 		}
 
+		bool ParseShader_DEBUG(TBuiltInResource& resource, EShMessages& messages, glslang::TShader& shader) {
+#if EWE_DEBUG
+			printf("parsing shader \n");
+#endif
+			/*
+			* failure here COULD mean the glslang compiler is not initiated
+			* debug steps -
+			* ensure glslang compiler is iniated
+
+			* if it is, ensure the shader code is correctly written
+			* ^ do this by going in the debug folder
+				1. add #version 450 to the beginning of the file
+				2. run the compiler manually
+			  this will give further warnings
+
+			** i really hate how little detail glslang gives
+			*/
+
+			bool finalizeHere = false;
+			if (!glslangInitialized) {
+				glslang::InitializeProcess();
+				finalizeHere = true;
+			}
+
+			const bool parseRet = shader.parse(&resource, 450, false, messages);
+			printf("shader parse DEBUG : %d \n", parseRet);
+
+			printf("info log - \n");
+
+			printf("\t%s\n", shader.getInfoLog());
+			printf("\ninfo debug log - \n");
+			printf("\t%s\n", shader.getInfoDebugLog());
+			if (finalizeHere) {
+				glslang::FinalizeProcess();
+			}
+			return parseRet;
+		}
+
 		bool ParseShader(TBuiltInResource& resource, EShMessages& messages, glslang::TShader& shader) {
 #if EWE_DEBUG
 			printf("parsing shader \n");
@@ -470,20 +560,42 @@ namespace EWE {
 				glslang::InitializeProcess();
 				finalizeHere = true;
 			}
-			if (!shader.parse(&resource, 450, false, messages)) {
+			const bool parseRet = shader.parse(&resource, 450, false, messages);
+			if (!parseRet) {
 				printf("shader parse failed \n");
 
 				printf("info log - \n");
+
+#if EWE_DEBUG
+				const char* infoLog = shader.getInfoLog();
+				//ERROR: 0:1
+#endif
+
 				printf("\t%s\n", shader.getInfoLog());
 				printf("\ninfo debug log - \n");
 				printf("\t%s\n", shader.getInfoDebugLog());
-
-				return false;  // something didn't work
 			}
 			if (finalizeHere) {
 				glslang::FinalizeProcess();
 			}
-			return true;
+			return parseRet;
+		}
+
+		void BuildFlaggedFrag_DEBUG(std::string& debugContents) {
+
+			glslang::TShader shader(EShLangFragment);
+			glslang::TProgram program{};
+			TBuiltInResource Resources{};
+			InitResources(Resources);
+
+			// Enable SPIR-V and Vulkan rules when parsing GLSL
+			EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDebugInfo | EShMsgEnhanced | EShMsgCascadingErrors);
+
+			const char* ptrBuffer = debugContents.c_str();
+			const char* const* shaderStrings = &ptrBuffer;
+			shader.setStrings(shaderStrings, 1);
+
+			ParseShader_DEBUG(Resources, messages, shader);
 		}
 
 		bool BuildFlaggedFrag(MaterialFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
@@ -833,10 +945,31 @@ namespace EWE {
 				return shaderCodeSpirV;
 			}
 			std::vector<uint32_t> shaderCodeSpirV;
+
 			if (SpirvHelper::BuildFlaggedFrag(flags, hasBones, shaderCodeSpirV)) {
 				//printf("compiled shader to spv successfully \n");
 			}
 			else {
+#if DEBUGGING_SHADERS
+				//output it with lines separated so i can debug faster and dont have to run a separate debugger. currently, in the first run, everything is squished to one line
+				//it shouldve been saved in debug build
+
+				std::string debugFileName = "shaders/materials/debugging/D_";
+				debugFileName += std::to_string(flags);
+				debugFileName += ".frag";
+				std::ifstream savedDebuggingFile{debugFileName, std::ios::binary};
+				assert(savedDebuggingFile.is_open());
+				{
+					std::istream is(savedDebuggingFile.rdbuf());
+					std::ostringstream ss;
+					ss << is.rdbuf();
+					std::string debugFileContents = ss.str();
+					SpirvHelper::BuildFlaggedFrag_DEBUG(debugFileContents);
+				}
+				
+
+#endif
+
 				printf("failed to compile shader : %d \n", flags);
 				assert(false && "failed to compile frag shader");
 				throw std::runtime_error("failed to compile shader");

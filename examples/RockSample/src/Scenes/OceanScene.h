@@ -6,7 +6,7 @@
 #include <EWEngine/Free_Camera_Controller.h>
 
 namespace EWE {
-	class OceanScene : public Scene {
+	class OceanScene : public SceneBase {
 		EightWindsEngine& ewEngine;
 		MenuManager& menuManager;
 		std::shared_ptr<SoundEngine> soundEngine;

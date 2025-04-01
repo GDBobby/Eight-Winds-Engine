@@ -12,6 +12,8 @@ namespace EWE {
 			MT_rough,
 			MT_metal,
 			MT_ao,
+
+			MT_SIZE,
 		};
 
 	public:

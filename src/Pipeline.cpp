@@ -181,7 +181,7 @@ namespace EWE {
 	EWEPipeline::EWEPipeline(uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo) {
 		std::string vertPath = SHADER_DIR;
 		//this is always instanced???
-		bool hasNormal = (flags & MaterialF_hasNormal) > 0;
+		bool hasNormal = (flags & Material::Normal) > 0;
 		if (hasNormal) {
 			vertPath += "dynamic/n" + std::to_string(boneCount) + ".vert.spv";
 		}

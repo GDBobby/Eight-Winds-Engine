@@ -43,8 +43,7 @@ namespace EWE {
 		Single2DPushConstantData(Matrix3ForGLSL const& transform) : transform{ transform } {}
 		Single2DPushConstantData(Matrix3ForGLSL const& transform, glm::vec3 color) : transform{ transform }, color{ color } {}
 	};
-	struct UV2DPushConstantData
-	{
+	struct UV2DPushConstantData {
 
 		Matrix3ForGLSL transform;
 		glm::vec3 color{ 1.f };

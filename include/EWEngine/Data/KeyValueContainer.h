@@ -1,4 +1,7 @@
 #pragma once
+
+#include "EWEngine/Graphics/Preprocessor.h"
+
 #include <cstdint>
 #include <cassert>
 #include <type_traits>
@@ -9,7 +12,7 @@
 
 #include <vector>
 
-#include <thread>
+//#include <thread>
 
 #ifndef INITIAL_SIZE_LIMIT
 #define INITIAL_SIZE_LIMIT 64
@@ -182,7 +185,7 @@ namespace EWE {
 					return point;
 				}
 			}
-			assert(false);
+			EWE_UNREACHABLE;
 		}
 		auto operator[](std::size_t i) {
 			KV_Helper::ConditionalLock<ThreadSafe>{mutex};

@@ -13,28 +13,7 @@ namespace EWE {
         const float sy = glm::sin(rotation.y);
 
 
-#if COORDINATE_SYSTEM == CS_PosXPosY
-        modelMatrix = {
-            {
-                scale.z * (cx * sy),
-                scale.z * (-sx),
-                scale.z * (cy * cx),
-                0.0f,
-            },
-            {
-                scale.y * (cz * sy * sx - cy * sz),
-                scale.y * (cx * cz),
-                scale.y * (cy * cz * sx + sy * sz),
-                0.0f,
-            },
-            {
-                scale.x * (cy * cz + sy * sx * sz),
-                scale.x * (cx * sz),
-                scale.x * (cy * sx * sz - cz * sy),
-                0.0f,
-            },
-            {translation.x, translation.y, translation.z, 1.0f} };
-#elif COORDINATE_SYSTEM == CS_NegZNegY
+
         modelMatrix = {
             {
                 scale.x * (cy * cz + sy * sx * sz),
@@ -55,9 +34,6 @@ namespace EWE {
                 0.0f,
             },
             {translation.x, translation.y, translation.z, 1.0f} };
-#else
-            static_assert(false);
-#endif
 
         return modelMatrix;
     }

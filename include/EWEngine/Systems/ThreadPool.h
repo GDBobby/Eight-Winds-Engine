@@ -1,5 +1,6 @@
 #pragma once
 #include "EWEngine/Data/KeyValueContainer.h"
+#include "EWEngine/Graphics/Preprocessor.h"
 
 #include <vector>
 #include <thread>
@@ -25,8 +26,16 @@ namespace EWE {
 
         std::vector<std::mutex> threadMutexesBase;
         KeyValueContainer<std::thread::id, std::mutex*, true> threadSpecificMutex;
-
+#if EWE_DEBUG
+        struct TaskStruct {
+            std::string name;
+            std::function<void()> func;
+        };
+        std::queue<TaskStruct> tasks{};
+#else
         std::queue<std::function<void()>> tasks{};
+#endif
+
         std::mutex queueMutex{};
         std::mutex counterMutex{};
         std::condition_variable condition{};
@@ -71,28 +80,33 @@ namespace EWE {
             return ret;
         }
 
+        void GiveTaskToAThread(std::thread::id id, std::function<void()> task);
         template<typename F, typename... Args>
         void GiveTaskToAThread(std::thread::id id, F&& func, Args&&... args) {
             auto task = std::bind(std::forward<F>(func), std::forward<Args>(args)...);
+            GiveTaskToAThread(id, task);
         }
-        void GiveTaskToAThread(std::thread::id id, std::function<void()> task);
 
         static void Construct();
         static void Deconstruct();
 
         static void EnqueueVoidFunction(std::function<void()> task);
+        static void EnqueueVoidFunction(std::string const& threadName, std::function<void()> task);
 
-        template<typename F, typename... Args, typename ReturnType = std::invoke_result<F, Args...>::type>
+        template<typename F, typename... Args>
         static auto Enqueue(F&& f, Args&&... args) {
-
-            if constexpr (std::is_void_v<ReturnType>) {
+            if constexpr (std::is_void_v<std::invoke_result_t<F, Args...>>) {
                 auto task = std::make_shared<std::packaged_task<void()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 
-                std::future<ReturnType> res = task->get_future();
+                std::future<std::invoke_result_t<F, Args...>> res = task->get_future();
                 {
                     std::unique_lock<std::mutex> lock(singleton->queueMutex);
                     assert(!singleton->stop && "enqueue on stopped threadpool");
+#if EWE_DEBUG
+                    singleton->tasks.emplace("", [task]() { (*task)(); });
+#else
                     singleton->tasks.emplace([task]() { (*task)(); });
+#endif
 
                     // Increment the number of tasks enqueued
                     std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
@@ -108,11 +122,47 @@ namespace EWE {
         }
 
         template<typename F, typename... Args>
+        static auto Enqueue(std::string const& threadName, F&& f, Args&&... args) {
+#if THREAD_NAMING
+            if constexpr (std::is_void_v<std::invoke_result_t<F, Args...>>) {
+                auto task = std::make_shared<std::packaged_task<void()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+
+                std::future<std::invoke_result_t<F, Args...>> res = task->get_future();
+                {
+                    std::unique_lock<std::mutex> lock(singleton->queueMutex);
+                    assert(!singleton->stop && "enqueue on stopped threadpool");
+                    singleton->tasks.emplace(threadName, [task]() { (*task)(); });
+
+                    // Increment the number of tasks enqueued
+                    std::unique_lock<std::mutex> counterLock(singleton->counterMutex);
+                    ++singleton->numTasksEnqueued;
+                }
+                singleton->condition.notify_one();
+                return res;
+            }
+            else {
+                auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+                EnqueueVoidFunction(threadName, task);
+            }
+#else
+            Enqueue(std::forward<F>(f), std::forward<Args>(args)...);
+#endif
+        }
+
+        template<typename F, typename... Args>
         static void EnqueueVoid(F&& f, Args&&... args) {
             auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
             EnqueueVoidFunction(task);
         }
-
+        template<typename F, typename... Args>
+        static void EnqueueVoid(std::string const& threadName, F&& f, Args&&... args) {
+            auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+#if THREAD_NAMING
+            EnqueueVoidFunction(threadName, task);
+#else
+            EnqueueVoidFunction(task);
+#endif
+        }
         static void WaitForCompletion();
         static bool CheckEmpty();
 

@@ -22,7 +22,7 @@ file(GLOB_RECURSE SHADERS
     ${SHADER_DIR}/*.vert 
     ${SHADER_DIR}/*.frag
     ${SHADER_DIR}/*.comp
-);
+)
 
 foreach(SHADER ${SHADERS})
     get_filename_component(SHADER_NAME ${SHADER} NAME)

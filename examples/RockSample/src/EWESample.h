@@ -1,11 +1,13 @@
 #pragma once
 
 #include <EWEngine/EightWindsEngine.h>
+#include <EWEngine/Systems/SceneManager.h>
 
 #include "Scenes/SceneEnum.h"
 #include "Scenes/MainMenuScene.h"
 #include "Scenes/ShaderGenerationScene.h"
 #include "Scenes/OceanScene.h"
+
 
 //#include "Scenes/FreeCameraScene.h"
 
@@ -34,8 +36,8 @@ namespace EWE {
 
 		Scene_Enum lastScene = scene_mainmenu;
 		Scene_Enum currentScene = scene_mainmenu;
-		std::unordered_map<Scene_Enum, Scene*> scenes;
-		Scene* currentScenePtr{ nullptr };
+		std::unordered_map<Scene_Enum, SceneBase*> scenes;
+		SceneBase* currentScenePtr{ nullptr };
 		bool swappingScenes = false;
 
 		bool gameRunning = true;

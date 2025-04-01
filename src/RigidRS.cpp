@@ -117,14 +117,16 @@ namespace EWE {
                 EWEDescriptorWriter(eDSL, DescriptorPool_Global)
                 .WriteBuffer(DescriptorHandler::GetCameraDescriptorBufferInfo(0))
                 .WriteBuffer(DescriptorHandler::GetLightingDescriptorBufferInfo(0))
-                .WriteBuffer(buffer.GetDescriptorBufferInfo(0))
+                .WriteBuffer(buffer.GetTransformDescriptorBufferInfo(0)) //instancing
+                .WriteBuffer(buffer.GetMaterialDescriptorBufferInfo(0)) //instancing
                 .WriteImage(imageID)
                 .Build()
             ,
                 EWEDescriptorWriter(eDSL, DescriptorPool_Global)
                 .WriteBuffer(DescriptorHandler::GetCameraDescriptorBufferInfo(1))
                 .WriteBuffer(DescriptorHandler::GetLightingDescriptorBufferInfo(1))
-                .WriteBuffer(buffer.GetDescriptorBufferInfo(1))
+                .WriteBuffer(buffer.GetTransformDescriptorBufferInfo(1)) //instancing
+                .WriteBuffer(buffer.GetMaterialDescriptorBufferInfo(1)) //instancing
                 .WriteImage(imageID)
                 .Build()
 
@@ -161,7 +163,6 @@ namespace EWE {
         : descriptorSets{ other.descriptorSets },
         buffer{other.buffer},
         meshPtr{other.meshPtr}
-
     {
         other.descriptorSets[0] = VK_NULL_HANDLE;
         other.descriptorSets[1] = VK_NULL_HANDLE;
@@ -246,6 +247,9 @@ namespace EWE {
             Deconstruct(instancedMaterialMap);
         }
         void AddInstancedMaterialObject(MaterialInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms) {
+            if ((materialInfo.materialFlags == Material::no_texture)) {
+                assert(materialInfo.materialBuffer != nullptr);
+            }
 
             assert(modelPtr != nullptr);
             const uint16_t pipeLayoutIndex = MaterialPipelines::GetPipeLayoutIndex(materialInfo.materialFlags);
@@ -261,6 +265,10 @@ namespace EWE {
 
         void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo) {
             assert(renderInfo.meshPtr != nullptr);
+            if ((materialInfo.materialFlags == Material::no_texture)) {
+                assert(materialInfo.materialBuffer != nullptr);
+            }
+
             auto findRet = materialMap->find(materialInfo.materialFlags);
             if (findRet == materialMap->end()) {
                 auto empRet = materialMap->try_emplace(materialInfo.materialFlags, materialInfo.materialFlags);
@@ -359,11 +367,11 @@ namespace EWE {
                 printf("iter->first:second - %d:%d \n", iter->first, iter->second.size());
                 uint8_t flags = iter->first;
                 printf("Drawing dynamic materials : %d \n", flags);
-                assert(((flags & 128) == 0) && "should not have bones here");
+                assert(((flags & Material::Bones) == 0) && "should not have bones here");
 #elif EWE_DEBUG
 
                 uint8_t flags = iter->first;
-                assert(((flags & 128) == 0) && "should not have bones here");
+                assert(((flags & Material::Bones) == 0) && "should not have bones here");
 #endif
                 iter->second.Render();
             }
@@ -377,11 +385,11 @@ namespace EWE {
                 printf("iter->first:second - %d:%d \n", iter->first, iter->second.size());
                 uint8_t flags = iter->first;
                 printf("Drawing dynamic materials : %d \n", flags);
-                assert(((flags & 128) == 0) && "should not have bones here");
+                assert(((flags & Material::Bones) == 0) && "should not have bones here");
 #elif EWE_DEBUG
 
                 uint8_t flags = iter->first;
-                assert(((flags & 128) == 0) && "should not have bones here");
+                assert(((flags & Material::Bones) == 0) && "should not have bones here");
 #endif
                 iter->second.Render();
 
@@ -406,7 +414,7 @@ namespace EWE {
             for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
                 for (auto const& instanced : iter->second.instancedInfo) {
                     if (meshPtr == instanced.meshPtr) {
-                        return instanced.buffer.GetBuffer();
+                        return instanced.buffer.GetTransformBuffer();
                     }
                 }
             }
@@ -419,17 +427,16 @@ namespace EWE {
             auto& ref = instancedMaterialMap->at(materialFlags);
             for (auto const& instanced : ref.instancedInfo) {
                 if (meshPtr == instanced.meshPtr) {
-                    return instanced.buffer.GetBuffer();
+                    return instanced.buffer.GetTransformBuffer();
                 }
             }
             EWE_UNREACHABLE;
         }
-
         std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothTransformBuffers(EWEModel* meshPtr) {
             for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
                 for (auto const& instanced : iter->second.instancedInfo) {
                     if (meshPtr == instanced.meshPtr) {
-                        return instanced.buffer.GetBothBuffers();
+                        return instanced.buffer.GetBothTransformBuffers();
                     }
                 }
             }
@@ -442,7 +449,52 @@ namespace EWE {
             auto& ref = instancedMaterialMap->at(materialFlags);
             for (auto const& instanced : ref.instancedInfo) {
                 if (meshPtr == instanced.meshPtr) {
-                    return instanced.buffer.GetBothBuffers();
+                    return instanced.buffer.GetBothTransformBuffers();
+                }
+            }
+            EWE_UNREACHABLE;
+        }
+
+        const EWEBuffer* GetMaterialBuffer(EWEModel* meshPtr) {
+            for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
+                for (auto const& instanced : iter->second.instancedInfo) {
+                    if (meshPtr == instanced.meshPtr) {
+                        return instanced.buffer.GetMaterialBuffer();
+                    }
+                }
+            }
+            EWE_UNREACHABLE;
+        }
+        const EWEBuffer* GetMaterialBuffer(MaterialFlags materialFlags, EWEModel* meshPtr) {
+#if EWE_DEBUG
+            assert(instancedMaterialMap->contains(materialFlags));
+#endif
+            auto& ref = instancedMaterialMap->at(materialFlags);
+            for (auto const& instanced : ref.instancedInfo) {
+                if (meshPtr == instanced.meshPtr) {
+                    return instanced.buffer.GetMaterialBuffer();
+                }
+            }
+            EWE_UNREACHABLE;
+        }
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothMaterialBuffers(EWEModel* meshPtr) {
+            for (auto iter = instancedMaterialMap->begin(); iter != instancedMaterialMap->end(); iter++) {
+                for (auto const& instanced : iter->second.instancedInfo) {
+                    if (meshPtr == instanced.meshPtr) {
+                        return instanced.buffer.GetBothMaterialBuffers();
+                    }
+                }
+            }
+            EWE_UNREACHABLE;
+        }
+        std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> GetBothMaterialBuffers(MaterialFlags materialFlags, EWEModel* meshPtr) {
+#if EWE_DEBUG
+            assert(instancedMaterialMap->contains(materialFlags));
+#endif
+            auto& ref = instancedMaterialMap->at(materialFlags);
+            for (auto const& instanced : ref.instancedInfo) {
+                if (meshPtr == instanced.meshPtr) {
+                    return instanced.buffer.GetBothMaterialBuffers();
                 }
             }
             EWE_UNREACHABLE;

@@ -41,7 +41,7 @@ namespace EWE {
 		//handle threads in this scene, or a game specific class
 	}
 	void OceanScene::Exit() {
-		ewEngine.objectManager.eweObjects.clear();
+		//ewEngine.objectManager.eweObjects.clear();
 	}
 	bool OceanScene::Render(double dt) {
 		//printf("render main menu scene \n");

@@ -118,7 +118,6 @@ set(GLSLANG_LIBS
 )
 
 #potentially use a cmake command, USE_AFTERMATH
-#if(USE_AFTERMATH)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/")
 
 if(USING_NVIDIA_AFTERMATH)
