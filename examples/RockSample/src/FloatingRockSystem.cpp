@@ -49,7 +49,7 @@ namespace EWE {
 
 			rockStagingBuffer->Stage(rockData.data(), rockTransformBufferSize);
 
-			eweDevice->CopyBuffer(cmdBuf, rockStagingBuffer->buffer, transformRockBuffer->GetBuffer(), rockTransformBufferSize);
+			VK::CopyBuffer(cmdBuf, rockStagingBuffer->buffer, transformRockBuffer->GetBuffer(), rockTransformBufferSize);
 		}
 		{
 			//materialRockBuffer = Construct<EWEBuffer>({ rockMaterialBufferSize, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
@@ -59,11 +59,9 @@ namespace EWE {
 			matData.albedo.r = 1.f;
 			matData.albedo.g = 1.f;
 			matData.albedo.b = 1.f;
-			matData.albedo.a = 1.f;
 			matData.metal = 0.f;
 			matData.rough = 0.5f;
 
-			rockMatStagingBuffer->Stage(rockData.data(), rockMaterialBufferSize);
 			void* stagingData;
 			rockMatStagingBuffer->Map(stagingData);
 			for (uint64_t i = 0; i < rockData.size(); i++) {
@@ -71,8 +69,8 @@ namespace EWE {
 			}
 			rockMatStagingBuffer->Unmap();
 
-			eweDevice->CopyBuffer(cmdBuf, rockMatStagingBuffer->buffer, materialBuffers[0]->GetBuffer(), rockMaterialBufferSize);
-			eweDevice->CopyBuffer(cmdBuf, rockMatStagingBuffer->buffer, materialBuffers[1]->GetBuffer(), rockMaterialBufferSize);
+			VK::CopyBuffer(cmdBuf, rockMatStagingBuffer->buffer, materialBuffers[0]->GetBuffer(), rockMaterialBufferSize);
+			VK::CopyBuffer(cmdBuf, rockMatStagingBuffer->buffer, materialBuffers[1]->GetBuffer(), rockMaterialBufferSize);
 		}
 
 		TransferCommand transferCommand{};

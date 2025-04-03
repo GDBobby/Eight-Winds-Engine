@@ -17,25 +17,49 @@
 
 namespace EWE {
 	typedef uint16_t MaterialFlags;
+#ifndef MAX_MATERIAL_TEXTURE_COUNT
+#define MAX_MATERIAL_TEXTURE_COUNT 6
+#endif
 	namespace Material {
 		enum Flags : MaterialFlags {
-			AO = 1,
+			//add albedo here eventually, as 1. then it's possible to create a material without albedo but with metal/rough and others
+			Albedo = 1,
 			Metal = 1 << 1,
 			Rough = 1 << 2,
 			Normal = 1 << 3,
 			Bump = 1 << 4,
+			AO = 1 << 5,
 
 			Instanced = 1 << 13,
 			Bones = 1 << 14,
-			no_texture = 1 << 15,
 		};
+
+		static constexpr uint8_t GetTextureCount(const MaterialFlags flags) {
+			const bool hasBumps = flags & Material::Bump;
+			const bool hasNormal = flags & Material::Normal;
+			const bool hasRough = flags & Material::Rough;
+			const bool hasMetal = flags & Material::Metal;
+			const bool hasAO = flags & Material::AO;
+			const bool hasAlbedo = flags & Material::Albedo;
+			//assert(!(hasBones && hasBumps));
+
+			return hasAlbedo + hasNormal + hasRough + hasMetal + hasAO + hasBumps;
+		}
+
+		static constexpr uint16_t GetPipeLayoutIndex(const MaterialFlags flags) {
+			const bool hasBones = flags & Material::Bones;
+			const bool instanced = flags & Material::Instanced;
+			//assert(!(hasBones && hasBumps));
+
+			const uint8_t textureCount = GetTextureCount(flags);
+			return textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced)));
+		}
+
+
 	}
 	//typedef VkDescriptorSet TextureDesc;
 #ifndef IMAGE_INVALID
 #define IMAGE_INVALID UINT64_MAX
-#endif
-#ifndef MAX_MATERIAL_TEXTURE_COUNT
-#define MAX_MATERIAL_TEXTURE_COUNT 6
 #endif
 
 	typedef uint16_t TransformID;
@@ -48,9 +72,10 @@ namespace EWE {
 
 
 	struct MaterialBuffer {
-		glm::vec4 albedo;
+		glm::vec3 albedo;
 		float rough;
 		float metal;
+		glm::vec3 p_padding; //no do not use
 		//sub surface scattering
 		//depth
 		//transparency
@@ -63,10 +88,8 @@ namespace EWE {
 	struct MaterialInfo {
 		MaterialFlags materialFlags;
 		ImageID imageID;
-		MaterialBuffer* materialBuffer;
 		MaterialInfo() {}
-		MaterialInfo(MaterialFlags flags, ImageID imageID) : materialFlags{ flags }, imageID{ imageID }, materialBuffer{ nullptr } {}
-		MaterialInfo(MaterialFlags flags, ImageID imageID, MaterialBuffer* matBuffer) : materialFlags{ flags }, imageID{ imageID }, materialBuffer{ matBuffer } {}
+		MaterialInfo(MaterialFlags flags, ImageID imageID) : materialFlags{ flags }, imageID{ imageID } {}
 		bool operator==(MaterialInfo const& other) const {
 			return (materialFlags == other.materialFlags) && (imageID == other.imageID);
 		}

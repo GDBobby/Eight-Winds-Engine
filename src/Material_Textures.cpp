@@ -72,17 +72,17 @@ namespace EWE {
             }
         }
 
-        assert(foundTypes[1] && "failed to find albedo");
         std::vector<PixelPeek> pixelPeeks{};
         for (int i = 0; i < matPaths.size(); i++) {
             pixelPeeks.emplace_back(matPaths[i]);
         }
 
-        ImageID imgID = imPtr->CreateImageArray(pixelPeeks, mipmapping);
+        const ImageID imgID = imPtr->CreateImageArray(pixelPeeks, mipmapping);
 
         //flags = normal, metal, rough, ao
-        MaterialFlags flags = (foundTypes[MT_bump] * Material::Bump) + (foundTypes[MT_metal] * Material::Metal) + (foundTypes[MT_rough] * Material::Rough) + (foundTypes[MT_ao] * Material::AO) + ((foundTypes[MT_normal] * Material::Normal));
+        const MaterialFlags flags = (foundTypes[MT_albedo] * Material::Albedo) + (foundTypes[MT_bump] * Material::Bump) + (foundTypes[MT_metal] * Material::Metal) + (foundTypes[MT_rough] * Material::Rough) + (foundTypes[MT_ao] * Material::AO) + ((foundTypes[MT_normal] * Material::Normal));
         //printf("flag values : %d \n", flags);
+        assert(flags != 0 && "found zero images in material texture, needs at least one");
 
 #if EWE_DEBUG
         if (!foundTypes[MT_albedo]) {

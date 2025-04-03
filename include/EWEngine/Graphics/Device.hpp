@@ -71,8 +71,6 @@ namespace EWE {
 
         VkFormat FindSupportedFormat(std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
-        void CopyBuffer(CommandBuffer& cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
 
         VkDeviceSize GetMemoryRemaining();
 

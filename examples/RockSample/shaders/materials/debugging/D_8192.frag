@@ -1,8 +1,7 @@
 layout (location = 0) in vec3 fragPosWorld;
 layout (location = 1) in vec3 fragNormalWorld;
 layout (location = 2) in vec2 fragTexCoord;
-layout (location = 3) in vec3 fragTangentWorld;
-layout (location = 4) in float instanceIndex;
+layout (location = 3) in float instanceIndex;
 layout (location = 0) out vec4 outColor;
 struct PointLight{
 vec4 position;
@@ -39,7 +38,7 @@ vec3 FresnelSchlick (float cosTheta, vec3 F0) {
 return F0 + (vec3(1.0) - F0) * pow (1.0 - cosTheta, 5.0);
  }
 struct MaterialBuffer{
-vec4 albedoColor;
+vec3 albedo;
 float rough;
 float metal;
 }
@@ -48,22 +47,11 @@ layout(std430, set = 0, binding = 3) readonly buffer MaterialBufferObject{
 MaterialBuffer mbo[];
 }
 ;
-layout (set = 0, binding = 4) uniform sampler2DArray materialTextures;
-const int albedoIndex = 0;
-const int normalIndex = 1;
-vec3 calculateNormal() {
-vec3 tangentNormal = texture(materialTextures, vec3(fragTexCoord, normalIndex)).rgb * 2.0 - 1.0;
-const vec3 N = normalize(fragNormalWorld);
-const vec3 T = normalize(fragTangentWorld.xyz);
-const vec3 B = normalize(cross(N, T));
-const mat3 TBN = mat3(T, B, N);
-return normalize(TBN * tangentNormal);
-}
 void main(){
-vec3 albedo = texture(materialTextures, vec3(fragTexCoord, albedoIndex)).rgb;
-vec3 viewDirection = normalize(ubo.cameraPos.xyz - fragPosWorld);
-vec3 normal = calculateNormal();
 int instanceIndexInt = int(instanceIndex);
+vec3 albedo = mbo[instanceIndexInt].albedo;
+vec3 viewDirection = normalize(ubo.cameraPos.xyz - fragPosWorld);
+vec3 normal = normalize(fragNormalWorld);
 float roughness = mbo[instanceIndexInt].rough;
 float metal = mbo[instanceIndexInt].metal;
 float NdotV = max(dot(normal, viewDirection), 0.0);

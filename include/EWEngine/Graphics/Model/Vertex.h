@@ -67,6 +67,10 @@ namespace EWE {
         glm::vec3 position{ 0.f };
         glm::vec3 normal{ 0.f };
         glm::vec2 uv{ 0.f };
+        VertexNT() {}
+        VertexNT(glm::vec3 position) : position{ position } {}
+        VertexNT(glm::vec3 position, glm::vec3 normal, glm::vec2 uv) : position{ position } {}
+
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
         bool operator==(VertexNT const& other) const {
@@ -105,6 +109,10 @@ namespace EWE {
     struct EffectVertex {
         glm::vec3 position{ 0.f };
         glm::vec2 uv{ 0.f };
+        EffectVertex() {}
+        EffectVertex(glm::vec3 position) : position{ position } {}
+        EffectVertex(glm::vec3 position, glm::vec2 uv) : position{ position }, uv{ uv } {}
+
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
         bool operator ==(const EffectVertex& other) const {
             return position == other.position && uv == other.uv;

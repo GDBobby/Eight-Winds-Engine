@@ -285,7 +285,7 @@ namespace EWE {
     inline void CopyModelBuffer(StagingBuffer* stagingBuffer, VkBuffer dstBuffer, const VkDeviceSize bufferSize) {
         SyncHub* syncHub = SyncHub::GetSyncHubInstance();
         CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand();
-        EWEDevice::GetEWEDevice()->CopyBuffer(cmdBuf, stagingBuffer->buffer, dstBuffer, bufferSize);
+        VK::CopyBuffer(cmdBuf, stagingBuffer->buffer, dstBuffer, bufferSize);
 
 
         if (VK::Object->CheckMainThread() || (!VK::Object->queueEnabled[Queue::transfer])) {

@@ -119,7 +119,8 @@ namespace EWE {
                 RigidRenderingSystem::AddInstancedMaterialObject(textureTracker.meshSimpleNames[i], meshes.back(), instanceCount, computedTransforms);
             }
             else {
-                RigidRenderingSystem::AddMaterialObject(textureTracker.meshSimpleNames[i], &transform, meshes.back(), &drawable);
+                assert(false && "need to rewrite this to support the new material buffer");
+                RigidRenderingSystem::AddMaterialObject(textureTracker.meshSimpleNames[i], &transform, meshes.back(), &drawable, nullptr);
             }
         }
         auto const& meshNTSimple = tempData.meshNTSimpleExport.meshes;
@@ -131,7 +132,8 @@ namespace EWE {
                 RigidRenderingSystem::AddInstancedMaterialObject(textureTracker.meshNTSimpleNames[i], meshes.back(), instanceCount, computedTransforms);
             }
             else {
-                RigidRenderingSystem::AddMaterialObject(textureTracker.meshNTSimpleNames[i], &transform, meshes.back(), &drawable);
+                assert(false && "need to rewrite this to support the new material buffer");
+                RigidRenderingSystem::AddMaterialObject(textureTracker.meshNTSimpleNames[i], &transform, meshes.back(), &drawable, nullptr);
             }
         }
 

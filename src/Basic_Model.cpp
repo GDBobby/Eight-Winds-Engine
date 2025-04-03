@@ -164,12 +164,12 @@ namespace EWE {
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices} SRC_PASS);
         }
 
-        EffectVertex MidPoint(EffectVertex const& vertex1, EffectVertex const& vertex2) {
-            return EffectVertex{ .position{(vertex1.position.x + vertex2.position.x) / 2.f, (vertex1.position.y + vertex2.position.y) / 2.f, (vertex1.position.z + vertex2.position.z) / 2.f}, };
+        VertexNT MidPoint(VertexNT const& vertex1, VertexNT const& vertex2) {
+            return VertexNT{ {(vertex1.position.x + vertex2.position.x) / 2.f, (vertex1.position.y + vertex2.position.y) / 2.f, (vertex1.position.z + vertex2.position.z) / 2.f}, };
         }
 
-        uint32_t IndexMidPoint(std::unordered_map<uint64_t, uint32_t>& midPoints, std::vector<EffectVertex>& vertices, uint32_t index1, uint32_t index2) {
-            const int64_t key = ((long long)std::min(index1, index2) << 32) | std::max(index1, index2);
+        uint32_t IndexMidPoint(std::unordered_map<uint64_t, uint32_t>& midPoints, std::vector<VertexNT>& vertices, uint32_t index1, uint32_t index2) {
+            const uint64_t key = ((long long)std::min(index1, index2) << 32) | std::max(index1, index2);
 
             {
                 auto findRet = midPoints.find(key);
@@ -178,7 +178,7 @@ namespace EWE {
                 }
             }
             vertices.push_back(MidPoint(vertices[index1], vertices[index2]));
-            int index = vertices.size() - 1;
+            uint32_t index = vertices.size() - 1;
             midPoints.try_emplace(key, index);
             return index;
         }
@@ -187,10 +187,10 @@ namespace EWE {
             const float t = 0.851f * radius;
             const float s = 0.526f * radius;
 
-            std::vector<EffectVertex> vertices = {
-                {.position = glm::vec3{-s, t, 0.f}}, {.position = glm::vec3{s, t, 0.f}}, {.position = glm::vec3{-s, -t, 0.f}}, {.position = glm::vec3{s, -t, 0.f}},
-                {.position = glm::vec3{0.f, -s, t}}, {.position = glm::vec3{0.f, s, t}}, {.position = glm::vec3{0.f, -s, -t}}, {.position = glm::vec3{0.f, s, -t}},
-                {.position = glm::vec3{t, 0.f, -s}}, {.position = glm::vec3{t, 0.f, s}}, {.position = glm::vec3{-t, 0.f, -s}}, {.position = glm::vec3{-t, 0.f, s}}
+            std::vector<VertexNT> vertices = {
+                {glm::vec3{-s, t, 0.f}}, {glm::vec3{s, t, 0.f}}, {glm::vec3{-s, -t, 0.f}}, {glm::vec3{s, -t, 0.f}},
+                {glm::vec3{0.f, -s, t}}, {glm::vec3{0.f, s, t}}, {glm::vec3{0.f, -s, -t}}, {glm::vec3{0.f, s, -t}},
+                {glm::vec3{t, 0.f, -s}}, {glm::vec3{t, 0.f, s}}, {glm::vec3{-t, 0.f, -s}}, {glm::vec3{-t, 0.f, s}}
             };
             std::vector<uint32_t> indices = {
                 0,11,5,  0,5,1,   0,1,7,    0,7,10,  0,10,11,
@@ -205,12 +205,19 @@ namespace EWE {
                     uint32_t a = IndexMidPoint(midpoints, vertices, indices[j], indices[j + 1]);
                     uint32_t b = IndexMidPoint(midpoints, vertices, indices[j + 1], indices[j + 2]);
                     uint32_t c = IndexMidPoint(midpoints, vertices, indices[j + 2], indices[j]);
-                    newIndices.insert(newIndices.end(), { indices[j], a, c, a, indices[j + 1], b, c, b, indices[j + 2], a, b, c });
+                    newIndices.insert(newIndices.end(), { 
+                        indices[j], a, c, 
+                        a, indices[j + 1], b, 
+                        c, b, indices[j + 2], 
+                        a, b, c 
+                    });
                 }
                 indices = std::move(newIndices);
             }
 
             for (auto& vert : vertices) {
+                vert.position = glm::normalize(vert.position);
+                vert.normal = vert.position;
                 vert.uv.x = 0.5f + std::atan2(vert.position.z, vert.position.x) / glm::two_pi<float>();
                 vert.uv.y = 0.5f - std::asin(vert.position.y) / glm::pi<float>();
             }

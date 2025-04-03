@@ -226,4 +226,14 @@ namespace EWE {
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         EWE_VK(vkBeginCommandBuffer, *this, &beginInfo);
     }
-}
+    void VK::CopyBuffer(CommandBuffer& cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+        //printf("COPY SECONDARY BUFFER, thread ID: %d \n", std::this_thread::get_id());
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;  // Optional
+        copyRegion.dstOffset = 0;  // Optional
+        copyRegion.size = size;
+        EWE_VK(vkCmdCopyBuffer, cmdBuf, srcBuffer, dstBuffer, 1, &copyRegion);
+    }
+
+
+} //namespaceEWE

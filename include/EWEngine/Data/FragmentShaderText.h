@@ -35,27 +35,34 @@ namespace FragmentShaderText {
 		{"const float PI = 3.14159265359;"},
 	};
 	const std::vector<std::string> functionBlock = {
-		{"float DistributionGGX (vec3 Normal, vec3 HalfAngle, float roughness) {"},
-		{"float a2 = roughness * roughness;"},
-		{"float NdotH = max(dot(Normal, HalfAngle), 0.0);"},
-		{"float denom = ((NdotH * a2 - NdotH) * NdotH + 1.0);"},
-		//{"float denom = (NdotH * NdotH * (a2 - 1.0) + 1.0);"},
+		{"float DistributionGGX (const float NdotH, const float roughness) {"},
+		{"const float a2 = roughness * roughness;"},
+		{"float denom = NdotH * NdotH * (a2 - 1.0) + 1.0;"},
 		{"return a2 / (PI * denom * denom);}"},
 
-		{"float Shlick(float NdotV, float NdotL, float roughness){"},
-		{"float k = roughness * roughness / 2;"},
-		{"float g_v = NdotV / (NdotV * (1 - k) + k);"},
-		{"float g_l = NdotL / (NdotL * (1 - k) + k);"},
-		{"return g_v * g_l;}"},
+		{"float FresnelShlick(const float VdotH, const float metallic, const vec3 albedo){"},
+		{"const vec3 f0 = mix(vec3(0.04), vec3(albedo), metallic);"},
+		{"return f0 + (1.0 - f0) * pow(clamp(1.0 - VdotH, 0.0, 1.0), 5.0)"},
 
-		{"vec3 FresnelSchlick (float cosTheta, vec3 F0) {"},
-		{"return F0 + (vec3(1.0) - F0) * pow (1.0 - cosTheta, 5.0); }"}
+		{"float Combined_Geometry_Smith(const float NdotL, const float NdotV, const float roughness){"},
+		{"const float rp1 = roughness + 1.0;"},
+		{"const float k = rp1 * rp1 / 8.0"},
+		{"const float g_v = NdotV / (NdotV * (1.0 - k) + k);"},
+		{"const float g_l = NdotL / (NdotL * (1.0 - k) + k);"},
+		{"return g_v * g_l;"},
+
+		{"vec3 pointlight_brdf(const vec3 albedo, const float metal, const float rough, const vec3 normal, const vec3 view) {" },
+		{"const float halfAngle = normalize(normal + view);"},
+		{"const float NdotH = max(dot(normal, halfAngle), 0.0);"},
+		{"const float VdotH = max(dot(view, halfAngle), 0.0);"},
+		{"const float NdotV = max(dot(normal, view), 0.0);"},
+
 	};
 
 
 	//first index is no bones, second index is with bones
 
-	const std::string materialBufferInstancedPartOne = "struct MaterialBuffer{vec4 albedoColor;float rough;float metal;};";
+	const std::string materialBufferInstancedPartOne = "struct MaterialBuffer{vec3 albedo;float rough;float metal;};";
 	const std::string materialBufferInstancedPartTwo = "layout(std430, set = 0, binding = ";
 	const std::string materialBufferInstancedPartThree = ") readonly buffer MaterialBufferObject{MaterialBuffer mbo[];};";
 
@@ -64,7 +71,7 @@ namespace FragmentShaderText {
 	const std::string secondHalfBinding = { ") uniform sampler2DArray materialTextures;" };
 	std::vector<std::string> MBOSecondHalf = {
 		{") uniform MaterialBufferObject{"},
-		{"vec4 albedoColor;float rough;float metal;" },
+		{"vec3 albedo;float rough;float metal;" },
 		{"}mbo;"}
 	};
 
@@ -85,7 +92,6 @@ namespace FragmentShaderText {
 	const std::vector<std::string> mainEntryBlock[2] = {
 		{
 			"void main(){",
-			"vec3 albedo = texture(materialTextures, vec3(fragTexCoord, albedoIndex)).rgb;",
 		},
 		{
 			"void main(){",			

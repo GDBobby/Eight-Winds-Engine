@@ -119,7 +119,7 @@ namespace EWE {
 				retBuf += FragmentShaderText::functionBlock[i];
 			}
 
-			AddBindings(retBuf, flags != Material::no_texture, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
+			AddBindings(retBuf, flags & Material::Albedo, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
 
 			if (hasNormal) {
 				for (int i = 0; i < FragmentShaderText::calcNormalFunction.size(); i++) {
@@ -130,6 +130,21 @@ namespace EWE {
 			for (int i = 0; i < FragmentShaderText::mainEntryBlock[0].size(); i++) {
 				retBuf += FragmentShaderText::mainEntryBlock[0][i];
 			}
+			bool initializedInstanceIndex = false;
+			if (flags & Material::Albedo) {
+				retBuf += "vec3 albedo = texture(materialTextures, vec3(fragTexCoord, albedoIndex)).rgb;";
+			}
+			else {
+				if (instanced) {
+					retBuf += "int instanceIndexInt = int(instanceIndex);";
+					initializedInstanceIndex = true;
+					retBuf += "vec3 albedo = mbo[instanceIndexInt].albedo;";
+				}
+				else {
+					retBuf += "vec3 albedo = mbo.albedo;";
+				}
+			}
+
 			for (int i = 0; i < FragmentShaderText::mainSecondBlockNN.size(); i++) {
 				retBuf += FragmentShaderText::mainSecondBlockNN[i];
 			}
@@ -140,14 +155,15 @@ namespace EWE {
 				retBuf += "vec3 normal = normalize(fragNormalWorld);";
 			}
 
-			bool initializedInstanceIndex = false;
 			if (hasRough) {
 				retBuf += "float roughness = texture(materialTextures, vec3(fragTexCoord, roughIndex)).r;";
 			}
 			else {
 				if (instanced) {
-					retBuf += "int instanceIndexInt = int(instanceIndex);";
-					initializedInstanceIndex = true;
+					if (!initializedInstanceIndex) {
+						retBuf += "int instanceIndexInt = int(instanceIndex);";
+						initializedInstanceIndex = true;
+					}
 					retBuf += "float roughness = mbo[instanceIndexInt].rough;";
 				}
 				else {
@@ -202,7 +218,7 @@ namespace EWE {
 				retBuf += FragmentShaderText::functionBlock[i];
 			}
 			//bump map should not have bones, but leaving it in regardless
-			AddBindings(retBuf, flags != Material::no_texture, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
+			AddBindings(retBuf, flags & Material::Albedo, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
 
 			for (int i = 0; i < FragmentShaderText::parallaxMapping.size(); i++) {
 				retBuf += FragmentShaderText::parallaxMapping[i];

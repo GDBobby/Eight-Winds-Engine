@@ -53,6 +53,7 @@ namespace EWE {
 		scenes.emplace(scene_shaderGen, nullptr);
 		scenes.emplace(scene_ocean, nullptr);
 		scenes.emplace(scene_LevelCreation, nullptr);
+		scenes.emplace(scene_PBR, nullptr);
 		auto sceneLoadFunc = [&]() {
 			printf("loading main menu scene : %u\n", std::this_thread::get_id());
 
@@ -77,6 +78,12 @@ namespace EWE {
 			LoadSceneIfMatching(scene_ocean);
 			loadingThreadTracker.oceanSceneThread = true;
 		};
+		auto sceneLoadFunc4 = [&] {
+			scenes.at(scene_PBR) = Construct<PBRScene>({ ewEngine });
+			LoadSceneIfMatching(scene_PBR);
+			loadingThreadTracker.pbrSceneThread = true;
+		};
+		ThreadPool::EnqueueVoidFunction("load pbr scene thread", sceneLoadFunc4);
 		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc2);
 		//ThreadPool::EnqueueVoidFunction(sceneLoadFunc3);
 

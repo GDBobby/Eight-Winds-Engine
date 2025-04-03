@@ -7,7 +7,7 @@
 #include "Scenes/MainMenuScene.h"
 #include "Scenes/ShaderGenerationScene.h"
 #include "Scenes/OceanScene.h"
-
+#include "Scenes/PBRScene.h"
 
 //#include "Scenes/FreeCameraScene.h"
 
@@ -19,9 +19,10 @@ namespace EWE {
 		bool oceanSceneThread = false;
 		bool menuModuleThread = false;
 		bool globalObjectThread = false;
+		bool pbrSceneThread = false;
 
 		bool Finished() const {
-			return soundMapThread && mainSceneThread && menuModuleThread && globalObjectThread;
+			return soundMapThread && mainSceneThread && menuModuleThread && globalObjectThread && pbrSceneThread;
 		}
 	};
 
@@ -34,8 +35,8 @@ namespace EWE {
 		MenuManager& menuManager;
 		std::shared_ptr<SoundEngine> soundEngine;
 
-		Scene_Enum lastScene = scene_mainmenu;
-		Scene_Enum currentScene = scene_mainmenu;
+		Scene_Enum lastScene = scene_PBR;
+		Scene_Enum currentScene = scene_PBR;
 		std::unordered_map<Scene_Enum, SceneBase*> scenes;
 		SceneBase* currentScenePtr{ nullptr };
 		bool swappingScenes = false;

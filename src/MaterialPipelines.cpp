@@ -30,7 +30,7 @@ namespace EWE {
 		return eDSLs[pipeLayoutIndex];
 	}
 	EWEDescriptorSetLayout* MaterialPipelines::GetDSLFromFlags(MaterialFlags flags) {
-		return GetDSL(MaterialPipelines::GetPipeLayoutIndex(flags));
+		return GetDSL(Material::GetPipeLayoutIndex(flags));
 	}
 
 	void InitPipeDSL(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
@@ -63,12 +63,13 @@ namespace EWE {
 			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //the material bfufer, uniform if not instanced
 		}
 
-
-		if (hasBump) {
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
-		}
-		else {
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+		if (textureCount > 0) {
+			if (hasBump) {
+				builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+			}
+			else {
+				builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+			}
 		}
 
 		eDSLs[pipeLayoutIndex] = builder.Build();
@@ -143,18 +144,18 @@ namespace EWE {
 			//probably going to need a breakpoint here for debugging
 		}
 #endif
-		//bool finalSlotBeforeNeedExpansion = Material::Flags & 32;
-		bool hasBumps = flags & Material::Bump;
-		bool hasNormal = flags & Material::Normal;
-		bool hasRough = flags & Material::Rough;
-		bool hasMetal = flags & Material::Metal;
-		bool hasAO = flags & Material::AO;
+		const bool hasAlbedo = flags & Material::Albedo;
+		const bool hasBumps = flags & Material::Bump;
+		const bool hasNormal = flags & Material::Normal;
+		const bool hasRough = flags & Material::Rough;
+		const bool hasMetal = flags & Material::Metal;
+		const bool hasAO = flags & Material::AO;
 		if (hasBones && hasBumps) {
 			printf("ERROR: HAS BONES AND BUMP, NOT CURRENTLY SUPPORTED \n");
 			assert(false);
 		}
 
-		uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
+		uint8_t textureCount = hasAlbedo + hasNormal + hasRough + hasMetal + hasAO + hasBumps;
 		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + 2 * instanced));
 
 #if EWE_DEBUG
@@ -315,13 +316,15 @@ namespace EWE {
 		EWEPipeline::PipelineConfigInfo pipelineConfig;
 		InitMaterialPipelineConfig(pipelineConfig, flags);
 
-		MaterialPipelines* ret = CreatePipe(pipelineConfig, flags);
 #if DEBUG_NAMING
+		MaterialPipelines* ret = CreatePipe(pipelineConfig, flags);
 		std::string pipeName = "material pipeline[";
 		pipeName += std::to_string(flags) + ']';
 		ret->pipeline.SetDebugName(pipeName);
-#endif
 		return ret;
+#else
+		return CreatePipe(pipelineConfig, flags);
+#endif
 
 		//printf("after dynamic shader finding \n");
 	}
@@ -354,7 +357,7 @@ namespace EWE {
 
 			const SkinInstanceKey key(boneCount, flags);
 
-			uint16_t pipeLayoutIndex = GetPipeLayoutIndex(flags);
+			const uint16_t pipeLayoutIndex = Material::GetPipeLayoutIndex(flags);
 
 			ret = instancedBonePipelines.try_emplace(key, Construct<MaterialPipelines>({ pipeLayoutIndex, boneCount, flags, pipelineConfig })).first->second;
 
@@ -369,14 +372,16 @@ namespace EWE {
 			const uint16_t entityCount = boneCount;
 			assert(entityCount <= 1024 && "currently dont have the systems set up for a storage buffer in rigid instancing");
 
+#if DEBUG_NAMING
 			MaterialPipelines* ret = CreatePipe(pipelineConfig, flags);
 
-#if DEBUG_NAMING
 			std::string pipeName = "material pipeline[";
 			pipeName += std::to_string(flags) + ']';
 			ret->pipeline.SetDebugName(pipeName);
-#endif
 			return ret;
+#else
+			return CreatePipe(pipelineConfig, flags);
+#endif
 		}
 	}
 
@@ -432,7 +437,7 @@ namespace EWE {
 
 	MaterialPipelines* MaterialPipelines::CreatePipe(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags) {
 
-		uint16_t pipeLayoutIndex = GetPipeLayoutIndex(flags);
+		const uint16_t pipeLayoutIndex = Material::GetPipeLayoutIndex(flags);
 
 		const bool hasBones = flags & Material::Bones;
 		const bool hasNormal = flags & Material::Normal;

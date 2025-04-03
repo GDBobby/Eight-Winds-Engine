@@ -21,7 +21,7 @@ namespace EWE {
         MaterialObjectInfo() : 
             ownerTransform{ nullptr },
             meshPtr{ nullptr },
-            drawable{ nullptr } 
+            drawable{ nullptr }
         {
 #if EWE_DEBUG
             printf("Default construction of material info??? \n");
@@ -30,7 +30,7 @@ namespace EWE {
         MaterialObjectInfo(TransformComponent* tComp, EWEModel* meshP, bool* drawable) : 
             ownerTransform{ tComp },
             meshPtr{ meshP }, 
-            drawable{ drawable } 
+            drawable{ drawable }
         {}
     };
     struct MaterialObjectByDesc {
@@ -84,8 +84,10 @@ namespace EWE {
         }
         */
         //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& cleanAndGetMaterialMap();
-        void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo);
-        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable);
+        void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo, EWEBuffer* materialBuffer);
+        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable, EWEBuffer* materialBuffer);
+        void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo, std::array<EWEBuffer*, 2> materialBuffer);
+        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable, std::array<EWEBuffer*, 2> materialBuffer);
         void AddInstancedMaterialObject(MaterialInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms);
 
         void RemoveByTransform(TransformComponent* ownerTransform);

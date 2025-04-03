@@ -895,15 +895,6 @@ namespace EWE {
         return VkFormat{}; //error silencing
     }
 
-    void EWEDevice::CopyBuffer(CommandBuffer& cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-        //printf("COPY SECONDARY BUFFER, thread ID: %d \n", std::this_thread::get_id());
-        VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0;  // Optional
-        copyRegion.dstOffset = 0;  // Optional
-        copyRegion.size = size;
-        EWE_VK(vkCmdCopyBuffer, cmdBuf, srcBuffer, dstBuffer, 1, &copyRegion);
-    }
-
     //need to find the usage and have it create the single time command
 
     VkDeviceSize EWEDevice::GetMemoryRemaining() {

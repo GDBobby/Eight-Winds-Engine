@@ -140,6 +140,8 @@ namespace EWE{
 #if USING_VMA
         VmaAllocator vmaAllocator;
 #endif
+
+        static void CopyBuffer(CommandBuffer& cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     };
 
 

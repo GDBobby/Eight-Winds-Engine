@@ -6,7 +6,7 @@
 #include "EWEngine/Graphics/Pipeline.h"
 
 #ifndef MATERIAL_PIPE_LAYOUT_COUNT
-#define MATERIAL_PIPE_LAYOUT_COUNT MAX_MATERIAL_TEXTURE_COUNT * 4
+#define MATERIAL_PIPE_LAYOUT_COUNT MAX_MATERIAL_TEXTURE_COUNT << 3
 //can be thought of as a multidimensional array, with a size of [4][MAX_MATERIAL_TEXTURE_COUNT]
 //[0][x] is a material without bones or instancing
 //[1][x] is a material with bones but no instancing
@@ -61,26 +61,6 @@ namespace EWE{
 		void DrawModel();
 		void DrawInstanced(EWEModel* model);
 		void DrawInstanced(EWEModel* model, uint32_t instanceCount);
-
-		static constexpr uint16_t GetPipeLayoutIndex(const MaterialFlags flags) {
-			const bool hasBones = flags & Material::Bones;
-			const bool instanced = flags & Material::Instanced;
-			const bool hasBumps = flags & Material::Bump;
-			const bool hasNormal = flags & Material::Normal;
-			const bool hasRough = flags & Material::Rough;
-			const bool hasMetal = flags & Material::Metal;
-			const bool hasAO = flags & Material::AO;
-			//assert(!(hasBones && hasBumps));
-
-			const uint8_t textureCount = hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-#if EWE_DEBUG
-			const uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced)));
-			//printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
-			return pipeLayoutIndex;
-#else
-			return textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + (2 * instanced)));
-#endif
-		}
 
 	protected:
 		uint16_t pipeLayoutIndex;
