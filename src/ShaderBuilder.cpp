@@ -115,9 +115,8 @@ namespace EWE {
 			for (int i = 0; i < FragmentShaderText::dataBindings.size(); i++) {
 				retBuf += FragmentShaderText::dataBindings[i];
 			}
-			for (int i = 0; i < FragmentShaderText::functionBlock.size(); i++) {
-				retBuf += FragmentShaderText::functionBlock[i];
-			}
+
+			FragmentShaderText::AddLighting(retBuf);
 
 			AddBindings(retBuf, flags & Material::Albedo, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
 
@@ -156,7 +155,7 @@ namespace EWE {
 			}
 
 			if (hasRough) {
-				retBuf += "float roughness = texture(materialTextures, vec3(fragTexCoord, roughIndex)).r;";
+				retBuf += "float rough = texture(materialTextures, vec3(fragTexCoord, roughIndex)).r;";
 			}
 			else {
 				if (instanced) {
@@ -164,10 +163,10 @@ namespace EWE {
 						retBuf += "int instanceIndexInt = int(instanceIndex);";
 						initializedInstanceIndex = true;
 					}
-					retBuf += "float roughness = mbo[instanceIndexInt].rough;";
+					retBuf += "float rough = mbo[instanceIndexInt].rough;";
 				}
 				else {
-					retBuf += "float roughness = mbo.rough;";
+					retBuf += "float rough = mbo.rough;";
 				}
 			}
 			if (hasMetal) {
@@ -186,12 +185,6 @@ namespace EWE {
 			}
 			for (int i = 0; i < FragmentShaderText::mainThirdBlock.size(); i++) {
 				retBuf += FragmentShaderText::mainThirdBlock[i];
-			}
-			for (int i = 0; i < FragmentShaderText::pointLightLoop.size(); i++) {
-				retBuf += FragmentShaderText::pointLightLoop[i];
-			}
-			for (int i = 0; i < FragmentShaderText::sunCalculation.size(); i++) {
-				retBuf += FragmentShaderText::sunCalculation[i];
 			}
 
 			if (hasAO) {
@@ -214,9 +207,7 @@ namespace EWE {
 			for (int i = 0; i < FragmentShaderText::dataBindings.size(); i++) {
 				retBuf += FragmentShaderText::dataBindings[i];
 			}
-			for (int i = 0; i < FragmentShaderText::functionBlock.size(); i++) {
-				retBuf += FragmentShaderText::functionBlock[i];
-			}
+			FragmentShaderText::AddLighting(retBuf);
 			//bump map should not have bones, but leaving it in regardless
 			AddBindings(retBuf, flags & Material::Albedo, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
 
@@ -234,16 +225,16 @@ namespace EWE {
 			}
 			bool initializedInstanceIndex;
 			if (hasRough) {
-				retBuf += "float roughness = texture(materialTextures, vec3(fragTexCoord, roughIndex)).r;";
+				retBuf += "float rough = texture(materialTextures, vec3(fragTexCoord, roughIndex)).r;";
 			}
 			else {
 				if (instanced) {
 					retBuf += "int instanceIndexInt = int(instanceIndex);";
 					initializedInstanceIndex = true;
-					retBuf += "float roughness = mbo[instanceIndexInt].rough;";
+					retBuf += "float rough = mbo[instanceIndexInt].rough;";
 				}
 				else {
-					retBuf += "float roughness = mbo.rough;";
+					retBuf += "float rough = mbo.rough;";
 				}
 			}
 			if (hasMetal) {
@@ -262,10 +253,6 @@ namespace EWE {
 			}
 			for (int i = 0; i < FragmentShaderText::mainThirdBlock.size(); i++) {
 				retBuf += FragmentShaderText::mainThirdBlock[i];
-			}
-
-			for (int i = 0; i < FragmentShaderText::bumpSunCalculation.size(); i++) {
-				retBuf += FragmentShaderText::bumpSunCalculation[i];
 			}
 
 			if (hasAO) {
@@ -983,7 +970,6 @@ namespace EWE {
 					SpirvHelper::BuildFlaggedFrag_DEBUG(debugFileContents);
 				}
 				
-
 #endif
 
 				printf("failed to compile shader : %d \n", flags);
