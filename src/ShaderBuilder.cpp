@@ -213,7 +213,7 @@ namespace EWE {
 				}
 			}
 			else if (instanced) {
-				retBuf += "layout (location = 3) in float instanceIndex;";
+				retBuf += "layout (location = 3) flat in int instanceIndex;";
 			}
 			retBuf += FragmentShaderText::fragExit;
 
@@ -301,7 +301,15 @@ namespace EWE {
 			retBuf += "vec3 color = ambient + Lo;";
 			retBuf += "color /= (color + vec3(1.0));";
 			retBuf += "color = pow(color, vec3(1.0/2.2));";
+
 			retBuf += "outColor = vec4(color, 1.0);}";
+			//debugging
+			//if (instanced) {
+			//	retBuf += "outColor = vec4(float(instanceIndexInt) / 16, metal, rough, 1.0);}";
+			//}
+			//else {
+			//	retBuf += "outColor = vec4(0.0, metal, rough, 1.0);}";
+			//}
 		}
 		else { //if hasBumps, mostly doing a second block because bumpmap changes the uv variable name from fragTexCoord to fragTexCoord
 			for (int i = 0; i < FragmentShaderText::fragBumpEntry.size(); i++) {

@@ -40,18 +40,21 @@ namespace EWE {
         for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             EWEDescriptorWriter descWriter{ eDSL, DescriptorPool_Global };
             DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
-
+#if DEBUGGING_MATERIAL_NORMALS
             if ((materialInfo.materialFlags & Material::Flags::GenerateNormals) == 0) {
+#endif
                 descWriter.WriteBuffer(materialBuffer[i]->DescriptorInfo());
 
                 //need to get a full texture count here
                 if (materialInfo.materialFlags & Material::Flags::Texture::Albedo) {
                     descWriter.WriteImage(materialInfo.imageID);
                 }
+#if DEBUGGING_MATERIAL_NORMALS
             }
             else if (materialInfo.materialFlags & Material::Flags::Bump) {
                 descWriter.WriteImage(materialInfo.imageID);
             }
+#endif
             ret[i] = descWriter.Build();
         }
 #if DEBUG_NAMING

@@ -74,10 +74,17 @@ namespace EWE {
 			//converts flags into unique descriptor set layouts
 			const bool hasBones = flags & Material::Flags::Other::Bones;
 			const bool instanced = flags & Material::Flags::Other::Instanced;
+#if DEBUGGING_MATERIAL_NORMALS
 			const bool generatingNormals = flags & Material::Flags::Other::GenerateNormals;
+#endif
 
 			const uint8_t textureCount = GetTextureCount(flags);
-			return textureCount + (Material::Attributes::Texture::SIZE * (hasBones + (2 * instanced) + (4 * generatingNormals)));
+			return textureCount + (Material::Attributes::Texture::SIZE * (hasBones + (2 * instanced)
+#if DEBUGGING_MATERIAL_NORMALS
+				+ (4 * generatingNormals)));
+#else
+				));
+#endif
 		}
 
 

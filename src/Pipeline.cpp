@@ -226,11 +226,14 @@ namespace EWE {
 				vertShaderModule = vertModuleIter->second;
 			}
 		}
+#if DEBUGGING_MATERIAL_NORMALS
 		const bool generatingNormals = flags & Material::Flags::GenerateNormals;
 		if (generatingNormals) { //geometry stage
 			configInfo.AddGeomShaderModule(flags);
 		}
+#endif
 		{
+#if DEBUGGING_MATERIAL_NORMALS
 			std::string fragPath;// = SHADER_DIR;
 			if (generatingNormals) {
 				fragPath = "GenerateNormal.frag.spv";
@@ -242,19 +245,33 @@ namespace EWE {
 					fragPath += "b";
 				}
 				fragPath += ".frag.spv";
+
 			}
+#else
+			std::string fragPath = SHADER_DIR;
+			fragPath += "dynamic/" + std::to_string(flags);
+			if (flags & Material::Flags::Bones) {
+				fragPath += "b";
+			}
+			fragPath += ".frag.spv";
+#endif
 			const auto fragModuleIter = shaderModuleMap.find(fragPath);
 			if (fragModuleIter == shaderModuleMap.end()) {
+#if DEBUGGING_MATERIAL_NORMALS
 				if (generatingNormals) {
 					auto fragCode = Pipeline_Helper_Functions::ReadFile(fragPath);
 					Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
 					shaderModuleMap.try_emplace(fragPath, fragShaderModule);
 				}
 				else {
+#endif
 					Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags), &fragShaderModule);
 					//fragPath = SHADER_DIR + fragPath;
 					shaderModuleMap.try_emplace(fragPath, fragShaderModule);
+#if DEBUGGING_MATERIAL_NORMALS
 				}
+#endif
+
 			}
 			else {
 				fragShaderModule = fragModuleIter->second;

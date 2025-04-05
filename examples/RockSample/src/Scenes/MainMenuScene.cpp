@@ -7,7 +7,6 @@ namespace EWE {
 		: ewEngine{ ewEngine }, 
 			menuManager{ ewEngine.menuManager }, 
 			soundEngine{ SoundEngine::GetSoundEngineInstance() },
-			rockSystem{},
 			windowPtr{ ewEngine.mainWindow.getGLFWwindow() },
 			camControl{ windowPtr }
 	{}
@@ -21,6 +20,8 @@ namespace EWE {
 
 	void MainMenuScene::Load() {
 		menuManager.giveMenuFocus();
+
+		rockSystem = Construct<FloatingRock>({});
 	}
 	void MainMenuScene::Entry() {
 		soundEngine->StopMusic();
@@ -40,6 +41,7 @@ namespace EWE {
 	}
 	void MainMenuScene::Exit() {
 		//ewEngine.objectManager.eweObjects.clear();
+		Deconstruct(rockSystem);
 	}
 	bool MainMenuScene::Render(double dt) {
 		//printf("render main menu scene \n");
@@ -57,7 +59,7 @@ namespace EWE {
 		if (ewEngine.BeginFrame()) {
 			//printf("drawing \n");
 			if (!paused) {
-				rockSystem.Dispatch(dt);
+				rockSystem->Dispatch(dt);
 			}
 			ewEngine.camera.BindUBO();
 			ewEngine.BeginRenderX();

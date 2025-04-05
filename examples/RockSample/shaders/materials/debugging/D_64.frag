@@ -1,7 +1,7 @@
 layout (location = 0) in vec3 fragPosWorld;
 layout (location = 1) in vec3 fragNormalWorld;
 layout (location = 2) in vec2 fragTexCoord;
-layout (location = 3) in float instanceIndex;
+layout (location = 3) flat in int instanceIndex;
 layout (location = 0) out vec4 outColor;
 struct PointLight{
 	vec4 position;

@@ -70,7 +70,11 @@ namespace EWE{
     public:
 
 		//pipelayout index is computed before passing in because the calling function is always using it as well
+#if DEBUGGING_MATERIAL_NORMALS
 		static void InitMaterialPipeLayout(uint16_t materialPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump, bool generatingNormals);
+#else
+		static void InitMaterialPipeLayout(uint16_t materialPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump);
+#endif
 		static MaterialPipelines* GetMaterialPipe(MaterialFlags flags);
 
 		//this is pretty shitty, entitycount could alos be bonecount if it has bones and not instancing or something. not even sure if it can be instanced and boned

@@ -33,8 +33,11 @@ namespace EWE {
 		return GetDSL(Material::GetPipeLayoutIndex(flags));
 	}
 
+#if DEBUGGING_MATERIAL_NORMALS
 	void InitPipeDSL(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump, bool generatingNormals) {
-		//printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
+#else
+	void InitPipeDSL(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
+#endif
 
 		//might be relevant to only build these once, not sure if its a big deal
 		if (eDSLs[pipeLayoutIndex] != VK_NULL_HANDLE) {
@@ -59,7 +62,9 @@ namespace EWE {
 			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT); //transform buffer
 		}
 
+#if DEBUGGING_MATERIAL_NORMALS
 		if (!generatingNormals) {
+#endif
 			if (instanced) {
 				builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //material buffer, storage if instanced
 			}
@@ -75,10 +80,12 @@ namespace EWE {
 					builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
 				}
 			}
+#if DEBUGGING_MATERIAL_NORMALS
 		}
 		else if (hasBump) {//allow bump to pass thru generatingNormals since its in the vertex shader
 			builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT);
 		}
+#endif
 
 		eDSLs[pipeLayoutIndex] = builder.Build();
 #if DEBUG_NAMING
@@ -147,11 +154,8 @@ namespace EWE {
 	void InitMaterialPipelineConfig(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags) {
 		bool hasBones = flags & Material::Flags::Other::Bones;
 		bool instanced = flags & Material::Flags::Other::Instanced;
+#if DEBUGGING_MATERIAL_NORMALS
 		bool generatingNormals = flags & Material::Flags::Other::GenerateNormals;
-#if EWE_DEBUG
-		if (generatingNormals) {
-			//probably going to need a breakpoint here for debugging
-		}
 #endif
 		const bool hasAlbedo = flags & Material::Flags::Texture::Albedo;
 		const bool hasBumps = flags & Material::Flags::Texture::Bump;
@@ -167,11 +171,11 @@ namespace EWE {
 		const uint8_t textureCount = Material::GetTextureCount(flags);
 		const uint16_t pipeLayoutIndex = Material::GetPipeLayoutIndex(flags);
 
-#if EWE_DEBUG
-		printf("textureCount, hasBones, instanced, generatingNormals - %d:%d:%d:%d \n", textureCount, hasBones, instanced, generatingNormals);
-#endif
-
+#if DEBUGGING_MATERIAL_NORMALS
 		MaterialPipelines::InitMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, hasBumps, generatingNormals);
+#else
+		MaterialPipelines::InitMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, hasBumps);
+#endif
 
 		//printf("creating pipeline, dynamicShaderFinding, (key value:%d)-(bones:%d)-(normal:%d)-(rough:%d)-(metal:%d)-(ao:%d) \n", newFlags, hasBones, hasNormal, hasRough, hasMetal, hasAO );
 		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
@@ -268,7 +272,11 @@ namespace EWE {
 		return instancedBonePipelines.at(key);
 	}
 
+#if DEBUGGING_MATERIAL_NORMALS
 	void MaterialPipelines::InitMaterialPipeLayout(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump, bool generatingNormals) {
+#else
+	void MaterialPipelines::InitMaterialPipeLayout(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
+#endif
 		//layouts
 		//textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))
 		if (materialPipeLayout[pipeLayoutIndex].pipeLayout == VK_NULL_HANDLE) {
@@ -295,7 +303,11 @@ namespace EWE {
 				pipelineLayoutInfo.pushConstantRangeCount = 1;
 			}
 
+#if DEBUGGING_MATERIAL_NORMALS
 			InitPipeDSL(pipeLayoutIndex, textureCount, hasBones, instanced, hasBump, generatingNormals);
+#else
+			InitPipeDSL(pipeLayoutIndex, textureCount, hasBones, instanced, hasBump);
+#endif
 			pipelineLayoutInfo.setLayoutCount = 1;
 			pipelineLayoutInfo.pSetLayouts = eDSLs[pipeLayoutIndex]->GetDescriptorSetLayout();
 
@@ -449,7 +461,6 @@ namespace EWE {
 		const bool hasNormal = flags & Material::Flags::Texture::Normal;
 		const bool hasBumps = flags & Material::Flags::Texture::Bump;
 		const bool instanced = flags & Material::Flags::Other::Instanced;
-		const bool generatingNormals = flags & Material::Flags::Other::GenerateNormals;
 
 		std::string vertString;
 

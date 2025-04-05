@@ -26,7 +26,7 @@ namespace EWE {
 		menuManager.giveMenuFocus();
 		assert(sphereModel == nullptr);
 
-		sphereModel = Basic_Model::Sphere(1, 1.f);
+		sphereModel = Basic_Model::Sphere(0, 1.f);
 
 		controlledSphere.drawable = &sphereDrawable;
 		sphereTransform.translation = glm::vec3(0.f, -2.f, 9.f);
@@ -44,23 +44,28 @@ namespace EWE {
 		RigidRenderingSystem::AddInstancedMaterialObject(matInfo, sphereModel, 16, false);
 		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> materialBuffers = RigidRenderingSystem::GetBothMaterialBuffers(matInfo.materialFlags, sphereModel);
 		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(matInfo.materialFlags, sphereModel);
+#if DEBUGGING_MATERIAL_NORMALS
 		matInfo.materialFlags |= Material::Flags::GenerateNormals;
 		RigidRenderingSystem::AddInstancedMaterialObject(matInfo, sphereModel, 16, false);
 		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> gn_transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(matInfo.materialFlags, sphereModel);
 
 		matInfo.materialFlags = Material::Flags::GenerateNormals;
 		RigidRenderingSystem::AddMaterialObject(matInfo, controlledSphere, csmEWEBuffer);
+#endif
 		matInfo.materialFlags = 0;
 		RigidRenderingSystem::AddMaterialObject(matInfo, controlledSphere, csmEWEBuffer);
 
 
 		transformBuffers[0]->Map();
 		transformBuffers[1]->Map();
+#if DEBUGGING_MATERIAL_NORMALS
 		gn_transformBuffers[0]->Map();
 		gn_transformBuffers[1]->Map();
-		uint64_t mappedTransformAddr[4] = {reinterpret_cast<uint64_t>(transformBuffers[0]->GetMappedMemory()), reinterpret_cast<uint64_t>(transformBuffers[1]->GetMappedMemory()),
-			reinterpret_cast<uint64_t>(gn_transformBuffers[0]->GetMappedMemory()), reinterpret_cast<uint64_t>(gn_transformBuffers[1]->GetMappedMemory())
+		uint64_t mappedTransformAddr[4] = {reinterpret_cast<uint64_t>(transformBuffers[0]->GetMappedMemory()), reinterpret_cast<uint64_t>(transformBuffers[1]->GetMappedMemory()), reinterpret_cast<uint64_t>(gn_transformBuffers[0]->GetMappedMemory()), reinterpret_cast<uint64_t>(gn_transformBuffers[1]->GetMappedMemory())
 		};
+#else
+		uint64_t mappedTransformAddr[2] = { reinterpret_cast<uint64_t>(transformBuffers[0]->GetMappedMemory()), reinterpret_cast<uint64_t>(transformBuffers[1]->GetMappedMemory()) };
+#endif
 
 		TransformComponent transform{};
 		const glm::vec3 baseAlbedo{ 0.41f, 0.249f, 0.f };
@@ -79,18 +84,22 @@ namespace EWE {
 
 				memcpy(reinterpret_cast<void*>(mappedTransformAddr[0] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
 				memcpy(reinterpret_cast<void*>(mappedTransformAddr[1] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
+#if DEBUGGING_MATERIAL_NORMALS
 				memcpy(reinterpret_cast<void*>(mappedTransformAddr[2] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
 				memcpy(reinterpret_cast<void*>(mappedTransformAddr[3] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
+#endif
 			}
 		}
 		transformBuffers[0]->Flush();
 		transformBuffers[0]->Unmap();
 		transformBuffers[1]->Flush();
 		transformBuffers[1]->Unmap();
+#if DEBUGGING_MATERIAL_NORMALS
 		gn_transformBuffers[0]->Flush();
 		gn_transformBuffers[0]->Unmap();
 		gn_transformBuffers[1]->Flush();
 		gn_transformBuffers[1]->Unmap();
+#endif
 
 		StagingBuffer* stagingBuffer = Construct<StagingBuffer>({16 * sizeof(MaterialBuffer), matData.data()});
 

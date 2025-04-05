@@ -34,7 +34,7 @@ namespace EWE {
 		MaterialBuffer controlledSphereMB;
 		int updatedCMB = 0; //CMB == controlled material buffer
 
-
+		EWEModel* groundModel{ nullptr };
 		EWEModel* sphereModel{ nullptr };
 
 		void RenderLBOControls();
