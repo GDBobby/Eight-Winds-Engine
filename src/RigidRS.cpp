@@ -176,10 +176,13 @@ namespace EWE {
             descWriter.WriteBuffer(DescriptorHandler::GetCameraDescriptorBufferInfo(i));
             descWriter.WriteBuffer(DescriptorHandler::GetLightingDescriptorBufferInfo(i));
             descWriter.WriteBuffer(buffer.GetTransformDescriptorBufferInfo(i)); //instancing
-            descWriter.WriteBuffer(buffer.GetMaterialDescriptorBufferInfo(i)); //instancing
+            auto const& bindings = eDSL->GetBindings();
+            if (bindings.size() > 3) {
+                descWriter.WriteBuffer(buffer.GetMaterialDescriptorBufferInfo(i)); //instancing
 
-            if (imageID != IMAGE_INVALID) {
-                descWriter.WriteImage(imageID);
+                if (bindings.size() > 4) {
+                    descWriter.WriteImage(imageID);
+                }
             }
             descriptorSets[i] = descWriter.Build();
         }

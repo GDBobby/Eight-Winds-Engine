@@ -3,6 +3,7 @@ layout(location = 0) out vec4 fragColor;
 layout (location = 0) in vec3 fragPosWorld[];
 layout (location = 1) in vec3 fragNormalWorld[];
 layout (location = 2) in vec2 fragTexCoord[];
+layout(location = 3)in float instanceIndex[];
 layout(set = 0, binding = 0) uniform GlobalUbo {
 	mat4 projView;
 	vec4 cameraPos;

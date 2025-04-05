@@ -59,8 +59,16 @@ namespace EWE {
 					bracketCount--;
 					debugShader << '\n';
 				}
-				if(bracketCount > 0) {
-					debugShader.write(&tabChar, bracketCount);
+				for (uint8_t j = 0; j < (bracketCount - 1); j++) {
+					debugShader << '\t';
+				}
+				if (bracketCount > 0) {
+					if (i < (retBuf.size() - 1)) {
+						if (retBuf[i + 1] != '}') {
+							debugShader << '\t';
+						}
+					}
+					
 				}
 			}
 		}
@@ -145,6 +153,10 @@ namespace EWE {
 					}
 					retBuf += FragmentShaderText::fragNNEntry[i][j];
 				}
+			}
+			if (flags & Material::Flags::Instanced) {
+				//i need to make this 3 dynamic
+				retBuf += "layout(location = 3)in float instanceIndex[];";
 			}
 		}
 		else {

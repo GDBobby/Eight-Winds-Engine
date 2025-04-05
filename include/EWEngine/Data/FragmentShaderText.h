@@ -38,13 +38,13 @@ namespace FragmentShaderText {
 	const std::vector<std::string> DistributionGGXFuncBlock{
 		"float DistributionGGX(const float NdotH, const float rough) {",
 		"const float a2 = rough * rough;",
-		"float denom = NdotH * NdotH * (a2 - 1.0) + 1.0;",
+		"const float denom = NdotH * NdotH * (a2 - 1.0) + 1.0;",
 		"return a2 / (PI * denom * denom);}"
 	};
 	const std::vector<std::string> FresnelShlickFuncBlock{
 		"vec3 FresnelShlick(const float VdotH, const float metallic, const vec3 albedo){",
-		"const vec3 f0 = mix(vec3(0.04), vec3(albedo), metallic);",
-		"return f0 + (1.0 - f0) * pow(clamp(1.0 - VdotH, 0.0, 1.0), 5.0);}",
+		"const vec3 baseReflectivity = mix(vec3(0.04), vec3(albedo), metallic);",
+		"return baseReflectivity + (1.0 - baseReflectivity) * pow(clamp(1.0 - VdotH, 0.0, 1.0), 5.0);}",
 	};
 	const std::vector<std::string> CombinedGeoFuncBlock{
 		"float CombinedGeometrySmith(const float NdotL, const float NdotV, const float roughness){",

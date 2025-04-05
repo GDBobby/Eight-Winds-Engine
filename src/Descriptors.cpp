@@ -41,10 +41,17 @@ namespace EWE {
         VkDescriptorSetLayoutBinding globalBindings{};
         globalBindings.binding = 0;
         globalBindings.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+#if DEBUGGING_MATERIAL_NORMALS
+        globalBindings.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
+#else
         globalBindings.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+#endif
         globalBindings.descriptorCount = 1;
         bindings.push_back(globalBindings);
 
+#if DEBUGGING_MATERIAL_NORMALS
+        globalBindings.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+#endif
         globalBindings.binding = 1;
         bindings.push_back(globalBindings);
 

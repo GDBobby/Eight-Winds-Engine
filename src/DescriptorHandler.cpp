@@ -9,7 +9,6 @@ namespace EWE {
     std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> globalBuffer;
     std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> lightBuffer;
 
-
     VkDescriptorBufferInfo* DescriptorHandler::GetCameraDescriptorBufferInfo(uint8_t whichFrame) {
         return globalBuffer[whichFrame]->DescriptorInfo();
     }

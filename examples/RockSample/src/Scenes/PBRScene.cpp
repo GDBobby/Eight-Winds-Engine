@@ -28,9 +28,6 @@ namespace EWE {
 
 		sphereModel = Basic_Model::Sphere(1, 1.f);
 
-		MaterialInfo matInfo;
-		matInfo.imageID = IMAGE_INVALID;
-		matInfo.materialFlags = Material::Flags::Other::Instanced;
 		controlledSphere.drawable = &sphereDrawable;
 		sphereTransform.translation = glm::vec3(0.f, -2.f, 9.f);
 		controlledSphere.ownerTransform = &sphereTransform;
@@ -41,20 +38,29 @@ namespace EWE {
 			Construct<EWEBuffer>({sizeof(MaterialBuffer), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT})
 		};
 
-		//RigidRenderingSystem::AddMaterialObject(matInfo, matObjInfo);
+		MaterialInfo matInfo;
+		matInfo.imageID = IMAGE_INVALID;
+		matInfo.materialFlags = Material::Flags::Other::Instanced;
 		RigidRenderingSystem::AddInstancedMaterialObject(matInfo, sphereModel, 16, false);
+		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> materialBuffers = RigidRenderingSystem::GetBothMaterialBuffers(matInfo.materialFlags, sphereModel);
+		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(matInfo.materialFlags, sphereModel);
+		matInfo.materialFlags |= Material::Flags::GenerateNormals;
+		RigidRenderingSystem::AddInstancedMaterialObject(matInfo, sphereModel, 16, false);
+		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> gn_transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(matInfo.materialFlags, sphereModel);
+
 		matInfo.materialFlags = Material::Flags::GenerateNormals;
 		RigidRenderingSystem::AddMaterialObject(matInfo, controlledSphere, csmEWEBuffer);
 		matInfo.materialFlags = 0;
 		RigidRenderingSystem::AddMaterialObject(matInfo, controlledSphere, csmEWEBuffer);
 
-		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> materialBuffers = RigidRenderingSystem::GetBothMaterialBuffers(sphereModel);
-		const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> transformBuffers = RigidRenderingSystem::GetBothTransformBuffers(sphereModel);
 
 		transformBuffers[0]->Map();
 		transformBuffers[1]->Map();
-		void* mappedTransforms[2] = { transformBuffers[0]->GetMappedMemory(), transformBuffers[1]->GetMappedMemory() };
-		uint64_t mappedTransformAddr[2] = {reinterpret_cast<uint64_t>(mappedTransforms[0]), reinterpret_cast<uint64_t>(mappedTransforms[1])};
+		gn_transformBuffers[0]->Map();
+		gn_transformBuffers[1]->Map();
+		uint64_t mappedTransformAddr[4] = {reinterpret_cast<uint64_t>(transformBuffers[0]->GetMappedMemory()), reinterpret_cast<uint64_t>(transformBuffers[1]->GetMappedMemory()),
+			reinterpret_cast<uint64_t>(gn_transformBuffers[0]->GetMappedMemory()), reinterpret_cast<uint64_t>(gn_transformBuffers[1]->GetMappedMemory())
+		};
 
 		TransformComponent transform{};
 		const glm::vec3 baseAlbedo{ 0.41f, 0.249f, 0.f };
@@ -64,8 +70,8 @@ namespace EWE {
 		for (uint8_t x = 0; x < 4; x++) {
 			for (uint8_t y = 0; y < 4; y++) {
 				matData[y + x * 4].albedo = baseAlbedo;
-				matData[y + x * 4].rough = x / 3.f;
-				matData[y + x * 4].metal = y / 3.f;
+				matData[y + x * 4].rough = 1.f - x / 3.f;
+				matData[y + x * 4].metal = 1.f - y / 3.f;
 				transform.translation.x = -7.f + 4.f * x;
 				transform.translation.z = -7.f + 4.f * y;
 
@@ -73,21 +79,25 @@ namespace EWE {
 
 				memcpy(reinterpret_cast<void*>(mappedTransformAddr[0] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
 				memcpy(reinterpret_cast<void*>(mappedTransformAddr[1] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
+				memcpy(reinterpret_cast<void*>(mappedTransformAddr[2] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
+				memcpy(reinterpret_cast<void*>(mappedTransformAddr[3] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
 			}
 		}
 		transformBuffers[0]->Flush();
 		transformBuffers[0]->Unmap();
 		transformBuffers[1]->Flush();
 		transformBuffers[1]->Unmap();
+		gn_transformBuffers[0]->Flush();
+		gn_transformBuffers[0]->Unmap();
+		gn_transformBuffers[1]->Flush();
+		gn_transformBuffers[1]->Unmap();
 
 		StagingBuffer* stagingBuffer = Construct<StagingBuffer>({16 * sizeof(MaterialBuffer), matData.data()});
 
 		auto& cmdBuf = SyncHub::GetSyncHubInstance()->BeginSingleTimeCommandTransfer();
 
-		auto matBuffers = RigidRenderingSystem::GetBothMaterialBuffers(sphereModel);
-
-		VK::CopyBuffer(cmdBuf, stagingBuffer->buffer, matBuffers[0]->GetBuffer(), 16 * sizeof(MaterialBuffer));
-		VK::CopyBuffer(cmdBuf, stagingBuffer->buffer, matBuffers[1]->GetBuffer(), 16 * sizeof(MaterialBuffer));
+		VK::CopyBuffer(cmdBuf, stagingBuffer->buffer, materialBuffers[0]->GetBuffer(), 16 * sizeof(MaterialBuffer));
+		VK::CopyBuffer(cmdBuf, stagingBuffer->buffer, materialBuffers[1]->GetBuffer(), 16 * sizeof(MaterialBuffer));
 
 		TransferCommand transferCommand{};
 		transferCommand.commands.push_back(&cmdBuf);

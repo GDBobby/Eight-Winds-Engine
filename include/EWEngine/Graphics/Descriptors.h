@@ -28,7 +28,6 @@ namespace EWE {
 #else
             EWEDescriptorSetLayout* Build();
 #endif
-
         private:
             std::vector<VkDescriptorSetLayoutBinding> bindings{};
             uint8_t currentBindingCount = 0;
@@ -40,6 +39,9 @@ namespace EWE {
         EWEDescriptorSetLayout& operator=(const EWEDescriptorSetLayout&) = delete;
 
         [[nodiscard]] VkDescriptorSetLayout* GetDescriptorSetLayout() { return &descriptorSetLayout; }
+        std::vector<VkDescriptorSetLayoutBinding> const& GetBindings() { //read only
+            return bindings;
+        }
     private:
         VkDescriptorSetLayout descriptorSetLayout;
         std::vector<VkDescriptorSetLayoutBinding> bindings;

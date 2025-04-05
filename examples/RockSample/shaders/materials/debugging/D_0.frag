@@ -1,7 +1,6 @@
 layout (location = 0) in vec3 fragPosWorld;
 layout (location = 1) in vec3 fragNormalWorld;
 layout (location = 2) in vec2 fragTexCoord;
-layout (location = 3) in float instanceIndex;
 layout (location = 0) out vec4 outColor;
 struct PointLight{
 	vec4 position;
@@ -83,25 +82,19 @@ vec3 Sun_BRDF(const vec3 albedo, const float metal, const float rough, const vec
 	return (kD * albedo / PI + specular) * lbo.sunColor.rgb * lbo.sunColor.w * NdotL;
 }
 
-struct MaterialBuffer{
+layout (set = 0, binding = 2) uniform MaterialBufferObject{
 	vec3 albedo;
 	float rough;
 	float metal;
 }
 
-;
-layout(std430, set = 0, binding = 3) readonly buffer MaterialBufferObject{
-	MaterialBuffer mbo[];
-}
-
-;
+mbo;
 void main(){
-	int instanceIndexInt = int(instanceIndex);
-	vec3 albedo = mbo[instanceIndexInt].albedo;
+	vec3 albedo = mbo.albedo;
 	const vec3 viewDir = normalize(ubo.cameraPos.xyz - fragPosWorld);
 	vec3 normal = normalize(fragNormalWorld);
-	float rough = mbo[instanceIndexInt].rough;
-	float metal = mbo[instanceIndexInt].metal;
+	float rough = mbo.rough;
+	float metal = mbo.metal;
 	const float NdotV = max(dot(normal, viewDir), 0.0);
 	vec3 Lo = Pointlight_BRDF(albedo, metal, rough, normal, viewDir, NdotV);
 	Lo += Sun_BRDF(albedo, metal, rough, normal, viewDir, NdotV);
