@@ -84,7 +84,7 @@ namespace EWE {
 
 	FloatingRock::FloatingRock() : rockMaterial{ Material_Image::CreateMaterialImage("eye/", true, true) } {
 		//rockModel = EWEModel::CreateModelFromFile("rock1.obj", Queue::transfer);
-		rockMaterial.materialFlags |= Material::Instanced;
+		rockMaterial.materialFlags |= Material::Flags::Other::Instanced;
 
 		std::ifstream inFile("models/eye_simpleMesh.ewe", std::ifstream::binary);
 		//inFile.open();

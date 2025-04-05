@@ -26,19 +26,18 @@ namespace EWE {
             }
         }
 
-        const std::array<std::vector<std::string>, MAX_MATERIAL_TEXTURE_COUNT> matImgTypes = {
-            //ordering it like this is necessary, the engine is set up so that vertex textures are always binded lower than fragment textures.
-            // this needs to be in sync with MaterialImgType
-            std::vector<std::string>{ "bump", "height"},
+        const std::array<std::vector<std::string>, Material::Attributes::Texture::SIZE> matImgTypes = {
 
+            //its important that this lines up with Material::Attributes::Texture
+            std::vector<std::string>{"bump", "height"},
             std::vector<std::string>{"Diffuse", "albedo", "diffuse", "Albedo", "BaseColor", "Base_Color"},
-            std::vector<std::string>{ "Normal", "normal" },
-            std::vector<std::string>{ "roughness", "rough", "Rough", "Roughness"},
-            std::vector<std::string>{ "metallic", "metal", "Metallic", "Metal"},
-            std::vector<std::string>{ "ao", "ambientOcclusion", "AO", "AmbientOcclusion", "Ao"},
+            std::vector<std::string>{"metallic", "metal", "Metallic", "Metal"},
+            std::vector<std::string>{"roughness", "rough", "Rough", "Roughness"},
+            std::vector<std::string>{"Normal", "normal" },
+            std::vector<std::string>{"ao", "ambientOcclusion", "AO", "AmbientOcclusion", "Ao"},
         };
         std::vector<std::string> matPaths{};
-        std::array<bool, MAX_MATERIAL_TEXTURE_COUNT> foundTypes{false};
+        std::array<bool, Material::Attributes::Texture::SIZE> foundTypes{false};
 
         for (int i = 0; i < matImgTypes.size(); i++) {
             //foundTypes[i] = true;
@@ -80,16 +79,16 @@ namespace EWE {
         const ImageID imgID = imPtr->CreateImageArray(pixelPeeks, mipmapping);
 
         //flags = normal, metal, rough, ao
-        const MaterialFlags flags = (foundTypes[MT_albedo] * Material::Albedo) + (foundTypes[MT_bump] * Material::Bump) + (foundTypes[MT_metal] * Material::Metal) + (foundTypes[MT_rough] * Material::Rough) + (foundTypes[MT_ao] * Material::AO) + ((foundTypes[MT_normal] * Material::Normal));
+        const MaterialFlags flags = (foundTypes[Material::Attributes::Texture::Albedo] * Material::Flags::Texture::Albedo) + (foundTypes[Material::Attributes::Texture::Bump] * Material::Flags::Texture::Bump) + (foundTypes[Material::Attributes::Texture::Metal] * Material::Flags::Texture::Metal) + (foundTypes[Material::Attributes::Texture::Rough] * Material::Flags::Texture::Rough) + (foundTypes[Material::Attributes::Texture::AO] * Material::Flags::Texture::AO) + ((foundTypes[Material::Attributes::Texture::Normal] * Material::Flags::Texture::Normal));
         //printf("flag values : %d \n", flags);
         assert(flags != 0 && "found zero images in material texture, needs at least one");
 
 #if EWE_DEBUG
-        if (!foundTypes[MT_albedo]) {
+        if (!foundTypes[Material::Attributes::Texture::Albedo]) {
             printf("did not find an albedo or diffuse texture for this MRO set : %s \n", texPath.c_str());
             assert(false);
         }
-        if (foundTypes[MT_bump]) {
+        if (foundTypes[Material::Attributes::Texture::Bump]) {
             printf("found a height map \n");
         }
 #endif

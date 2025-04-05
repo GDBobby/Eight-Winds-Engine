@@ -25,7 +25,7 @@ namespace EWE {
 
 	std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> SkinRenderSystem::CreateDescriptorSets(MaterialInfo materialInfo, SkeletonID skeletonID) {
 
-		if (materialInfo.materialFlags & Material::Instanced) {
+		if (materialInfo.materialFlags & Material::Flags::Other::Instanced) {
 			return CreateDescriptorSetsHelper(materialInfo, &skinnedMainObject->instancedBuffers.at(skeletonID));
 		}
 		else {
@@ -303,10 +303,10 @@ namespace EWE {
 		printf("adding skeleton \n");
 #endif
 
-		materialInfo.materialFlags |= Material::Bones;
+		materialInfo.materialFlags |= Material::Flags::Other::Bones;
 
 		if (instanced) {
-			materialInfo.materialFlags |= Material::Instanced;
+			materialInfo.materialFlags |= Material::Flags::Other::Instanced;
 
 			uint32_t instancedFlags = (boneCount << 16) + materialInfo.materialFlags;
 

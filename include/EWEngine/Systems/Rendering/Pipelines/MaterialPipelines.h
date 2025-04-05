@@ -1,17 +1,14 @@
 #pragma once
 
-#include <unordered_map>
 #include "EWEngine/Data/EWE_Utils.h"
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Graphics/Pipeline.h"
 
+#include <unordered_map>
+
 #ifndef MATERIAL_PIPE_LAYOUT_COUNT
-#define MATERIAL_PIPE_LAYOUT_COUNT MAX_MATERIAL_TEXTURE_COUNT << 3
-//can be thought of as a multidimensional array, with a size of [4][MAX_MATERIAL_TEXTURE_COUNT]
-//[0][x] is a material without bones or instancing
-//[1][x] is a material with bones but no instancing
-//[2][x] is a material with instancing
-//[3][x] is a material with instancing and bones
+//can be thought of as a multidimensional array, with a size of [Material::Atributes::Vertex::COUNT][Material::Attributes::Texture::SIZE]
+#define MATERIAL_PIPE_LAYOUT_COUNT (Material::Attributes::Texture::SIZE << (Material::Attributes::Other::COUNT - Material::Attributes::Texture::SIZE))
 #endif
 
 namespace EWE {
@@ -45,7 +42,7 @@ namespace EWE{
 		//	EWEPipeline(uint16_t boneCount, MaterialFlags flags, PipelineConfigInfo const& configInfo);
 		MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilepath, std::string const& fragFilepath, EWEPipeline::PipelineConfigInfo const& configInfo);
 		MaterialPipelines(uint16_t pipeLayoutIndex, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, EWEPipeline::PipelineConfigInfo const& configInfo);
-		MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilePath, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo, bool hasBones);
+		MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilePath, MaterialFlags flags, EWEPipeline::PipelineConfigInfo& configInfo);
 		MaterialPipelines(uint16_t pipeLayoutIndex, uint16_t boneCount, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo);
 
 		~MaterialPipelines();
@@ -53,8 +50,8 @@ namespace EWE{
 		void BindPipeline();
 
 		void BindModel(EWEModel* model);
-		void BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet);
-		void BindDescriptor(uint8_t descSlot, const VkDescriptorSet* descSet);
+		void BindDescriptor(const uint8_t descSlot, VkDescriptorSet* descSet);
+		void BindDescriptor(const uint8_t descSlot, const VkDescriptorSet* descSet);
 
 		void Push(void* push);
 		void PushAndDraw(void* push);
@@ -73,16 +70,18 @@ namespace EWE{
     public:
 
 		//pipelayout index is computed before passing in because the calling function is always using it as well
-		static void InitMaterialPipeLayout(uint16_t materialPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump);
+		static void InitMaterialPipeLayout(uint16_t materialPipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump, bool generatingNormals);
 		static MaterialPipelines* GetMaterialPipe(MaterialFlags flags);
-		static MaterialPipelines* GetMaterialPipe(MaterialFlags flags, uint16_t boneCount);
+
+		//this is pretty shitty, entitycount could alos be bonecount if it has bones and not instancing or something. not even sure if it can be instanced and boned
+		static MaterialPipelines* GetMaterialPipe(MaterialFlags flags, uint16_t entityCount);
 
 		static void InitStaticVariables();
 		static void CleanupStaticVariables();
 
-		static MaterialPipelines* At(Material::Flags flags);
+		static MaterialPipelines* At(MaterialFlags flags);
 		static MaterialPipelines* At(SkinInstanceKey skinInstanceKey);
-		static MaterialPipelines* At(uint16_t boneCount, Material::Flags flags);
+		static MaterialPipelines* At(uint16_t boneCount, MaterialFlags flags);
 
 		static EWEDescriptorSetLayout* GetDSL(uint16_t pipeLayoutIndex);
 		static EWEDescriptorSetLayout* GetDSLFromFlags(MaterialFlags flags);
@@ -93,7 +92,7 @@ namespace EWE{
 
 #if EWE_DEBUG
 		static std::vector<MaterialFlags> bonePipeTracker;
-		static std::vector<std::pair<uint16_t, Material::Flags>> instancedBonePipeTracker;
+		static std::vector<std::pair<uint16_t, MaterialFlags>> instancedBonePipeTracker;
 		static MaterialPipelines* currentPipe;
 #endif
 		static MaterialPipelines* CreatePipe(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags);

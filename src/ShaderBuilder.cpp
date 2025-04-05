@@ -28,6 +28,47 @@ namespace EWE {
 		}
 	} //namespace ShaderBlock
 
+#if DEBUGGING_SHADERS
+	void DEBUG_OutputShader(std::string const& retBuf, MaterialFlags const flags, std::string const& extension) {
+		if (!std::filesystem::exists("shaders/materials/debugging")) {
+			printf("debugging directory doesn't exist, creating\n");
+			std::filesystem::create_directories("shaders/materials/debugging");
+		}
+
+		std::string debugShaderPath = "shaders/materials/debugging/D_";
+		debugShaderPath += std::to_string(flags) + extension;
+		std::ofstream debugShader{ debugShaderPath, std::ios::trunc };
+		if (!debugShader.is_open()) {
+			printf("COULD NOT OPEN OR FIND DEBUG SHADER FILE\n");
+		}
+
+		uint64_t last = 0;
+		int bracketCount = 0;
+		const char tabChar = '\t';
+		for (int i = 0; i < retBuf.size(); i++) {
+
+			if ((retBuf[i] == ';') || (retBuf[i] == '{') || (retBuf[i] == '}')) {
+
+				debugShader << retBuf.substr(last, i - last + 1);
+				if (retBuf[i] == '{') {
+					bracketCount++;
+				}
+				last = i + 1;
+				debugShader << '\n';
+				if (retBuf[i] == '}') {
+					bracketCount--;
+					debugShader << '\n';
+				}
+				if(bracketCount > 0) {
+					debugShader.write(&tabChar, bracketCount);
+				}
+			}
+		}
+
+		debugShader.close();
+	}
+#endif
+
 	void AddBindings(std::string& retBuf, bool hasAlbedo, bool hasNormal, bool hasRough, bool hasMetal, bool hasAO, bool hasBumps, bool hasBones, bool instanced) {
 		uint8_t currentBinding = 2 + instanced + hasBones;
 
@@ -55,15 +96,17 @@ namespace EWE {
 			retBuf += std::to_string(currentBinding);
 			retBuf += FragmentShaderText::secondHalfBinding;
 
+			//its important the ordering matches Material::Attributes::Texture
+			//this is why Bump must come before any fragment attributes
+			//if any additional vertex attributes are added, they'll be considered in the initial texIndex value
 			uint8_t texIndex = hasBumps;
 
 			retBuf += "const int albedoIndex = ";
 			retBuf += std::to_string(texIndex++);
 			retBuf += ';';
 
-
-			if (hasNormal) {
-				retBuf += "const int normalIndex = ";
+			if (hasMetal) {
+				retBuf += "const int metalIndex = ";
 				retBuf += std::to_string(texIndex++);
 				retBuf += ';';
 			}
@@ -72,12 +115,12 @@ namespace EWE {
 				retBuf += std::to_string(texIndex++);
 				retBuf += ';';
 			}
-
-			if (hasMetal) {
-				retBuf += "const int metalIndex = ";
+			if (hasNormal) {
+				retBuf += "const int normalIndex = ";
 				retBuf += std::to_string(texIndex++);
 				retBuf += ';';
 			}
+
 			if (hasAO) {
 				retBuf += "const int aoIndex = ";
 				retBuf += std::to_string(texIndex++);
@@ -86,16 +129,66 @@ namespace EWE {
 		}
 	}
 
+	std::string BuildGeomShader(MaterialFlags const flags) {
+
+		std::string retBuf{};
+		bool hasBumps = flags & Material::Flags::Texture::Bump;
+
+		retBuf += "layout(triangles) in;";
+		retBuf += "layout(location = 0) out vec4 fragColor;";
+
+		if (!hasBumps) {
+			for (int i = 0; i < FragmentShaderText::fragNNEntry.size(); ++i) {
+				for (uint16_t j = 0; j < FragmentShaderText::fragNNEntry[i].size(); ++j) {
+					if (j == FragmentShaderText::fragNNEntry[i].size() - 1) {
+						retBuf += "[]";
+					}
+					retBuf += FragmentShaderText::fragNNEntry[i][j];
+				}
+			}
+		}
+		else {
+			assert(false && "not currently supported");
+			for (int i = 0; i < FragmentShaderText::fragBumpEntry.size(); i++) {
+				if (i == FragmentShaderText::fragBumpEntry.size() - 1) {
+					retBuf += "[]";
+				}
+				retBuf += FragmentShaderText::fragBumpEntry[i];
+			}
+		}
+
+		retBuf += "layout(set = 0, binding = 0) uniform GlobalUbo {";
+		retBuf += "mat4 projView;vec4 cameraPos;";
+		retBuf += "}ubo;";
+
+
+		retBuf += "layout(line_strip, max_vertices = 6) out;";
+		retBuf += "void main(){";
+		retBuf += "gl_Position = gl_in[0].gl_Position;";
+		retBuf += "fragColor = vec4(0.0, 1.0, 0.0, 1.0);";
+		retBuf += "EmitVertex();";
+		retBuf += "gl_Position = gl_Position + ubo.projView * vec4(fragNormalWorld[0], 0.0);";
+		retBuf += "fragColor = vec4(1.0, 0.0, 0.0, 1.0);";
+		retBuf += "EmitVertex();EndPrimitive();}";
+
+#if DEBUGGING_SHADERS
+		DEBUG_OutputShader(retBuf, flags, ".geom");
+#endif
+
+		return retBuf;
+	}
+
+
 	std::string BuildFragmentShader(MaterialFlags flags, bool hasBones) {
 
 		std::string retBuf{};
 
-		bool instanced = flags & Material::Instanced;
-		bool hasBumps = flags & Material::Bump;
-		bool hasNormal = flags & Material::Normal;
-		bool hasRough = flags & Material::Rough;
-		bool hasMetal = flags & Material::Metal;
-		bool hasAO = flags & Material::AO;
+		bool instanced = flags & Material::Flags::Other::Instanced;
+		bool hasBumps = flags & Material::Flags::Texture::Bump;
+		bool hasNormal = flags & Material::Flags::Texture::Normal;
+		bool hasRough = flags & Material::Flags::Texture::Rough;
+		bool hasMetal = flags & Material::Flags::Texture::Metal;
+		bool hasAO = flags & Material::Flags::Texture::AO;
 
 		if (!hasBumps) {
 			for (int i = 0; i < FragmentShaderText::fragNNEntry.size(); i++) {
@@ -118,7 +211,7 @@ namespace EWE {
 
 			FragmentShaderText::AddLighting(retBuf);
 
-			AddBindings(retBuf, flags & Material::Albedo, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
+			AddBindings(retBuf, flags & Material::Flags::Texture::Albedo, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
 
 			if (hasNormal) {
 				for (int i = 0; i < FragmentShaderText::calcNormalFunction.size(); i++) {
@@ -130,7 +223,7 @@ namespace EWE {
 				retBuf += FragmentShaderText::mainEntryBlock[0][i];
 			}
 			bool initializedInstanceIndex = false;
-			if (flags & Material::Albedo) {
+			if (flags & Material::Flags::Texture::Albedo) {
 				retBuf += "vec3 albedo = texture(materialTextures, vec3(fragTexCoord, albedoIndex)).rgb;";
 			}
 			else {
@@ -209,7 +302,7 @@ namespace EWE {
 			}
 			FragmentShaderText::AddLighting(retBuf);
 			//bump map should not have bones, but leaving it in regardless
-			AddBindings(retBuf, flags & Material::Albedo, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
+			AddBindings(retBuf, flags & Material::Flags::Texture::Albedo, hasNormal, hasRough, hasMetal, hasAO, hasBumps, hasBones, instanced);
 
 			for (int i = 0; i < FragmentShaderText::parallaxMapping.size(); i++) {
 				retBuf += FragmentShaderText::parallaxMapping[i];
@@ -271,28 +364,7 @@ namespace EWE {
 
 
 #if DEBUGGING_SHADERS
-		if (!std::filesystem::exists("shaders/materials/debugging")) {
-			printf("debugging directory doesn't exist, creating \n");
-			std::filesystem::create_directories("shaders/materials/debugging");
-		}
-
-		std::string debugShaderPath = "shaders/materials/debugging/D_";
-		debugShaderPath += std::to_string(flags) + ".frag";
-		std::ofstream debugShader{ debugShaderPath, std::ios::trunc };
-		if (!debugShader.is_open()) {
-			printf("COULD NOT OPEN OR FIND DEBUG SHADER FILE \n");
-		}
-
-		uint64_t last = 0;
-		for(int i = 0; i < retBuf.size(); i++){
-			if ((retBuf[i] == ';') || (retBuf[i] == '{') || (retBuf[i] == '}')) {
-				debugShader << retBuf.substr(last, i - last + 1);
-				last = i + 1;
-				debugShader << '\n';
-			}
-		}
-
-		debugShader.close();
+		DEBUG_OutputShader(retBuf, flags, ".frag");
 #endif
 
 		return retBuf;
@@ -502,44 +574,6 @@ namespace EWE {
 			Resources.limits.generalConstantMatrixVectorIndexing = 1;
 		}
 
-		bool ParseShader_DEBUG(TBuiltInResource& resource, EShMessages& messages, glslang::TShader& shader) {
-#if EWE_DEBUG
-			printf("parsing shader \n");
-#endif
-			/*
-			* failure here COULD mean the glslang compiler is not initiated
-			* debug steps -
-			* ensure glslang compiler is iniated
-
-			* if it is, ensure the shader code is correctly written
-			* ^ do this by going in the debug folder
-				1. add #version 450 to the beginning of the file
-				2. run the compiler manually
-			  this will give further warnings
-
-			** i really hate how little detail glslang gives
-			*/
-
-			bool finalizeHere = false;
-			if (!glslangInitialized) {
-				glslang::InitializeProcess();
-				finalizeHere = true;
-			}
-
-			const bool parseRet = shader.parse(&resource, 450, false, messages);
-			printf("shader parse DEBUG : %d \n", parseRet);
-
-			printf("info log - \n");
-
-			printf("\t%s\n", shader.getInfoLog());
-			printf("\ninfo debug log - \n");
-			printf("\t%s\n", shader.getInfoDebugLog());
-			if (finalizeHere) {
-				glslang::FinalizeProcess();
-			}
-			return parseRet;
-		}
-
 		bool ParseShader(TBuiltInResource& resource, EShMessages& messages, glslang::TShader& shader) {
 #if EWE_DEBUG
 			printf("parsing shader \n");
@@ -598,7 +632,7 @@ namespace EWE {
 			const char* const* shaderStrings = &ptrBuffer;
 			shader.setStrings(shaderStrings, 1);
 
-			ParseShader_DEBUG(Resources, messages, shader);
+			ParseShader(Resources, messages, shader);
 		}
 
 		bool BuildFlaggedFrag(MaterialFlags flags, bool hasBones, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
@@ -643,6 +677,75 @@ namespace EWE {
 				shaderFileName += "b";
 			}
 			shaderFileName += ".frag.spv";
+			std::ofstream outShader{ shaderFileName, std::ios::binary };
+
+			if (outShader.is_open()) {
+#if EWE_DEBUG
+				printf("writing to shader location : %s \n", shaderFileName.c_str());
+#endif
+				outShader.write((char*)spirv.data(), spirv.size() * sizeof(unsigned int));
+				outShader.close();
+			}
+			else {
+				printf("failed to save shader \n");
+			}
+
+			return true;
+		}
+
+		void BuildFlaggedGeom_DEBUG(std::string& debugContents) {
+
+			glslang::TShader shader(EShLangGeometry);
+			glslang::TProgram program{};
+			TBuiltInResource Resources{};
+			InitResources(Resources);
+
+			// Enable SPIR-V and Vulkan rules when parsing GLSL
+			EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDebugInfo | EShMsgEnhanced | EShMsgCascadingErrors);
+
+			const char* ptrBuffer = debugContents.c_str();
+			const char* const* shaderStrings = &ptrBuffer;
+			shader.setStrings(shaderStrings, 1);
+
+			ParseShader(Resources, messages, shader);
+		}
+
+		bool BuildFlaggedGeom(MaterialFlags flags, std::vector<unsigned int>& spirv) { //shader stage ALWAYS frag?
+
+			glslang::TShader shader(EShLangGeometry);
+			glslang::TProgram program{};
+			TBuiltInResource Resources{};
+			InitResources(Resources);
+
+			// Enable SPIR-V and Vulkan rules when parsing GLSL
+			EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDebugInfo | EShMsgEnhanced | EShMsgCascadingErrors);
+			std::string fragString = BuildGeomShader(flags);
+
+			const char* ptrBuffer = fragString.c_str();
+			const char* const* shaderStrings = &ptrBuffer;
+			shader.setStrings(shaderStrings, 1);
+
+			if (!ParseShader(Resources, messages, shader)) {
+				return false;
+			}
+
+			program.addShader(&shader);
+
+			//
+			// Program-level processing...
+			//
+			//printf("linking program \n"); //what is this doing? just processing? processing what?
+			if (!program.link(messages)) {
+				puts(shader.getInfoLog());
+				puts(shader.getInfoDebugLog());
+				fflush(stdout);
+				return false;
+			}
+			//printf("compiling \n");
+			glslang::GlslangToSpv(*program.getIntermediate(EShLangGeometry), spirv);
+			std::string shaderFileName = SHADER_DYNAMIC_PATH;
+			shaderFileName += std::to_string(flags);
+			shaderFileName += ".geom.spv";
 			std::ofstream outShader{ shaderFileName, std::ios::binary };
 
 			if (outShader.is_open()) {
@@ -906,7 +1009,7 @@ namespace EWE {
 
 		}
 
-		std::vector<uint32_t> GetFragmentShader(MaterialFlags flags, bool hasBones) {
+		std::vector<uint32_t> GetFragmentShader(MaterialFlags flags) {
 			/*
 			auto print_msg_to_printf = [](spv_message_level_t, const char*, const spv_position_t&, const char* m) {
 					printf("\t SPIRV Validator : error: %s \n", m);
@@ -918,6 +1021,9 @@ namespace EWE {
 			std::string subPath = SHADER_DYNAMIC_PATH;
 			subPath += SHADER_VERSION_ID;
 			subPath += std::to_string(flags);
+
+			const bool hasBones = flags & Material::Flags::Bones;
+
 			if (hasBones) {
 				subPath += "b";
 			}
@@ -955,7 +1061,6 @@ namespace EWE {
 			else {
 #if DEBUGGING_SHADERS
 				//output it with lines separated so i can debug faster and dont have to run a separate debugger. currently, in the first run, everything is squished to one line
-				//it shouldve been saved in debug build
 
 				std::string debugFileName = "shaders/materials/debugging/D_";
 				debugFileName += std::to_string(flags);
@@ -976,13 +1081,6 @@ namespace EWE {
 				assert(false && "failed to compile frag shader");
 				throw std::runtime_error("failed to compile shader");
 			}
-			/*
-			uint8_t paddingNeeded = 4 - shaderCodeSpirV.size() % 4;
-			printf("padding needed, size - %d:%d \n", paddingNeeded, shaderCodeSpirV.size());
-			for(int i = 0; i < paddingNeeded; i++) {
-				shaderCodeSpirV.push_back(0);
-			}
-			*/
 
 			return shaderCodeSpirV;
 
@@ -1046,6 +1144,74 @@ namespace EWE {
 
 		}
 
+
+		std::vector<uint32_t> GetGeometryShader(MaterialFlags flags) {
+			std::string subPath = SHADER_DYNAMIC_PATH;
+			subPath += SHADER_VERSION_ID;
+			subPath += std::to_string(flags);
+
+			const bool hasBones = flags & Material::Flags::Bones;
+
+			if (hasBones) {
+				subPath += "b";
+			}
+			subPath += ".geom.spv";
+			printf("subPath : %s \n", subPath.c_str());
+			if (std::filesystem::exists(subPath)) {
+				printf("reading shader from file : %ud \n", flags);
+				std::ifstream inShader{ subPath, std::ios::binary };
+				if (!inShader.is_open()) {
+					printf("failed to open an existing file? \n");
+					return {};
+				}
+				// Get the file size
+				inShader.seekg(0, std::ios::end);
+				std::streampos fileSize = inShader.tellg();
+				inShader.seekg(0, std::ios::beg);
+
+				// Calculate the number of uint32_t elements in the file
+				std::size_t numElements = fileSize / sizeof(uint32_t);
+
+				// Create a vector to store the file contents
+				std::vector<uint32_t> shaderCodeSpirV(numElements);
+
+				// Read the file data into the vector
+				inShader.read(reinterpret_cast<char*>(shaderCodeSpirV.data()), fileSize);
+
+				inShader.close();
+				return shaderCodeSpirV;
+			}
+
+			std::vector<uint32_t> shaderCodeSpirV;
+			if (SpirvHelper::BuildFlaggedGeom(flags, shaderCodeSpirV)) {
+				//printf("compiled shader to spv successfully \n");
+			}
+			else {
+#if DEBUGGING_SHADERS
+				//output it with lines separated so i can debug faster and dont have to run a separate debugger. currently, in the first run, everything is squished to one line
+
+				std::string debugFileName = "shaders/materials/debugging/D_";
+				debugFileName += std::to_string(flags);
+				debugFileName += ".geom";
+				std::ifstream savedDebuggingFile{ debugFileName, std::ios::binary };
+				assert(savedDebuggingFile.is_open());
+				{
+					std::istream is(savedDebuggingFile.rdbuf());
+					std::ostringstream ss;
+					ss << is.rdbuf();
+					std::string debugFileContents = ss.str();
+					SpirvHelper::BuildFlaggedGeom_DEBUG(debugFileContents);
+				}
+
+#endif
+
+				printf("failed to compile geom shader : %d \n", flags);
+				assert(false);
+				throw std::runtime_error("failed to compile geom shader");
+			}
+
+			return shaderCodeSpirV;
+		}
 
 	}//namespace ShaderBlock
 } //namespace EWE

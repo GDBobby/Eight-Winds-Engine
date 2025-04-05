@@ -115,7 +115,7 @@ namespace EWE {
         for (int i = 0; i < meshSimple.size(); i++) {
             meshes.emplace_back(Construct<EWEModel>({ meshSimple[i].vertices.data(), meshSimple[i].vertices.size(), tempData.meshSimpleExport.vertex_size, meshSimple[i].indices}));
             if (instanceCount > 1) {
-                textureTracker.meshSimpleNames[i].materialFlags |= Material::Instanced;
+                textureTracker.meshSimpleNames[i].materialFlags |= Material::Flags::Other::Instanced;
                 RigidRenderingSystem::AddInstancedMaterialObject(textureTracker.meshSimpleNames[i], meshes.back(), instanceCount, computedTransforms);
             }
             else {
@@ -128,7 +128,7 @@ namespace EWE {
             meshes.emplace_back(Construct<EWEModel>({ meshNTSimple[i].vertices.data(), meshNTSimple[i].vertices.size(), tempData.meshNTSimpleExport.vertex_size, meshNTSimple[i].indices}));
 
             if (instanceCount > 1) {
-                textureTracker.meshNTSimpleNames[i].materialFlags |= Material::Instanced;
+                textureTracker.meshNTSimpleNames[i].materialFlags |= Material::Flags::Other::Instanced;
                 RigidRenderingSystem::AddInstancedMaterialObject(textureTracker.meshNTSimpleNames[i], meshes.back(), instanceCount, computedTransforms);
             }
             else {
@@ -154,7 +154,7 @@ namespace EWE {
             auto const& mesh = tempData.meshExport.meshes;
             for (uint16_t i = 0; i < tempData.meshExport.meshes.size(); i++) {
                 meshes.push_back(Construct<EWEModel>({ mesh[i].vertices.data(), mesh[i].vertices.size(), tempData.meshExport.vertex_size, mesh[i].indices}));
-                textureTracker.meshNames[i].materialFlags |= Material::Bones;
+                textureTracker.meshNames[i].materialFlags |= Material::Flags::Other::Bones;
                 SkinRenderSystem::AddWeapon(textureTracker.meshNames[i], meshes[i], mySkinID, skeletonOwner);
             }
         }
@@ -164,7 +164,7 @@ namespace EWE {
             
             for (uint16_t i = 0; i < tempData.meshNTExport.meshes.size(); i++) {
                 meshes.push_back(Construct<EWEModel>({ meshNT[i].vertices.data(), meshNT[i].vertices.size(), tempData.meshNTExport.vertex_size, tempData.meshNTExport.meshes[i].indices}));
-                textureTracker.meshNames[i].materialFlags |= Material::Bones;
+                textureTracker.meshNames[i].materialFlags |= Material::Flags::Other::Bones;
                 SkinRenderSystem::AddWeapon(textureTracker.meshNTNames[i], meshes[i], mySkinID, skeletonOwner);
             }
         }

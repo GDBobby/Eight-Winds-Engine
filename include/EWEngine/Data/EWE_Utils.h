@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <functional>
+
 namespace EWE {
 
 	template <typename T, typename... Rest>

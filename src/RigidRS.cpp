@@ -16,7 +16,7 @@ namespace EWE {
             descWriter.WriteBuffer(materialBuffer->DescriptorInfo());
 
             //need to get a full texture count here
-            if (materialInfo.materialFlags & Material::Albedo) {
+            if (materialInfo.materialFlags & Material::Flags::Texture::Albedo) {
                 descWriter.WriteImage(materialInfo.imageID);
             }
             ret[i] = descWriter.Build();
@@ -41,10 +41,15 @@ namespace EWE {
             EWEDescriptorWriter descWriter{ eDSL, DescriptorPool_Global };
             DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
 
-            descWriter.WriteBuffer(materialBuffer[i]->DescriptorInfo());
+            if ((materialInfo.materialFlags & Material::Flags::GenerateNormals) == 0) {
+                descWriter.WriteBuffer(materialBuffer[i]->DescriptorInfo());
 
-            //need to get a full texture count here
-            if (materialInfo.materialFlags & Material::Albedo) {
+                //need to get a full texture count here
+                if (materialInfo.materialFlags & Material::Flags::Texture::Albedo) {
+                    descWriter.WriteImage(materialInfo.imageID);
+                }
+            }
+            else if (materialInfo.materialFlags & Material::Flags::Bump) {
                 descWriter.WriteImage(materialInfo.imageID);
             }
             ret[i] = descWriter.Build();
@@ -459,7 +464,7 @@ namespace EWE {
 #elif EWE_DEBUG
 
                 uint8_t flags = iter->first;
-                assert(((flags & Material::Bones) == 0) && "should not have bones here");
+                assert(((flags & Material::Flags::Other::Bones) == 0) && "should not have bones here");
 #endif
                 iter->second.Render();
             }
@@ -473,11 +478,11 @@ namespace EWE {
                 printf("iter->first:second - %d:%d \n", iter->first, iter->second.size());
                 uint8_t flags = iter->first;
                 printf("Drawing dynamic materials : %d \n", flags);
-                assert(((flags & Material::Bones) == 0) && "should not have bones here");
+                assert(((flags & Material::Flags::Other::Bones) == 0) && "should not have bones here");
 #elif EWE_DEBUG
 
                 uint8_t flags = iter->first;
-                assert(((flags & Material::Bones) == 0) && "should not have bones here");
+                assert(((flags & Material::Flags::Other::Bones) == 0) && "should not have bones here");
 #endif
                 iter->second.Render();
 

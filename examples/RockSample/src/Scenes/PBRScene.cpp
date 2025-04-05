@@ -26,11 +26,11 @@ namespace EWE {
 		menuManager.giveMenuFocus();
 		assert(sphereModel == nullptr);
 
-		sphereModel = Basic_Model::Sphere(4, 1.f);
+		sphereModel = Basic_Model::Sphere(1, 1.f);
 
 		MaterialInfo matInfo;
 		matInfo.imageID = IMAGE_INVALID;
-		matInfo.materialFlags = Material::Instanced;
+		matInfo.materialFlags = Material::Flags::Other::Instanced;
 		controlledSphere.drawable = &sphereDrawable;
 		sphereTransform.translation = glm::vec3(0.f, -2.f, 9.f);
 		controlledSphere.ownerTransform = &sphereTransform;
@@ -43,6 +43,8 @@ namespace EWE {
 
 		//RigidRenderingSystem::AddMaterialObject(matInfo, matObjInfo);
 		RigidRenderingSystem::AddInstancedMaterialObject(matInfo, sphereModel, 16, false);
+		matInfo.materialFlags = Material::Flags::GenerateNormals;
+		RigidRenderingSystem::AddMaterialObject(matInfo, controlledSphere, csmEWEBuffer);
 		matInfo.materialFlags = 0;
 		RigidRenderingSystem::AddMaterialObject(matInfo, controlledSphere, csmEWEBuffer);
 

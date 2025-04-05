@@ -34,9 +34,10 @@ namespace EWE {
 		void FinalizeGlslang();
 
 		//static void BatchCreateFragmentShader(std::vector<MaterialFlags> flagVector);
-		std::vector<uint32_t> GetFragmentShader(MaterialFlags flags, bool hasBones);
+		std::vector<uint32_t> GetFragmentShader(MaterialFlags flags);
 		std::vector<uint32_t> GetVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance = true);
 		std::vector<uint32_t> GetLoadingVertShader();
 		std::vector<uint32_t> GetLoadingFragShader();
+		std::vector<uint32_t> GetGeometryShader(MaterialFlags flags);
 	};
 } //namespace EWE

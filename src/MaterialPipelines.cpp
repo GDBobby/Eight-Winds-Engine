@@ -33,7 +33,7 @@ namespace EWE {
 		return GetDSL(Material::GetPipeLayoutIndex(flags));
 	}
 
-	void InitPipeDSL(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
+	void InitPipeDSL(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump, bool generatingNormals) {
 		//printf("get dynamic pipe desc set layout : %d \n", textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2)));
 
 		//might be relevant to only build these once, not sure if its a big deal
@@ -46,30 +46,38 @@ namespace EWE {
 #if EWE_DEBUG
 		printf("getting material PDSL - %d:%d:%d \n", textureCount, hasBones, instanced);
 #endif
+
+		//if generating normals, no fragment bindigns go thru
 		if (hasBones && instanced) {
 			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);//bone buffer
 			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT); //transform buffer
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //material buffer, storage if instanced
 		}
 		else if (hasBones) {
 			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT); //bone buffer
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //the material bfufer, uniform if not instanced
 		}
 		else if (instanced) {
 			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT); //transform buffer
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //material buffer, storage if instanced
-		}
-		else {
-			builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //the material bfufer, uniform if not instanced
 		}
 
-		if (textureCount > 0) {
-			if (hasBump) {
-				builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+		if (!generatingNormals) {
+			if (instanced) {
+				builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //material buffer, storage if instanced
 			}
 			else {
-				builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+				builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); //the material bfufer, uniform if not instanced
 			}
+
+			if (textureCount > 0) {
+				if (hasBump) {
+					builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+				}
+				else {
+					builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+				}
+			}
+		}
+		else if (hasBump) {//allow bump to pass thru generatingNormals since its in the vertex shader
+			builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT);
 		}
 
 		eDSLs[pipeLayoutIndex] = builder.Build();
@@ -84,7 +92,7 @@ namespace EWE {
 
 	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertShaderModu, fragShaderModu, configInfo } {}
 
-	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilePath, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo, bool hasBones) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertFilePath, flags, configInfo, hasBones } {}
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilePath, MaterialFlags flags, EWEPipeline::PipelineConfigInfo& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertFilePath, flags, configInfo } {}
 
 	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, uint16_t boneCount, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ boneCount, flags, configInfo } {}
 
@@ -137,36 +145,33 @@ namespace EWE {
 
 
 	void InitMaterialPipelineConfig(EWEPipeline::PipelineConfigInfo& pipelineConfig, MaterialFlags flags) {
-		bool hasBones = flags & Material::Bones;
-		bool instanced = flags & Material::Instanced;
+		bool hasBones = flags & Material::Flags::Other::Bones;
+		bool instanced = flags & Material::Flags::Other::Instanced;
+		bool generatingNormals = flags & Material::Flags::Other::GenerateNormals;
 #if EWE_DEBUG
-		if (instanced) {
+		if (generatingNormals) {
 			//probably going to need a breakpoint here for debugging
 		}
 #endif
-		const bool hasAlbedo = flags & Material::Albedo;
-		const bool hasBumps = flags & Material::Bump;
-		const bool hasNormal = flags & Material::Normal;
-		const bool hasRough = flags & Material::Rough;
-		const bool hasMetal = flags & Material::Metal;
-		const bool hasAO = flags & Material::AO;
+		const bool hasAlbedo = flags & Material::Flags::Texture::Albedo;
+		const bool hasBumps = flags & Material::Flags::Texture::Bump;
+		const bool hasNormal = flags & Material::Flags::Texture::Normal;
+		const bool hasRough = flags & Material::Flags::Texture::Rough;
+		const bool hasMetal = flags & Material::Flags::Texture::Metal;
+		const bool hasAO = flags & Material::Flags::Texture::AO;
 		if (hasBones && hasBumps) {
 			printf("ERROR: HAS BONES AND BUMP, NOT CURRENTLY SUPPORTED \n");
 			assert(false);
 		}
 
-		uint8_t textureCount = hasAlbedo + hasNormal + hasRough + hasMetal + hasAO + hasBumps;
-		uint16_t pipeLayoutIndex = textureCount + (MAX_MATERIAL_TEXTURE_COUNT * (hasBones + 2 * instanced));
+		const uint8_t textureCount = Material::GetTextureCount(flags);
+		const uint16_t pipeLayoutIndex = Material::GetPipeLayoutIndex(flags);
 
 #if EWE_DEBUG
-		printf("textureCount, hasBones, instanced - %d:%d:%d \n", textureCount, hasBones, instanced);
-		if (textureCount == 0) {
-			//undesirable, but not quite a bug. only passing in an albedo texture is valid
-			printf("material pipeline, flags textureCount is 0 \n");
-		}
+		printf("textureCount, hasBones, instanced, generatingNormals - %d:%d:%d:%d \n", textureCount, hasBones, instanced, generatingNormals);
 #endif
 
-		MaterialPipelines::InitMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, hasBumps);
+		MaterialPipelines::InitMaterialPipeLayout(pipeLayoutIndex, textureCount, hasBones, instanced, hasBumps, generatingNormals);
 
 		//printf("creating pipeline, dynamicShaderFinding, (key value:%d)-(bones:%d)-(normal:%d)-(rough:%d)-(metal:%d)-(ao:%d) \n", newFlags, hasBones, hasNormal, hasRough, hasMetal, hasAO );
 		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
@@ -186,7 +191,7 @@ namespace EWE {
 		bindedModel = model;
 		bindedModel->Bind();
 	}
-	void MaterialPipelines::BindDescriptor(uint8_t descSlot, VkDescriptorSet* descSet) {
+	void MaterialPipelines::BindDescriptor(const uint8_t descSlot, VkDescriptorSet* descSet) {
 		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			materialPipeLayout[pipeLayoutIndex].pipeLayout,
@@ -195,7 +200,7 @@ namespace EWE {
 			0, nullptr
 		);
 	}
-	void MaterialPipelines::BindDescriptor(uint8_t descSlot, const VkDescriptorSet* descSet) {
+	void MaterialPipelines::BindDescriptor(const uint8_t descSlot, const VkDescriptorSet* descSet) {
 		EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			materialPipeLayout[pipeLayoutIndex].pipeLayout,
@@ -240,7 +245,7 @@ namespace EWE {
 	std::unordered_map<MaterialFlags, MaterialPipelines*> MaterialPipelines::materialPipelines;
 	std::unordered_map<SkinInstanceKey, MaterialPipelines*> MaterialPipelines::instancedBonePipelines;
 
-	MaterialPipelines* MaterialPipelines::At(Material::Flags flags) {
+	MaterialPipelines* MaterialPipelines::At(MaterialFlags flags) {
 #if EWE_DEBUG
 		currentPipe = materialPipelines.at(flags);
 		return currentPipe;
@@ -254,7 +259,7 @@ namespace EWE {
 #endif
 		return instancedBonePipelines.at(skinInstanceKey);
 	}
-	MaterialPipelines* MaterialPipelines::At(uint16_t boneCount, Material::Flags flags) {
+	MaterialPipelines* MaterialPipelines::At(uint16_t boneCount, MaterialFlags flags) {
 		SkinInstanceKey key{ boneCount, flags };
 #if EWE_DEBUG
 		currentPipe = instancedBonePipelines.at(key);
@@ -263,7 +268,7 @@ namespace EWE {
 		return instancedBonePipelines.at(key);
 	}
 
-	void MaterialPipelines::InitMaterialPipeLayout(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump) {
+	void MaterialPipelines::InitMaterialPipeLayout(uint16_t pipeLayoutIndex, uint8_t textureCount, bool hasBones, bool instanced, bool hasBump, bool generatingNormals) {
 		//layouts
 		//textureCount + (hasBones * MAX_MATERIAL_TEXTURE_COUNT) + (instanced * (MAX_MATERIAL_TEXTURE_COUNT * 2))
 		if (materialPipeLayout[pipeLayoutIndex].pipeLayout == VK_NULL_HANDLE) {
@@ -290,7 +295,7 @@ namespace EWE {
 				pipelineLayoutInfo.pushConstantRangeCount = 1;
 			}
 
-			InitPipeDSL(pipeLayoutIndex, textureCount, hasBones, instanced, hasBump);
+			InitPipeDSL(pipeLayoutIndex, textureCount, hasBones, instanced, hasBump, generatingNormals);
 			pipelineLayoutInfo.setLayoutCount = 1;
 			pipelineLayoutInfo.pSetLayouts = eDSLs[pipeLayoutIndex]->GetDescriptorSetLayout();
 
@@ -331,7 +336,8 @@ namespace EWE {
 
 	MaterialPipelines* MaterialPipelines::GetMaterialPipe(MaterialFlags flags, uint16_t boneCount) {
 
-		if (flags & Material::Bones) {
+		const bool hasBones = flags & Material::Flags::Other::Bones;
+		if (hasBones) {
 
 			SkinInstanceKey skinInstanceKey{ boneCount, flags };
 			auto findRet = instancedBonePipelines.find(skinInstanceKey);
@@ -349,7 +355,7 @@ namespace EWE {
 		InitMaterialPipelineConfig(pipelineConfig, flags);
 
 		MaterialPipelines* ret;
-		if (flags & Material::Bones) {
+		if (hasBones) {
 
 			//printf("boneVertex, flags:%d \n", newFlags);
 			pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
@@ -439,24 +445,27 @@ namespace EWE {
 
 		const uint16_t pipeLayoutIndex = Material::GetPipeLayoutIndex(flags);
 
-		const bool hasBones = flags & Material::Bones;
-		const bool hasNormal = flags & Material::Normal;
-		const bool hasBumps = flags & Material::Bump;
-		const bool instanced = flags & Material::Instanced;
+		const bool hasBones = flags & Material::Flags::Other::Bones;
+		const bool hasNormal = flags & Material::Flags::Texture::Normal;
+		const bool hasBumps = flags & Material::Flags::Texture::Bump;
+		const bool instanced = flags & Material::Flags::Other::Instanced;
+		const bool generatingNormals = flags & Material::Flags::Other::GenerateNormals;
+
+		std::string vertString;
 
 		if (hasBones) {
 			if (hasNormal) {
 				//printf("boneVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
 				pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "bone_Tangent.vert.spv", flags, pipelineConfig, true })).first->second;
 
+				vertString = "bone_Tangent.vert.spv";
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertexNoTangent>();
 				pipelineConfig.attributeDescriptions = boneVertexNoTangent::GetAttributeDescriptions();
-				return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "bone_NT.vert.spv", flags, pipelineConfig, true })).first->second;
+				vertString = "bone_NT.vert.spv";
 			}
 		}
 		else {
@@ -468,36 +477,34 @@ namespace EWE {
 				else if (hasNormal) {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_tangent_instance.vert.spv", flags, pipelineConfig, false })).first->second;
+					vertString = "material_tangent_instance.vert.spv";
 				}
 				else {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 					pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
-					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_nn_instance.vert.spv", flags, pipelineConfig, false })).first->second;
+					vertString = "material_nn_instance.vert.spv";
 				}
 			}
 			else {
 				if (hasBumps) {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_bump.vert.spv", flags, pipelineConfig, false })).first->second;
+					vertString = "material_bump.vert.spv";
 				}
 				else if (hasNormal) {
 					//printf("AVertex, flags:%d \n", newFlags);
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_Tangent.vert.spv", flags, pipelineConfig, false })).first->second;
+					vertString = "material_Tangent.vert.spv";
 				}
 				else {
 					//printf("AVertexNT, flags:%d \n", newFlags);
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 					pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
-					return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, "material_nn.vert.spv", flags, pipelineConfig, false })).first->second;
+					vertString = "material_nn.vert.spv";
 				}
 			}
 		}
-		//in a release build, tag this unreachable
-		assert(false);
-		return nullptr;
+		return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, vertString, flags, pipelineConfig})).first->second;
 	}
 }

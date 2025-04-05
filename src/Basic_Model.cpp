@@ -222,6 +222,13 @@ namespace EWE {
                 vert.uv.y = 0.5f - std::asin(vert.position.y) / glm::pi<float>();
             }
 
+            printf("sphere index to vert ratio : %.2f\n", static_cast<float>(indices.size()) / static_cast<float>(vertices.size()));
+
+            //im having an issue with the shading, this reverses the indices (it wasnt the issue)
+            //for (uint64_t i = 0; i < indices.size(); i += 3) {
+            //    std::swap(indices[i], indices[i + 2]);
+            //}
+
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices } SRC_PASS);
         }
         /*

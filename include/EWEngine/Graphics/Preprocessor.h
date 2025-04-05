@@ -55,6 +55,7 @@
 #define MIPMAP_ENABLED true
 
 #define THREAD_NAMING (true && EWE_DEBUG)
+#define DEBUGGING_MATERIAL_NORMALS (true && EWE_DEBUG)
 
 #if EWE_DEBUG
     #define EWE_UNREACHABLE assert(false)
