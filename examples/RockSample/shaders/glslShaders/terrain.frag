@@ -26,7 +26,7 @@ layout(set = 0, binding = 1) uniform LightBufferObject {
 
 
 layout (set = 0, binding = 3) uniform sampler2D samplerHeight; 
-layout (set = 0, binding = 4) uniform sampler2DArray samplerLayers;
+//layout (set = 0, binding = 4) uniform sampler2DArray samplerLayers;
 
 vec3 sampleTerrainLayer() {
 	// Define some layer ranges for sampling depending on terrain height
@@ -38,19 +38,28 @@ vec3 sampleTerrainLayer() {
 	layers[4] = vec2(95.0, 140.0);
 	layers[5] = vec2(140.0, 190.0);
 
-	vec3 color = vec3(0.0);
+	//vec3 color = vec3(0.0);
 	
 	// Get height from displacement map
 	const float height = textureLod(samplerHeight, inUV, 0.0).r * 255.0;
-	
+	/*
 	for (int i = 0; i < 6; i++) {
 		const float range = layers[i].y - layers[i].x;
 		float weight = (range - abs(height - layers[i].y)) / range;
 		weight = max(0.0, weight);
 		color += weight * texture(samplerLayers, vec3(inUV * 16.0, i)).rgb;
 	}
-
-	return color;
+	*/
+	if(height < 32.0){
+		return vec3(0.0, 0.0, 1.0);
+	}
+	else if (height < 64.0){
+		return vec3(0.75, 0.6, 0.5);
+	}
+	else if (height < 192.0){
+		return vec3(0.0, 1.0, 0.0);
+	}
+	return vec3(1.0, 1.0, 1.0);
 }
 
 float fog(const float density) {
