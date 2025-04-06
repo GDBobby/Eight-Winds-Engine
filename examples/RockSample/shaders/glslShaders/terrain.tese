@@ -1,6 +1,6 @@
 #version 450
 
-https://github.com/SaschaWillems/Vulkan/blob/master/shaders/glsl/terraintessellation/terrain.tese
+//https://github.com/SaschaWillems/Vulkan/blob/master/shaders/glsl/terraintessellation/terrain.tese
 
 layout(set = 0, binding = 0) uniform GlobalUbo{
 	mat4 projView;
@@ -17,7 +17,7 @@ layout(set = 0, binding = 2) uniform TescBO{
     float tessEdgeSize;
 } tbo;
 
-layout (set = 0, binding = 4) uniform sampler2D displacementMap; 
+layout (set = 0, binding = 3) uniform sampler2D samplerHeight;
 
 layout(quads, equal_spacing, cw) in;
 

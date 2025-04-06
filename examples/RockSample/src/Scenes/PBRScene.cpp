@@ -143,6 +143,11 @@ namespace EWE {
 
 		glfwSetMouseButtonCallback(windowPtr, ImGui_ImplGlfw_MouseButtonCallback);
 		glfwSetKeyCallback(windowPtr, ImGui_ImplGlfw_KeyCallback);
+
+		tbo.proj = ewEngine.camera.GetProjection();
+		tbo.displacementFactor = 32.f;
+		tbo.tessFactor = 0.75f;
+		tbo.tessEdgeSize = 20.f;
 	}
 
 	void PBRScene::RenderLBOControls(){
@@ -227,8 +232,25 @@ namespace EWE {
 
 		if (ewEngine.BeginFrame()) {
 			ewEngine.camera.BindUBO();
+			const auto tempFrustumCopy = ewEngine.camera.GetFrustumPlanes();
+			for (uint8_t i = 0; i < 6; i++) {
+				tbo.frustumPlanes[i] = tempFrustumCopy[i];
+			}
+			tbo.viewportDim = glm::vec2{VK::Object->screenWidth, VK::Object->screenHeight};
+
 			ewEngine.BeginRenderX();
-			ewEngine.DrawObjects(dt);
+
+			ewEngine.Draw3DObjects(dt);
+
+			auto* pipe = PipelineSystem::At(Pipe::ENGINE_MAX_COUNT);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
+			pipe->BindPipeline();
+			pipe->BindDescriptor(0, &terrainDesc[VK::Object->frameIndex]);
+			pipe->BindModel(groundModel);
+			pipe->DrawModel();
+			
+
+			ewEngine.Draw2DObjects();
+			ewEngine.DrawText(dt);
 
 			imguiHandler.beginRender();
 			RenderLBOControls();

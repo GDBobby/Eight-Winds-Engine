@@ -2,6 +2,16 @@
 
 #include <EWEngine/Systems/PipelineSystem.h>
 
+struct TessBufferObject {
+	glm::mat4 proj;
+	glm::mat4 view;
+	glm::vec4 frustumPlanes[6];
+	glm::vec2 viewportDim;
+	float displacementFactor;
+	float tessFactor;
+	float tessEdgeSize;
+};
+
 namespace EWE {
 	class TerrainPipe : public PipelineSystem {
 	public:

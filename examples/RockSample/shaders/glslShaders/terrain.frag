@@ -61,11 +61,11 @@ float fog(const float density) {
 }
 
 void main() {
-	vec3 normal = normalize(inNormal);
+	const vec3 normal = normalize(inNormal);
 
     //id like to do some PBR here, but ill come back to that
 
-	vec3 ambient = vec3(0.5);
+	const vec3 ambient = vec3(0.5);
 
 	const float NdotL = max(dot(normal, lbo.sunDirection.xyz), 0.0);
 

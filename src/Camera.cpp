@@ -5,7 +5,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <limits>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/projView_transform.hpp>
 
 namespace EWE {
 	EWECamera::EWECamera() {
@@ -171,4 +171,47 @@ namespace EWE {
 		this->cameraUp = cameraUp;
 		dataHasBeenUpdated = MAX_FRAMES_IN_FLIGHT;
 	};
+
+
+
+	std::array<glm::vec4, 6> EWECamera::GetFrustumPlanes() {
+		std::array<glm::vec4, 6> planes;
+		enum side { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, BACK = 4, FRONT = 5 };
+		planes[LEFT].x = ubo.projView[0].w + ubo.projView[0].x;
+		planes[LEFT].y = ubo.projView[1].w + ubo.projView[1].x;
+		planes[LEFT].z = ubo.projView[2].w + ubo.projView[2].x;
+		planes[LEFT].w = ubo.projView[3].w + ubo.projView[3].x;
+
+		planes[RIGHT].x = ubo.projView[0].w - ubo.projView[0].x;
+		planes[RIGHT].y = ubo.projView[1].w - ubo.projView[1].x;
+		planes[RIGHT].z = ubo.projView[2].w - ubo.projView[2].x;
+		planes[RIGHT].w = ubo.projView[3].w - ubo.projView[3].x;
+
+		planes[TOP].x = ubo.projView[0].w - ubo.projView[0].y;
+		planes[TOP].y = ubo.projView[1].w - ubo.projView[1].y;
+		planes[TOP].z = ubo.projView[2].w - ubo.projView[2].y;
+		planes[TOP].w = ubo.projView[3].w - ubo.projView[3].y;
+
+		planes[BOTTOM].x = ubo.projView[0].w + ubo.projView[0].y;
+		planes[BOTTOM].y = ubo.projView[1].w + ubo.projView[1].y;
+		planes[BOTTOM].z = ubo.projView[2].w + ubo.projView[2].y;
+		planes[BOTTOM].w = ubo.projView[3].w + ubo.projView[3].y;
+
+		planes[BACK].x = ubo.projView[0].w + ubo.projView[0].z;
+		planes[BACK].y = ubo.projView[1].w + ubo.projView[1].z;
+		planes[BACK].z = ubo.projView[2].w + ubo.projView[2].z;
+		planes[BACK].w = ubo.projView[3].w + ubo.projView[3].z;
+
+		planes[FRONT].x = ubo.projView[0].w - ubo.projView[0].z;
+		planes[FRONT].y = ubo.projView[1].w - ubo.projView[1].z;
+		planes[FRONT].z = ubo.projView[2].w - ubo.projView[2].z;
+		planes[FRONT].w = ubo.projView[3].w - ubo.projView[3].z;
+
+		for (auto i = 0; i < planes.size(); i++) {
+			const float length = sqrtf(planes[i].x * planes[i].x + planes[i].y * planes[i].y + planes[i].z * planes[i].z);
+			planes[i] /= length;
+		}
+
+		return planes;
+	}
 }

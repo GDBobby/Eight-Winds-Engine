@@ -5,6 +5,8 @@
 #include <EWEngine/Systems/Rendering/Rigid/RigidRS.h>
 #include <EWEngine/imgui/imGuiHandler.h>
 
+#include "../Pipelines/TerrainPipe.h"
+
 
 namespace EWE {
 	class PBRScene : public SceneBase {
@@ -37,12 +39,15 @@ namespace EWE {
 		EWEModel* groundModel{ nullptr };
 		EWEModel* sphereModel{ nullptr };
 
+		VkDescriptorSet terrainDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+
 		void RenderLBOControls();
 		void RenderCameraData();
 		void RenderControlledSphereControls();
 
 		int updatedLBO = 0;
 		LightBufferObject lbo;
+		TessBufferObject tbo;
 	};
 }
 

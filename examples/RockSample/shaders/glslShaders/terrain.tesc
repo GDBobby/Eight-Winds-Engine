@@ -25,7 +25,7 @@ layout(location = 1) out vec2 outUV[4];
 
 // Calculate the tessellation factor based on screen space
 // dimensions of the edge
-float screenSpaceTessFactor(vec4 const p0, vec4 const p1) {
+float screenSpaceTessFactor(const vec4 p0, const vec4 p1) {
 	// Calculate edge mid point
 	const vec4 midPoint = 0.5 * (p0 + p1);
 	// Sphere radius as distance between the control points
@@ -58,11 +58,11 @@ bool frustumCheck() {
 	// Fixed radius (increase if patch size is increased in example)
 	const float radius = 8.0f;
 	vec4 pos = gl_in[gl_InvocationID].gl_Position;
-	pos.y -= textureLod(samplerHeight, inUV[0], 0.0).r * ubo.displacementFactor;
+	pos.y -= textureLod(samplerHeight, inUV[0], 0.0).r * tbo.displacementFactor;
 
 	// Check sphere against frustum planes
 	for (int i = 0; i < 6; i++) {
-		if ((dot(pos, ubo.frustumPlanes[i]) + radius) < 0.0) {
+		if ((dot(pos, tbo.frustumPlanes[i]) + radius) < 0.0) {
 			return false;
 		}
 	}
@@ -77,12 +77,13 @@ void main() {
 			gl_TessLevelInner[1] = 0.0;
 
 			gl_TessLevelOuter[0] = 0.0;
+			
 			gl_TessLevelOuter[1] = 0.0;
 			gl_TessLevelOuter[2] = 0.0;
 			gl_TessLevelOuter[3] = 0.0;
 		}
 		else {
-			if (ubo.tessellationFactor > 0.0) {
+			if (tbo.tessFactor > 0.0) {
 				gl_TessLevelOuter[0] = screenSpaceTessFactor(gl_in[3].gl_Position, gl_in[0].gl_Position);
 				gl_TessLevelOuter[1] = screenSpaceTessFactor(gl_in[0].gl_Position, gl_in[1].gl_Position);
 				gl_TessLevelOuter[2] = screenSpaceTessFactor(gl_in[1].gl_Position, gl_in[2].gl_Position);

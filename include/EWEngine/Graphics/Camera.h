@@ -35,6 +35,8 @@ namespace EWE {
 		void SetBuffers();
 		void UpdateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp = glm::vec3{ 0.f,1.f,0.f });
 		void PrintCameraPos();
+
+		std::array<glm::vec4, 6> GetFrustumPlanes();
 		
 	private:
 		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT>* uniformBuffers;

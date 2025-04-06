@@ -1,13 +1,14 @@
 #include "EWESample.h"
 
 #include "GUI/MainMenuMM.h"
+#include "GUI/MenuEnums.h"
+#include "Pipelines/TerrainPipe.h"
 //#include "GUI/ShaderGenerationMM.h"
 //#include "GUI/ControlsMM.h"
 #include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
 #include <EWEngine/Graphics/Texture/Cube_Texture.h>
 #include <EWEngine/Systems/PipelineSystem.h>
 
-#include "GUI/MenuEnums.h"
 #include <EWEngine/Systems/ThreadPool.h>
 
 #include <chrono>
@@ -196,6 +197,8 @@ namespace EWE {
 			ewEngine.objectManager.pointLights[i].transform.translation.y += 1.f;
 		}
 		*/
+
+		PipelineSystem::Emplace(Pipe::ENGINE_MAX_COUNT, Construct<TerrainPipe>({}));
 	}
 	void EWESample::addModulesToMenuManager() {
 		auto& mm = menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>()).first->second;
@@ -213,100 +216,6 @@ namespace EWE {
 		//menuManager.menuModules.emplace(menu_ShaderGen, std::make_unique<ShaderGenerationMM>(windowPtr, screenWidth, screenHeight));
 		//Shader::InputBox::giveGLFWCallbacks(MenuManager::staticMouseCallback, MenuManager::staticKeyCallback);
 	}
-/*
-	bool EWESample::processClick() {
-
-		bool wantsToChangeScene = false;
-		auto& clickReturns = MenuModule::clickReturns;
-		//while (MenuModule::clickReturns.size() > 0) {
-		if (clickReturns.size() == 0) {
-			return false;
-		}
-		soundEngine->PlayEffect(0);
-		uint16_t processMCR = clickReturns.front();
-		while (clickReturns.size() > 0) {
-			clickReturns.pop();
-		}
-
-		switch (processMCR) {
-			case MCR_ExitProgram: {
-				currentScene = scene_exitting;
-				wantsToChangeScene = true;
-				break;
-			}
-			case MCR_DiscardReturn: {
-				printf("Discard returning \n");
-				if (currentScene == scene_mainmenu) {
-					printf("pre main menu change menu state \n");
-					menuManager.changeMenuState(menu_main);
-				}
-				else {
-					printf("game state in discard returrn? : %d \n", currentScene);
-				}
-				break;
-			}
-			case MCR_SaveReturn: {
-				printf("save returning \n");
-				//MenuStates currentMenuState = uiHandler.getCurrentState();
-				if (menuManager.currentMenuState == menu_graphics_settings) {
-					if (SettingsJSON::tempSettings.screenDimensions != SettingsJSON::settingsData.screenDimensions) {
-						std::cout << "window is resizing : " << SettingsJSON::tempSettings.screenDimensions << " : " << SettingsJSON::settingsData.screenDimensions << std::endl;
-						menuManager.windowResize(SettingsJSON::tempSettings.getDimensions());
-					}
-					SettingsJSON::settingsData = SettingsJSON::tempSettings;
-					SettingsJSON::saveToJsonFile();
-
-					if (SettingsJSON::settingsData.FPS == 0) {
-						renderRefreshRate = .00000001;
-					}
-					else {
-						renderRefreshRate = 1.0 / static_cast<double>(SettingsJSON::settingsData.FPS);
-					}
-					ewEngine.pointLightsEnabled = SettingsJSON::settingsData.pointLights;
-					if (!ewEngine.pointLightsEnabled) {
-						ewEngine.lbo.numLights = 0;
-					}
-					ewEngine.displayingRenderInfo = SettingsJSON::settingsData.renderInfo;
-					ewEngine.mainWindow.updateSettings();
-					printf("new camera perspective on graphics save \n");
-				}
-
-				if (currentScene == scene_mainmenu) {
-					menuManager.changeMenuState(menu_main);
-				}
-	#if 0
-				else if (currentScene == scene_other) {
-					//if you'd like multiple return destionations from the graphics menu, set them up here
-				}
-	#endif
-				else {
-					printf("game state on save return? : %d \n", currentScene);
-				}
-				break;
-			}
-			case MCR_swapToShaderGen: {
-				currentScene = scene_shaderGen;
-				wantsToChangeScene = true;
-				break;
-			}
-			case MCR_swapToMainMenu: {
-				currentScene = scene_mainmenu;
-				wantsToChangeScene = true;
-				break;
-			}
-			case MCR_none: {
-				printf("returned MCR_Return \n");
-				assert(false && "this should nto be returned");
-				break;
-			}
-			default: {
-				//this should be natrual? idk
-				//printf("why default click : %d \n", processMCR);
-			}
-		}
-		return wantsToChangeScene;
-	}
-	*/
 
 	void EWESample::SwapScenes() {
 

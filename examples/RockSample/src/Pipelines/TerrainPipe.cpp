@@ -32,17 +32,14 @@ namespace EWE {
 		pushConstantRange.stageFlags = pushStageFlags;
 		pushConstantRange.size = pushSize;
 
-		pipelineLayoutInfo.pushConstantRangeCount = 1;
-		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+		pipelineLayoutInfo.pushConstantRangeCount = 0;
+		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
 		EWEDescriptorSetLayout::Builder builder;
-			builder
-			.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-			.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-
+		builder.AddGlobalBindings();
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		eDSL = builder.Build();
 
@@ -65,9 +62,9 @@ namespace EWE {
         pipelineConfig.tessCreateInfo.pNext = nullptr;
 
 		pipelineConfig.pipelineLayout = pipeLayout;
-		//pipelineConfig.bindingDescriptions = EffectVertex::getBindingDescriptions();
-		//pipelineConfig.bindingDescriptions = TileVertex::getBindingDescriptions();
-		//pipelineConfig.attributeDescriptions = TileVertex::getAttributeDescriptions();
+		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
+		
+		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 		std::string vertString = "terrain.vert.spv";
 		std::string fragString = "terrain.frag.spv";
 
