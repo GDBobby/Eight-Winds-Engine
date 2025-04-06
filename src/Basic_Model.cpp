@@ -97,6 +97,43 @@ namespace EWE {
             //std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0])} SRC_PASS);
         }
+        EWEModel* Grid3DQuadPrimitive(const uint32_t patchSize, const glm::vec2 uvScale SRC_PARAM){
+            
+            const uint32_t vertexCount = patchSize * patchSize;
+            std::vector<VertexNT> vertices(vertexCount);
+    
+            const float wx = 2.0f;
+            const float wy = 2.0f;
+            const uint32_t w = (patchSize - 1);
+            const float wf = static_cast<float>(w);
+
+            for(uint32_t x = 0; x < patchSize; x++){
+                for(uint32_t y = 0; y < patchSize; y++){
+                    auto& vertex = vertices[x + y * patchSize];
+                    vertex.position.x = x * wx + wx / 2.0f - static_cast<float>(patchSize) * wx / 2.0f;
+                    vertex.position.y = 0.0f;
+                    vertex.position.z = y * wy + wy / 2.0f - static_cast<float>(patchSize) * wy / 2.0f;
+                    vertex.uv = glm::vec2(static_cast<float>(x) / wf, static_cast<float>(y) / wf) * uvScale;
+
+                    //temporary
+                    vertex.normal = glm::vec3(0.f, -1.f, 0.f);
+                }
+            }
+
+            const uint32_t indexCount = w * w * 4;
+            std::vector<uint32_t> indices(indexCount);
+            for (auto x = 0; x < w; x++) {
+                for (auto y = 0; y < w; y++) {
+                    uint32_t index = (x + y * w) * 4;
+                    indices[index] = (x + y * patchSize);
+                    indices[index + 1] = indices[index] + patchSize;
+                    indices[index + 2] = indices[index + 1] + 1;
+                    indices[index + 3] = indices[index] + 1;
+                }
+            }
+
+            return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices } SRC_PASS);
+        }
 
         EWEModel* Quad2D(glm::vec2 scale SRC_PARAM) {
             std::vector<VertexUI> vertices{

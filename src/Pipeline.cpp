@@ -300,7 +300,12 @@ namespace EWE {
 		assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no pipelineLayout provided in configInfo");
 		//assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no renderPass provided in configInfo");
 
-		std::vector<VkPipelineShaderStageCreateInfo> shaderStages{2 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE)};
+		if(configInfo.hasTesselation){
+			assert(configInfo.tessControlModule != VK_NULL_HANDLE);
+			assert(configInfo.tessEvaluationModule != VK_NULL_HANDLE);
+		}
+
+		std::vector<VkPipelineShaderStageCreateInfo> shaderStages{2 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE) + 2 * static_cast<std::size_t>(configInfo.hasTesselation)};
 		shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
 		shaderStages[0].module = vertShaderModule;
@@ -309,8 +314,35 @@ namespace EWE {
 		shaderStages[0].pNext = nullptr;
 		shaderStages[0].pSpecializationInfo = nullptr;
 
+		uint8_t currentStage = 1;
+		if(configInfo.hasTesselation){
+			{
+				auto& tescStage = shaderStages[currentStage];
+				currentStage++;
+				tescStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				tescStage.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+				tescStage.module = configInfo.tessControlModule;
+				tescStage.pName = "main";
+				tescStage.flags = 0;
+				tescStage.pNext = nullptr;
+				tescStage.pSpecializationInfo = nullptr;
+			}
+			{
+				auto& teseStage = shaderStages[currentStage];
+				currentStage++;
+				teseStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				teseStage.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+				teseStage.module = configInfo.tessEvaluationModule;
+				teseStage.pName = "main";
+				teseStage.flags = 0;
+				teseStage.pNext = nullptr;
+				teseStage.pSpecializationInfo = nullptr;
+			}
+		}
+
 		if (configInfo.geomShaderModule != VK_NULL_HANDLE) {
-			auto& geomStage = shaderStages[1];
+			auto& geomStage = shaderStages[currentStage];
+			currentStage++;
 			geomStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			geomStage.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
 			geomStage.module = configInfo.geomShaderModule;
@@ -322,7 +354,7 @@ namespace EWE {
 
 
 		
-		auto& fragStage = shaderStages[1 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE)];
+		auto& fragStage = shaderStages[currentStage];
 		fragStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		fragStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 		fragStage.module = fragShaderModule;
@@ -367,6 +399,10 @@ namespace EWE {
 		}
 		pipelineInfo.flags = configInfo.flags;
 #endif
+		if(configInfo.hasTesselation){
+			pipelineInfo.pTessellationState = &configInfo.tessCreateInfo;
+		}
+
 		EWE_VK(vkCreateGraphicsPipelines, VK::Object->vkDevice, configInfo.cache, 1, &pipelineInfo, nullptr, &graphicsPipeline);
 	}
 

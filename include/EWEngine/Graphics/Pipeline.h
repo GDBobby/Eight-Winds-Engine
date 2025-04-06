@@ -113,6 +113,11 @@ namespace EWE {
 			std::vector<VkDynamicState> dynamicStateEnables{};
 			VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
 
+			bool hasTesselation = false;
+			VkPipelineTessellationStateCreateInfo tessCreateInfo{};
+			VkShaderModule tessControlModule{VK_NULL_HANDLE};
+			VkShaderModule tessEvaluationModule{VK_NULL_HANDLE};
+
 			VkPipelineLayout pipelineLayout = nullptr;
 			//VkPipelineRenderingCreateInfo const& pipeRenderInfo = nullptr;
 			VkPipelineRenderingCreateInfo pipelineRenderingInfo;

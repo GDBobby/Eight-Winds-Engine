@@ -53,7 +53,11 @@ namespace EWE {
 		RigidRenderingSystem::AddMaterialObject(matInfo, controlledSphere, csmEWEBuffer);
 #endif
 		matInfo.materialFlags = 0;
+		groundModel = Basic_Model::Grid3DQuadPrimitive(100);
+		//controlledSphere.meshPtr = groundModel;
 		RigidRenderingSystem::AddMaterialObject(matInfo, controlledSphere, csmEWEBuffer);
+
+		//RigidRenderingSystem::AddMaterialObject(matInfo, controlledSphere
 
 
 		transformBuffers[0]->Map();
