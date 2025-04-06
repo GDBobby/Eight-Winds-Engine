@@ -38,8 +38,9 @@ namespace EWE {
 		EWEDescriptorSetLayout::Builder builder;
 		builder.AddGlobalBindings();
 		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-		builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
-		builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+		//builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+		//builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		eDSL = builder.Build();
 
@@ -63,13 +64,11 @@ namespace EWE {
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
-		
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
-		std::string vertString = "terrain.vert.spv";
-		std::string fragString = "terrain.frag.spv";
-
-        std::string tescString = "terrain.tesc.spv";
-        std::string teseString = "terrain.tese.spv";
+		const std::string vertString = "terrain.vert.spv";
+		const std::string fragString = "terrain.frag.spv";
+        const std::string tescString = "terrain.tesc.spv";
+        const std::string teseString = "terrain.tese.spv";
         Pipeline_Helper_Functions::CreateShaderModule(tescString, &pipelineConfig.tessControlModule);
         Pipeline_Helper_Functions::CreateShaderModule(teseString, &pipelineConfig.tessControlModule);
 

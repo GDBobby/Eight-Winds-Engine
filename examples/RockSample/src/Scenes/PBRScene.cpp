@@ -1,5 +1,6 @@
 #include "PBRScene.h"
 
+#include <numeric>
 
 namespace EWE {
 
@@ -21,11 +22,159 @@ namespace EWE {
 		assert(sphereModel != nullptr);
 		Deconstruct(sphereModel);
 		sphereModel = nullptr;
-	}
-	void PBRScene::Load() {
-		menuManager.giveMenuFocus();
-		assert(sphereModel == nullptr);
 
+		if(perlinNoiseImage != VK_NULL_HANDLE){
+			EWE_VK(vkDestroyImage, VK::Object->vkDevice, perlinNoiseImage, nullptr);
+			perlinNoiseImage = VK_NULL_HANDLE;
+
+			Sampler::RemoveSampler(perlinNoiseSampler);
+			perlinNoiseSampler = VK_NULL_HANDLE;
+
+			EWE_VK(vkFreeMemory, VK::Object->vkDevice, perlinNoiseImageMemory, nullptr);
+			perlinNoiseImageMemory = VK_NULL_HANDLE;
+
+			EWE_VK(vkDestroyImageView, VK::Object->vkDevice, perlinNoiseImageView, nullptr);
+			perlinNoiseImageView = VK_NULL_HANDLE;
+
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, perlinGenDSL, &perlinDesc[0]);
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, perlinGenDSL, &perlinDesc[1]);
+			perlinDesc[0] = VK_NULL_HANDLE;
+			perlinDesc[1] = VK_NULL_HANDLE;
+			Deconstruct(perlinGenDSL);
+			perlinGenDSL = nullptr;
+		}
+	}
+
+	void PBRScene::InitTerrainResources(){
+
+		std::vector<int> perlinNumbers(256);
+		std::iota(perlinNumbers.begin(), perlinNumbers.end(), 0);
+		std::shuffle(perlinNumbers.begin(), perlinNumbers.end(), 0); //this 3rd value is the random seed
+
+		for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
+			tessBuffer[i] = Construct<EWEBuffer>({sizeof(TessBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
+			perlinNumberBuffer[i] = Construct<EWEBuffer>({sizeof(int) * 256, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
+
+			tessBuffer[i]->Map();
+			tessBuffer[i]->WriteToBuffer(&tbo, sizeof(TessBufferObject));
+			tessBuffer[i]->Flush();
+			tessBuffer[i]->Unmap();
+
+			perlinNumberBuffer[i]->Map();
+			perlinNumberBuffer[i]->WriteToBuffer(perlinNumbers.data(), sizeof(int) * 256);
+			perlinNumberBuffer[i]->Flush();
+			perlinNumberBuffer[i]->Unmap();
+		}
+
+
+		for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
+			EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::ENGINE_MAX_COUNT)->GetDSL(), DescriptorPool_Global);
+			DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
+			descWriter.WriteBuffer(tessBuffer[i]->DescriptorInfo());
+			descWriter.WriteBuffer(perlinNumberBuffer[i]->DescriptorInfo());
+			terrainDesc[i] = descWriter.Build();
+		}
+	}
+
+	void PBRScene::InitPerlinNoiseResources() {
+
+		const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		VkFormatProperties formatProperties;
+		// Get device properties for the requested texture format
+		EWE_VK(vkGetPhysicalDeviceFormatProperties, VK::Object->physicalDevice, format, &formatProperties);
+		// Check if requested image format supports image storage operations required for storing pixel from the compute shader
+		assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
+		
+		const uint32_t perlinExtent = 256;
+
+		VkImageCreateInfo imageCreateInfo{};
+		imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageCreateInfo.pNext = nullptr;
+
+		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageCreateInfo.format = format;
+		imageCreateInfo.extent = { perlinExtent, perlinExtent, 1 };
+		imageCreateInfo.mipLevels = 1;
+		imageCreateInfo.arrayLayers = 1;
+		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+		imageCreateInfo.flags = 0;
+		imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		
+		uint32_t queueData[] = { static_cast<uint32_t>(VK::Object->queueIndex[Queue::graphics]), static_cast<uint32_t>(VK::Object->queueIndex[Queue::present])};
+		const bool differentFamilies = (queueData[0] != queueData[1]);
+		imageCreateInfo.sharingMode = (VkSharingMode)differentFamilies;
+		imageCreateInfo.queueFamilyIndexCount = 1 + differentFamilies;
+		imageCreateInfo.pQueueFamilyIndices = queueData;
+		Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, perlinNoiseImage, perlinNoiseImageMemory);
+
+		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
+		//directly to graphics because no data is being uploaded
+		CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
+
+		VkImageMemoryBarrier imageBarrier = Barrier::TransitionImageLayout(perlinNoiseImage,
+			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
+			1, 1
+		);
+		
+		EWE_VK(vkCmdPipelineBarrier, cmdBuf,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &imageBarrier
+		);			
+		GraphicsCommand gCommand{};
+		gCommand.command = &cmdBuf;
+		syncHub->EndSingleTimeCommandGraphics(gCommand);
+
+
+		VkSamplerCreateInfo samplerInfo{};
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.magFilter = VK_FILTER_LINEAR;
+		samplerInfo.minFilter = VK_FILTER_LINEAR;
+		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.mipLodBias = 0.0f;
+		samplerInfo.maxAnisotropy = 1.0f;
+		samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
+		samplerInfo.minLod = 0.0f;
+		samplerInfo.maxLod = 1.0f;
+		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+		perlinNoiseSampler = Sampler::GetSampler(samplerInfo);
+
+
+		VkImageViewCreateInfo view{};
+		view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		view.pNext = nullptr;
+		view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		view.format = format;
+		view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		view.subresourceRange.baseMipLevel = 0;
+		view.subresourceRange.levelCount = 1;
+		view.subresourceRange.baseArrayLayer = 0;
+		view.subresourceRange.layerCount = 1;
+		view.image = perlinNoiseImage;
+		EWE_VK(vkCreateImageView, VK::Object->vkDevice, &view, nullptr, &perlinNoiseImageView);
+
+		perlinComputeImgInfo.imageView = perlinNoiseImageView;
+		perlinGraphicsImgInfo.imageView = perlinNoiseImageView;
+
+		perlinComputeImgInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		perlinComputeImgInfo.sampler = perlinNoiseSampler;
+		
+		perlinGraphicsImgInfo.imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+		perlinGraphicsImgInfo.sampler = perlinNoiseSampler;
+
+	}
+
+	void PBRScene::InitSphereMaterialResources(){
+		assert(sphereModel == nullptr);
 		sphereModel = Basic_Model::Sphere(0, 1.f);
 
 		controlledSphere.drawable = &sphereDrawable;
@@ -117,6 +266,16 @@ namespace EWE {
 		transferCommand.stagingBuffers.push_back(stagingBuffer);
 
 		SyncHub::GetSyncHubInstance()->EndSingleTimeCommandTransfer(transferCommand);
+
+		updatedCMB = MAX_FRAMES_IN_FLIGHT;
+		controlledSphereMB.albedo = glm::vec3(1.f);
+		controlledSphereMB.metal = 0.f;
+		controlledSphereMB.rough = 0.f;
+	}
+
+	void PBRScene::Load() {
+		menuManager.giveMenuFocus();
+		InitSphereMaterialResources();
 	
 		lbo.ambientColor = glm::vec4(0.04f);
 		lbo.numLights = 0;
@@ -124,11 +283,6 @@ namespace EWE {
 		lbo.sunlightDirection = glm::normalize(glm::vec4(1.f));
 
 		updatedLBO = MAX_FRAMES_IN_FLIGHT;
-
-		updatedCMB = MAX_FRAMES_IN_FLIGHT;
-		controlledSphereMB.albedo = glm::vec3(1.f);
-		controlledSphereMB.metal = 0.f;
-		controlledSphereMB.rough = 0.f;
 
 		camTransform.translation = glm::vec3(-1.5f, -7.5f, 9.f);
 	}

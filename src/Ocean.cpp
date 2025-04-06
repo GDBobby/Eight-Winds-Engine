@@ -134,7 +134,7 @@ namespace EWE {
 			samplerInfo.minLod = 0.0f;
 			samplerInfo.maxLod = 1.0f;
 			samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-			Sampler::GetSampler(samplerInfo);
+			Sampler::GetSampler(samplerInfo); //why is this being discarded
 			oceanOutputImageInfoDescriptorGraphics.sampler = oceanOutputImageInfoDescriptorCompute.sampler;
 
 			// Create image view

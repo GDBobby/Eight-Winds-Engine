@@ -26,20 +26,40 @@ namespace EWE {
 		CameraController camControl;
 		TransformComponent camTransform{};
 
+
+		ImGUIHandler imguiHandler;
+
+		void InitSphereMaterialResources();
+		std::array<EWEBuffer*, 2> csmEWEBuffer; //csmEWE == controlled sphere material EWE buffer
+		MaterialBuffer controlledSphereMB;
+		int updatedCMB = 0; //CMB == controlled material buffer
 		TransformComponent sphereTransform;
 		bool sphereDrawable = true;
 		MaterialObjectInfo controlledSphere;
 
-		ImGUIHandler imguiHandler;
-
-		std::array<EWEBuffer*, 2> csmEWEBuffer; //csmEWE == controlled sphere material EWE buffer
-		MaterialBuffer controlledSphereMB;
-		int updatedCMB = 0; //CMB == controlled material buffer
-
 		EWEModel* groundModel{ nullptr };
 		EWEModel* sphereModel{ nullptr };
 
+
+		void InitTerrainResources();
+		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> tessBuffer;
+		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> perlinNumberBuffer;
 		VkDescriptorSet terrainDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+
+		int updatedTBO = 0;
+		int updatedPerlinNumberBuffer = 0;
+		TessBufferObject tbo;
+	
+
+		void InitPerlinNoiseResources();
+		VkSampler perlinNoiseSampler{VK_NULL_HANDLE};
+		VkDeviceMemory perlinNoiseImageMemory{VK_NULL_HANDLE};
+		VkImage perlinNoiseImage{VK_NULL_HANDLE};
+		VkImageView perlinNoiseImageView{VK_NULL_HANDLE};
+		VkDescriptorImageInfo perlinComputeImgInfo{VK_NULL_HANDLE};
+		VkDescriptorImageInfo perlinGraphicsImgInfo{VK_NULL_HANDLE};
+		VkDescriptorSet perlinDesc[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+		EWEDescriptorSetLayout* perlinGenDSL{nullptr};
 
 		void RenderLBOControls();
 		void RenderCameraData();
@@ -47,7 +67,6 @@ namespace EWE {
 
 		int updatedLBO = 0;
 		LightBufferObject lbo;
-		TessBufferObject tbo;
 	};
 }
 

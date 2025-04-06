@@ -3,6 +3,7 @@
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
+layout (location = 2) in float inHeight;
 
 layout (location = 0) out vec4 outFragColor;
 
@@ -25,7 +26,7 @@ layout(set = 0, binding = 1) uniform LightBufferObject {
 } lbo;
 
 
-layout (set = 0, binding = 3) uniform sampler2D samplerHeight; 
+//layout (set = 0, binding = 3) uniform sampler2D samplerHeight; //just passing it from tese
 //layout (set = 0, binding = 4) uniform sampler2DArray samplerLayers;
 
 vec3 sampleTerrainLayer() {
@@ -41,7 +42,8 @@ vec3 sampleTerrainLayer() {
 	//vec3 color = vec3(0.0);
 	
 	// Get height from displacement map
-	const float height = textureLod(samplerHeight, inUV, 0.0).r * 255.0;
+	//const float height = textureLod(samplerHeight, inUV, 0.0).r * 255.0;
+	const float height = inHeight * 255.0; //getting it from a tese pass now
 	/*
 	for (int i = 0; i < 6; i++) {
 		const float range = layers[i].y - layers[i].x;
