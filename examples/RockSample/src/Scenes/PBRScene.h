@@ -43,12 +43,11 @@ namespace EWE {
 
 		void InitTerrainResources();
 		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> tessBuffer;
-		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> perlinNumberBuffer;
 		VkDescriptorSet terrainDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 
-		int updatedTBO = 0;
-		int updatedPerlinNumberBuffer = 0;
+		//int updatedTBO = 0;
 		TessBufferObject tbo;
+		bool terrainWire = false;
 	
 
 		void InitPerlinNoiseResources();
@@ -64,6 +63,7 @@ namespace EWE {
 		void RenderLBOControls();
 		void RenderCameraData();
 		void RenderControlledSphereControls();
+		void RenderTerrainControls();
 
 		int updatedLBO = 0;
 		LightBufferObject lbo;

@@ -37,14 +37,9 @@ namespace EWE {
         }
 
         void InitGlobalDescriptors(LightBufferObject& lbo) {
-#if DEBUGGING_MATERIAL_NORMALS
-            constexpr VkShaderStageFlags cameraStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
-#else
-            constexpr VkShaderStageFlags cameraStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-#endif
 
             globalDSL = EWEDescriptorSetLayout::Builder()
-                .AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, cameraStages)
+                .AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
                 .AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
                 .Build();
 

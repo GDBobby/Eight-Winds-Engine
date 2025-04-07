@@ -5,7 +5,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <limits>
-#include <glm/gtc/projView_transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace EWE {
 	EWECamera::EWECamera() {
@@ -208,7 +208,7 @@ namespace EWE {
 		planes[FRONT].w = ubo.projView[3].w - ubo.projView[3].z;
 
 		for (auto i = 0; i < planes.size(); i++) {
-			const float length = sqrtf(planes[i].x * planes[i].x + planes[i].y * planes[i].y + planes[i].z * planes[i].z);
+			const float length = glm::sqrt(planes[i].x * planes[i].x + planes[i].y * planes[i].y + planes[i].z * planes[i].z);
 			planes[i] /= length;
 		}
 

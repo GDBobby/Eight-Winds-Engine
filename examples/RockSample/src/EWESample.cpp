@@ -2,7 +2,9 @@
 
 #include "GUI/MainMenuMM.h"
 #include "GUI/MenuEnums.h"
+#include "Pipelines/PipeEnum.h"
 #include "Pipelines/TerrainPipe.h"
+#include "Pipelines/TerrainPipeWireMesh.h"
 //#include "GUI/ShaderGenerationMM.h"
 //#include "GUI/ControlsMM.h"
 #include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
@@ -10,6 +12,7 @@
 #include <EWEngine/Systems/PipelineSystem.h>
 
 #include <EWEngine/Systems/ThreadPool.h>
+
 
 #include <chrono>
 
@@ -198,7 +201,8 @@ namespace EWE {
 		}
 		*/
 
-		PipelineSystem::Emplace(Pipe::ENGINE_MAX_COUNT, Construct<TerrainPipe>({}));
+		PipelineSystem::Emplace(Pipe::Terrain, Construct<TerrainPipe>({}));
+		PipelineSystem::Emplace(Pipe::TerrainWM, Construct<TerrainPipeWireMesh>({}));
 	}
 	void EWESample::addModulesToMenuManager() {
 		auto& mm = menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>()).first->second;

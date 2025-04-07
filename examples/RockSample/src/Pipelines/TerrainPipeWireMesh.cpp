@@ -1,4 +1,4 @@
-#include "TerrainPipe.h"
+#include "TerrainPipeWireMesh.h"
 
 //#include "PipelineEnum.h"
 
@@ -10,9 +10,9 @@
 
 
 namespace EWE {
-	TerrainPipe::TerrainPipe()
+	TerrainPipeWireMesh::TerrainPipeWireMesh()
 #if EWE_DEBUG
-		: PipelineSystem{Pipe::Terrain} //i need to fix this up later
+		: PipelineSystem{ Pipe::TerrainWM } //i need to fix this up later
 #endif
 	{
 		//createPipeline();
@@ -21,7 +21,7 @@ namespace EWE {
 		CreatePipeline();
 	}
 
-	void TerrainPipe::CreatePipeLayout() {
+	void TerrainPipeWireMesh::CreatePipeLayout() {
 		pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		//pushSize = sizeof(ModelPushData);
 		pushSize = sizeof(PushTileConstantData);
@@ -51,28 +51,30 @@ namespace EWE {
 
 		EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
 	}
-	void TerrainPipe::CreatePipeline() {
+	void TerrainPipeWireMesh::CreatePipeline() {
 		EWEPipeline::PipelineConfigInfo pipelineConfig{};
 		EWEPipeline::DefaultPipelineConfigInfo(pipelineConfig);
-        pipelineConfig.inputAssemblyInfo.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-        pipelineConfig.inputAssemblyInfo.flags = 0;
-        pipelineConfig.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+		pipelineConfig.inputAssemblyInfo.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+		pipelineConfig.inputAssemblyInfo.flags = 0;
+		pipelineConfig.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-        pipelineConfig.hasTesselation = true;
-        pipelineConfig.tessCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-        pipelineConfig.tessCreateInfo.flags = 0;
-        pipelineConfig.tessCreateInfo.patchControlPoints = 4;
-        pipelineConfig.tessCreateInfo.pNext = nullptr;
+		pipelineConfig.hasTesselation = true;
+		pipelineConfig.tessCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+		pipelineConfig.tessCreateInfo.flags = 0;
+		pipelineConfig.tessCreateInfo.patchControlPoints = 4;
+		pipelineConfig.tessCreateInfo.pNext = nullptr;
+
+		pipelineConfig.rasterizationInfo.polygonMode = VK_POLYGON_MODE_LINE;
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 		const std::string vertString = "terrain.vert.spv";
 		const std::string fragString = "terrain.frag.spv";
-        const std::string tescString = "terrain.tesc.spv";
-        const std::string teseString = "terrain.tese.spv";
-        Pipeline_Helper_Functions::CreateShaderModule(tescString, &pipelineConfig.tessControlModule);
-        Pipeline_Helper_Functions::CreateShaderModule(teseString, &pipelineConfig.tessEvaluationModule);
+		const std::string tescString = "terrain.tesc.spv";
+		const std::string teseString = "terrain.tese.spv";
+		Pipeline_Helper_Functions::CreateShaderModule(tescString, &pipelineConfig.tessControlModule);
+		Pipeline_Helper_Functions::CreateShaderModule(teseString, &pipelineConfig.tessEvaluationModule);
 
 		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
 	}

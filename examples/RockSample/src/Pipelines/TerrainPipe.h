@@ -10,6 +10,7 @@ struct TessBufferObject {
 	float displacementFactor;
 	float tessFactor;
 	float tessEdgeSize;
+	int octaves;
 };
 
 namespace EWE {

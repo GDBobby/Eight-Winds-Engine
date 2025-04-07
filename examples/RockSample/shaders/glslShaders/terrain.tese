@@ -15,51 +15,43 @@ layout(set = 0, binding = 2) uniform TescBO{
     float displacementFactor;
     float tessFactor;
     float tessEdgeSize;
+	int octaves;
 } tbo;
-layout(set = 0, binding = 3) uniform PerlinBO{
-	int numbers[256];
-} pbo;
 
-float fade(const float t){
-	return t * t * t * (t * (t * 6 - 15) + 10);
-}
-float grad(const int hash, const float x, const float y){
-	const int h = hash & 15;
-	const float u = (float(h < 8) * x) + (float(h >= 8) * y);
-	const float v = (float(h < 4) * y) + (float(h >= 4) * float(h == 12 || h == 14) * x);
-
-	const float signageU = float((h&1) == 0);
-	const float signageV = float((h&2) == 0);
-
-	return (u * (-1.0 + 2.0 * signageU)) + (v * (-1.0 + 2.0 * signageV));
+vec2 SimplexHash(vec2 p ) { // replace this by something better {
+	p = vec2( dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)) );
+	return -1.0 + 2.0*fract(sin(p)*43758.5453123);
 }
 
-float PerlinAt(const float ix, const float iy){
-	const int X = int(floor(ix)) & 255;
-	const int Y = int(floor(iy)) & 255;
-	const float x = fract(ix);
-	const float y = fract(iy);
+//https://www.shadertoy.com/view/Msf3WH
+float SimplexNoise(const vec2 p ) {
+    const float K1 = 0.366025404; // (sqrt(3)-1)/2;
+    const float K2 = 0.211324865; // (3-sqrt(3))/6;
 
-	const float u = fade(x);
-	const float v = fade(y);
-
-	const int AA = pbo.numbers[(pbo.numbers[X] + Y) % 256];
-	const int AB = pbo.numbers[(pbo.numbers[X] + Y + 1) % 256];
-	const int BA = pbo.numbers[(pbo.numbers[X + 1] + Y) % 256];
-	const int BB = pbo.numbers[(pbo.numbers[X + 1] + Y + 1) % 256];
-
-	const float gradAA = grad(pbo.numbers[AA], x, y);
-	const float gradBA = grad(pbo.numbers[BA], x - 1.0, y);
-	const float gradAB = grad(pbo.numbers[AB], x, y - 1.0);
-	const float gradBB = grad(pbo.numbers[BB], x - 1.0, y - 1.0);
-
-	const float lerped0 = mix(gradAA, gradBA, u);
-	const float lerped1 = mix(gradAB, gradBB, u);
-
-	return mix(lerped0, lerped1, v);
+	vec2  i = floor( p + (p.x+p.y)*K1 );
+    vec2  a = p - i + (i.x+i.y)*K2;
+    float m = step(a.y,a.x); 
+    vec2  o = vec2(m,1.0-m);
+    vec2  b = a - o + K2;
+	vec2  c = a - 1.0 + 2.0*K2;
+    vec3  h = max( 0.5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0.0 );
+	vec3  n = h*h*h*h*vec3( dot(a,SimplexHash(i+0.0)), dot(b,SimplexHash(i+o)), dot(c,SimplexHash(i+1.0)));
+    return dot( n, vec3(70.0) );
 }
 
-layout (set = 0, binding = 3) uniform sampler2D samplerHeight;
+float NoiseWithOctaves(vec2 uv, int octaves){
+	float freq = 0.25;
+    mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
+	float f  = 0.5 * SimplexNoise( uv ); 
+	uv = m * uv;
+	for(int i = 1; i < octaves; i++){
+		freq /= 2.0;
+		f += freq * SimplexNoise(uv);
+		uv = m * uv;
+	}
+
+	return f;
+}
 
 layout(quads, equal_spacing, cw) in;
 
@@ -85,7 +77,8 @@ void main() {
 	vec4 pos2 = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
 	vec4 pos = mix(pos1, pos2, gl_TessCoord.y);
 	// Displace
-	outHeight = textureLod(samplerHeight, outUV, 0.0).r;
+	//outHeight = textureLod(samplerHeight, outUV, 0.0).r;
+	outHeight = NoiseWithOctaves(outUV, tbo.octaves);
 	pos.y -= outHeight * tbo.displacementFactor;
 	// Perspective projection
 	gl_Position = ubo.projView * pos;

@@ -11,9 +11,43 @@ layout(set = 0, binding = 2) uniform TescBO{
     float displacementFactor;
     float tessFactor;
     float tessEdgeSize;
+	int octaves;
 } tbo;
 
-layout(set = 0, binding = 3) uniform sampler2D samplerHeight;
+vec2 SimplexHash(vec2 p) {// replace this by something better
+	p = vec2( dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)) );
+	return -1.0 + 2.0*fract(sin(p)*43758.5453123);
+}
+
+//https://www.shadertoy.com/view/Msf3WH
+float SimplexNoise(const vec2 p ) {
+    const float K1 = 0.366025404; // (sqrt(3)-1)/2;
+    const float K2 = 0.211324865; // (3-sqrt(3))/6;
+
+	vec2  i = floor( p + (p.x+p.y)*K1 );
+    vec2  a = p - i + (i.x+i.y)*K2;
+    float m = step(a.y,a.x); 
+    vec2  o = vec2(m,1.0-m);
+    vec2  b = a - o + K2;
+	vec2  c = a - 1.0 + 2.0*K2;
+    vec3  h = max( 0.5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0.0 );
+	vec3  n = h*h*h*h*vec3( dot(a,SimplexHash(i+0.0)), dot(b,SimplexHash(i+o)), dot(c,SimplexHash(i+1.0)));
+    return dot( n, vec3(70.0) );
+}
+
+float NoiseWithOctaves(vec2 uv, int octaves){
+	float freq = 0.25;
+    mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
+	float f  = 0.5 * SimplexNoise( uv ); 
+	uv = m * uv;
+	for(int i = 1; i < octaves; i++){
+		freq /= 2.0;
+		f += freq * SimplexNoise(uv);
+		uv = m * uv;
+	}
+
+	return f;
+}
 
 layout(vertices = 4) out;
 
@@ -58,7 +92,8 @@ bool frustumCheck() {
 	// Fixed radius (increase if patch size is increased in example)
 	const float radius = 8.0f;
 	vec4 pos = gl_in[gl_InvocationID].gl_Position;
-	pos.y -= textureLod(samplerHeight, inUV[0], 0.0).r * tbo.displacementFactor;
+	//pos.y -= textureLod(samplerHeight, inUV[0], 0.0).r * tbo.displacementFactor;
+	pos.y -= NoiseWithOctaves(inUV[0], tbo.octaves) * tbo.displacementFactor;
 
 	// Check sphere against frustum planes
 	for (int i = 0; i < 6; i++) {
@@ -77,7 +112,7 @@ void main() {
 			gl_TessLevelInner[1] = 0.0;
 
 			gl_TessLevelOuter[0] = 0.0;
-			
+
 			gl_TessLevelOuter[1] = 0.0;
 			gl_TessLevelOuter[2] = 0.0;
 			gl_TessLevelOuter[3] = 0.0;

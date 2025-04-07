@@ -1,6 +1,11 @@
 #include "PBRScene.h"
 
 #include <numeric>
+#include <algorithm>
+#include <random>
+
+
+#include "../Pipelines/PipeEnum.h"
 
 namespace EWE {
 
@@ -22,6 +27,16 @@ namespace EWE {
 		assert(sphereModel != nullptr);
 		Deconstruct(sphereModel);
 		sphereModel = nullptr;
+
+		if (tessBuffer[0] != nullptr) {
+			Deconstruct(tessBuffer[0]);
+			Deconstruct(tessBuffer[1]);
+		}
+		if (terrainDesc[0] != VK_NULL_HANDLE) {
+			auto* dsl = PipelineSystem::At(Pipe::ENGINE_MAX_COUNT)->GetDSL();
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, dsl, &terrainDesc[0]);
+			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, dsl, &terrainDesc[1]);
+		}
 
 		if(perlinNoiseImage != VK_NULL_HANDLE){
 			EWE_VK(vkDestroyImage, VK::Object->vkDevice, perlinNoiseImage, nullptr);
@@ -47,23 +62,13 @@ namespace EWE {
 
 	void PBRScene::InitTerrainResources(){
 
-		std::vector<int> perlinNumbers(256);
-		std::iota(perlinNumbers.begin(), perlinNumbers.end(), 0);
-		std::shuffle(perlinNumbers.begin(), perlinNumbers.end(), 0); //this 3rd value is the random seed
-
 		for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
 			tessBuffer[i] = Construct<EWEBuffer>({sizeof(TessBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
-			perlinNumberBuffer[i] = Construct<EWEBuffer>({sizeof(int) * 256, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
 
 			tessBuffer[i]->Map();
 			tessBuffer[i]->WriteToBuffer(&tbo, sizeof(TessBufferObject));
 			tessBuffer[i]->Flush();
 			tessBuffer[i]->Unmap();
-
-			perlinNumberBuffer[i]->Map();
-			perlinNumberBuffer[i]->WriteToBuffer(perlinNumbers.data(), sizeof(int) * 256);
-			perlinNumberBuffer[i]->Flush();
-			perlinNumberBuffer[i]->Unmap();
 		}
 
 
@@ -71,7 +76,6 @@ namespace EWE {
 			EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::ENGINE_MAX_COUNT)->GetDSL(), DescriptorPool_Global);
 			DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
 			descWriter.WriteBuffer(tessBuffer[i]->DescriptorInfo());
-			descWriter.WriteBuffer(perlinNumberBuffer[i]->DescriptorInfo());
 			terrainDesc[i] = descWriter.Build();
 		}
 	}
@@ -276,6 +280,7 @@ namespace EWE {
 	void PBRScene::Load() {
 		menuManager.giveMenuFocus();
 		InitSphereMaterialResources();
+		InitTerrainResources();
 	
 		lbo.ambientColor = glm::vec4(0.04f);
 		lbo.numLights = 0;
@@ -285,6 +290,14 @@ namespace EWE {
 		updatedLBO = MAX_FRAMES_IN_FLIGHT;
 
 		camTransform.translation = glm::vec3(-1.5f, -7.5f, 9.f);
+
+		tbo.proj = ewEngine.camera.GetProjection();
+		tbo.displacementFactor = 32.f;
+		tbo.tessFactor = 0.75f;
+		tbo.tessEdgeSize = 20.f;
+
+		//updatedTBO = MAX_FRAMES_IN_FLIGHT;
+	
 	}
 
 	void PBRScene::Entry() {
@@ -297,11 +310,6 @@ namespace EWE {
 
 		glfwSetMouseButtonCallback(windowPtr, ImGui_ImplGlfw_MouseButtonCallback);
 		glfwSetKeyCallback(windowPtr, ImGui_ImplGlfw_KeyCallback);
-
-		tbo.proj = ewEngine.camera.GetProjection();
-		tbo.displacementFactor = 32.f;
-		tbo.tessFactor = 0.75f;
-		tbo.tessEdgeSize = 20.f;
 	}
 
 	void PBRScene::RenderLBOControls(){
@@ -356,6 +364,19 @@ namespace EWE {
 		ImGui::End();
 	}
 
+	void PBRScene::RenderTerrainControls() {
+		if (ImGui::Begin("terrain data")) {
+
+			ImGui::DragFloat("displacement factor", &tbo.displacementFactor, 1.f, 0.f, 1000.f);
+			ImGui::DragFloat("tessellation factor", &tbo.tessFactor, 0.01f, 0.f, 10.f);
+			ImGui::DragFloat("tessellation edge size", &tbo.tessEdgeSize, 0.1f, 0.1f, 100.f);
+			ImGui::SliderInt("octaves", &tbo.octaves, 1, 8);
+
+			ImGui::Checkbox("wireframe", &terrainWire);
+		}
+		ImGui::End();
+	}
+
 	bool PBRScene::Render(double dt) {
 		//printf("render main menu scene \n");
 		//if (!paused && (glfwGetKey(windowPtr, GLFW_KEY_P) == GLFW_PRESS)) {
@@ -378,6 +399,13 @@ namespace EWE {
 
 			--updatedCMB;
 		}
+		tessBuffer[VK::Object->frameIndex]->Map();
+		void* mappedMem = tessBuffer[VK::Object->frameIndex]->GetMappedMemory();
+		tbo.view = ewEngine.camera.GetView();
+		memcpy(mappedMem, &tbo, sizeof(TessBufferObject));
+		tessBuffer[VK::Object->frameIndex]->Flush();
+		tessBuffer[VK::Object->frameIndex]->Unmap();
+		
 
 		camControl.Move(camTransform);
 		camControl.RotateCam(camTransform);
@@ -396,7 +424,13 @@ namespace EWE {
 
 			ewEngine.Draw3DObjects(dt);
 
-			auto* pipe = PipelineSystem::At(Pipe::ENGINE_MAX_COUNT);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
+			PipelineSystem* pipe;
+			if (terrainWire) {
+				pipe = PipelineSystem::At(Pipe::TerrainWM);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
+			}
+			else {
+				pipe = PipelineSystem::At(Pipe::Terrain);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
+			}
 			pipe->BindPipeline();
 			pipe->BindDescriptor(0, &terrainDesc[VK::Object->frameIndex]);
 			pipe->BindModel(groundModel);
@@ -410,6 +444,7 @@ namespace EWE {
 			RenderLBOControls();
 			RenderCameraData();
 			RenderControlledSphereControls();
+			RenderTerrainControls();
 			imguiHandler.endRender();
 
 			//rockSystem.Render();
