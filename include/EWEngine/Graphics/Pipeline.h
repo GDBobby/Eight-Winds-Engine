@@ -118,6 +118,9 @@ namespace EWE {
 			VkShaderModule tessControlModule{VK_NULL_HANDLE};
 			VkShaderModule tessEvaluationModule{VK_NULL_HANDLE};
 
+			VkShaderModule meshShaderModule{ VK_NULL_HANDLE };
+			VkShaderModule taskShaderModule{ VK_NULL_HANDLE };
+
 			VkPipelineLayout pipelineLayout = nullptr;
 			//VkPipelineRenderingCreateInfo const& pipeRenderInfo = nullptr;
 			VkPipelineRenderingCreateInfo pipelineRenderingInfo;
@@ -138,6 +141,7 @@ namespace EWE {
 		EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, PipelineConfigInfo const& configInfo);
 		EWEPipeline(std::string const& vertFilePath, MaterialFlags const flags, PipelineConfigInfo& configInfo);
 		EWEPipeline(uint16_t boneCount, MaterialFlags flags, PipelineConfigInfo const& configInfo);
+		EWEPipeline(std::string const& fragFilepath, PipelineConfigInfo const& configInfo);
 
 		~EWEPipeline();
 

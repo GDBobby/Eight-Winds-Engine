@@ -2,11 +2,16 @@
 
 #include "GUI/MainMenuMM.h"
 #include "GUI/MenuEnums.h"
+
+
 #include "Pipelines/PipeEnum.h"
 #include "Pipelines/TerrainPipe.h"
+#if EWE_DEBUG
 #include "Pipelines/TerrainPipeWireMesh.h"
-//#include "GUI/ShaderGenerationMM.h"
-//#include "GUI/ControlsMM.h"
+#endif
+#include "Pipelines/GeneratedGrassPipe.h"
+
+
 #include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
 #include <EWEngine/Graphics/Texture/Cube_Texture.h>
 #include <EWEngine/Systems/PipelineSystem.h>
@@ -202,7 +207,10 @@ namespace EWE {
 		*/
 
 		PipelineSystem::Emplace(Pipe::Terrain, Construct<TerrainPipe>({}));
+#if EWE_DEBUG
 		PipelineSystem::Emplace(Pipe::TerrainWM, Construct<TerrainPipeWireMesh>({}));
+#endif
+		PipelineSystem::Emplace(Pipe::GenGrass, Construct<GeneratedGrassPipe>({}));
 	}
 	void EWESample::addModulesToMenuManager() {
 		auto& mm = menuManager.menuModules.emplace(menu_main, std::make_unique<MainMenuMM>()).first->second;

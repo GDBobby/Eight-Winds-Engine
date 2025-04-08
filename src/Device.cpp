@@ -214,8 +214,12 @@ namespace EWE {
                 {VK_EXT_DEVICE_FAULT_EXTENSION_NAME, false},
                 //{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}
     #endif
+            {VK_EXT_MESH_SHADER_EXTENSION_NAME, false},
+            {VK_NV_MESH_SHADER_EXTENSION_NAME, false } //need to do smoe kinda branching so AMD doesn't attempt to include this
         }
     { //ewe device entrance
+        
+        
         //printf("device constructor \n");
         assert(eweDevice == nullptr && "EWEDevice already exists");
         eweDevice = this;
@@ -341,6 +345,9 @@ namespace EWE {
         }
 
         std::vector<const char*> extensions = GetRequiredExtensions();
+
+        //AddOptionalExtensions(extensions);
+
         //extensions.push_back("VK_KHR_get_physical_Device_properties2");
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
@@ -515,8 +522,42 @@ namespace EWE {
             queueCreateInfos[i].pQueuePriorities = queuePriorities[i].data();
         }
 
+        VkPhysicalDeviceMeshShaderFeaturesNV nvMeshStruct{};
+        nvMeshStruct.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+        nvMeshStruct.pNext = nullptr;
+        nvMeshStruct.taskShader = VK_TRUE;
+        nvMeshStruct.meshShader = VK_TRUE;
+
+        VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{};
+        meshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+        meshShaderFeatures.meshShader = VK_TRUE;
+        if (optionalExtensions.at(VK_NV_MESH_SHADER_EXTENSION_NAME)) {
+            meshShaderFeatures.pNext = &nvMeshStruct;
+        }
+        else {
+            meshShaderFeatures.pNext = nullptr;
+        }
+        meshShaderFeatures.meshShaderQueries = VK_TRUE;
+
+        VkPhysicalDeviceFeatures2 deviceFeatures2{};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        if (optionalExtensions.at(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
+            deviceFeatures2.pNext = &meshShaderFeatures;
+        }
+        else {
+            deviceFeatures2.pNext = nullptr;
+        }
+        deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
+        deviceFeatures2.features.geometryShader = VK_TRUE;
+        deviceFeatures2.features.wideLines = VK_TRUE;
+        deviceFeatures2.features.tessellationShader = VK_TRUE;
+#if EWE_DEBUG
+        deviceFeatures2.features.fillModeNonSolid = VK_TRUE;
+#endif
+
+
         VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_feature{};
-        dynamic_rendering_feature.pNext = nullptr;
+        dynamic_rendering_feature.pNext = &deviceFeatures2;
         dynamic_rendering_feature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
         dynamic_rendering_feature.dynamicRendering = VK_TRUE;
 
@@ -538,14 +579,6 @@ namespace EWE {
         }
 #endif
 
-
-        VkPhysicalDeviceFeatures deviceFeatures{};
-        deviceFeatures.samplerAnisotropy = VK_TRUE;
-        deviceFeatures.geometryShader = VK_TRUE;
-        deviceFeatures.wideLines = VK_TRUE;
-        deviceFeatures.tessellationShader = VK_TRUE;
-        deviceFeatures.fillModeNonSolid = VK_TRUE;
-
         VkDeviceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         createInfo.pNext = &synchronization_2_feature;
@@ -553,7 +586,7 @@ namespace EWE {
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-        createInfo.pEnabledFeatures = &deviceFeatures;
+        createInfo.pEnabledFeatures = nullptr;
 
         /*
         printf("printing active device extensions \n");
@@ -576,8 +609,16 @@ namespace EWE {
         createInfo.enabledExtensionCount = static_cast<uint32_t>(debugDeviceExtensions.size());
         createInfo.ppEnabledExtensionNames = debugDeviceExtensions.data();
 #else
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-        createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+        std::vector<const char*> totalDeviceExtensions{ deviceExtensions };
+        for (auto const& option : optionalExtensions) {
+            if (option.second) {
+                totalDeviceExtensions.push_back(option.first.c_str());
+            }
+        }
+
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(totalDeviceExtensions.size());
+        createInfo.ppEnabledExtensionNames = totalDeviceExtensions.data();
 #endif
 
 
@@ -600,6 +641,8 @@ namespace EWE {
         }
 #endif
         EWE_VK(vkCreateDevice, VK::Object->physicalDevice, &createInfo, nullptr, &VK::Object->vkDevice);
+
+        VK::CmdDrawMeshTasksEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksEXT>(vkGetDeviceProcAddr(VK::Object->vkDevice, "vkCmdDrawMeshTasksEXT"));
 #if GPU_LOGGING
         {
             //printf("opening file? \n");
@@ -760,6 +803,41 @@ namespace EWE {
         return extensions;
     }
 
+    void EWEDevice::AddOptionalExtensions(std::vector<const char*>& extensions) {
+        if (optionalExtensions.size() == 0) {
+            return;
+        }
+        //uint32_t extensionCount;
+
+        //EWE_VK(vkEnumerateDeviceExtensionProperties, VK::Object->physicalDevice, nullptr, &extensionCount, nullptr);
+
+        //std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        //EWE_VK(vkEnumerateDeviceExtensionProperties,
+        //    VK::Object->physicalDevice,
+        //    nullptr,
+        //    &extensionCount,
+        //    availableExtensions.data()
+        //);
+        //for (auto& optional : optionalExtensions) {
+        //    optional.second = false;
+        //}
+
+        //for (auto& extension : availableExtensions) {
+        //    //printf("device extension name available : %s \n", extension.extensionName);
+        //    auto optionalExtension = optionalExtensions.find(extension.extensionName);
+        //    if (optionalExtension != optionalExtensions.end()) {
+        //        optionalExtension->second = true;
+        //    }
+        //}
+
+        for (auto const& optional : optionalExtensions) {
+            //if (optional.second) {
+                extensions.push_back(optional.first.c_str());
+            //}
+        }
+
+    }
+
     void EWEDevice::HasGflwRequiredInstanceExtensions() {
         uint32_t extensionCount = 0;
         EWE_VK(vkEnumerateInstanceExtensionProperties, nullptr, &extensionCount, nullptr);
@@ -803,7 +881,7 @@ namespace EWE {
         std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
         for (const auto& extension : availableExtensions) {
-            //printf("device extension name available : %s \n", extension.extensionName);
+            printf("device extension name available : %s \n", extension.extensionName);
             requiredExtensions.erase(extension.extensionName);
         }
 
@@ -896,81 +974,4 @@ namespace EWE {
         assert(false && "failed to find supported format");
         return VkFormat{}; //error silencing
     }
-
-    //need to find the usage and have it create the single time command
-
-    VkDeviceSize EWEDevice::GetMemoryRemaining() {
-        VkPhysicalDeviceMemoryProperties memoryProperties;
-        EWE_VK(vkGetPhysicalDeviceMemoryProperties, VK::Object->physicalDevice, &memoryProperties);
-
-        uint32_t memoryHeapCount = memoryProperties.memoryHeapCount;
-        VkDeviceSize deviceMemoryRemaining = 0;
-        for (uint32_t i = 0; i < memoryHeapCount; ++i) {
-            VkMemoryHeap memoryHeap = memoryProperties.memoryHeaps[i];
-            VkDeviceSize heapSize = memoryHeap.size;
-            VkMemoryHeapFlags heapFlags = memoryHeap.flags;
-
-            // Check if the heap is device local and not a host-visible heap
-            if (heapFlags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
-                VkDeviceSize heapUsed = 0;
-
-                // Sum up the memory used on the heap by iterating through memory types
-                for (uint32_t j = 0; j < memoryProperties.memoryTypeCount; ++j) {
-                    VkMemoryType memoryType = memoryProperties.memoryTypes[j];
-
-                    // Check if the memory type belongs to the current heap
-                    if (memoryType.heapIndex == i) {
-                        VkDeviceSize memorySize = memoryProperties.memoryHeaps[memoryType.heapIndex].size;
-                        heapUsed += memorySize;
-                    }
-                }
-
-                VkDeviceSize heapRemaining = heapSize - heapUsed;
-#if EWE_DEBUG
-                std::cout << "Heap " << i << " Remaining Memory: " << heapRemaining << " bytes" << std::endl;
-#endif
-                deviceMemoryRemaining += heapRemaining;
-            }
-        }
-        return deviceMemoryRemaining;
-    }
-    /*
-    QueueTransitionContainer* EWEDevice::PostTransitionsToGraphics(CommandBuffer cmdBuf, uint8_t frameIndex){
-		QueueTransitionContainer* transitionContainer = syncHub->transitionManager.PrepareGraphics(frameIndex);
-        if(transitionContainer == nullptr) [[unlikely]] {
-            return nullptr;
-        }
-
-        VkImageLayout dstLayout;
-        std::vector<VkImageMemoryBarrier> imageBarriers{};
-        std::vector<VkBufferMemoryBarrier> bufferBarriers{};
-        imageBarriers.reserve(transitionContainer->images.size());
-        bufferBarriers.reserve(transitionContainer->buffers.size());
-
-        for(auto& transitionInstance : transitionContainer->images){
-            if(transitionInstance.mipLevels > 1){
-                dstLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            }
-            else{
-                dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-            imageBarriers.push_back(
-                TransitionImageLayout(transitionInstance.image, 
-                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dstLayout,
-                    transitionInstance.mipLevels,
-                    transitionInstance.arrayLayers
-                )
-            );
-        }
-         
-        vkCmdPipelineBarrier(cmdBuf,
-            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-            0,
-            0, nullptr,
-            bufferBarriers.size(), bufferBarriers.data(),
-            imageBarriers.size(), imageBarriers.data()
-        );
-        return transitionContainer;
-    }
-    */
 }  // namespace EWE

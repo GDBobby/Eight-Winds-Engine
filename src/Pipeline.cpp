@@ -178,6 +178,24 @@ namespace EWE {
 		CreateGraphicsPipeline(configInfo);
 	}
 
+	EWEPipeline::EWEPipeline(std::string const& fragFilepath, PipelineConfigInfo const& configInfo) : vertShaderModule{ VK_NULL_HANDLE } {
+		assert(configInfo.meshShaderModule != VK_NULL_HANDLE);
+
+
+
+		const auto fragFind = shaderModuleMap.find(fragFilepath);
+		if (fragFind == shaderModuleMap.end()) {
+			auto fragCode = Pipeline_Helper_Functions::ReadFile(fragFilepath);
+			Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
+			//printf("emplacing shader module frag to map\n");
+			shaderModuleMap.try_emplace(fragFilepath, fragShaderModule);
+		}
+		else {
+			fragShaderModule = fragFind->second;
+		}
+		CreateGraphicsPipeline(configInfo);
+	}
+
 	EWEPipeline::EWEPipeline(uint16_t boneCount, MaterialFlags flags, const PipelineConfigInfo& configInfo) {
 		std::string vertPath = SHADER_DIR;
 		//this is always instanced???
@@ -300,58 +318,87 @@ namespace EWE {
 		assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no pipelineLayout provided in configInfo");
 		//assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no renderPass provided in configInfo");
 
+		uint8_t currentStage = 0; 
+		std::vector<VkPipelineShaderStageCreateInfo> shaderStages{ 2 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE) + 2 * static_cast<std::size_t>(configInfo.hasTesselation) + static_cast<std::size_t>(configInfo.taskShaderModule != VK_NULL_HANDLE)};
+
 		if(configInfo.hasTesselation){
 			assert(configInfo.tessControlModule != VK_NULL_HANDLE);
 			assert(configInfo.tessEvaluationModule != VK_NULL_HANDLE);
 		}
+		if (configInfo.meshShaderModule != VK_NULL_HANDLE) {
+			assert(vertShaderModule == VK_NULL_HANDLE);
+			assert(configInfo.tessControlModule == VK_NULL_HANDLE);
+			assert(configInfo.tessEvaluationModule == VK_NULL_HANDLE);
+			assert(configInfo.geomShaderModule == VK_NULL_HANDLE);
 
-		std::vector<VkPipelineShaderStageCreateInfo> shaderStages{2 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE) + 2 * static_cast<std::size_t>(configInfo.hasTesselation)};
-		shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-		shaderStages[0].module = vertShaderModule;
-		shaderStages[0].pName = "main";
-		shaderStages[0].flags = 0;
-		shaderStages[0].pNext = nullptr;
-		shaderStages[0].pSpecializationInfo = nullptr;
+			if (configInfo.taskShaderModule != VK_NULL_HANDLE) {
+				shaderStages[currentStage].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				shaderStages[currentStage].stage = VK_SHADER_STAGE_TASK_BIT_EXT;
+				shaderStages[currentStage].module = configInfo.taskShaderModule;
+				shaderStages[currentStage].pName = "main";
+				shaderStages[currentStage].flags = 0;
+				shaderStages[currentStage].pNext = nullptr;
+				shaderStages[currentStage].pSpecializationInfo = nullptr;
 
-		uint8_t currentStage = 1;
-		if(configInfo.hasTesselation){
-			{
-				auto& tescStage = shaderStages[currentStage];
 				currentStage++;
-				tescStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-				tescStage.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-				tescStage.module = configInfo.tessControlModule;
-				tescStage.pName = "main";
-				tescStage.flags = 0;
-				tescStage.pNext = nullptr;
-				tescStage.pSpecializationInfo = nullptr;
 			}
-			{
-				auto& teseStage = shaderStages[currentStage];
-				currentStage++;
-				teseStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-				teseStage.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-				teseStage.module = configInfo.tessEvaluationModule;
-				teseStage.pName = "main";
-				teseStage.flags = 0;
-				teseStage.pNext = nullptr;
-				teseStage.pSpecializationInfo = nullptr;
-			}
-		}
 
-		if (configInfo.geomShaderModule != VK_NULL_HANDLE) {
-			auto& geomStage = shaderStages[currentStage];
+			shaderStages[currentStage].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			shaderStages[currentStage].stage = VK_SHADER_STAGE_MESH_BIT_EXT;
+			shaderStages[currentStage].module = configInfo.meshShaderModule;
+			shaderStages[currentStage].pName = "main";
+			shaderStages[currentStage].flags = 0;
+			shaderStages[currentStage].pNext = nullptr;
+			shaderStages[currentStage].pSpecializationInfo = nullptr;
 			currentStage++;
-			geomStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			geomStage.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-			geomStage.module = configInfo.geomShaderModule;
-			geomStage.pName = "main";
-			geomStage.flags = 0;
-			geomStage.pNext = nullptr;
-			geomStage.pSpecializationInfo = nullptr;
 		}
+		else {
+			shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+			shaderStages[0].module = vertShaderModule;
+			shaderStages[0].pName = "main";
+			shaderStages[0].flags = 0;
+			shaderStages[0].pNext = nullptr;
+			shaderStages[0].pSpecializationInfo = nullptr;
+			currentStage = 1;
 
+			if (configInfo.hasTesselation) {
+				{
+					auto& tescStage = shaderStages[currentStage];
+					currentStage++;
+					tescStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+					tescStage.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+					tescStage.module = configInfo.tessControlModule;
+					tescStage.pName = "main";
+					tescStage.flags = 0;
+					tescStage.pNext = nullptr;
+					tescStage.pSpecializationInfo = nullptr;
+				}
+				{
+					auto& teseStage = shaderStages[currentStage];
+					currentStage++;
+					teseStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+					teseStage.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+					teseStage.module = configInfo.tessEvaluationModule;
+					teseStage.pName = "main";
+					teseStage.flags = 0;
+					teseStage.pNext = nullptr;
+					teseStage.pSpecializationInfo = nullptr;
+				}
+			}
+
+			if (configInfo.geomShaderModule != VK_NULL_HANDLE) {
+				auto& geomStage = shaderStages[currentStage];
+				currentStage++;
+				geomStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				geomStage.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+				geomStage.module = configInfo.geomShaderModule;
+				geomStage.pName = "main";
+				geomStage.flags = 0;
+				geomStage.pNext = nullptr;
+				geomStage.pSpecializationInfo = nullptr;
+			}
+		}
 
 		
 		auto& fragStage = shaderStages[currentStage];

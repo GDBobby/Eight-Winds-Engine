@@ -41,7 +41,7 @@ namespace EWE {
         VkDescriptorSetLayoutBinding globalBindings{};
         globalBindings.binding = 0;
         globalBindings.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        globalBindings.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+        globalBindings.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_MESH_BIT_EXT;
         globalBindings.descriptorCount = 1;
         bindings.push_back(globalBindings);
 

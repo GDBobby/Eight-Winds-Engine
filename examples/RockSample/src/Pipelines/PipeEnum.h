@@ -8,6 +8,7 @@ namespace EWE {
 			Terrain = Pipe::ENGINE_MAX_COUNT,
 			TerrainWM,
 			Perlin,
+			GenGrass,
 		};
 	}
 }

@@ -6,6 +6,7 @@
 #include <EWEngine/imgui/imGuiHandler.h>
 
 #include "../Pipelines/TerrainPipe.h"
+#include "../Pipelines/GeneratedGrassPipe.h"
 
 
 namespace EWE {
@@ -32,7 +33,7 @@ namespace EWE {
 		void InitSphereMaterialResources();
 		std::array<EWEBuffer*, 2> csmEWEBuffer; //csmEWE == controlled sphere material EWE buffer
 		MaterialBuffer controlledSphereMB;
-		int updatedCMB = 0; //CMB == controlled material buffer
+		int updatedCMB = MAX_FRAMES_IN_FLIGHT; //CMB == controlled material buffer
 		TransformComponent sphereTransform;
 		bool sphereDrawable = true;
 		MaterialObjectInfo controlledSphere;
@@ -48,6 +49,13 @@ namespace EWE {
 		//int updatedTBO = 0;
 		TessBufferObject tbo;
 		bool terrainWire = false;
+		bool terrainActive = true;
+
+		void InitGrassResources();
+		GrassBufferObject gbo;
+		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> grassBuffer;
+		VkDescriptorSet grassDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+		bool grassActive = true;
 	
 
 		void InitPerlinNoiseResources();
@@ -64,8 +72,9 @@ namespace EWE {
 		void RenderCameraData();
 		void RenderControlledSphereControls();
 		void RenderTerrainControls();
+		void RenderGrassControls();
 
-		int updatedLBO = 0;
+		int updatedLBO = MAX_FRAMES_IN_FLIGHT;
 		LightBufferObject lbo;
 	};
 }

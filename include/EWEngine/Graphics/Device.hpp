@@ -27,18 +27,6 @@ namespace EWE {
         std::vector<VkPresentModeKHR> presentModes;
     };
 
-    //struct QueueData {
-
-    //    std::array<int, 4> index = { -1, -1, -1, -1 };
-    //    std::array<bool, 4> found = {false, false, false, false};
-    //    std::vector<VkQueueFamilyProperties> queueFamilies{};
-    //    void FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface_);
-
-    //    bool isComplete() const { return found[Queue::graphics] && found[Queue::present] && found[Queue::transfer] && found[Queue::compute]; }
-    //};
-
-    //std::vector<VkDeviceQueueCreateInfo> queueInfo;
-
     class EWEDevice {
         static EWEDevice* eweDevice; //singleton
 
@@ -70,9 +58,6 @@ namespace EWE {
         SwapChainSupportDetails GetSwapChainSupport() { return QuerySwapChainSupport(VK::Object->physicalDevice); }
 
         VkFormat FindSupportedFormat(std::vector<VkFormat> const& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-
-
-        VkDeviceSize GetMemoryRemaining();
 
 
     private:
@@ -114,6 +99,7 @@ namespace EWE {
         // helper functions
         bool IsDeviceSuitable(VkPhysicalDevice device);
         std::vector<const char*> GetRequiredExtensions(); //glfw
+        void AddOptionalExtensions(std::vector<const char*>& extensions);
         bool CheckValidationLayerSupport();
         void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
         void HasGflwRequiredInstanceExtensions();

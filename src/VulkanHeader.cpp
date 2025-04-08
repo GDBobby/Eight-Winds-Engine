@@ -41,6 +41,7 @@ void EWE_VK_RESULT(VkResult vkResult) {
 
 namespace EWE {
     VK* VK::Object{ nullptr };
+    PFN_vkCmdDrawMeshTasksEXT VK::CmdDrawMeshTasksEXT = VK_NULL_HANDLE;
 
 
     uint32_t FindMemoryType(uint32_t typeFilter, const VkMemoryPropertyFlags properties) {

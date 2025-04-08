@@ -71,12 +71,24 @@ namespace EWE {
 			tessBuffer[i]->Unmap();
 		}
 
-
 		for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
-			EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::ENGINE_MAX_COUNT)->GetDSL(), DescriptorPool_Global);
+			EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::Terrain)->GetDSL(), DescriptorPool_Global);
 			DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
 			descWriter.WriteBuffer(tessBuffer[i]->DescriptorInfo());
 			terrainDesc[i] = descWriter.Build();
+		}
+	}
+
+	void PBRScene::InitGrassResources() {
+
+		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			grassBuffer[i] = Construct<EWEBuffer>({ sizeof(GrassBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
+
+
+			EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::GenGrass)->GetDSL(), DescriptorPool_Global);
+			DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
+			descWriter.WriteBuffer(grassBuffer[i]->DescriptorInfo());
+			grassDesc[i] = descWriter.Build();
 		}
 	}
 
@@ -281,6 +293,7 @@ namespace EWE {
 		menuManager.giveMenuFocus();
 		InitSphereMaterialResources();
 		InitTerrainResources();
+		InitGrassResources();
 	
 		lbo.ambientColor = glm::vec4(0.04f);
 		lbo.numLights = 0;
@@ -295,6 +308,14 @@ namespace EWE {
 		tbo.displacementFactor = 32.f;
 		tbo.tessFactor = 0.75f;
 		tbo.tessEdgeSize = 20.f;
+
+		gbo.animationScale = 1.f;
+		gbo.endDistance = 10000.f;
+		gbo.height = 1.f;
+		gbo.lengthGroundPosV2 = 1.f;
+		gbo.spacing = 0.1f;
+		gbo.windDir = 0.f;
+		gbo.time = 0.f;
 
 		//updatedTBO = MAX_FRAMES_IN_FLIGHT;
 	
@@ -367,12 +388,25 @@ namespace EWE {
 	void PBRScene::RenderTerrainControls() {
 		if (ImGui::Begin("terrain data")) {
 
+			ImGui::Checkbox("active##ter", &terrainActive);
 			ImGui::DragFloat("displacement factor", &tbo.displacementFactor, 1.f, 0.f, 1000.f);
 			ImGui::DragFloat("tessellation factor", &tbo.tessFactor, 0.01f, 0.f, 10.f);
 			ImGui::DragFloat("tessellation edge size", &tbo.tessEdgeSize, 0.1f, 0.1f, 100.f);
 			ImGui::SliderInt("octaves", &tbo.octaves, 1, 8);
-
+#if EWE_DEBUG
 			ImGui::Checkbox("wireframe", &terrainWire);
+#endif
+		}
+		ImGui::End();
+	}
+	void PBRScene::RenderGrassControls() {
+		if (ImGui::Begin("grass data")) {
+			ImGui::DragFloat("animation scale", &gbo.animationScale, 0.1f, -100.f, 100.f);
+			ImGui::DragFloat("end distance", &gbo.endDistance, 1.f, 0.f, 10000.f);
+			ImGui::DragFloat("height&gr", &gbo.height, 0.01f, 0.f, 100.f);
+			ImGui::DragFloat("length ground posv2", &gbo.lengthGroundPosV2, 0.01f, 0.f, 100.f);
+			ImGui::DragFloat("spacing", &gbo.spacing, 0.01f, 0.f, 100.f);
+			ImGui::DragFloat("wind dir", &gbo.windDir, 0.01f, 0.f, glm::two_pi<float>());
 		}
 		ImGui::End();
 	}
@@ -399,13 +433,22 @@ namespace EWE {
 
 			--updatedCMB;
 		}
-		tessBuffer[VK::Object->frameIndex]->Map();
-		void* mappedMem = tessBuffer[VK::Object->frameIndex]->GetMappedMemory();
-		tbo.view = ewEngine.camera.GetView();
-		memcpy(mappedMem, &tbo, sizeof(TessBufferObject));
-		tessBuffer[VK::Object->frameIndex]->Flush();
-		tessBuffer[VK::Object->frameIndex]->Unmap();
-		
+		{
+			tessBuffer[VK::Object->frameIndex]->Map();
+			void* mappedMem = tessBuffer[VK::Object->frameIndex]->GetMappedMemory();
+			tbo.view = ewEngine.camera.GetView();
+			memcpy(mappedMem, &tbo, sizeof(TessBufferObject));
+			tessBuffer[VK::Object->frameIndex]->Flush();
+			tessBuffer[VK::Object->frameIndex]->Unmap();
+		}
+		{
+			grassBuffer[VK::Object->frameIndex]->Map();
+			void* mappedMem = grassBuffer[VK::Object->frameIndex]->GetMappedMemory();
+			gbo.time += static_cast<float>(dt);
+			memcpy(mappedMem, &gbo, sizeof(GrassBufferObject));
+			grassBuffer[VK::Object->frameIndex]->Flush();
+			grassBuffer[VK::Object->frameIndex]->Unmap();
+		}
 
 		camControl.Move(camTransform);
 		camControl.RotateCam(camTransform);
@@ -424,18 +467,29 @@ namespace EWE {
 
 			ewEngine.Draw3DObjects(dt);
 
-			PipelineSystem* pipe;
-			if (terrainWire) {
-				pipe = PipelineSystem::At(Pipe::TerrainWM);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
+			if (terrainActive) {
+				PipelineSystem* pipe;
+				if (terrainWire) {
+					pipe = PipelineSystem::At(Pipe::TerrainWM);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
+				}
+				else {
+					pipe = PipelineSystem::At(Pipe::Terrain);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
+				}
+				pipe->BindPipeline();
+				pipe->BindDescriptor(0, &terrainDesc[VK::Object->frameIndex]);
+				pipe->BindModel(groundModel);
+				pipe->DrawModel();
 			}
-			else {
-				pipe = PipelineSystem::At(Pipe::Terrain);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
+
+			if (VK::CmdDrawMeshTasksEXT != VK_NULL_HANDLE) {
+				if (grassActive) {
+					PipelineSystem* pipe = PipelineSystem::At(Pipe::GenGrass);
+					pipe->BindPipeline();
+					pipe->BindDescriptor(0, &grassDesc[VK::Object->frameIndex]);
+					//EWE_VK(VK::CmdDrawMeshTasksEXT, VK::Object->GetFrameBuffer(), 1, 0, 0);
+					VK::CmdDrawMeshTasksEXT(VK::Object->GetFrameBuffer().cmdBuf, 1, 0, 0);
+				}
 			}
-			pipe->BindPipeline();
-			pipe->BindDescriptor(0, &terrainDesc[VK::Object->frameIndex]);
-			pipe->BindModel(groundModel);
-			pipe->DrawModel();
-			
 
 			ewEngine.Draw2DObjects();
 			ewEngine.DrawText(dt);

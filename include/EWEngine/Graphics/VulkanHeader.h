@@ -142,6 +142,9 @@ namespace EWE{
 #endif
 
         static void CopyBuffer(CommandBuffer& cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+
+        static PFN_vkCmdDrawMeshTasksEXT CmdDrawMeshTasksEXT;
     };
 
 
