@@ -9,8 +9,9 @@ struct GrassBufferObject {
 	float time;
 	float windDir;
 	float endDistance;
-	float animationScale;
-	float lengthGroundPosV2;
+	float windStrength;
+	VkBool32 cullGrassHeight;
+	//float lengthGroundPosV2;
 };
 
 namespace EWE {

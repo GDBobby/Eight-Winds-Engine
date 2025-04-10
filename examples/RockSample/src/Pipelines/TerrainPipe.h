@@ -11,6 +11,9 @@ struct TessBufferObject {
 	float tessFactor;
 	float tessEdgeSize;
 	int octaves;
+	float worldPosNoiseScaling;
+	float sandHeight;
+	float grassHeight;
 };
 
 namespace EWE {

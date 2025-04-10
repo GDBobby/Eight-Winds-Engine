@@ -6,6 +6,7 @@ namespace EWE {
 	namespace Pipe {
 		enum Enum {
 			Terrain = Pipe::ENGINE_MAX_COUNT,
+			SimpleTerrain,
 			TerrainWM,
 			Perlin,
 			GenGrass,

@@ -25,6 +25,19 @@ layout(set = 0, binding = 1) uniform LightBufferObject {
 	int numLights;
 } lbo;
 
+layout(set = 0, binding = 2) uniform TescBO{
+    mat4 projection;
+    mat4 view;
+    vec4 frustumPlanes[6];
+    vec2 viewportDim;
+    float displacementFactor;
+    float tessFactor;
+    float tessEdgeSize;
+	int octaves;
+	float worldPosNoiseScaling;
+    float sandHeight;
+    float grassHeight;
+} tbo;
 
 //layout (set = 0, binding = 3) uniform sampler2D samplerHeight; //just passing it from tese
 //layout (set = 0, binding = 4) uniform sampler2DArray samplerLayers;
@@ -52,13 +65,13 @@ vec3 sampleTerrainLayer() {
 		color += weight * texture(samplerLayers, vec3(inUV * 16.0, i)).rgb;
 	}
 	*/
-	if(height < 32.0){
+	if(height < 0.0){
 		return vec3(0.0, 0.0, 1.0);
 	}
-	else if (height < 64.0){
+	else if (height < tbo.sandHeight){
 		return vec3(0.75, 0.6, 0.5);
 	}
-	else if (height < 192.0){
+	else if (height < tbo.grassHeight){
 		return vec3(0.0, 1.0, 0.0);
 	}
 	return vec3(1.0, 1.0, 1.0);

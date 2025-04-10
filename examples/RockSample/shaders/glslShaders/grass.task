@@ -1,6 +1,46 @@
 #version 450
 #extension GL_EXT_mesh_shader : require
+#extension GL_EXT_debug_printf : enable
+
+layout(set = 0, binding = 0) uniform GlobalUbo{
+	mat4 projView;
+	vec4 cameraPos;
+} ubo;
+
+layout(set = 0, binding = 2) uniform GrassBufferObject{
+    float spacing;
+    float height;
+    float time;
+    float windDir;
+    float endDistance; //LOD = 6 - sqrt(x) / endDistance; blade vertex count = LOD * 2
+    float windStrength;
+    int cullGrassHeight;
+} gbo;
+
+layout(set = 0, binding = 3) uniform TescBO{
+    mat4 projection;
+    mat4 view;
+    vec4 frustumPlanes[6]; //world space
+    vec2 viewportDim;
+    float displacementFactor;
+    float tessFactor;
+    float tessEdgeSize;
+	int octaves;
+	float worldPosNoiseScaling;
+    float sandHeight;
+    float grassHeight;
+} tbo;
+
+struct Payload{
+    vec3 patchCenter;
+    int lod;
+};
+
+//do a push constant that gives desired grass blades, then divide that up into what the mesh shader actually creates
 
 void main() {
+    //im going to ignore near and far on the camera, and take only 4 frustums
+    //enum side { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, NEAR = 4, FAR = 5 };
+
 	EmitMeshTasksEXT(1, 1, 1);
 }

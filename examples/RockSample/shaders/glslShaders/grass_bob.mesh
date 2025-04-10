@@ -1,0 +1,315 @@
+#version 460
+#extension GL_EXT_mesh_shader : require
+#extension GL_EXT_debug_printf : enable
+#extension GL_GOOGLE_include_directive : enable
+
+#include "SimplexNoise.glsl"
+
+#define PI 3.1415926535897932384626433832795
+
+#define TWO_PI 6.283185307179586476925286766559
+
+//https://www.geeks3d.com/20200519/introduction-to-mesh-shaders-opengl-and-vulkan/
+//https://gpuopen.com/learn/mesh_shaders/mesh_shaders-procedural_grass_rendering/
+
+const int GROUP_SIZE = 16;
+const uint maxMeshOutputVertices = 256; //this is the max output on 1650nvidia, 6500amd, and 4090nvidia
+
+layout(set = 0, binding = 0) uniform GlobalUbo{
+	mat4 projView;
+	vec4 cameraPos;
+} ubo;
+
+layout(set = 0, binding = 2) uniform GrassBufferObject{
+    float spacing;
+    float height;
+    float time;
+    float windDir;
+    float endDistance; //LOD = 6 - sqrt(x) / endDistance; blade vertex count = LOD * 2
+    float windStrength;
+    int cullGrassHeight;
+} gbo;
+
+layout(set = 0, binding = 3) uniform TescBO{
+    mat4 projection;
+    mat4 view;
+    vec4 frustumPlanes[6];
+    vec2 viewportDim;
+    float displacementFactor;
+    float tessFactor;
+    float tessEdgeSize;
+	int octaves;
+	float worldPosNoiseScaling;
+    float sandHeight;
+    float grassHeight;
+} tbo;
+
+struct VertexOutput{
+    vec3 worldPos;
+    vec3 worldNormal;
+    float distanceFromCenter;
+    float heightPercent;
+};
+//void PrintVertex(VertexOutput v, uint vertId){
+    //debugPrintfEXT("vert[%d] - height %f root_height %f worldPos %f %f %f normal %f %f %f\n", vertId, v.height, v.rootHeight, v.worldPos.x, v.worldPos.y, v.worldPos.z, v.worldNormal.x, v.worldNormal.y, v.worldNormal.z);
+//}
+
+
+layout(location = 0) out VertexOutput v_out[];  // [max_vertices]
+
+uint combineSeed(const float x, const float y) {
+    return (floatBitsToUint(x) ^ (floatBitsToUint(y) * 0x6C078965u)) * 0x9E3779B9u;
+}
+
+#define saturate(value) clamp(value, 0.0, 1.0)
+
+uint pcg4d(uvec4 v) {
+    v = v * 1664525u + 1013904223u;
+    v.x += v.y * v.w;
+    v.y += v.z * v.x;
+    v.z += v.x * v.y;
+    v.w += v.y * v.z;
+    v = v ^ (v >> 16u);
+    //v.x += v.y * v.w;
+    return v.x + v.y * v.w;
+}
+
+float rand1(inout uvec4 rng_state) {
+    rng_state.w++;
+    return uintBitsToFloat(pcg4d(rng_state));
+}
+float rand0to1(inout uvec4 rng_state){
+    rng_state.w++;
+    const float firstVal = float(pcg4d(rng_state));
+    return firstVal / float(4294967295u);
+}
+
+vec3 GetWindOffset(const vec2 pos, const float time){    
+    //debugPrintfEXT("wind offset calc - pos, time - (%f)(%f)(%f)", pos.x, pos.y, time);
+    const float posOnSineWave = cos(gbo.windDir) * pos.x - sin(gbo.windDir) * pos.y;
+    
+    const float t     = time + posOnSineWave + 4.0 * SimplexNoise(0.1 * pos);
+    const float windx = 2.0 * sin(0.5 * t);
+    const float windy = sin(t);
+    //debugPrintfEXT("wind offset calc - t, x, y - (%f)(%f)(%f)", t, windx, windy);
+    
+    return gbo.windStrength * vec3(windx, 0.0, windy);
+}
+
+void MakePersistentLength(in vec3 groundPos, inout vec3 v1, inout vec3 v2, in float height) {
+    //Persistent length
+    vec3 v01 = v1 - groundPos;
+    vec3 v12 = v2 - v1;
+    const float lv01 = length(v01);
+    const float lv12 = length(v12);
+
+    const float L1 = lv01 + lv12;
+    const float L0 = length(v2 - groundPos); //https://github.com/klejah/ResponsiveGrassDemo/blob/6ce514717467acc80fd965a6f7695d5151ba8c03/ResponsiveGrassDemo/shader/Grass/GrassUpdateForcesShader.cs#L76
+    const float L = (2.0 * L0 + L1) / 3.0; //http://steve.hollasch.net/cgindex/curves/cbezarclen.html
+
+    const float ldiff = height / L;
+    v01 = v01 * ldiff;
+    v12 = v12 * ldiff;
+    v1 = groundPos + v01;
+    v2 = v1 + v12;
+}
+
+vec3 bezier(vec3 p0, vec3 p1, vec3 p2, float t) {
+    const vec3 a = mix(p0, p1, t);
+    const vec3 b = mix(p1, p2, t);
+    return mix(a, b, t);
+}
+vec3 bezierDerivative(vec3 p0, vec3 p1, vec3 p2, float t) {
+    return 2.0 * (1.0 - t) * (p1 - p0) + 2.0 * t * (p2 - p1);
+}
+
+
+shared vec3 sharedPatchPosition;
+shared uint keepingFlag[GROUP_SIZE];
+
+layout(triangles) out;
+layout(max_vertices = 256, max_primitives = 192) out;
+layout(local_size_x = GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+void main(){
+    
+    const uvec3 centerInvocation = uvec3(2, 0, 2);
+
+    const uvec3 expandedInvocationID = uvec3(
+        gl_LocalInvocationID.x % 4,
+        0,
+        (gl_LocalInvocationID.x - (gl_LocalInvocationID.x % 4)) / 4
+    );
+
+    vec3 patchPosition = vec3(
+        (float(gl_WorkGroupID.x) / float(gl_NumWorkGroups.x) - 0.5) * 2.0 * (gbo.spacing * 2.0 * 8.0), //8.0 is local_size_x,
+        0.0,
+        (float(gl_WorkGroupID.z) / float(gl_NumWorkGroups.z) - 0.5) * 2.0 * (gbo.spacing * 2.0 * 8.0) //8.0 is local_size_z
+    );
+    
+    
+    vec3 bladePosition = patchPosition;
+    bladePosition.x += (float(expandedInvocationID.x) - float(centerInvocation.x)) * gbo.spacing;
+    bladePosition.z += (float(expandedInvocationID.z) - float(centerInvocation.z)) * gbo.spacing;
+    bladePosition.y = -NoiseWithOctaves(bladePosition.xz / tbo.worldPosNoiseScaling, tbo.octaves) * tbo.displacementFactor;
+
+    //debugPrintfEXT("patchPosition - (%f)(%f)(%f))", bladePosition.x, bladePosition.y, bladePosition.z);
+
+    if(expandedInvocationID == centerInvocation){
+        //debugPrintfEXT("center invocation - (%d)(%d)(%d)", gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
+
+        sharedPatchPosition.x = patchPosition.x;
+        sharedPatchPosition.z = patchPosition.z;
+        
+        sharedPatchPosition.y = bladePosition.y;
+    }
+
+    //LINGERING QUESTION, which is more expensive, the barrier or sampling noise twice?
+    barrier();
+
+    //debugPrintfEXT("pelase - (%f)(%f)(%f)", 
+   //     float(gl_WorkGroupID.x) / float(gl_NumWorkGroups.x) - 0.5 * 2.0, 
+    //    float(gl_WorkGroupID.z) / float(gl_NumWorkGroups.z) - 0.5 * 2.0, 
+    //    gbo.spacing * 2.0 * 8.0
+    //);
+
+
+    const float distanceToCamera = distance(sharedPatchPosition, ubo.cameraPos.xyz);
+
+    const uint maxVertsPerBladeEdge = uint(floor(float(maxMeshOutputVertices) / float(GROUP_SIZE) / 2.0));
+
+    const float lod = floor(min(5.0 - sqrt(distanceToCamera) / gbo.endDistance, float(maxVertsPerBladeEdge))); //4.0 is the max vertices 
+    //need frustum culling here too
+    if(lod <= 1.0){
+        //debugPrintfEXT("discarding because lod - %f - (%d)(%d)(%d)", lod, gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
+        return;
+    }
+    
+    if((gbo.cullGrassHeight != 0) && (sharedPatchPosition.y < tbo.grassHeight)){
+        debugPrintfEXT("discarding because position below water - %f", bladePosition.y);
+        keepingFlag[gl_LocalInvocationID.x] = 0;
+        return;
+    }
+    else{
+        keepingFlag[gl_LocalInvocationID.x] = 1;
+    }
+    barrier();
+
+    uint bladeID = 0;
+    for(uint i = 0; i < gl_LocalInvocationID.x; i++){
+        bladeID += keepingFlag[i];
+    }
+    uint bladeOutputCount = bladeID;
+    for(uint i = gl_LocalInvocationID.x; i < GROUP_SIZE; i++){
+        bladeOutputCount++;
+    }
+    
+
+    //nvidia - want one blade per invocation.
+    //AMD - want 1 primitive per invocation??
+    const uint verticesPerBladeEdge = uint(lod);
+    const uint verticesPerBlade =  verticesPerBladeEdge * 2;
+    const uint trianglesPerBlade = verticesPerBlade - 2;
+
+    SetMeshOutputsEXT(verticesPerBlade * bladeOutputCount, trianglesPerBlade * bladeOutputCount);
+    //const uint bladeID = gl_LocalInvocationID.x;
+    uvec4 seed = uvec4(gl_WorkGroupID.x, 0, 0, 0);
+
+    seed.y = bladeID;
+    const float bladeDirectionAngle = TWO_PI * rand0to1(seed);
+    const vec2 bladeDirection = vec2(cos(bladeDirectionAngle), sin(bladeDirectionAngle));
+
+    const float height = gbo.height + (fract(rand1(seed)) - 0.5) * 0.5;
+    vec3 p0 = bladePosition;
+    vec3 p1 = p0 - vec3(0.0, height, 0.0);
+    const vec3 windOffset = GetWindOffset(p0.xz, gbo.time);
+    //debugPrintfEXT("wind offset - (%f)(%f)(%f)", windOffset.x, windOffset.y, windOffset.z);
+    vec3 p2 = p1 + vec3(bladeDirection.x * height * 0.3, 0.0, bladeDirection.y * height * 0.3) + windOffset;
+
+    MakePersistentLength(p0, p1, p2, height);
+
+    //that 0.05 should be parameterized
+    const vec3 sideVec = vec3(bladeDirection.y, 0.0, -bladeDirection.x) * 0.05;
+    vec3 pPos[3] = vec3[3](
+        p0 + sideVec,
+        p1 + sideVec * 0.7,
+        p2 + sideVec * 0.3
+    );
+    vec3 pNeg[3] = vec3[3](
+        p0 - sideVec,
+        p1 - sideVec * 0.7,
+        p2 - sideVec * 0.3
+    );
+
+
+    const uint startingVertexID = bladeID * verticesPerBlade;
+    {   //ground verts
+        {
+
+            VertexOutput vertex;
+            vertex.heightPercent = 0.0;
+            vertex.distanceFromCenter = 1.0;
+            vertex.worldPos = pPos[0];
+            //bezDiff definition - return 2.0 * (1.0 - t) * (p1 - p0) + 2.0 * t * (p2 - p1);
+            //i could do this (below) 
+            //vertex[0].worldNormal = cross(sideVec, vec3(sideVec.x * 0.7, -height, sideVec.z * 0.7));
+            vertex.worldNormal = cross(sideVec, normalize(pPos[1] - pPos[0])); //groudn tangent?
+            v_out[startingVertexID] = vertex;
+            gl_MeshVerticesEXT[startingVertexID].gl_Position = ubo.projView * vec4(pPos[0], 1);
+            debugPrintfEXT("emitting vert - %d", startingVertexID);
+        }
+        {
+            VertexOutput vertex;
+            vertex.heightPercent = 0.0;
+            vertex.distanceFromCenter = -1.0;
+            vertex.worldPos = pNeg[0];
+            vertex.worldNormal = cross(sideVec, normalize(pNeg[1] - pNeg[0])); //groudn tangent?
+            
+            v_out[startingVertexID + 1] = vertex;
+            gl_MeshVerticesEXT[startingVertexID + 1].gl_Position = ubo.projView * vec4(pNeg[0], 1);
+            debugPrintfEXT("emitting vert - %d", startingVertexID + 1);
+        }
+    }
+    
+    for(uint vertIDLocal = 1; vertIDLocal < verticesPerBladeEdge; vertIDLocal++) {
+        const uint vertID = startingVertexID + vertIDLocal * 2;
+        //debugPrintfEXT("vert id - %d - %d", vertID, vertIDLocal);
+
+
+
+        const float t = float(vertIDLocal) / (float(verticesPerBladeEdge - 1));
+        const vec3 worldPos = bezier(pPos[0], pPos[1], pPos[2], t);
+        const vec3 worldPos2 = bezier(pNeg[0], pNeg[1], pNeg[2], t);
+
+        VertexOutput vertex[2];
+        vertex[0].heightPercent = t;
+        vertex[0].distanceFromCenter = 1.0;
+        vertex[0].worldPos = worldPos;
+        vertex[0].worldNormal = cross(sideVec, normalize(bezierDerivative(pPos[0], pPos[1], pPos[2], t)));
+
+        vertex[1].heightPercent = t;
+        vertex[1].distanceFromCenter = -1.0;
+        vertex[1].worldPos = worldPos2;
+        vertex[1].worldNormal = cross(sideVec, normalize(bezierDerivative(pNeg[0], pNeg[1], pNeg[2], t)));
+
+        v_out[vertID] = vertex[0];
+        v_out[vertID + 1] = vertex[1];
+        gl_MeshVerticesEXT[vertID].gl_Position = ubo.projView * vec4(worldPos, 1);
+        gl_MeshVerticesEXT[vertID + 1].gl_Position = ubo.projView * vec4(worldPos2, 1);
+
+        
+        debugPrintfEXT("emitting vert - %d", vertID);
+        debugPrintfEXT("emitting vert - %d", vertID + 1);
+    }
+
+    const uint bladeStartingTriangle = bladeID * trianglesPerBlade;
+
+    const uvec3 baseTriangle = uvec3(0, 1, 2);
+
+    for (uint i = 0; i < (verticesPerBlade - 2); i++){
+        const uint triID = bladeStartingTriangle + i;
+        //debugPrintfEXT("triangle id - %d - %d - %d", triID, bladeStartingTriangle, verticesPerBlade);
+
+        gl_PrimitiveTriangleIndicesEXT[triID] = baseTriangle + (startingVertexID + i);
+        debugPrintfEXT("emitting triangle - %d:%d:%d", baseTriangle.x + (startingVertexID + i), baseTriangle.y + (startingVertexID + i), baseTriangle.z + (startingVertexID + i));
+    }   
+}

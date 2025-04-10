@@ -12,6 +12,9 @@ layout(set = 0, binding = 2) uniform TescBO{
     float tessFactor;
     float tessEdgeSize;
 	int octaves;
+	float worldPosNoiseScaling;
+    float sandHeight;
+    float grassHeight;
 } tbo;
 
 vec2 SimplexHash(vec2 p) {// replace this by something better
@@ -53,9 +56,11 @@ layout(vertices = 4) out;
 
 layout(location = 0) in vec3 inNormal[];
 layout(location = 1) in vec2 inUV[];
+layout(location = 2) in vec3 inPos[];
 
 layout(location = 0) out vec3 outNormal[4];
 layout(location = 1) out vec2 outUV[4];
+layout(location = 2) out vec3 outPos[4];
 
 // Calculate the tessellation factor based on screen space
 // dimensions of the edge
@@ -93,7 +98,7 @@ bool frustumCheck() {
 	const float radius = 8.0f;
 	vec4 pos = gl_in[gl_InvocationID].gl_Position;
 	//pos.y -= textureLod(samplerHeight, inUV[0], 0.0).r * tbo.displacementFactor;
-	pos.y -= NoiseWithOctaves(inUV[0], tbo.octaves) * tbo.displacementFactor;
+	pos.y -= NoiseWithOctaves(inPos[0].xz, tbo.octaves) * tbo.displacementFactor;
 
 	// Check sphere against frustum planes
 	for (int i = 0; i < 6; i++) {
@@ -145,4 +150,5 @@ void main() {
 	gl_out[gl_InvocationID].gl_Position =  gl_in[gl_InvocationID].gl_Position;
 	outNormal[gl_InvocationID] = inNormal[gl_InvocationID];
 	outUV[gl_InvocationID] = inUV[gl_InvocationID];
+	outPos[gl_InvocationID] = inPos[gl_InvocationID];
 } 

@@ -6,9 +6,11 @@ layout (location = 2) in vec2 inUV;
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
+layout (location = 2) out vec3 outPos;
 
 void main(void) {
 	gl_Position = vec4(inPos.xyz, 1.0);
 	outUV = inUV;
 	outNormal = inNormal;
+	outPos = inPos;
 }

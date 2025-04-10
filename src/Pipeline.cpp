@@ -181,8 +181,6 @@ namespace EWE {
 	EWEPipeline::EWEPipeline(std::string const& fragFilepath, PipelineConfigInfo const& configInfo) : vertShaderModule{ VK_NULL_HANDLE } {
 		assert(configInfo.meshShaderModule != VK_NULL_HANDLE);
 
-
-
 		const auto fragFind = shaderModuleMap.find(fragFilepath);
 		if (fragFind == shaderModuleMap.end()) {
 			auto fragCode = Pipeline_Helper_Functions::ReadFile(fragFilepath);
@@ -424,8 +422,14 @@ namespace EWE {
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
 		pipelineInfo.pStages = shaderStages.data();
-		pipelineInfo.pVertexInputState = &vertexInputInfo;
-		pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
+		if (configInfo.meshShaderModule != VK_NULL_HANDLE) {
+			pipelineInfo.pVertexInputState = nullptr;
+			pipelineInfo.pInputAssemblyState = nullptr;
+		}
+		else {
+			pipelineInfo.pVertexInputState = &vertexInputInfo;
+			pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
+		}
 		pipelineInfo.pViewportState = &configInfo.viewportInfo;
 		pipelineInfo.pRasterizationState = &configInfo.rasterizationInfo;
 		pipelineInfo.pMultisampleState = &configInfo.multisampleInfo;

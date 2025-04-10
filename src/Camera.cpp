@@ -176,7 +176,7 @@ namespace EWE {
 
 	std::array<glm::vec4, 6> EWECamera::GetFrustumPlanes() {
 		std::array<glm::vec4, 6> planes;
-		enum side { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, BACK = 4, FRONT = 5 };
+		enum side { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, NEAR = 4, FAR = 5 };
 		planes[LEFT].x = ubo.projView[0].w + ubo.projView[0].x;
 		planes[LEFT].y = ubo.projView[1].w + ubo.projView[1].x;
 		planes[LEFT].z = ubo.projView[2].w + ubo.projView[2].x;
@@ -197,21 +197,62 @@ namespace EWE {
 		planes[BOTTOM].z = ubo.projView[2].w + ubo.projView[2].y;
 		planes[BOTTOM].w = ubo.projView[3].w + ubo.projView[3].y;
 
-		planes[BACK].x = ubo.projView[0].w + ubo.projView[0].z;
-		planes[BACK].y = ubo.projView[1].w + ubo.projView[1].z;
-		planes[BACK].z = ubo.projView[2].w + ubo.projView[2].z;
-		planes[BACK].w = ubo.projView[3].w + ubo.projView[3].z;
+		planes[NEAR].x = ubo.projView[0].w + ubo.projView[0].z;
+		planes[NEAR].y = ubo.projView[1].w + ubo.projView[1].z;
+		planes[NEAR].z = ubo.projView[2].w + ubo.projView[2].z;
+		planes[NEAR].w = ubo.projView[3].w + ubo.projView[3].z;
 
-		planes[FRONT].x = ubo.projView[0].w - ubo.projView[0].z;
-		planes[FRONT].y = ubo.projView[1].w - ubo.projView[1].z;
-		planes[FRONT].z = ubo.projView[2].w - ubo.projView[2].z;
-		planes[FRONT].w = ubo.projView[3].w - ubo.projView[3].z;
+		planes[FAR].x = ubo.projView[0].w - ubo.projView[0].z;
+		planes[FAR].y = ubo.projView[1].w - ubo.projView[1].z;
+		planes[FAR].z = ubo.projView[2].w - ubo.projView[2].z;
+		planes[FAR].w = ubo.projView[3].w - ubo.projView[3].z;
+
+		const glm::mat4 invProjView = glm::inverse(ubo.projView);
+		const glm::mat4 invTransProjView = glm::transpose(invProjView);
+
+		std::array<glm::vec4, 6> planesWorld;
 
 		for (auto i = 0; i < planes.size(); i++) {
-			const float length = glm::sqrt(planes[i].x * planes[i].x + planes[i].y * planes[i].y + planes[i].z * planes[i].z);
-			planes[i] /= length;
+			planesWorld[i] = invTransProjView * planes[i];
+			const float length = glm::length(planesWorld[i]);
+			planesWorld[i] /= length;
 		}
 
-		return planes;
+		const std::array<glm::vec3, 8> ndcCorners = {
+			glm::vec3{-1.f, -1.f, -1.f}, // near bottom-left
+			glm::vec3{ 1.f, -1.f, -1.f}, // near bottom-right
+			glm::vec3{-1.f,  1.f, -1.f}, // near top-left
+			glm::vec3{ 1.f,  1.f, -1.f}, // near top-right
+			glm::vec3{-1.f, -1.f,  1.f}, // far bottom-left
+			glm::vec3{ 1.f, -1.f,  1.f}, // far bottom-right
+			glm::vec3{-1.f,  1.f,  1.f}, // far top-left
+			glm::vec3{ 1.f,  1.f,  1.f}, // far top-right
+		};
+		std::array<glm::vec3, 8> worldCorners;
+
+		for (uint8_t i = 0; i < 8; i++) {
+			const glm::vec4 clip = glm::vec4(ndcCorners[i], 1.0f);
+			const glm::vec4 world = invProjView * clip;
+			//world /= world.w; // perspective divide
+			worldCorners[i] = glm::vec3(world) / world.w;
+		}
+
+
+		std::array<glm::vec2, 4> tileCorners;
+		//bottom left,
+		//bottom right,
+		//top left,
+		//top right
+
+		for (uint8_t i = 0; i < 4; i++) {
+			const glm::vec3 diff = worldCorners[i + 4] - worldCorners[i];
+			const float t = -worldCorners[i].y / diff.y;
+			const glm::vec3 corner = worldCorners[i] + (diff * t);
+
+			tileCorners[i].x = corner.x;
+			tileCorners[i].y = corner.z;
+		}
+
+		return planesWorld;
 	}
 }

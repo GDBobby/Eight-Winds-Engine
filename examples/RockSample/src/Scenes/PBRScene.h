@@ -8,6 +8,11 @@
 #include "../Pipelines/TerrainPipe.h"
 #include "../Pipelines/GeneratedGrassPipe.h"
 
+enum RenderStrat { 
+	RS_Tess, 
+	RS_Simple, 
+	RS_COUNT 
+};
 
 namespace EWE {
 	class PBRScene : public SceneBase {
@@ -38,25 +43,29 @@ namespace EWE {
 		bool sphereDrawable = true;
 		MaterialObjectInfo controlledSphere;
 
-		EWEModel* groundModel{ nullptr };
+		bool materialsActive = false;
 		EWEModel* sphereModel{ nullptr };
 
 
 		void InitTerrainResources();
 		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> tessBuffer;
-		VkDescriptorSet terrainDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+		VkDescriptorSet terrainDesc[RS_COUNT][MAX_FRAMES_IN_FLIGHT];
 
 		//int updatedTBO = 0;
 		TessBufferObject tbo;
+		EWEModel* terrainQuadModel{ nullptr };
+		EWEModel* terrainTriModel{ nullptr };
 		bool terrainWire = false;
 		bool terrainActive = true;
+		int renderStrat = 1;
 
 		void InitGrassResources();
 		GrassBufferObject gbo;
 		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> grassBuffer;
 		VkDescriptorSet grassDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		bool grassActive = true;
-	
+		glm::ivec3 grassGroup{ 256, 1, 256 };
+		bool fakeGrassCullBool = false;
 
 		void InitPerlinNoiseResources();
 		VkSampler perlinNoiseSampler{VK_NULL_HANDLE};

@@ -16,8 +16,10 @@ layout(set = 0, binding = 2) uniform TescBO{
     float tessFactor;
     float tessEdgeSize;
 	int octaves;
+	float worldPosNoiseScaling;
+    float sandHeight;
+    float grassHeight;
 } tbo;
-
 vec2 SimplexHash(vec2 p ) { // replace this by something better {
 	p = vec2( dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)) );
 	return -1.0 + 2.0*fract(sin(p)*43758.5453123);
@@ -40,14 +42,13 @@ float SimplexNoise(const vec2 p ) {
 }
 
 float NoiseWithOctaves(vec2 uv, int octaves){
-	float freq = 0.25;
     mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
 	float f  = 0.5 * SimplexNoise( uv ); 
-	uv = m * uv;
+	float freq = 0.5;
 	for(int i = 1; i < octaves; i++){
 		freq /= 2.0;
-		f += freq * SimplexNoise(uv);
 		uv = m * uv;
+		f += freq * SimplexNoise(uv);
 	}
 
 	return f;
@@ -57,6 +58,7 @@ layout(quads, equal_spacing, cw) in;
 
 layout (location = 0) in vec3 inNormal[];
 layout (location = 1) in vec2 inUV[];
+layout(location = 2) in vec3 inPos[];
  
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
@@ -73,15 +75,22 @@ void main() {
 	outNormal = mix(n1, n2, gl_TessCoord.y);
 
 	// Interpolate positions
-	vec4 pos1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
-	vec4 pos2 = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
-	vec4 pos = mix(pos1, pos2, gl_TessCoord.y);
+	//vec4 pos1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
+	//vec4 pos2 = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
+	//vec4 pos = mix(pos1, pos2, gl_TessCoord.y);
 	// Displace
 	//outHeight = textureLod(samplerHeight, outUV, 0.0).r;
-	outHeight = NoiseWithOctaves(outUV, tbo.octaves);
-	pos.y -= outHeight * tbo.displacementFactor;
+
+	vec3 outPos1 = mix(inPos[0], inPos[1], gl_TessCoord.x);
+	vec3 outPos2 = mix(inPos[3], inPos[2], gl_TessCoord.x);
+	vec3 outPos = mix(outPos1, outPos2, gl_TessCoord.y);
+	outHeight = NoiseWithOctaves(outPos.xz / tbo.worldPosNoiseScaling, tbo.octaves);    
+//	debugPrintfEXT("noise uv - (%f)(%f)", outPos.x / tbo.worldPosNoiseScaling, outPos.z / tbo.worldPosNoiseScaling);
+    
+	outPos.y -= outHeight * tbo.displacementFactor;
+	//pos.y -= outHeight * tbo.displacementFactor;
 	// Perspective projection
-	gl_Position = ubo.projView * pos;
+	gl_Position = ubo.projView * vec4(outPos, 1.0);
 
 	//outWorldPos = pos.xyz;
 }

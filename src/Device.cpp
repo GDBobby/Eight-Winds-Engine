@@ -31,7 +31,7 @@ namespace EWE {
 
     EWEDevice* EWEDevice::eweDevice = nullptr;
 
-    const bool enableValidationLayers = EWE_DEBUG;
+    const bool enableValidationLayers = true;// EWE_DEBUG;
 
     // local callback functions
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -53,7 +53,7 @@ namespace EWE {
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             std::cout << "validation error: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
-            assert(false && "validation layer error");
+            //assert(false && "validation layer error");
             break;
         default:
             printf("validation default: %s \n", pCallbackData->pMessage);
@@ -208,6 +208,11 @@ namespace EWE {
 
     // class member functions
     EWEDevice::EWEDevice(MainWindow& window) :
+        validationLayers{ "VK_LAYER_KHRONOS_validation" },
+        deviceExtensions{
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+        },
         window{ window },
         optionalExtensions{
     #if DEBUGGING_DEVICE_LOST
