@@ -218,41 +218,6 @@ namespace EWE {
 			planesWorld[i] /= length;
 		}
 
-		const std::array<glm::vec3, 8> ndcCorners = {
-			glm::vec3{-1.f, -1.f, -1.f}, // near bottom-left
-			glm::vec3{ 1.f, -1.f, -1.f}, // near bottom-right
-			glm::vec3{-1.f,  1.f, -1.f}, // near top-left
-			glm::vec3{ 1.f,  1.f, -1.f}, // near top-right
-			glm::vec3{-1.f, -1.f,  1.f}, // far bottom-left
-			glm::vec3{ 1.f, -1.f,  1.f}, // far bottom-right
-			glm::vec3{-1.f,  1.f,  1.f}, // far top-left
-			glm::vec3{ 1.f,  1.f,  1.f}, // far top-right
-		};
-		std::array<glm::vec3, 8> worldCorners;
-
-		for (uint8_t i = 0; i < 8; i++) {
-			const glm::vec4 clip = glm::vec4(ndcCorners[i], 1.0f);
-			const glm::vec4 world = invProjView * clip;
-			//world /= world.w; // perspective divide
-			worldCorners[i] = glm::vec3(world) / world.w;
-		}
-
-
-		std::array<glm::vec2, 4> tileCorners;
-		//bottom left,
-		//bottom right,
-		//top left,
-		//top right
-
-		for (uint8_t i = 0; i < 4; i++) {
-			const glm::vec3 diff = worldCorners[i + 4] - worldCorners[i];
-			const float t = -worldCorners[i].y / diff.y;
-			const glm::vec3 corner = worldCorners[i] + (diff * t);
-
-			tileCorners[i].x = corner.x;
-			tileCorners[i].y = corner.z;
-		}
-
-		return planesWorld;
+		return planes;
 	}
 }

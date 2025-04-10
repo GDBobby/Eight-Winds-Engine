@@ -9,19 +9,23 @@
 
 namespace EWE {
 
-	PBRScene::PBRScene(EightWindsEngine& ewEngine)
+	PBRScene::PBRScene(EightWindsEngine& ewEngine, ImageID skyboxImgID)
 		: ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
 		soundEngine{ SoundEngine::GetSoundEngineInstance() },
 		windowPtr{ ewEngine.mainWindow.getGLFWwindow() },
 		camControl{ ewEngine.mainWindow.getGLFWwindow() },
-		imguiHandler{ ewEngine.mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT }
-	{}
+		imguiHandler{ ewEngine.mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT },
+		fakeCameraForCullingDemo{ewEngine.camera}
+	{
+		ocean = Construct<Ocean::Ocean>({ Image_Manager::GetDescriptorImageInfo(skyboxImgID) });
+	}
 
 	PBRScene::~PBRScene() {
 #if DECONSTRUCTION_DEBUG
 		printf("deconstructing pbr scene \n");
 #endif
+		Deconstruct(ocean);
 	}
 	void PBRScene::Exit() {
 		assert(sphereModel != nullptr);
@@ -32,6 +36,15 @@ namespace EWE {
 			Deconstruct(tessBuffer[0]);
 			Deconstruct(tessBuffer[1]);
 		}
+		if (grassBuffer[0] != nullptr) {
+			Deconstruct(grassBuffer[0]);
+			Deconstruct(grassBuffer[1]);
+		}
+		//if (ttmGrassBuffer[0] != nullptr) {
+		//	Deconstruct(ttmGrassBuffer[0]);
+		//	Deconstruct(ttmGrassBuffer[1]);
+		//}
+
 		if (terrainDesc[0][0] != VK_NULL_HANDLE) {
 			auto* dsl = PipelineSystem::At(Pipe::ENGINE_MAX_COUNT)->GetDSL();
 			for (uint8_t i = 0; i < RS_COUNT; i++) {
@@ -73,7 +86,7 @@ namespace EWE {
 		tbo.tessEdgeSize = 20.f;
 		tbo.octaves = 8;
 		tbo.worldPosNoiseScaling = 1000.f;
-		tbo.sandHeight = 32.f;
+		tbo.sandHeight = 2.f;
 		tbo.grassHeight = 32.f;
 
 		for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
@@ -114,12 +127,14 @@ namespace EWE {
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			grassBuffer[i] = Construct<EWEBuffer>({ sizeof(GrassBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
+			//ttmGrassBuffer[i] = Construct<EWEBuffer>({ sizeof(glm::vec3) * 1024 * 1024, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
 
 
 			EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::GenGrass)->GetDSL(), DescriptorPool_Global);
 			DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
 			descWriter.WriteBuffer(grassBuffer[i]->DescriptorInfo());
 			descWriter.WriteBuffer(tessBuffer[i]->DescriptorInfo());
+			//descWriter.WriteBuffer(ttmGrassBuffer[i]->DescriptorInfo());
 			grassDesc[i] = descWriter.Build();
 		}
 	}
@@ -383,6 +398,20 @@ namespace EWE {
 		if (ImGui::Begin("camera data")) {
 			ImGui::Text("camera translation - %.2f:%.2f:%.2f\n", camTransform.translation.x, camTransform.translation.y, camTransform.translation.z);
 			ImGui::Text("camera rotation - %.2f:%.2f:%.2f\n", camTransform.rotation.x, camTransform.rotation.y, camTransform.rotation.z);
+
+			ImGui::Checkbox("fake camera for culling demo", &fakeCameraBool);
+			if (fakeCameraBool) {
+				ImGui::DragFloat3("translation##fc", reinterpret_cast<float*>(&sphereTransform.translation), 1.f, -100.f, 100.f);
+				ImGui::DragFloat3("rotation##fc", reinterpret_cast<float*>(&sphereTransform.rotation), 0.1f, -glm::pi<float>(), glm::pi<float>());
+			}
+
+			ImGui::SeparatorText("cam frustums (world)");
+			ImGui::Text("left - (%.2f):(%.2f):(%.2f):(%.2f)", tbo.frustumPlanes[0].x, tbo.frustumPlanes[0].y, tbo.frustumPlanes[0].z, tbo.frustumPlanes[0].w);
+			ImGui::Text("right - (%.2f):(%.2f):(%.2f):(%.2f)", tbo.frustumPlanes[1].x, tbo.frustumPlanes[1].y, tbo.frustumPlanes[1].z, tbo.frustumPlanes[1].w);
+			ImGui::Text("top - (%.2f):(%.2f):(%.2f):(%.2f)", tbo.frustumPlanes[2].x, tbo.frustumPlanes[2].y, tbo.frustumPlanes[2].z, tbo.frustumPlanes[2].w);
+			ImGui::Text("bottom - (%.2f):(%.2f):(%.2f):(%.2f)", tbo.frustumPlanes[3].x, tbo.frustumPlanes[3].y, tbo.frustumPlanes[3].z, tbo.frustumPlanes[3].w);
+			ImGui::Text("near - (%.2f):(%.2f):(%.2f):(%.2f)", tbo.frustumPlanes[4].x, tbo.frustumPlanes[4].y, tbo.frustumPlanes[4].z, tbo.frustumPlanes[4].w);
+			ImGui::Text("far - (%.2f):(%.2f):(%.2f):(%.2f)", tbo.frustumPlanes[5].x, tbo.frustumPlanes[5].y, tbo.frustumPlanes[5].z, tbo.frustumPlanes[5].w);
 		}
 		ImGui::End();
 	}
@@ -445,7 +474,12 @@ namespace EWE {
 
 			ImGui::Separator();
 
-			ImGui::SliderInt3("grass groups", reinterpret_cast<int*>(&grassGroup), 1, 16384);
+			ImGui::Text("(Blades of grass precull):(Vertices prelod):(Triangles prelod)");
+			ImGui::Text("(%d):(%d):(%d)", 64 * grassGroup.x * grassGroup.z * 16, 64 * grassGroup.x * grassGroup.z * 16 * 8, 64 * grassGroup.x * grassGroup.z * 16 * 6);
+			int grassGroupTemp[2] = { grassGroup.x, grassGroup.z };
+			ImGui::SliderInt2("grass groups", grassGroupTemp, 1, 512);
+			grassGroup.x = grassGroupTemp[0];
+			grassGroup.z = grassGroupTemp[1];
 		}
 		ImGui::End();
 	}
@@ -472,6 +506,26 @@ namespace EWE {
 
 			--updatedCMB;
 		}
+
+		camControl.Move(camTransform);
+		camControl.RotateCam(camTransform);
+		camControl.Zoom(camTransform);
+		ewEngine.camera.SetViewYXZ(camTransform.translation, camTransform.rotation);
+		ewEngine.camera.BindUBO();
+		if (fakeCameraBool) {
+			fakeCameraForCullingDemo.SetViewYXZ(sphereTransform.translation, sphereTransform.rotation);
+			const auto tempFrustumCopy = fakeCameraForCullingDemo.GetFrustumPlanes();
+			for (uint8_t i = 0; i < 6; i++) {
+				tbo.frustumPlanes[i] = tempFrustumCopy[i];
+			}
+		}
+		else {
+			const auto tempFrustumCopy = ewEngine.camera.GetFrustumPlanes();
+			for (uint8_t i = 0; i < 6; i++) {
+				tbo.frustumPlanes[i] = tempFrustumCopy[i];
+			}
+		}
+		tbo.viewportDim = glm::vec2{ VK::Object->screenWidth, VK::Object->screenHeight };
 		{
 			tessBuffer[VK::Object->frameIndex]->Map();
 			void* mappedMem = tessBuffer[VK::Object->frameIndex]->GetMappedMemory();
@@ -489,18 +543,10 @@ namespace EWE {
 			grassBuffer[VK::Object->frameIndex]->Unmap();
 		}
 
-		camControl.Move(camTransform);
-		camControl.RotateCam(camTransform);
-		camControl.Zoom(camTransform);
-		ewEngine.camera.SetViewYXZ(camTransform.translation, camTransform.rotation);
 
 		if (ewEngine.BeginFrame()) {
-			ewEngine.camera.BindUBO();
-			const auto tempFrustumCopy = ewEngine.camera.GetFrustumPlanes();
-			for (uint8_t i = 0; i < 6; i++) {
-				tbo.frustumPlanes[i] = tempFrustumCopy[i];
-			}
-			tbo.viewportDim = glm::vec2{VK::Object->screenWidth, VK::Object->screenHeight};
+
+			ocean->ReinitUpdate(dt);
 
 			ewEngine.BeginRenderX();
 			ewEngine.camera.ViewTargetDirect();
@@ -544,9 +590,17 @@ namespace EWE {
 					VK::CmdDrawMeshTasksEXT(VK::Object->GetFrameBuffer().cmdBuf, grassGroup.x, grassGroup.y, grassGroup.z);
 				}
 			}
+			ocean->RenderOcean();
 
 			//ewEngine.Draw2DObjects();
 			//ewEngine.DrawText(dt);
+			ewEngine.uiHandler.BeginTextRender();
+#if BENCHMARKING
+			if (ewEngine.displayingRenderInfo) {
+				ewEngine.uiHandler.Benchmarking(dt, ewEngine.peakRenderTime, ewEngine.averageRenderTime, ewEngine.highestRenderTime, ewEngine.averageLogicTime, BENCHMARKING_GPU, ewEngine.elapsedGPUMS, ewEngine.averageElapsedGPUMS);
+			}
+#endif
+			ewEngine.uiHandler.EndTextRender();
 
 			imguiHandler.beginRender();
 			RenderLBOControls();
@@ -559,6 +613,7 @@ namespace EWE {
 			//rockSystem.Render();
 			//printf("after displaying render info \n");
 			ewEngine.EndRender();
+			ocean->TransferGraphicsToCompute();
 			ewEngine.EndFrame();
 			//std::cout << "after ending render \n";
 			return false;

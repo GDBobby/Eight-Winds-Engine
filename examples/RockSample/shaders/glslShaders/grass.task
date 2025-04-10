@@ -1,6 +1,9 @@
 #version 450
 #extension GL_EXT_mesh_shader : require
 #extension GL_EXT_debug_printf : enable
+#extension GL_GOOGLE_include_directive : enable
+
+#include "SimplexNoise.glsl"
 
 layout(set = 0, binding = 0) uniform GlobalUbo{
 	mat4 projView;
@@ -31,16 +34,74 @@ layout(set = 0, binding = 3) uniform TescBO{
     float grassHeight;
 } tbo;
 
-struct Payload{
-    vec3 patchCenter;
-    int lod;
+struct Task {
+  vec2 patchCenter[64];
+  float lod[64];
 };
+taskPayloadSharedEXT Task OUT;
 
-//do a push constant that gives desired grass blades, then divide that up into what the mesh shader actually creates
+bool CheckFrustum(const vec3 point){
+    for(int i = 0; i < 6; i++){
+        const float planeDist = dot(tbo.frustumPlanes[i].xyz, point) + tbo.frustumPlanes[i].w;
+        if(planeDist < 0.0){
+            return false;
+        }
+    }
+    return true;
+}
+
+#define DISPATCH_X 2
+#define DISPATCH_Z 2
 
 void main() {
     //im going to ignore near and far on the camera, and take only 4 frustums
     //enum side { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, NEAR = 4, FAR = 5 };
 
-	EmitMeshTasksEXT(1, 1, 1);
+    //invocation is always 0,0,0
+    //workgroupid is what changes
+    //so the amount of times this is ran is completely controlled by the CPU dispatch call
+
+    //debugPrintfEXT("num work groups - (%d)(%d)(%d)", gl_NumWorkGroups.x, gl_NumWorkGroups.y, gl_NumWorkGroups.z);
+    //debugPrintfEXT("work group id - (%d)(%d)(%d)", gl_WorkGroupID.x, gl_WorkGroupID.y, gl_WorkGroupID.z);
+    //debugPrintfEXT("invocation - (%d)(%d)(%d)", gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
+    
+
+    //i need to do some adjustment so the grass doesnt move
+
+    //iterating 8x8 per invocation here
+    const vec3 halfGroup = vec3(
+        -float(gl_NumWorkGroups.x) * gbo.spacing * DISPATCH_X / 2.0,
+        0.0,
+        -float(gl_NumWorkGroups.z) * gbo.spacing * DISPATCH_Z / 2.0
+    );
+
+
+    const float invocationXOffset = float(gl_WorkGroupID.x) * DISPATCH_X;
+    const float invocationZOffset = float(gl_WorkGroupID.z) * DISPATCH_Z;
+    vec3 point;
+    uint outputCount = 0;
+    for(uint x = 0; x < DISPATCH_X; ++x){
+        for(uint z = 0; z < DISPATCH_Z; ++z){
+            point = halfGroup;
+            point.x += gbo.spacing * (float(x) + invocationXOffset) * 2.0;
+            point.z += gbo.spacing * (float(z) + invocationZOffset) * 2.0;
+            point.y = -NoiseWithOctaves(point.xz / tbo.worldPosNoiseScaling, tbo.octaves) * tbo.displacementFactor;
+
+            if(CheckFrustum(point)){
+                const float distanceToCamera = distance(point, ubo.cameraPos.xyz);
+                const float lod = floor(min(5.0 - sqrt(distanceToCamera) / gbo.endDistance, 8.0));
+                //need frustum culling here too
+                if(lod > 1.0){
+                    OUT.patchCenter[outputCount] = point.xz;
+                    //debugPrintfEXT("point - (%d)(%d)(%f)(%f)", x, z, point.x, point.z);
+                    OUT.lod[outputCount] = lod;
+                    outputCount++;
+                }
+            }
+
+        }
+    }
+    //thse numbers define gl_NumWorkGroups inside the mesh shader. the question would be do i even need that?
+    //i dont know what the difference would be between calling 1,1,1 1 million times and 1000,1,1000 once
+    EmitMeshTasksEXT(outputCount, 1, 1);
 }

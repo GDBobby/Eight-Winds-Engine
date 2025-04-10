@@ -95,7 +95,7 @@ namespace EWE {
 
 			SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 			//directly to graphics because no data is being uploaded
-			CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommand();
+			CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
 
 			VkImageMemoryBarrier imageBarriers[2];
 			imageBarriers[0] = Barrier::TransitionImageLayout(oceanOutputImages,
@@ -134,7 +134,7 @@ namespace EWE {
 			samplerInfo.minLod = 0.0f;
 			samplerInfo.maxLod = 1.0f;
 			samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-			Sampler::GetSampler(samplerInfo); //why is this being discarded
+			oceanOutputImageInfoDescriptorCompute.sampler = Sampler::GetSampler(samplerInfo); //why is this being discarded
 			oceanOutputImageInfoDescriptorGraphics.sampler = oceanOutputImageInfoDescriptorCompute.sampler;
 
 			// Create image view

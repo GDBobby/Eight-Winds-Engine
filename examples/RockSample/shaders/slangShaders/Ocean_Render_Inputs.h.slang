@@ -18,8 +18,7 @@ cbuffer Uniform_Block {
 };
 */
 layout(set = 0, binding = 0) cbuffer GlobalUbo {
-    float4x4 projection;
-    float4x4 view;
+    float4x4 projView;
     float4 cameraPos;
 };
 
@@ -75,14 +74,14 @@ struct SSSDataBuffer {
     float3 colorMulti;
 };
 
-layout(set = 1, binding = 0) cbuffer OceanUniform {
+layout(set = 0, binding = 2) cbuffer OceanUniform {
     OceanData oceanData;
     FoamDataBuffer foamBuffer;
     SSSDataBuffer sssBuffer;
 };
 
-layout(set = 1, binding = 1) Sampler2DArray<float4> oceanTextures;
-layout(set = 1, binding = 2) SamplerCube<float4> skyTexture;
+layout(set = 0, binding = 3) Sampler2DArray<float4> oceanTextures;
+layout(set = 0, binding = 4) SamplerCube<float4> skyTexture;
 
 
 #endif

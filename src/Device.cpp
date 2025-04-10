@@ -53,7 +53,7 @@ namespace EWE {
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             std::cout << "validation error: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
-            //assert(false && "validation layer error");
+            assert(false && "validation layer error");
             break;
         default:
             printf("validation default: %s \n", pCallbackData->pMessage);

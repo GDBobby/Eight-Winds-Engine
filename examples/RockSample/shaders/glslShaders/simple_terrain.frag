@@ -52,6 +52,7 @@ void main(){
 
 	if(height < 0.0){
 		outColor = vec4(0.0, 0.0, 1.0, 1.0);
+		discard;
 	}
 	else if (height < tbo.sandHeight){
 		outColor = vec4(0.75, 0.6, 0.5, 1.0);

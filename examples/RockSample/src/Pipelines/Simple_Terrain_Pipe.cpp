@@ -40,6 +40,7 @@ namespace EWE {
 		EWEDescriptorSetLayout::Builder builder;
 		builder.AddGlobalBindings();
 		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT);
 
 		eDSL = builder.Build();
 

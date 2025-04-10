@@ -25,8 +25,7 @@ VertexStageOutput vertexMain(AssembledVertex assembledVertex) {
     output.uv = output.worldPos.xz;
     output.worldPos += SampleDisplacement(viewDist, output.uv, 200.0);
 
-    const float4x4 mvp = mul(projection, view);
-    output.sv_Position = mul(mvp, float4(output.worldPos, 1.0));
+    output.sv_Position = mul(projView, float4(output.worldPos, 1.0));
     //output.sv_Position = mul(mvp, output.worldPos);
     return output;
 }

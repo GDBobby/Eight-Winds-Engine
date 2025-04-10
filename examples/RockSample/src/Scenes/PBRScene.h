@@ -1,12 +1,15 @@
 #pragma once
+
+#include "../Pipelines/TerrainPipe.h"
+#include "../Pipelines/GeneratedGrassPipe.h"
+
 #include <EWEngine/EightWindsEngine.h>
 #include "EWEngine/Scene.h"
 #include "EWEngine/Free_Camera_Controller.h"
 #include <EWEngine/Systems/Rendering/Rigid/RigidRS.h>
 #include <EWEngine/imgui/imGuiHandler.h>
+#include <EWEngine/Systems/Ocean/Ocean.h>
 
-#include "../Pipelines/TerrainPipe.h"
-#include "../Pipelines/GeneratedGrassPipe.h"
 
 enum RenderStrat { 
 	RS_Tess, 
@@ -17,7 +20,7 @@ enum RenderStrat {
 namespace EWE {
 	class PBRScene : public SceneBase {
 	public:
-		PBRScene(EightWindsEngine& ewEngine);
+		PBRScene(EightWindsEngine& ewEngine, ImageID skyboxImgID);
 		~PBRScene();
 
 		void Load() final;
@@ -46,6 +49,9 @@ namespace EWE {
 		bool materialsActive = false;
 		EWEModel* sphereModel{ nullptr };
 
+		EWECamera fakeCameraForCullingDemo;
+		bool fakeCameraBool = false;
+
 
 		void InitTerrainResources();
 		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> tessBuffer;
@@ -62,9 +68,10 @@ namespace EWE {
 		void InitGrassResources();
 		GrassBufferObject gbo;
 		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> grassBuffer;
+		//std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> ttmGrassBuffer;
 		VkDescriptorSet grassDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		bool grassActive = true;
-		glm::ivec3 grassGroup{ 256, 1, 256 };
+		glm::ivec3 grassGroup{ 8, 1, 8 };
 		bool fakeGrassCullBool = false;
 
 		void InitPerlinNoiseResources();
@@ -85,6 +92,7 @@ namespace EWE {
 
 		int updatedLBO = MAX_FRAMES_IN_FLIGHT;
 		LightBufferObject lbo;
+		Ocean::Ocean* ocean{ nullptr };
 	};
 }
 

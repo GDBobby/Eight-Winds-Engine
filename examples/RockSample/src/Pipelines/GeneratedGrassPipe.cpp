@@ -8,6 +8,7 @@
 
 #include "PipeEnum.h"
 
+#define INCLUDE_TASK_SHADER true
 
 namespace EWE {
 	GeneratedGrassPipe::GeneratedGrassPipe()
@@ -37,9 +38,18 @@ namespace EWE {
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
 		EWEDescriptorSetLayout::Builder builder;
-		builder.AddGlobalBindings();
+#if INCLUDE_TASK_SHADER
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT);
+		//builder.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT);
+#else
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
 		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT);
 		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT);
+#endif
 		//builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 		//builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 		//builder.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -57,7 +67,7 @@ namespace EWE {
 
 
 		//pipelineConfig.rasterizationInfo.polygonMode = VK_POLYGON_MODE_LINE;
-		//Pipeline_Helper_Functions::CreateShaderModule("grass.task.spv", &pipelineConfig.taskShaderModule);
+		Pipeline_Helper_Functions::CreateShaderModule("grass.task.spv", &pipelineConfig.taskShaderModule);
 		Pipeline_Helper_Functions::CreateShaderModule("grass.mesh.spv", &pipelineConfig.meshShaderModule);
 
 		pipelineConfig.pipelineLayout = pipeLayout;

@@ -39,7 +39,7 @@ namespace EWE {
 
 		EWEDescriptorSetLayout::Builder builder;
 		builder.AddGlobalBindings();
-		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+		builder.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		eDSL = builder.Build();
 
@@ -72,7 +72,6 @@ namespace EWE {
         Pipeline_Helper_Functions::CreateShaderModule(tescString, &pipelineConfig.tessControlModule);
         Pipeline_Helper_Functions::CreateShaderModule(teseString, &pipelineConfig.tessEvaluationModule);
 
-		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
 		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
 	}
 }

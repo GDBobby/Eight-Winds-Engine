@@ -16,6 +16,7 @@ namespace EWE {
 #if DECONSTRUCTION_DEBUG
 		printf("deconstructing ocean scene \n");
 #endif
+		Deconstruct(ocean);
 	}
 
 

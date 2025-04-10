@@ -417,8 +417,9 @@ namespace EWE {
 
         void OceanGraphicsGPUData::Render() {
             pipe->Bind();
+            
             EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout,
-                1, 1,
+                0, 1,
                 &descriptorSet[VK::Object->frameIndex],
                 0, nullptr
             );

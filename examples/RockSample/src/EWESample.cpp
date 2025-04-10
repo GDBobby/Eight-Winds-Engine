@@ -30,6 +30,8 @@ namespace EWE {
 		soundEngine{SoundEngine::GetSoundEngineInstance()}
  {
 
+		loadGlobalObjects(); // need the skybox id in advance
+		loadingThreadTracker.globalObjectThread = true;
 
 		{
 			auto loadFunc = [&]() {
@@ -50,14 +52,14 @@ namespace EWE {
 			};
 			ThreadPool::EnqueueVoidFunction("load menu modules thread", loadFunc);
 		}
-		{
-			auto loadFunc = [&]() {
-				printf("loading global objects : %u\n", std::this_thread::get_id());
-				loadGlobalObjects();
-				loadingThreadTracker.globalObjectThread = true;
-			};
-			ThreadPool::EnqueueVoidFunction("load global objects thread", loadFunc);
-		}
+		//{
+		//	auto loadFunc = [&]() {
+		//		printf("loading global objects : %u\n", std::this_thread::get_id());
+		//		loadGlobalObjects();
+		//		loadingThreadTracker.globalObjectThread = true;
+		//	};
+		//	ThreadPool::EnqueueVoidFunction("load global objects thread", loadFunc);
+		//}
 
 		scenes.emplace(scene_mainmenu, nullptr);
 		scenes.emplace(scene_shaderGen, nullptr);
@@ -89,7 +91,7 @@ namespace EWE {
 			loadingThreadTracker.oceanSceneThread = true;
 		};
 		auto sceneLoadFunc4 = [&] {
-			scenes.at(scene_PBR) = Construct<PBRScene>({ ewEngine });
+			scenes.at(scene_PBR) = Construct<PBRScene>({ ewEngine, skyboxImgID });
 			LoadSceneIfMatching(scene_PBR);
 			loadingThreadTracker.pbrSceneThread = true;
 		};

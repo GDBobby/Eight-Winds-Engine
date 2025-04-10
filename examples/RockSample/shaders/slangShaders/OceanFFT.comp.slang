@@ -27,7 +27,7 @@ groupshared float4 pingpong[2][WAVE_COUNT];
 [numthreads(WAVE_COUNT, 1, 1)]
 void computeMain(uint3 id: SV_DispatchThreadID) {
 
-    const uint2 position = select(push.secondPass > 0, id.xy, id.yx);
+    const uint2 position = push.secondPass > 0 ? id.xy : id.yx;
     const uint index = id.x;
     const uint total_texture_count = texture_count * CASCADE_COUNT;
 
