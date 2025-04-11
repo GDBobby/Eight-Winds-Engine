@@ -41,8 +41,7 @@ TextureCube<float4> srcTexture;
 RWTexture2DArray<float4> dstTexture;
 SamplerState skyboxSampler;
 
-float RadicalInverse_VdC(uint bits)
-{
+float RadicalInverse_VdC(uint bits) {
 	bits = (bits << 16u) | (bits >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
@@ -51,13 +50,11 @@ float RadicalInverse_VdC(uint bits)
 	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
 
-float2 Hammersley(uint i, uint N)
-{
+float2 Hammersley(uint i, uint N) {
 	return float2(float(i) / float(N), RadicalInverse_VdC(i));
 }
 
-float DistributionGGX(float3 N, float3 H, float roughness)
-{
+float DistributionGGX(float3 N, float3 H, float roughness) {
 	float a = roughness * roughness;
 	float a2 = a * a;
 	float NdotH = max(dot(N, H), 0.0);
@@ -70,8 +67,7 @@ float DistributionGGX(float3 N, float3 H, float roughness)
 	return nom / denom;
 }
 
-float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
-{
+float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness) {
 	float a = roughness * roughness;
 
 	float phi = 2.0 * Pi * Xi.x;
@@ -95,8 +91,7 @@ float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
 
 [shader("compute")]
 [numthreads(32, 32, 1)]
-void computeMain(uint3 DTid: SV_DispatchThreadID)
-{
+void computeMain(uint3 DTid: SV_DispatchThreadID) {
 	uint3 threadPos = DTid;
 
 	float mipRoughness = push.pcRoughness;
@@ -135,15 +130,13 @@ void computeMain(uint3 DTid: SV_DispatchThreadID)
     float2 dim = float2(dimUINT);
 	float srcTextureSize = max(dim[0], dim[1]);
 
-	for (int i = 0; i < SampleCount; ++i)
-	{
+	for (int i = 0; i < SampleCount; ++i) {
 		float2 Xi = Hammersley(i, SampleCount);
 		float3 H = ImportanceSampleGGX(Xi, N, mipRoughness);
 		float3 L = normalize(2.0 * dot(V, H) * H - V);
 
 		float NdotL = max(dot(N, L), 0.0);
-		if (NdotL > 0.0)
-		{
+		if (NdotL > 0.0) {
 			// sample from the environment's mip level based on roughness/pdf
 			float D = DistributionGGX(N, H, mipRoughness);
 			float NdotH = max(dot(N, H), 0.0);

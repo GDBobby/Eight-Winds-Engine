@@ -150,7 +150,7 @@ float3 CalculateOceanColor(const WorldSpaceData ws, const FoamData foamData) {
     const float foamCoverageY = 1.0 - foamData.coverage.y;
 
     const float3 specular = Bruneton_Specular(ws, slopeVarianceSqrd, tangentX, tangentY) * foamCoverageY * foamCoverageY * foamCoverageY * foamCoverageY * foamCoverageY;
-    const float3 reflected = Bruneton_Reflection(ws);
+    const float3 reflected = float3(0.0);//Bruneton_Reflection(ws);
     const float3 foamLitColor = LitFoamColor(ws, foamData, reflected);
     const float3 refracted = Bruneton_Refraction(ws, sss, foamData, foamLitColor);
     float3 color = specular + lerp(refracted, reflected, fresnel);

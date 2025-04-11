@@ -37,6 +37,7 @@ namespace EWE {
 		void PrintCameraPos();
 
 		std::array<glm::vec4, 6> GetFrustumPlanes();
+		std::array<glm::vec4, 6> GetConservativeFrustumPlanes(const glm::vec3 position, const glm::vec3 rotation);
 		
 	private:
 		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT>* uniformBuffers;
@@ -44,6 +45,7 @@ namespace EWE {
 
 		glm::mat4 projection{ 0.f };
 		glm::mat4 view{ 0.f };
+		glm::mat4 conservativeProjection;
 
 		uint8_t dataHasBeenUpdated = 0;
 		glm::vec3 position;

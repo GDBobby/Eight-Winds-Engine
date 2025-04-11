@@ -51,6 +51,7 @@ namespace EWE {
 
 		EWECamera fakeCameraForCullingDemo;
 		bool fakeCameraBool = false;
+		bool conservativeFrustum = false;
 
 
 		void InitTerrainResources();
@@ -61,6 +62,7 @@ namespace EWE {
 		TessBufferObject tbo;
 		EWEModel* terrainQuadModel{ nullptr };
 		EWEModel* terrainTriModel{ nullptr };
+		MaterialInfo dirtMatInfo;
 		bool terrainWire = false;
 		bool terrainActive = true;
 		int renderStrat = 1;
@@ -72,27 +74,24 @@ namespace EWE {
 		VkDescriptorSet grassDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		bool grassActive = true;
 		glm::ivec3 grassGroup{ 8, 1, 8 };
-		bool fakeGrassCullBool = false;
+		bool displayGrassLOD = true;
 
-		void InitPerlinNoiseResources();
-		VkSampler perlinNoiseSampler{VK_NULL_HANDLE};
-		VkDeviceMemory perlinNoiseImageMemory{VK_NULL_HANDLE};
-		VkImage perlinNoiseImage{VK_NULL_HANDLE};
-		VkImageView perlinNoiseImageView{VK_NULL_HANDLE};
-		VkDescriptorImageInfo perlinComputeImgInfo{VK_NULL_HANDLE};
-		VkDescriptorImageInfo perlinGraphicsImgInfo{VK_NULL_HANDLE};
-		VkDescriptorSet perlinDesc[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
-		EWEDescriptorSetLayout* perlinGenDSL{nullptr};
 
 		void RenderLBOControls();
 		void RenderCameraData();
 		void RenderControlledSphereControls();
 		void RenderTerrainControls();
 		void RenderGrassControls();
+		void RenderOceanControls();
 
 		int updatedLBO = MAX_FRAMES_IN_FLIGHT;
 		LightBufferObject lbo;
+
+
 		Ocean::Ocean* ocean{ nullptr };
+		bool oceanEnabled = true;
+		bool oceanActive = oceanEnabled;
+		int oceanRenderParamsUpdated = 0;
 	};
 }
 

@@ -1,5 +1,7 @@
 #include "PBRScene.h"
 
+#include <EWEngine/Graphics/Texture/Material_Textures.h>
+
 #include <numeric>
 #include <algorithm>
 #include <random>
@@ -53,32 +55,15 @@ namespace EWE {
 			}
 		}
 
-		if(perlinNoiseImage != VK_NULL_HANDLE){
-			EWE_VK(vkDestroyImage, VK::Object->vkDevice, perlinNoiseImage, nullptr);
-			perlinNoiseImage = VK_NULL_HANDLE;
-
-			Sampler::RemoveSampler(perlinNoiseSampler);
-			perlinNoiseSampler = VK_NULL_HANDLE;
-
-			EWE_VK(vkFreeMemory, VK::Object->vkDevice, perlinNoiseImageMemory, nullptr);
-			perlinNoiseImageMemory = VK_NULL_HANDLE;
-
-			EWE_VK(vkDestroyImageView, VK::Object->vkDevice, perlinNoiseImageView, nullptr);
-			perlinNoiseImageView = VK_NULL_HANDLE;
-
-			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, perlinGenDSL, &perlinDesc[0]);
-			EWEDescriptorPool::FreeDescriptor(DescriptorPool_Global, perlinGenDSL, &perlinDesc[1]);
-			perlinDesc[0] = VK_NULL_HANDLE;
-			perlinDesc[1] = VK_NULL_HANDLE;
-			Deconstruct(perlinGenDSL);
-			perlinGenDSL = nullptr;
-		}
 	}
 
 	void PBRScene::InitTerrainResources(){
 
 		terrainQuadModel = Basic_Model::Grid3DQuadPrimitive(100);
 		terrainTriModel = Basic_Model::Grid3DTrianglePrimitive(100);
+
+		//Image_Manager::GetCreateImageID("textures/dirt/", false);
+		dirtMatInfo = Material_Image::CreateMaterialImage("dirt/", false, true);
 
 		tbo.proj = ewEngine.camera.GetProjection();
 		tbo.displacementFactor = 32.f;
@@ -88,6 +73,7 @@ namespace EWE {
 		tbo.worldPosNoiseScaling = 1000.f;
 		tbo.sandHeight = 2.f;
 		tbo.grassHeight = 32.f;
+		tbo.renderUnderwater = VK_FALSE;
 
 		for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
 			tessBuffer[i] = Construct<EWEBuffer>({sizeof(TessBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
@@ -109,6 +95,7 @@ namespace EWE {
 				EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::SimpleTerrain)->GetDSL(), DescriptorPool_Global);
 				DescriptorHandler::AddGlobalsToDescriptor(descWriter, i);
 				descWriter.WriteBuffer(tessBuffer[i]->DescriptorInfo());
+				descWriter.WriteImage(dirtMatInfo.imageID);
 				terrainDesc[RS_Simple][i] = descWriter.Build();
 			}
 		}
@@ -117,13 +104,13 @@ namespace EWE {
 	void PBRScene::InitGrassResources() {
 
 		gbo.windStrength = 1.f;
-		gbo.endDistance = 5.3f; //LOD = 6 - sqrt(distance) / endDistance
+		gbo.endDistance = glm::vec4(8.f, 13.f, 12.5f, 500.f); //LOD = 6 - sqrt(distance) / endDistance
 		gbo.height = 1.f;
 		//gbo.lengthGroundPosV2 = 1.f;
-		gbo.spacing = 3.f;
+		gbo.spacing = 0.125f;
 		gbo.windDir = 0.f;
 		gbo.time = 0.f;
-		gbo.cullGrassHeight = VK_FALSE;
+		gbo.displayLOD = VK_TRUE;
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			grassBuffer[i] = Construct<EWEBuffer>({ sizeof(GrassBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
@@ -137,103 +124,6 @@ namespace EWE {
 			//descWriter.WriteBuffer(ttmGrassBuffer[i]->DescriptorInfo());
 			grassDesc[i] = descWriter.Build();
 		}
-	}
-
-	void PBRScene::InitPerlinNoiseResources() {
-
-		const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		VkFormatProperties formatProperties;
-		// Get device properties for the requested texture format
-		EWE_VK(vkGetPhysicalDeviceFormatProperties, VK::Object->physicalDevice, format, &formatProperties);
-		// Check if requested image format supports image storage operations required for storing pixel from the compute shader
-		assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-		
-		const uint32_t perlinExtent = 256;
-
-		VkImageCreateInfo imageCreateInfo{};
-		imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageCreateInfo.pNext = nullptr;
-
-		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-		imageCreateInfo.format = format;
-		imageCreateInfo.extent = { perlinExtent, perlinExtent, 1 };
-		imageCreateInfo.mipLevels = 1;
-		imageCreateInfo.arrayLayers = 1;
-		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-		imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-		imageCreateInfo.flags = 0;
-		imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-		
-		uint32_t queueData[] = { static_cast<uint32_t>(VK::Object->queueIndex[Queue::graphics]), static_cast<uint32_t>(VK::Object->queueIndex[Queue::present])};
-		const bool differentFamilies = (queueData[0] != queueData[1]);
-		imageCreateInfo.sharingMode = (VkSharingMode)differentFamilies;
-		imageCreateInfo.queueFamilyIndexCount = 1 + differentFamilies;
-		imageCreateInfo.pQueueFamilyIndices = queueData;
-		Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, perlinNoiseImage, perlinNoiseImageMemory);
-
-		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-		//directly to graphics because no data is being uploaded
-		CommandBuffer& cmdBuf = syncHub->BeginSingleTimeCommandGraphics();
-
-		VkImageMemoryBarrier imageBarrier = Barrier::TransitionImageLayout(perlinNoiseImage,
-			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-			1, 1
-		);
-		
-		EWE_VK(vkCmdPipelineBarrier, cmdBuf,
-			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, //i get the feeling this is suboptimal, but this is what sascha does and i haven't found an alternative
-			0,
-			0, nullptr,
-			0, nullptr,
-			1, &imageBarrier
-		);			
-		GraphicsCommand gCommand{};
-		gCommand.command = &cmdBuf;
-		syncHub->EndSingleTimeCommandGraphics(gCommand);
-
-
-		VkSamplerCreateInfo samplerInfo{};
-		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.magFilter = VK_FILTER_LINEAR;
-		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.mipLodBias = 0.0f;
-		samplerInfo.maxAnisotropy = 1.0f;
-		samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
-		samplerInfo.minLod = 0.0f;
-		samplerInfo.maxLod = 1.0f;
-		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-
-		perlinNoiseSampler = Sampler::GetSampler(samplerInfo);
-
-
-		VkImageViewCreateInfo view{};
-		view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		view.pNext = nullptr;
-		view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		view.format = format;
-		view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		view.subresourceRange.baseMipLevel = 0;
-		view.subresourceRange.levelCount = 1;
-		view.subresourceRange.baseArrayLayer = 0;
-		view.subresourceRange.layerCount = 1;
-		view.image = perlinNoiseImage;
-		EWE_VK(vkCreateImageView, VK::Object->vkDevice, &view, nullptr, &perlinNoiseImageView);
-
-		perlinComputeImgInfo.imageView = perlinNoiseImageView;
-		perlinGraphicsImgInfo.imageView = perlinNoiseImageView;
-
-		perlinComputeImgInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-		perlinComputeImgInfo.sampler = perlinNoiseSampler;
-		
-		perlinGraphicsImgInfo.imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
-		perlinGraphicsImgInfo.sampler = perlinNoiseSampler;
-
 	}
 
 	void PBRScene::InitSphereMaterialResources(){
@@ -404,6 +294,7 @@ namespace EWE {
 				ImGui::DragFloat3("translation##fc", reinterpret_cast<float*>(&sphereTransform.translation), 1.f, -100.f, 100.f);
 				ImGui::DragFloat3("rotation##fc", reinterpret_cast<float*>(&sphereTransform.rotation), 0.1f, -glm::pi<float>(), glm::pi<float>());
 			}
+			ImGui::Checkbox("conservative frustums", &conservativeFrustum);
 
 			ImGui::SeparatorText("cam frustums (world)");
 			ImGui::Text("left - (%.2f):(%.2f):(%.2f):(%.2f)", tbo.frustumPlanes[0].x, tbo.frustumPlanes[0].y, tbo.frustumPlanes[0].z, tbo.frustumPlanes[0].w);
@@ -453,6 +344,10 @@ namespace EWE {
 			const char* strat_name = (renderStrat >= 0 && renderStrat < RS_COUNT) ? stratNames[renderStrat] : "Unknown";
 
 			ImGui::SliderInt("render strategy", &renderStrat, 0, RS_COUNT - 1, strat_name);
+
+			bool renderUnder = tbo.renderUnderwater;
+			ImGui::Checkbox("Render udnerwater", &renderUnder);
+			tbo.renderUnderwater = renderUnder;
 #endif
 		}
 		ImGui::End();
@@ -462,14 +357,16 @@ namespace EWE {
 			ImGui::Checkbox("active##g", &grassActive);
 
 			ImGui::DragFloat("wind strength", &gbo.windStrength, 0.1f, -100.f, 100.f);
-			ImGui::DragFloat("end distance", &gbo.endDistance, 0.001f, 0.001f, 5.3f);
+			ImGui::DragFloat3("end distance", reinterpret_cast<float*>(&gbo.endDistance), 0.001f, -100.f, 100.f);
+			ImGui::SameLine();
+			ImGui::DragFloat(" ##ed", reinterpret_cast<float*>(&gbo.endDistance.w), 1.f, -1000.f, 1000.f);
 			ImGui::DragFloat("height##gr", &gbo.height, 0.01f, 0.f, 100.f);
 			//ImGui::DragFloat("length ground posv2", &gbo.lengthGroundPosV2, 0.01f, 0.f, 100.f);
 			ImGui::DragFloat("spacing", &gbo.spacing, 0.01f, 0.f, 100.f);
 			ImGui::DragFloat("wind dir", &gbo.windDir, 0.01f, 0.f, glm::two_pi<float>());
 
-			if (ImGui::Checkbox("cull at grass height", &fakeGrassCullBool)) {
-				gbo.cullGrassHeight = fakeGrassCullBool;
+			if (ImGui::Checkbox("cull at grass height", &displayGrassLOD)) {
+				gbo.displayLOD = displayGrassLOD;
 			}
 
 			ImGui::Separator();
@@ -480,6 +377,17 @@ namespace EWE {
 			ImGui::SliderInt2("grass groups", grassGroupTemp, 1, 512);
 			grassGroup.x = grassGroupTemp[0];
 			grassGroup.z = grassGroupTemp[1];
+		}
+		ImGui::End();
+	}
+
+	void PBRScene::RenderOceanControls() {
+		if (ImGui::Begin("ocean data")) {
+			ImGui::Checkbox("active##oc", &oceanEnabled);
+			bool updated = ImGui::DragFloat4("beach scale", reinterpret_cast<float*>(&ocean->graphicsGPUData.oceanRenderParameters.oceanFragmentData.beachScales), 0.1, -10.f, 10.f);
+			if (updated) {
+				oceanRenderParamsUpdated = MAX_FRAMES_IN_FLIGHT;
+			}
 		}
 		ImGui::End();
 	}
@@ -514,15 +422,31 @@ namespace EWE {
 		ewEngine.camera.BindUBO();
 		if (fakeCameraBool) {
 			fakeCameraForCullingDemo.SetViewYXZ(sphereTransform.translation, sphereTransform.rotation);
-			const auto tempFrustumCopy = fakeCameraForCullingDemo.GetFrustumPlanes();
-			for (uint8_t i = 0; i < 6; i++) {
-				tbo.frustumPlanes[i] = tempFrustumCopy[i];
+			if (conservativeFrustum) {
+				const auto tempFrustumCopy = fakeCameraForCullingDemo.GetConservativeFrustumPlanes(sphereTransform.translation, sphereTransform.rotation);
+				for (uint8_t i = 0; i < 6; i++) {
+					tbo.frustumPlanes[i] = tempFrustumCopy[i];
+				}
+			}
+			else {
+				const auto tempFrustumCopy = fakeCameraForCullingDemo.GetFrustumPlanes();
+				for (uint8_t i = 0; i < 6; i++) {
+					tbo.frustumPlanes[i] = tempFrustumCopy[i];
+				}
 			}
 		}
 		else {
-			const auto tempFrustumCopy = ewEngine.camera.GetFrustumPlanes();
-			for (uint8_t i = 0; i < 6; i++) {
-				tbo.frustumPlanes[i] = tempFrustumCopy[i];
+			if (conservativeFrustum) {
+				const auto tempFrustumCopy = ewEngine.camera.GetConservativeFrustumPlanes(camTransform.translation, camTransform.rotation);
+				for (uint8_t i = 0; i < 6; i++) {
+					tbo.frustumPlanes[i] = tempFrustumCopy[i];
+				}
+			}
+			else {
+				const auto tempFrustumCopy = ewEngine.camera.GetFrustumPlanes();
+				for (uint8_t i = 0; i < 6; i++) {
+					tbo.frustumPlanes[i] = tempFrustumCopy[i];
+				}
 			}
 		}
 		tbo.viewportDim = glm::vec2{ VK::Object->screenWidth, VK::Object->screenHeight };
@@ -542,11 +466,16 @@ namespace EWE {
 			grassBuffer[VK::Object->frameIndex]->Flush();
 			grassBuffer[VK::Object->frameIndex]->Unmap();
 		}
+		if (oceanRenderParamsUpdated > 0) {
+			ocean->graphicsGPUData.UpdateBuffers();
+			oceanRenderParamsUpdated--;
+		}
 
 
 		if (ewEngine.BeginFrame()) {
-
-			ocean->ReinitUpdate(dt);
+			if (oceanActive) {
+				ocean->ReinitUpdate(dt);
+			}
 
 			ewEngine.BeginRenderX();
 			ewEngine.camera.ViewTargetDirect();
@@ -590,7 +519,15 @@ namespace EWE {
 					VK::CmdDrawMeshTasksEXT(VK::Object->GetFrameBuffer().cmdBuf, grassGroup.x, grassGroup.y, grassGroup.z);
 				}
 			}
-			ocean->RenderOcean();
+			if (oceanActive) {
+#if DEBUG_NAMING
+				DebugNaming::BeginLabel("ocean render", 0.f, 0.f, 1.f);
+#endif
+				ocean->RenderOcean();
+#if DEBUG_NAMING
+				DebugNaming::EndLabel();
+#endif
+			}
 
 			//ewEngine.Draw2DObjects();
 			//ewEngine.DrawText(dt);
@@ -608,16 +545,21 @@ namespace EWE {
 			RenderControlledSphereControls();
 			RenderTerrainControls();
 			RenderGrassControls();
+			RenderOceanControls();
 			imguiHandler.endRender();
 
 			//rockSystem.Render();
 			//printf("after displaying render info \n");
 			ewEngine.EndRender();
-			ocean->TransferGraphicsToCompute();
+			if (oceanActive) {
+				ocean->TransferGraphicsToCompute();
+			}
 			ewEngine.EndFrame();
+			oceanActive = oceanEnabled;
 			//std::cout << "after ending render \n";
 			return false;
 		}
+		oceanActive = oceanEnabled;
 		return true;
 	}
 }

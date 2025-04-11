@@ -35,6 +35,7 @@ layout(set = 0, binding = 1) cbuffer GPUSceneData {
 };
 
 struct OceanData {
+    float4 beachScale;
     float4 lengthScales;
     float windSpeed;
     float waveScale;
@@ -42,6 +43,7 @@ struct OceanData {
     float referenceWaveHeight;
     float2 windDirection;
     float horizon_fog;
+
 };
 struct FoamDataBuffer {
     float underwaterFoamParallax;

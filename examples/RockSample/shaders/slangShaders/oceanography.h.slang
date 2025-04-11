@@ -22,8 +22,7 @@ Complex ComplexExp(const Complex a)
     return Complex(cos(a.y), sin(a.y)) * exp(a.x);
 }
 
-float Frequency(const float waveVecMag, const float depth)
-{
+float Frequency(const float waveVecMag, const float depth) {
     // https://en.wikipedia.org/wiki/Dispersion_(water_waves)
     // i think that with enough of a render budget, a switch statement would be used to define deep water, shallow water, and capillary waves
     return sqrt(gravity * waveVecMag * tanh(waveVecMag * depth));

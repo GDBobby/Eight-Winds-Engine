@@ -6,7 +6,7 @@ vec2 SimplexHash(vec2 p ) { // replace this by something better {
 }
 
 //https://www.shadertoy.com/view/Msf3WH
-float SimplexNoise(const vec2 p ) {
+float SimplexNoise(const vec2 p) {
     const float K1 = 0.366025404; // (sqrt(3)-1)/2;
     const float K2 = 0.211324865; // (3-sqrt(3))/6;
 
@@ -21,15 +21,14 @@ float SimplexNoise(const vec2 p ) {
     return dot( n, vec3(70.0) );
 }
 
-float NoiseWithOctaves(vec2 uv, int octaves){
-	float freq = 0.25;
-    mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
+float NoiseWithOctaves(vec2 uv, const int octaves){
+	float freq = 0.5;
+    const mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
 	float f  = 0.5 * SimplexNoise( uv ); 
-	uv = m * uv;
 	for(int i = 1; i < octaves; i++){
 		freq /= 2.0;
-		f += freq * SimplexNoise(uv);
 		uv = m * uv;
+		f += freq * SimplexNoise(uv);
 	}
 
 	return f;

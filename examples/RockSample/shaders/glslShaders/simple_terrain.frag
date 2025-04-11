@@ -31,7 +31,10 @@ layout(set = 0, binding = 2) uniform TescBO{
 	float worldPosNoiseScaling;
     float sandHeight;
     float grassHeight;
+    int renderUnderwater;
 } tbo;
+
+layout(set = 0, binding = 4) uniform sampler2DArray dirtTex;
 
 
 layout (location = 0) in vec3 inNormal;
@@ -50,15 +53,18 @@ void main(){
 	}
 	*/
 
-	if(height < 0.0){
+	if(height < -0.1){
 		outColor = vec4(0.0, 0.0, 1.0, 1.0);
-		discard;
+		if(tbo.renderUnderwater == 0){
+			discard;
+		}
 	}
 	else if (height < tbo.sandHeight){
 		outColor = vec4(0.75, 0.6, 0.5, 1.0);
 	}
 	else if (height < tbo.grassHeight){
-		outColor = vec4(0.0, 1.0, 0.0, 1.0);
+		//outColor = vec4(0.0, 1.0, 0.0, 1.0);
+		outColor = texture(dirtTex, vec3(inPos.xz, 0));
 	}
     else{
 	    outColor = vec4(1.0, 1.0, 1.0, 1.0);

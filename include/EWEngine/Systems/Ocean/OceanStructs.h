@@ -113,8 +113,7 @@ namespace EWE {
 
 
 
-        struct SSSDataBuffer
-        {
+        struct SSSDataBuffer {
             float mNormalStrength = 1.f;
             float mSunStrength = 0.f;
             float mEnvironmentStrength = 0.f;
@@ -127,8 +126,7 @@ namespace EWE {
             float  m__Padding2;
             glm::vec3 mColorMulti{ 0.0f, 0.025490196f, 0.02745098f };
         };
-        struct FoamRenderData
-        {
+        struct FoamRenderData {
             float mUnderwaterFoamParallax{ 1.2f };
             float mNormalDetail{ 0.5f };
             float mDensity{ 8.4f };
@@ -148,9 +146,9 @@ namespace EWE {
             glm::vec4 mCascadeWeights{ 0.0f, 1.0f, 0.5f, 0.3f };
             glm::vec4 mNormalWeights{ 1.0f, 0.66f, 0.33f, 0.0f };
         };
-        struct OceanFragmentData
-        {
-            glm::vec4  mLengthScales;
+        struct OceanFragmentData {
+            glm::vec4 beachScales{ 0.f, 1.f, -3.7f, 1.f };
+            glm::vec4 mLengthScales;
             float mWindSpeed;
             float mWaveScale{ 1.f };
             float mWaveAlignment{ 1.f };
@@ -184,6 +182,7 @@ namespace EWE {
 
             void Render();
             void CreateDescriptorSet(VkDescriptorImageInfo* outputImages, VkDescriptorImageInfo* skyboxImage);
+            void UpdateBuffers();
         private:
             void CreatePipeLayout();
             void CreatePipeline();

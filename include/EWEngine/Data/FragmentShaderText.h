@@ -135,7 +135,6 @@ namespace FragmentShaderText {
 	const std::string materialBufferInstancedPartTwo = "layout(std430, set = 0, binding = ";
 	const std::string materialBufferInstancedPartThree = ") readonly buffer MaterialBufferObject{MaterialBuffer mbo[];};";
 
-
 	const std::string firstHalfBinding =  "layout (set = 0, binding = ";
 	const std::string secondHalfBinding = { ") uniform sampler2DArray materialTextures;" };
 	std::vector<std::string> MBOSecondHalf = {

@@ -21,6 +21,7 @@ layout(set = 0, binding = 2) uniform TescBO{
 
     float sandHeight;
     float grassHeight;
+    int renderUnderwater;
 } tbo;
 
 layout (location = 0) in vec3 inPos;

@@ -11,6 +11,7 @@ namespace EWE {
 	namespace Ocean {
 
 		class Ocean {
+		public:
 			uint8_t cascade_count{ 4 };
 			bool notFirstRun = false;
 

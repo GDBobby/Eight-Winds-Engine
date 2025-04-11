@@ -14,6 +14,7 @@ struct TessBufferObject {
 	float worldPosNoiseScaling;
 	float sandHeight;
 	float grassHeight;
+	int renderUnderwater = VK_TRUE;
 };
 
 namespace EWE {

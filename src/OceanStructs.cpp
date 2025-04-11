@@ -314,11 +314,13 @@ namespace EWE {
             renderData[0]->Map();
             renderData[0]->WriteToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
             renderData[0]->Flush();
+            renderData[0]->Unmap();
 
             renderData[1] = Construct<EWEBuffer>({ sizeof(OceanRenderParameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
             renderData[1]->Map();
             renderData[1]->WriteToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
             renderData[1]->Flush();
+            renderData[1]->Unmap();
 
 
             for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -330,6 +332,13 @@ namespace EWE {
                 descriptorSet[i] = descWriter.Build();
             }
         }
+        void OceanGraphicsGPUData::UpdateBuffers() {
+            renderData[VK::Object->frameIndex]->Map();
+            renderData[VK::Object->frameIndex]->WriteToBuffer(&oceanRenderParameters, sizeof(OceanRenderParameters));
+            renderData[VK::Object->frameIndex]->Flush();
+            renderData[VK::Object->frameIndex]->Unmap();
+        }
+
         void OceanGraphicsGPUData::CreatePipeLayout() {
 
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
