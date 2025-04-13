@@ -12,9 +12,9 @@
 //https://www.geeks3d.com/20200519/introduction-to-mesh-shaders-opengl-and-vulkan/
 //https://gpuopen.com/learn/mesh_shaders/mesh_shaders-procedural_grass_rendering/
 
-
 const uint BLADES_PER_GROUP = 16;
-const int GROUP_SIZE = 32;
+const uint INVOCATIONS_PER_BLADE = 4;
+const uint GROUP_SIZE = BLADES_PER_GROUP * INVOCATIONS_PER_BLADE;
 const uint maxMeshOutputVertices = 256; //this is the max output on 1650nvidia, 6500amd, and 4090nvidia
 
 layout(set = 0, binding = 0) uniform GlobalUbo{
@@ -144,7 +144,7 @@ vec3 bezierDerivative(vec3 p0, vec3 p1, vec3 p2, float t) {
     return 2.0 * (1.0 - t) * (p1 - p0) + 2.0 * t * (p2 - p1);
 }
 
-shared uint cullFlag[GROUP_SIZE / 2];
+shared uint cullFlag[BLADES_PER_GROUP];
 
 struct Task {
   vec2 patchCenter[64];
@@ -159,7 +159,9 @@ layout(local_size_x = GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 void main(){
     const uint uintOddInvoc = gl_LocalInvocationID.x % 2;
     const bool oddInvoc = uintOddInvoc == 1;
-    const uint earlyBladeID = (gl_LocalInvocationID.x - uintOddInvoc) / 2;
+    const uint bladeInternalInvocationOffset = gl_LocalInvocationID.x % INVOCATIONS_PER_BLADE;
+
+    const uint earlyBladeID = (gl_LocalInvocationID.x - bladeInternalInvocationOffset) / INVOCATIONS_PER_BLADE;
     
     uint inLOD = uint(IN.lod[gl_WorkGroupID.x]);
     //debugPrintfEXT("num work groups - (%d)(%d)(%d)", gl_NumWorkGroups.x, gl_NumWorkGroups.y, gl_NumWorkGroups.z);
@@ -190,8 +192,8 @@ void main(){
     
     
     //if the grass is above grass height, its kept
-    if(!oddInvoc){
-        //i think its fine since they should both even and odd invocations should write the same data
+    if(bladeInternalInvocationOffset == 0){
+        //i think its fine since each invocation should write the same data
         //but i still dont want weird double write sync errors
         cullFlag[earlyBladeID] = (-bladePosition.y < tbo.sandHeight) ? 0 : 1;
     }
@@ -218,7 +220,6 @@ void main(){
         return;
     }
     //debugPrintfEXT("continuing output - (%d)(%d)(%d)", bladeOutputCount, verticesPerBlade, trianglesPerBlade);
-    //const uint bladeID = gl_LocalInvocationID.x;
     uvec4 seed = uvec4(gl_WorkGroupID.x, 0, 0, 0);
 
     seed.y = bladeID;
@@ -249,34 +250,14 @@ void main(){
     );
 
 
-    const uint startingVertexID = bladeID * verticesPerBlade + uintOddInvoc;
-    {   //ground verts
-        {
-
-            VertexOutput vertex;
-            vertex.heightPercent = 0.0;
-            vertex.distanceFromCenter = posNegOddInvoc;
-            vertex.worldPos = pOffset[0];
-            //bezDiff definition - return 2.0 * (1.0 - t) * (p1 - p0) + 2.0 * t * (p2 - p1);
-            //i could do this (below) 
-            //vertex[0].worldNormal = cross(sideVec, vec3(sideVec.x * 0.7, -height, sideVec.z * 0.7));
-            vertex.worldNormal = cross(sideVec, normalize(pOffset[1] - pOffset[0])); //groudn tangent?
-            if(gbo.displayLOD == 1){
-                vertex.worldNormal.x = IN.lod[gl_WorkGroupID.x];
-            }
-            v_out[startingVertexID] = vertex;
-            gl_MeshVerticesEXT[startingVertexID].gl_Position = ubo.projView * vec4(pOffset[0], 1);
-            //debugPrintfEXT("emitting vert - %d", startingVertexID);
-        }
-    }
-    
-    for(uint vertIDLocal = 1; vertIDLocal < verticesPerBladeEdge; vertIDLocal++) {
-        const uint vertID = startingVertexID + vertIDLocal * 2;
+    const uint startingVertexID = bladeID * verticesPerBlade;
+    for(uint vertIDLocal = bladeInternalInvocationOffset; vertIDLocal < verticesPerBlade; vertIDLocal += INVOCATIONS_PER_BLADE) {
+        const uint vertID = startingVertexID + vertIDLocal;
         //debugPrintfEXT("vert id - %d - %d", vertID, vertIDLocal);
 
 
 
-        const float t = float(vertIDLocal) / (float(verticesPerBladeEdge - 1));
+        const float t = float(vertIDLocal - uintOddInvoc) / (float(verticesPerBlade - 2));
         const vec3 worldPos = bezier(pOffset[0], pOffset[1], pOffset[2], t);
 
         VertexOutput vertex;
@@ -295,15 +276,15 @@ void main(){
         //debugPrintfEXT("emitting vert - %d", vertID);
     }
 
-    const uint bladeStartingTriangle = bladeID * trianglesPerBlade + uintOddInvoc;
+    const uint bladeStartingTriangle = bladeID * trianglesPerBlade;
 
     const uvec3 baseTriangle = uvec3(startingVertexID, startingVertexID + 1, startingVertexID + 2);
 
-    for (uint i = 0; i < (trianglesPerBlade / 2); i++){
-        const uint triID = bladeStartingTriangle + i * 2;
+    for (uint i = bladeInternalInvocationOffset; i < trianglesPerBlade; i += INVOCATIONS_PER_BLADE){
+        const uint triID = bladeStartingTriangle + i;
         //debugPrintfEXT("triangle id - %d - %d - %d", triID, bladeStartingTriangle, verticesPerBlade);
 
-        gl_PrimitiveTriangleIndicesEXT[triID] = baseTriangle + i * 2;
+        gl_PrimitiveTriangleIndicesEXT[triID] = baseTriangle + i;
         //debugPrintfEXT("emitting triangle - %d:%d:%d", baseTriangle.x + (startingVertexID + i), baseTriangle.y + (startingVertexID + i), baseTriangle.z + (startingVertexID + i));
     }   
 }
