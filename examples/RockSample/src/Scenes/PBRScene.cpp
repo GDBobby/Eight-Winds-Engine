@@ -286,6 +286,11 @@ namespace EWE {
 
 	void PBRScene::RenderCameraData() {
 		if (ImGui::Begin("camera data")) {
+			//ewEngine.uiHandler.Benchmarking(dt, ewEngine.peakRenderTime, ewEngine.averageRenderTime, ewEngine.highestRenderTime, ewEngine.averageLogicTime, BENCHMARKING_GPU, ewEngine.elapsedGPUMS, ewEngine.averageElapsedGPUMS);
+
+			ImGui::Text("Render gpu times - last[%.2f] - peak[%.2f] - avg[%.2f] - highest[%.2f]", ewEngine.elapsedGPUMS, ewEngine.peakRenderTime, ewEngine.averageRenderTime, ewEngine.highestRenderTime);
+
+
 			ImGui::Text("camera translation - %.2f:%.2f:%.2f\n", camTransform.translation.x, camTransform.translation.y, camTransform.translation.z);
 			ImGui::Text("camera rotation - %.2f:%.2f:%.2f\n", camTransform.rotation.x, camTransform.rotation.y, camTransform.rotation.z);
 
@@ -337,8 +342,6 @@ namespace EWE {
 			ImGui::SliderInt("octaves", &tbo.octaves, 1, 8);
 			ImGui::DragFloat("sand ehight", &tbo.sandHeight, 0.f, 0.1f, 100.f);
 			ImGui::DragFloat("grass height", &tbo.grassHeight, 0.f, 0.1f, 100.f);
-#if EWE_DEBUG
-			ImGui::Checkbox("wireframe", &terrainWire);
 
 			const char* stratNames[RS_COUNT] = { "Tesselated (Sascha Willems)", "Simple" };
 			const char* strat_name = (renderStrat >= 0 && renderStrat < RS_COUNT) ? stratNames[renderStrat] : "Unknown";
@@ -348,7 +351,6 @@ namespace EWE {
 			bool renderUnder = tbo.renderUnderwater;
 			ImGui::Checkbox("Render udnerwater", &renderUnder);
 			tbo.renderUnderwater = renderUnder;
-#endif
 		}
 		ImGui::End();
 	}
@@ -489,12 +491,7 @@ namespace EWE {
 			if (terrainActive) {
 				PipelineSystem* pipe;
 				if (renderStrat == 0) {
-					if (terrainWire) {
-						pipe = PipelineSystem::At(Pipe::TerrainWM);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
-					}
-					else {
-						pipe = PipelineSystem::At(Pipe::Terrain);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
-					}
+					pipe = PipelineSystem::At(Pipe::Terrain);//terrain pipe. i should just make an enum but if this is the only pipe its not a big deal
 					pipe->BindPipeline();
 					pipe->BindDescriptor(0, &terrainDesc[RS_Tess][VK::Object->frameIndex]);
 					pipe->BindModel(terrainQuadModel);
@@ -545,13 +542,13 @@ namespace EWE {
 
 			//ewEngine.Draw2DObjects();
 			//ewEngine.DrawText(dt);
-			ewEngine.uiHandler.BeginTextRender();
 #if BENCHMARKING
 			if (ewEngine.displayingRenderInfo) {
-				ewEngine.uiHandler.Benchmarking(dt, ewEngine.peakRenderTime, ewEngine.averageRenderTime, ewEngine.highestRenderTime, ewEngine.averageLogicTime, BENCHMARKING_GPU, ewEngine.elapsedGPUMS, ewEngine.averageElapsedGPUMS);
+				//ewEngine.uiHandler.BeginTextRender();
+				//ewEngine.uiHandler.Benchmarking(dt, ewEngine.peakRenderTime, ewEngine.averageRenderTime, ewEngine.highestRenderTime, ewEngine.averageLogicTime, BENCHMARKING_GPU, ewEngine.elapsedGPUMS, ewEngine.averageElapsedGPUMS);
+				//ewEngine.uiHandler.EndTextRender();
 			}
 #endif
-			ewEngine.uiHandler.EndTextRender();
 
 			imguiHandler.beginRender();
 			PipelineSystem::RenderPipelinesIMGUI();

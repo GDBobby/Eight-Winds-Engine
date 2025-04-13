@@ -18,7 +18,6 @@ layout(set = 0, binding = 1) uniform LightBufferObject {
 	int numLights;
 } lbo;
 
-
 layout(set = 0, binding = 2) uniform TescBO{
     mat4 projection;
     mat4 view;
@@ -34,13 +33,13 @@ layout(set = 0, binding = 2) uniform TescBO{
     int renderUnderwater;
 } tbo;
 
-layout(set = 0, binding = 4) uniform sampler2DArray dirtTex;
+layout(set = 0, binding = 3) uniform sampler2DArray dirtTex;
 
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
 layout (location = 2) in vec3 inPos;
-layout(location = 0) out vec4 outColor;
+layout (location = 0) out vec4 outColor;
 
 void main(){
     const float height = -inPos.y; //getting it from a tese pass now
@@ -53,7 +52,7 @@ void main(){
 	}
 	*/
 
-	if(height < -0.1){
+	if(height < -0.5){
 		outColor = vec4(0.0, 0.0, 1.0, 1.0);
 		if(tbo.renderUnderwater == 0){
 			discard;

@@ -7,9 +7,6 @@
 #include "Pipelines/PipeEnum.h"
 #include "Pipelines/TerrainPipe.h"
 #include "Pipelines/Simple_Terrain_Pipe.h"
-#if EWE_DEBUG
-#include "Pipelines/TerrainPipeWireMesh.h"
-#endif
 #include "Pipelines/GeneratedGrassPipe.h"
 
 
@@ -210,9 +207,6 @@ namespace EWE {
 		*/
 
 		PipelineSystem::Emplace(Pipe::Terrain, Construct<TerrainPipe>({}));
-#if EWE_DEBUG
-		PipelineSystem::Emplace(Pipe::TerrainWM, Construct<TerrainPipeWireMesh>({}));
-#endif
 		PipelineSystem::Emplace(Pipe::GenGrass, Construct<GeneratedGrassPipe>({}));
 		PipelineSystem::Emplace(Pipe::SimpleTerrain, Construct<Simple_Terrain_Pipe>({}));
 	}

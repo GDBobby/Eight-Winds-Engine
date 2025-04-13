@@ -663,6 +663,7 @@ namespace EWE {
 		stalePipeline = graphicsPipeline;
 		graphicsPipeline = VK_NULL_HANDLE;
 		if (reloadShaders) {
+			printf("this is a vram leak, old shaders wont get freed. revisit later\n");
 			ReloadShaderModules();
 		}
 		else {

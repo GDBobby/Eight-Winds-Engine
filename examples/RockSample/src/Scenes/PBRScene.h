@@ -63,7 +63,6 @@ namespace EWE {
 		EWEModel* terrainQuadModel{ nullptr };
 		EWEModel* terrainTriModel{ nullptr };
 		MaterialInfo dirtMatInfo;
-		bool terrainWire = false;
 		bool terrainActive = true;
 		int renderStrat = 1;
 

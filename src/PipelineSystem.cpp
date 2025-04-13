@@ -117,8 +117,6 @@ namespace EWE {
 			uint16_t pipeIndex = 0;
 			std::string extension{};
 			for (auto& pipeName : pipelineNames) {
-				extension = "reload##ps";
-				extension += std::to_string(pipeIndex);
 				if (ImGui::TreeNode(pipeName.second.c_str())) {
 					auto* pipe = pipelineSystem.at(pipeName.first);
 
@@ -136,12 +134,24 @@ namespace EWE {
 						}
 					}
 					else {
+						extension = "reload##ps";
+						extension += std::to_string(pipeIndex);
 						if (ImGui::Button(extension.c_str())) {
 							//holdingReloadPipe = pipe->pipe;
 							//pipe->pipe = Construct<EWEPipeline>({ holdingReloadPipe->copyStringStruct, holdingReloadPipe->copyConfigInfo });
 							//holdingReloadPipe = Construct<EWEPipeline>({ pipe->pipe->copyStringStruct, pipe->pipe->copyConfigInfo });
 							pipe->pipe->HotReloadPipeline(false);
 						}
+						extension = "reload shaders##ps";
+						extension += std::to_string(pipeIndex);
+						if (ImGui::Button(extension.c_str())) {
+							//holdingReloadPipe = pipe->pipe;
+							//pipe->pipe = Construct<EWEPipeline>({ holdingReloadPipe->copyStringStruct, holdingReloadPipe->copyConfigInfo });
+							//holdingReloadPipe = Construct<EWEPipeline>({ pipe->pipe->copyStringStruct, pipe->pipe->copyConfigInfo });
+							pipe->pipe->HotReloadPipeline(true);
+						}
+						extension = "recompile shaders ( not ready yet) ##ps";
+						extension += std::to_string(pipeIndex);
 						
 					}
 					pipe->pipe->copyStringStruct.RenderIMGUI();

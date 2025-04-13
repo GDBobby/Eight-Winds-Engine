@@ -201,7 +201,7 @@ void main(){
     }
     //nvidia - want one blade per invocation.
     //AMD - want 1 primitive per invocation??
-    const uint verticesPerBladeEdge = min(inLOD, 2);
+    const uint verticesPerBladeEdge = max(inLOD, 2);
     const uint verticesPerBlade =  verticesPerBladeEdge * 2;
     const uint trianglesPerBlade = verticesPerBlade - 2;
 
@@ -318,13 +318,13 @@ void main(){
 
     const uint bladeStartingTriangle = bladeID * trianglesPerBlade;
 
-    const uvec3 baseTriangle = uvec3(0, 1, 2);
+    const uvec3 baseTriangle = uvec3(startingVertexID, startingVertexID + 1, startingVertexID + 2);
 
-    for (uint i = 0; i < (verticesPerBlade - 2); i++){
+    for (uint i = 0; i < trianglesPerBlade; i++){
         const uint triID = bladeStartingTriangle + i;
         //debugPrintfEXT("triangle id - %d - %d - %d", triID, bladeStartingTriangle, verticesPerBlade);
 
-        gl_PrimitiveTriangleIndicesEXT[triID] = baseTriangle + (startingVertexID + i);
+        gl_PrimitiveTriangleIndicesEXT[triID] = baseTriangle + i;
         //debugPrintfEXT("emitting triangle - %d:%d:%d", baseTriangle.x + (startingVertexID + i), baseTriangle.y + (startingVertexID + i), baseTriangle.z + (startingVertexID + i));
     }   
 }
