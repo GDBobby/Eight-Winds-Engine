@@ -21,6 +21,9 @@ namespace EWE {
 		CreatePipeLayout();
 		CreatePipeline();
 	}
+	GeneratedGrassPipe::~GeneratedGrassPipe() {
+		Deconstruct(pipe);
+	}
 
 	void GeneratedGrassPipe::CreatePipeLayout() {
 		pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -67,13 +70,13 @@ namespace EWE {
 
 
 		//pipelineConfig.rasterizationInfo.polygonMode = VK_POLYGON_MODE_LINE;
-		Pipeline_Helper_Functions::CreateShaderModule("grass.task.spv", &pipelineConfig.taskShaderModule);
-		Pipeline_Helper_Functions::CreateShaderModule("grass.mesh.spv", &pipelineConfig.meshShaderModule);
+		ShaderStringStruct stringStruct{};
+		stringStruct.filepath[Shader::task] = "grass.task.spv";
+		stringStruct.filepath[Shader::mesh] = "grass.mesh.spv";
+		stringStruct.filepath[Shader::frag] = "grass.frag.spv";
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 
-		const std::string fragString = "grass.frag.spv";
-
-		pipe = std::make_unique<EWEPipeline>(fragString, pipelineConfig);
+		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 	}
 }

@@ -18,6 +18,7 @@
 
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
+//if you have two discrete amd gpus, and an nvidia gpu, itll randomly select an amd gpu with amd target
 #define AMD_TARGET false
 #define NVIDIA_TARGET (false && !AMD_TARGET) //not currently setup to correctly
 #define INTEGRATED_TARGET (false && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
@@ -51,10 +52,27 @@ namespace EWE {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
             std::cout << "validation warning: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
             break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: {
             std::cout << "validation error: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
+
+#if GPU_LOGGING
+            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
+            logFile << "current frame index - " << VK::Object->frameIndex << std::endl;
+            for (uint8_t i = 0; i < VK::Object->renderCommands.size(); i++) {
+                while (VK::Object->renderCommands[i].usageTracking.size() > 0) {
+                    for (auto& usage : VK::Object->renderCommands[i].usageTracking.front()) {
+                        logFile << "cb" << i << " : " << usage.funcName;
+                    }
+                    VK::Object->renderCommands[i].usageTracking.pop();
+                }
+            }
+            logFile.close();
+#endif
+
+
             assert(false && "validation layer error");
             break;
+        }
         default:
             printf("validation default: %s \n", pCallbackData->pMessage);
             EWE_UNREACHABLE;
@@ -220,7 +238,6 @@ namespace EWE {
                 //{VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME}
     #endif
             {VK_EXT_MESH_SHADER_EXTENSION_NAME, false},
-            {VK_NV_MESH_SHADER_EXTENSION_NAME, false } //need to do smoe kinda branching so AMD doesn't attempt to include this
         }
     { //ewe device entrance
         
@@ -232,7 +249,7 @@ namespace EWE {
 #if GPU_LOGGING
         {
             std::ofstream logFile{ GPU_LOG_FILE, std::ofstream::trunc };
-            logFile << "testing output \n";
+            logFile << "initializing log file \n";
             //initialize log file (reset it)
 
             logFile.close();
@@ -254,14 +271,6 @@ namespace EWE {
 #endif
 
         CreateCommandPools();
-#if GPU_LOGGING
-        //printf("opening file? \n");
-        {
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "after creating command pools " << std::endl;
-            logFile.close();
-        }
-#endif
         //printf("command pool, transfer CP - %lld:%lld \n", commandPool, transferCommandPool);
         //std::cout << "command pool, transfer CP - " << std::hex << commandPool << ":" << transferCommandPool << std::endl;
         //printf("after creating transfer command pool \n");
@@ -482,10 +491,6 @@ namespace EWE {
         //printf("opening file? \n");
         std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
         logFile << "Device Name: " << VK::Object->properties.deviceName << std::endl;
-        logFile << "max sampelr allocation : " << VK::Object->properties.limits.maxSamplerAllocationCount << std::endl;
-        logFile << "max samplers : " << VK::Object->properties.limits.maxDescriptorSetSamplers << std::endl;
-        logFile << "max sampled images : " << VK::Object->properties.limits.maxDescriptorSetSampledImages << std::endl;
-        logFile << "max image dimension 2d : " << VK::Object->properties.limits.maxImageDimension2D << std::endl;
         logFile.close();
 
         //printf("remaining memory : %d \n", GetMemoryRemaining());
@@ -527,22 +532,28 @@ namespace EWE {
             queueCreateInfos[i].pQueuePriorities = queuePriorities[i].data();
         }
 
-        VkPhysicalDeviceMeshShaderFeaturesNV nvMeshStruct{};
-        nvMeshStruct.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
-        nvMeshStruct.pNext = nullptr;
-        nvMeshStruct.taskShader = VK_TRUE;
-        nvMeshStruct.meshShader = VK_TRUE;
+        //VkPhysicalDeviceMeshShaderFeaturesNV nvMeshStruct{};
+        //nvMeshStruct.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+        //nvMeshStruct.pNext = nullptr;
+        //nvMeshStruct.taskShader = VK_TRUE;
+        //nvMeshStruct.meshShader = VK_TRUE;
 
         VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{};
         meshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
         meshShaderFeatures.meshShader = VK_TRUE;
-        if (optionalExtensions.at(VK_NV_MESH_SHADER_EXTENSION_NAME)) {
-            meshShaderFeatures.pNext = &nvMeshStruct;
-        }
-        else {
+        meshShaderFeatures.taskShader = VK_TRUE;
+        //if (optionalExtensions.at(VK_NV_MESH_SHADER_EXTENSION_NAME)) {
+        //    meshShaderFeatures.pNext = &nvMeshStruct;
+        //}
+        //else {
             meshShaderFeatures.pNext = nullptr;
-        }
-        meshShaderFeatures.meshShaderQueries = VK_TRUE;
+        //}
+        //meshShaderFeatures.meshShaderQueries = VK_TRUE;
+
+        //VkPhysicalDeviceFeatures2 testDeviceFeatures2{};
+        //testDeviceFeatures2.pNext = nullptr;
+        //testDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        //EWE_VK(vkGetPhysicalDeviceFeatures2, VK::Object->physicalDevice, &testDeviceFeatures2);
 
         VkPhysicalDeviceFeatures2 deviceFeatures2{};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -552,6 +563,7 @@ namespace EWE {
         else {
             deviceFeatures2.pNext = nullptr;
         }
+        //deviceFeatures2.pNext = nullptr; //disables mesh extension
         deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
         deviceFeatures2.features.geometryShader = VK_TRUE;
         deviceFeatures2.features.wideLines = VK_TRUE;
@@ -637,25 +649,9 @@ namespace EWE {
         else {
             createInfo.enabledLayerCount = 0;
         }
-#if GPU_LOGGING
-        //printf("opening file? \n");
-        {
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "before creating logic device " << std::endl;
-            logFile.close();
-        }
-#endif
         EWE_VK(vkCreateDevice, VK::Object->physicalDevice, &createInfo, nullptr, &VK::Object->vkDevice);
 
         VK::CmdDrawMeshTasksEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksEXT>(vkGetDeviceProcAddr(VK::Object->vkDevice, "vkCmdDrawMeshTasksEXT"));
-#if GPU_LOGGING
-        {
-            //printf("opening file? \n");
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "after creating logic device " << std::endl;
-            logFile.close();
-        }
-#endif
 #if EWE_DEBUG
         std::cout << "getting device queues \n";
         std::cout << "\t graphics family:queue index - " << VK::Object->queueIndex[Queue::graphics] << std::endl;
@@ -678,15 +674,8 @@ namespace EWE {
         if (VK::Object->queueEnabled[Queue::transfer]) {
             EWE_VK(vkGetDeviceQueue, VK::Object->vkDevice, VK::Object->queueIndex[Queue::transfer], 0, &VK::Object->queues[Queue::transfer]);
         }
+#if EWE_DEBUG
         printf("after transfer qeuue \n");
-
-#if GPU_LOGGING
-        {
-            //printf("opening file? \n");
-            std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-            logFile << "after getting device queues " << std::endl;
-            logFile.close();
-        }
 #endif
     }
 #if USING_VMA
@@ -836,9 +825,9 @@ namespace EWE {
         //}
 
         for (auto const& optional : optionalExtensions) {
-            //if (optional.second) {
+            if (optional.second) {
                 extensions.push_back(optional.first.c_str());
-            //}
+            }
         }
 
     }

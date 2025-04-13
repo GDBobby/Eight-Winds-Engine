@@ -4,6 +4,12 @@
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Graphics/Renderer.h"
 
+#if PIPELINE_HOT_RELOAD
+#include "EWEngine/Data/magic_enum.hpp"
+#include "EWEngine/imgui/imgui.h"
+
+#include <algorithm>
+#endif
 
 #include <fstream>
 #include <iostream>
@@ -17,26 +23,17 @@ namespace EWE {
 
 	namespace Pipeline_Helper_Functions {
 		std::vector<char> ReadFile(const std::string& filepath) {
-			//printf("reading shader file\n");
-
-			//#define ENGINE_DIR "..//shaders//"
 
 			std::string enginePath = SHADER_DIR + filepath;
 
-			//printf("readFile enginePath : %s \n", enginePath.c_str());
-
 			std::ifstream shaderFile{};
 			shaderFile.open(enginePath, std::ios::binary);
-//#if EWE_DEBUG
-//			const std::string errorPrint = "failed to open shader : " + enginePath;
-//			assert(shaderFile.is_open() && errorPrint.c_str());
-//#endif
 			if(!shaderFile.is_open()){
 				printf("failed ot open shader file : %s\n", enginePath.c_str());
 				assert(shaderFile.is_open() && "failed to open shader");
 			}
 			shaderFile.seekg(0, std::ios::end);
-			std::size_t fileSize = static_cast<std::size_t>(shaderFile.tellg());
+			const std::size_t fileSize = static_cast<std::size_t>(shaderFile.tellg());
 			assert(fileSize > 0 && "shader is empty");
 
 			shaderFile.seekg(0, std::ios::beg);
@@ -142,55 +139,149 @@ namespace EWE {
 
 	// ~~~~~~~~~~~~~~~~~~~~ END COMPUTE PIPELINE ~~~~~~~~~~~~~~~~~~~~~~
 
-	std::map<std::string, VkShaderModule> EWEPipeline::shaderModuleMap;
+#if EWE_DEBUG
+	void Validate(ShaderStringStruct const& stringStruct) {
+		bool hasNormalPipeline = false;
+		hasNormalPipeline |= stringStruct.filepath[Shader::vert].size() > 0;
+		hasNormalPipeline |= stringStruct.filepath[Shader::geom].size() > 0;
+		hasNormalPipeline |= stringStruct.filepath[Shader::tessControl].size() > 0;
+		hasNormalPipeline |= stringStruct.filepath[Shader::tessEval].size() > 0;
+
+		bool hasMeshPipeline = false;
+		hasMeshPipeline |= stringStruct.filepath[Shader::task].size() > 0;
+		hasMeshPipeline |= stringStruct.filepath[Shader::mesh].size() > 0;
+
+		assert(hasMeshPipeline ^ hasNormalPipeline);
+		//throw std::runtime_error("invalid shader filepaths");
+	}
+#endif
+
+
+	uint8_t ShaderStringStruct::Count() const {
+		uint8_t ret = 0;
+		for (uint8_t i = 0; i < Shader::Stage::COUNT; i++) {
+			ret += filepath[i].size() > 0;
+		}
+		return ret;
+	}
+
+	struct ShaderModuleTracker {
+		VkShaderModule shader;
+		int16_t usageCount;
+		ShaderModuleTracker(VkShaderModule shader) : shader{ shader }, usageCount{ 1 } {}
+	};
+	std::map<std::string, ShaderModuleTracker> shaderModuleMap;
+	std::mutex shaderMapMutex;
+
+
+	void GetShader(std::string const& filepath, VkShaderModule& shader) {
+		auto modFind = shaderModuleMap.find(filepath);
+		if (modFind == shaderModuleMap.end()) {
+			const auto shaderCode = Pipeline_Helper_Functions::ReadFile(filepath);
+			Pipeline_Helper_Functions::CreateShaderModule(shaderCode, &shader);
+			shaderMapMutex.lock();
+			shaderModuleMap.try_emplace(filepath, shader);
+			shaderMapMutex.unlock();
+		}
+		else {
+			shaderMapMutex.lock();
+			modFind->second.usageCount++;
+			shader = modFind->second.shader;
+			shaderMapMutex.unlock();
+		}
+	}
+	void DestroyShader(VkShaderModule shader, bool lock = true) {
+		if (shader != VK_NULL_HANDLE) {
+			if (lock) {
+				shaderMapMutex.lock();
+			}
+			for (auto& shaderTracker : shaderModuleMap) {
+				if (shaderTracker.second.shader == shader) {
+					shaderTracker.second.usageCount--;
+					if (shaderTracker.second.usageCount <= 0) {
+						EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, shader, nullptr);
+					}
+					shaderModuleMap.erase(shaderTracker.first);
+
+					if (lock) {
+						shaderMapMutex.unlock();
+					}
+					return;
+				}
+			}
+#if PIPELINE_HOT_RELOAD
+			EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, shader, nullptr);
+			return;
+#endif
+			EWE_UNREACHABLE;
+		}
+	}
+
 	VkPipelineRenderingCreateInfo* EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic;
 
-	EWEPipeline::EWEPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo) {
-		//printf("constructing ewe pipeline\n");
 
+	EWEPipeline::EWEPipeline(ShaderStringStruct const& stringStruct, PipelineConfigInfo const& configInfo)
+#if PIPELINE_HOT_RELOAD
+		: copyConfigInfo{configInfo},
+		copyStringStruct{stringStruct}
+#endif
+	{
+#if EWE_DEBUG
+		Validate(stringStruct);
+#endif
 
-		const auto vertFind = shaderModuleMap.find(vertFilepath);
-		if (vertFind == shaderModuleMap.end()) {
-			auto vertCode = Pipeline_Helper_Functions::ReadFile(vertFilepath);
-			Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
-			//printf("emplacing shader module vert to map\n");
-			shaderModuleMap.try_emplace(vertFilepath, vertShaderModule);
+		for (uint8_t i = 0; i < Shader::Stage::COUNT; i++) {
+			if (stringStruct.filepath[i].size() > 0) {
+				GetShader(stringStruct.filepath[i], shaderModules[i]);
+			}
 		}
-		else {
-			vertShaderModule = vertFind->second;
+		CreateGraphicsPipeline(configInfo);
+	}
+	EWEPipeline::EWEPipeline(ShaderStringStruct const& stringStruct, MaterialFlags const flags, PipelineConfigInfo& configInfo)
+#if PIPELINE_HOT_RELOAD
+		: copyConfigInfo{ configInfo },
+		copyStringStruct{ stringStruct }
+#endif
+	{
+#if EWE_DEBUG
+		Validate(stringStruct);
+#endif
+		assert(stringStruct.filepath[Shader::frag].size() == 0);
+
+		for (uint8_t i = 0; i < Shader::Stage::COUNT; i++) {
+			if (stringStruct.filepath[i].size() > 0) {
+				GetShader(stringStruct.filepath[i], shaderModules[i]);
+			}
 		}
 
-		const auto fragFind = shaderModuleMap.find(fragFilepath);
+		std::string fragPath = SHADER_DIR;
+		fragPath += "dynamic/" + std::to_string(flags) + "b.frag.spv";
+		const auto fragFind = shaderModuleMap.find(fragPath);
 		if (fragFind == shaderModuleMap.end()) {
-			auto fragCode = Pipeline_Helper_Functions::ReadFile(fragFilepath);
-			Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
-			//printf("emplacing shader module frag to map\n");
-			shaderModuleMap.try_emplace(fragFilepath, fragShaderModule);
+			printf("creating fragment shader : %d \n", flags);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags), &shaderModules[Shader::frag]);
+			shaderMapMutex.lock();
+			shaderModuleMap.try_emplace(fragPath, shaderModules[Shader::frag]);
+			shaderMapMutex.unlock();
 		}
 		else {
-			fragShaderModule = fragFind->second;
+			shaderMapMutex.lock();
+			fragFind->second.usageCount++;
+			shaderModules[Shader::frag] = fragFind->second.shader;
+			shaderMapMutex.unlock();
 		}
-		//printf("creating graphics pipeline\n");
+
 		CreateGraphicsPipeline(configInfo);
 	}
 
-	EWEPipeline::EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo) : vertShaderModule{ vertShaderModu }, fragShaderModule{ fragShaderModu } {
-		CreateGraphicsPipeline(configInfo);
-	}
-
-	EWEPipeline::EWEPipeline(std::string const& fragFilepath, PipelineConfigInfo const& configInfo) : vertShaderModule{ VK_NULL_HANDLE } {
-		assert(configInfo.meshShaderModule != VK_NULL_HANDLE);
-
-		const auto fragFind = shaderModuleMap.find(fragFilepath);
-		if (fragFind == shaderModuleMap.end()) {
-			auto fragCode = Pipeline_Helper_Functions::ReadFile(fragFilepath);
-			Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
-			//printf("emplacing shader module frag to map\n");
-			shaderModuleMap.try_emplace(fragFilepath, fragShaderModule);
-		}
-		else {
-			fragShaderModule = fragFind->second;
-		}
+	EWEPipeline::EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, const PipelineConfigInfo& configInfo)
+#if PIPELINE_HOT_RELOAD
+		: copyConfigInfo{ configInfo },
+		copyStringStruct{}
+#endif 
+	{
+		shaderModules[Shader::vert] = vertShaderModu;
+		shaderModules[Shader::frag] = fragShaderModu;
 		CreateGraphicsPipeline(configInfo);
 	}
 
@@ -208,97 +299,44 @@ namespace EWE {
 		if (vertFind == shaderModuleMap.end()) {
 			printf("creating vertex shader - %d:%d \n", boneCount, flags);
 			//auto vertCode = readFile(vertPath);
-			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetVertexShader(hasNormal, boneCount, true), &vertShaderModule);
-			shaderModuleMap.try_emplace(vertPath, vertShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetVertexShader(hasNormal, boneCount, true), &shaderModules[Shader::vert]);
+			shaderMapMutex.lock();
+			shaderModuleMap.try_emplace(vertPath, shaderModules[Shader::vert]);
+			shaderMapMutex.unlock();
 		}
 		else {
-			vertShaderModule = vertFind->second;
+			shaderMapMutex.lock();
+			vertFind->second.usageCount++;
+			shaderModules[Shader::vert] = vertFind->second.shader;
+			shaderMapMutex.unlock();
 		}
 		std::string fragPath = SHADER_DIR;
 		fragPath += "dynamic/" + std::to_string(flags) + "b.frag.spv";
 		const auto fragFind = shaderModuleMap.find(fragPath);
 		if (fragFind == shaderModuleMap.end()) {
 			printf("creating fragment shader : %d \n", flags);
-			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags), &fragShaderModule);
-			shaderModuleMap.try_emplace(fragPath, fragShaderModule);
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags), &shaderModules[Shader::frag]);
+			shaderMapMutex.lock();
+			shaderModuleMap.try_emplace(fragPath, shaderModules[Shader::frag]);
+			shaderMapMutex.unlock();
 		}
 		else {
-			fragShaderModule = fragFind->second;
+			shaderMapMutex.lock();
+			fragFind->second.usageCount++;
+			shaderModules[Shader::frag] = fragFind->second.shader;
+			shaderMapMutex.unlock();
 		}
 
-		CreateGraphicsPipeline(configInfo);
-	}
-
-	EWEPipeline::EWEPipeline(std::string const& vertFilePath, MaterialFlags const flags, PipelineConfigInfo& configInfo) {
-
-		{
-			const auto vertModuleIter = shaderModuleMap.find(vertFilePath);
-			if (vertModuleIter == shaderModuleMap.end()) {
-				auto vertCode = Pipeline_Helper_Functions::ReadFile(vertFilePath);
-				Pipeline_Helper_Functions::CreateShaderModule(vertCode, &vertShaderModule);
-				shaderModuleMap.try_emplace(vertFilePath, vertShaderModule);
-			}
-			else {
-				vertShaderModule = vertModuleIter->second;
-			}
-		}
-#if DEBUGGING_MATERIAL_NORMALS
-		const bool generatingNormals = flags & Material::Flags::GenerateNormals;
-		if (generatingNormals) { //geometry stage
-			configInfo.AddGeomShaderModule(flags);
-		}
-#endif
-		{
-#if DEBUGGING_MATERIAL_NORMALS
-			std::string fragPath;// = SHADER_DIR;
-			if (generatingNormals) {
-				fragPath = "GenerateNormal.frag.spv";
-			}
-			else {
-				fragPath = SHADER_DIR;
-				fragPath += "dynamic/" + std::to_string(flags);
-				if (flags & Material::Flags::Bones) {
-					fragPath += "b";
-				}
-				fragPath += ".frag.spv";
-
-			}
-#else
-			std::string fragPath = SHADER_DIR;
-			fragPath += "dynamic/" + std::to_string(flags);
-			if (flags & Material::Flags::Bones) {
-				fragPath += "b";
-			}
-			fragPath += ".frag.spv";
-#endif
-			const auto fragModuleIter = shaderModuleMap.find(fragPath);
-			if (fragModuleIter == shaderModuleMap.end()) {
-#if DEBUGGING_MATERIAL_NORMALS
-				if (generatingNormals) {
-					auto fragCode = Pipeline_Helper_Functions::ReadFile(fragPath);
-					Pipeline_Helper_Functions::CreateShaderModule(fragCode, &fragShaderModule);
-					shaderModuleMap.try_emplace(fragPath, fragShaderModule);
-				}
-				else {
-#endif
-					Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags), &fragShaderModule);
-					//fragPath = SHADER_DIR + fragPath;
-					shaderModuleMap.try_emplace(fragPath, fragShaderModule);
-#if DEBUGGING_MATERIAL_NORMALS
-				}
-#endif
-
-			}
-			else {
-				fragShaderModule = fragModuleIter->second;
-			}
-			
-		}
 		CreateGraphicsPipeline(configInfo);
 	}
 
 	EWEPipeline::~EWEPipeline() {
 		EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, graphicsPipeline, nullptr);
+		shaderMapMutex.lock();
+		for (uint8_t i = 0; i < Shader::Stage::COUNT; i++) {
+			DestroyShader(shaderModules[i], false);
+		}
+		shaderMapMutex.unlock();
 	}
 
 	void EWEPipeline::Bind() {
@@ -317,22 +355,28 @@ namespace EWE {
 		//assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline:: no renderPass provided in configInfo");
 
 		uint8_t currentStage = 0; 
-		std::vector<VkPipelineShaderStageCreateInfo> shaderStages{ 2 + static_cast<std::size_t>(configInfo.geomShaderModule != VK_NULL_HANDLE) + 2 * static_cast<std::size_t>(configInfo.hasTesselation) + static_cast<std::size_t>(configInfo.taskShaderModule != VK_NULL_HANDLE)};
 
-		if(configInfo.hasTesselation){
-			assert(configInfo.tessControlModule != VK_NULL_HANDLE);
-			assert(configInfo.tessEvaluationModule != VK_NULL_HANDLE);
+		uint8_t shaderCount = 0;
+		for (uint8_t i = 0; i < Shader::Stage::COUNT; i++) {
+			shaderCount += shaderModules[i] != VK_NULL_HANDLE;
 		}
-		if (configInfo.meshShaderModule != VK_NULL_HANDLE) {
-			assert(vertShaderModule == VK_NULL_HANDLE);
-			assert(configInfo.tessControlModule == VK_NULL_HANDLE);
-			assert(configInfo.tessEvaluationModule == VK_NULL_HANDLE);
-			assert(configInfo.geomShaderModule == VK_NULL_HANDLE);
+		if (shaderCount < 2) {
+			//the material system generates the modules sometimes, it wont show in the strings
+			shaderCount = 2;
+		}
 
-			if (configInfo.taskShaderModule != VK_NULL_HANDLE) {
+		std::vector<VkPipelineShaderStageCreateInfo> shaderStages{ shaderCount };
+
+		if (shaderModules[Shader::mesh] != VK_NULL_HANDLE) {
+			assert(shaderModules[Shader::vert] == VK_NULL_HANDLE);
+			assert(shaderModules[Shader::tessControl] == VK_NULL_HANDLE);
+			assert(shaderModules[Shader::tessEval] == VK_NULL_HANDLE);
+			assert(shaderModules[Shader::geom] == VK_NULL_HANDLE);
+
+			if (shaderModules[Shader::task] != VK_NULL_HANDLE) {
 				shaderStages[currentStage].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				shaderStages[currentStage].stage = VK_SHADER_STAGE_TASK_BIT_EXT;
-				shaderStages[currentStage].module = configInfo.taskShaderModule;
+				shaderStages[currentStage].module = shaderModules[Shader::task];
 				shaderStages[currentStage].pName = "main";
 				shaderStages[currentStage].flags = 0;
 				shaderStages[currentStage].pNext = nullptr;
@@ -343,7 +387,7 @@ namespace EWE {
 
 			shaderStages[currentStage].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			shaderStages[currentStage].stage = VK_SHADER_STAGE_MESH_BIT_EXT;
-			shaderStages[currentStage].module = configInfo.meshShaderModule;
+			shaderStages[currentStage].module = shaderModules[Shader::mesh];
 			shaderStages[currentStage].pName = "main";
 			shaderStages[currentStage].flags = 0;
 			shaderStages[currentStage].pNext = nullptr;
@@ -353,20 +397,20 @@ namespace EWE {
 		else {
 			shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-			shaderStages[0].module = vertShaderModule;
+			shaderStages[0].module = shaderModules[Shader::vert];
 			shaderStages[0].pName = "main";
 			shaderStages[0].flags = 0;
 			shaderStages[0].pNext = nullptr;
 			shaderStages[0].pSpecializationInfo = nullptr;
 			currentStage = 1;
 
-			if (configInfo.hasTesselation) {
+			if (shaderModules[Shader::tessControl] != VK_NULL_HANDLE) {
 				{
 					auto& tescStage = shaderStages[currentStage];
 					currentStage++;
 					tescStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 					tescStage.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-					tescStage.module = configInfo.tessControlModule;
+					tescStage.module = shaderModules[Shader::tessControl];
 					tescStage.pName = "main";
 					tescStage.flags = 0;
 					tescStage.pNext = nullptr;
@@ -377,7 +421,7 @@ namespace EWE {
 					currentStage++;
 					teseStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 					teseStage.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-					teseStage.module = configInfo.tessEvaluationModule;
+					teseStage.module = shaderModules[Shader::tessEval];
 					teseStage.pName = "main";
 					teseStage.flags = 0;
 					teseStage.pNext = nullptr;
@@ -385,12 +429,12 @@ namespace EWE {
 				}
 			}
 
-			if (configInfo.geomShaderModule != VK_NULL_HANDLE) {
+			if (shaderModules[Shader::geom] != VK_NULL_HANDLE) {
 				auto& geomStage = shaderStages[currentStage];
 				currentStage++;
 				geomStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				geomStage.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-				geomStage.module = configInfo.geomShaderModule;
+				geomStage.module = shaderModules[Shader::geom];
 				geomStage.pName = "main";
 				geomStage.flags = 0;
 				geomStage.pNext = nullptr;
@@ -402,7 +446,7 @@ namespace EWE {
 		auto& fragStage = shaderStages[currentStage];
 		fragStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		fragStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		fragStage.module = fragShaderModule;
+		fragStage.module = shaderModules[Shader::frag];
 		fragStage.pName = "main";
 		fragStage.flags = 0;
 		fragStage.pNext = nullptr;
@@ -422,7 +466,7 @@ namespace EWE {
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
 		pipelineInfo.pStages = shaderStages.data();
-		if (configInfo.meshShaderModule != VK_NULL_HANDLE) {
+		if (shaderModules[Shader::mesh] != VK_NULL_HANDLE) {
 			pipelineInfo.pVertexInputState = nullptr;
 			pipelineInfo.pInputAssemblyState = nullptr;
 		}
@@ -440,17 +484,7 @@ namespace EWE {
 
 		pipelineInfo.layout = configInfo.pipelineLayout;
 		pipelineInfo.subpass = configInfo.subpass;
-#if PIPELINE_DERIVATIVES
-		pipelineInfo.basePipelineIndex = configInfo.basePipelineIndex;
-		if (configInfo.basePipelineHandle != nullptr) {
-			pipelineInfo.basePipelineHandle = configInfo.basePipelineHandle->graphicsPipeline;
-		}
-		else {
-			pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-		}
-		pipelineInfo.flags = configInfo.flags;
-#endif
-		if(configInfo.hasTesselation){
+		if(shaderModules[Shader::tessControl] != VK_NULL_HANDLE){
 			pipelineInfo.pTessellationState = &configInfo.tessCreateInfo;
 		}
 
@@ -459,6 +493,33 @@ namespace EWE {
 
 	void EWEPipeline::Enable2DConfig(PipelineConfigInfo& configInfo) {
 		configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+	}
+
+	EWEPipeline::PipelineConfigInfo::PipelineConfigInfo(PipelineConfigInfo const& other) {
+
+		bindingDescriptions = other.bindingDescriptions;
+		attributeDescriptions = other.attributeDescriptions;
+
+		inputAssemblyInfo = other.inputAssemblyInfo;
+		viewportInfo = other.viewportInfo;
+		rasterizationInfo = other.rasterizationInfo;
+		multisampleInfo = other.multisampleInfo;
+		colorBlendAttachment = other.colorBlendAttachment;
+		colorBlendInfo = other.colorBlendInfo;
+		colorBlendInfo.pAttachments = &colorBlendAttachment;
+		depthStencilInfo = other.depthStencilInfo;
+		tessCreateInfo = other.tessCreateInfo;
+
+		pipelineLayout = other.pipelineLayout;
+		cache = other.cache;
+
+		dynamicStateEnables = other.dynamicStateEnables;
+		dynamicStateInfo.sType = other.dynamicStateInfo.sType;
+		dynamicStateInfo.pNext = nullptr; //idk if this is correct or if i need some more complicated handling of this
+		dynamicStateInfo.pDynamicStates = dynamicStateEnables.data();
+		dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
+
+		pipelineRenderingInfo = *PipelineConfigInfo::pipelineRenderingInfoStatic;
 	}
 
 	void EWEPipeline::DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo) {
@@ -552,9 +613,7 @@ namespace EWE {
 	void EWEPipeline::EnableAlphaBlending(PipelineConfigInfo& configInfo) {
 		configInfo.colorBlendAttachment.blendEnable = VK_TRUE;
 
-		configInfo.colorBlendAttachment.colorWriteMask =
-			VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-			VK_COLOR_COMPONENT_A_BIT;
+		configInfo.colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
 		configInfo.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 		configInfo.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -565,37 +624,198 @@ namespace EWE {
 		configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 		configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 	}
+	void EWEPipeline::CleanShaderModules() {
+		for (auto iter = shaderModuleMap.begin(); iter != shaderModuleMap.end(); iter++) {
+			EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, iter->second.shader, nullptr);
+		}
+		shaderModuleMap.clear();
+	}
 
-	void EWEPipeline::PipelineConfigInfo::AddGeomShaderModule(std::string const& geomFilepath) {
+#if PIPELINE_HOT_RELOAD
+	void EWEPipeline::ReloadShaderModules() {
+		for (uint8_t i = 0; i < Shader::Stage::COUNT; i++) {
+			if (copyStringStruct.filepath[i].size() > 0) {
+				auto modFind = shaderModuleMap.find(copyStringStruct.filepath[i]);
+				if (modFind == shaderModuleMap.end()) {
+					assert(false && "this should have been created if it was named");
+				}
+				else {
+					shaderMapMutex.lock();
+					const auto shaderCode = Pipeline_Helper_Functions::ReadFile(copyStringStruct.filepath[i]);
+					Pipeline_Helper_Functions::CreateShaderModule(shaderCode, &shaderModules[i]);
+					modFind->second = shaderModules[i];
+					shaderMapMutex.unlock();
+				}
+			}
+		}
 
-		const auto geomFind = shaderModuleMap.find(geomFilepath);
-		if (geomFind == shaderModuleMap.end()) {
-			auto geomCode = Pipeline_Helper_Functions::ReadFile(geomFilepath);
-			Pipeline_Helper_Functions::CreateShaderModule(geomCode, &geomShaderModule);
-			shaderModuleMap.try_emplace(geomFilepath, geomShaderModule);
-
+		CreateGraphicsPipeline(copyConfigInfo);
+	}
+	void EWEPipeline::HotReloadPipeline(bool reloadShaders) {
+		/*
+		static EWEPipeline* pipeCopy = nullptr;
+		if (pipeCopy != nullptr) {
+			Deconstruct(pipeCopy);
+		}
+		pipeCopy = Construct<EWEPipeline>({ copyStringStruct, copyConfigInfo });
+		*/
+		
+		stalePipeline = graphicsPipeline;
+		graphicsPipeline = VK_NULL_HANDLE;
+		if (reloadShaders) {
+			ReloadShaderModules();
 		}
 		else {
-			geomShaderModule = geomFind->second;
+			CreateGraphicsPipeline(copyConfigInfo);
+		}
+		//std::swap(stalePipeline, graphicsPipeline);
+		printf("recreated a pipeline, sleepign\n");
+		//std::this_thread::sleep_for(std::chrono::seconds(3));
+	}
+
+	void ShaderStringStruct::RenderIMGUI() {
+		static int currentImguiIndex = 0;
+		if (imguiIndex < 0) {
+			imguiIndex = currentImguiIndex;
+			currentImguiIndex++;
+		}
+
+		std::string extension = "##p";
+		extension += std::to_string(imguiIndex);
+
+		std::string treeName = "shaderStrings";
+		treeName += extension;
+
+		const auto str_callback = [](ImGuiInputTextCallbackData* data) -> int {
+			if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+			{
+				auto* str = static_cast<std::string*>(data->UserData);
+				str->resize(data->BufTextLen);
+				data->Buf = str->data();
+			}
+			return 0;
+		};
+
+
+		if (ImGui::TreeNode(treeName.c_str())) {
+			for (uint8_t i = 0; i < Shader::Stage::COUNT; i++) {
+				ImGui::InputText(magic_enum::enum_name(static_cast<Shader::Stage>(i)).data(), filepath[i].data(), filepath[i].capacity() + 1, ImGuiInputTextFlags_CallbackResize, str_callback, &filepath[i]);
+			}
+
+			ImGui::TreePop();
 		}
 	}
-	void EWEPipeline::PipelineConfigInfo::AddGeomShaderModule(const MaterialFlags flags) {
-		std::string geomFilepath = SHADER_DIR;
-		geomFilepath += "dynamic/" + std::to_string(flags);
-		if (flags & Material::Flags::Bones) {
-			geomFilepath += "b";
-		}
-		geomFilepath += ".geom.spv";
 
-		const auto geomFind = shaderModuleMap.find(geomFilepath);
-		if (geomFind == shaderModuleMap.end()) {
-			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetGeometryShader(flags), &geomShaderModule);
-			//fragPath = SHADER_DIR + fragPath;
-			shaderModuleMap.try_emplace(geomFilepath, geomShaderModule);
 
-		}
-		else {
-			geomShaderModule = geomFind->second;
-		}
+	void imgui_vkbool(std::string const& name, VkBool32& vkBool) {
+		bool loe = vkBool;
+		ImGui::Checkbox(name.c_str(), &loe);
+		vkBool = loe;
 	}
+
+	template<typename T>
+	void imgui_enum(std::string const& name, T& val, int min, int max) {
+
+		ImGui::SliderInt(name.c_str(), reinterpret_cast<int*>(&val), min, max, magic_enum::enum_name(val).data());
+	}
+
+
+	void EWEPipeline::PipelineConfigInfo::RenderIMGUI() {
+		static int currentImguiIndex = 0;
+		if (imguiIndex < 0) {
+			imguiIndex = currentImguiIndex;
+			currentImguiIndex++;
+		}
+		
+
+		std::string extension = "##p";
+		extension += std::to_string(imguiIndex);
+
+		std::string treeName = "pipeline config info";
+		treeName += extension;
+
+		std::string optionStr;
+		if (ImGui::TreeNode(treeName.c_str())) {
+
+			optionStr = "viewport info";
+			optionStr += extension;
+			if (ImGui::TreeNode(optionStr.c_str())) {
+
+				optionStr = "topology";
+				optionStr += extension;
+				imgui_enum(optionStr, inputAssemblyInfo.topology, 0, 10);
+
+				optionStr = "primitive restart enable";
+				optionStr += extension;
+				imgui_vkbool(optionStr, inputAssemblyInfo.primitiveRestartEnable);
+
+				ImGui::TreePop();
+			}
+			//input assembly
+			optionStr = "rasterzation info";
+			optionStr += extension;
+			if (ImGui::TreeNode(optionStr.c_str())) {
+				optionStr = "depth clamp enable";
+				optionStr += extension;
+				imgui_vkbool(optionStr, rasterizationInfo.depthClampEnable);
+				optionStr = "rasterizer discard enable";
+				optionStr += extension;
+				imgui_vkbool(optionStr, rasterizationInfo.rasterizerDiscardEnable);
+				optionStr = "polygonMode";
+				optionStr += extension;
+				imgui_enum(optionStr, rasterizationInfo.polygonMode, 0, 2);
+				optionStr = "cullMode";
+				optionStr += extension;
+				ImGui::DragInt(optionStr.c_str(), reinterpret_cast<int*>(&rasterizationInfo.cullMode), 1, 0, 100);
+				optionStr = "frontFace";
+				optionStr += extension;
+				imgui_enum(optionStr, rasterizationInfo.frontFace, 0, 1);
+				optionStr = "depthBiasEnable";
+				optionStr += extension;
+				imgui_vkbool(optionStr, rasterizationInfo.depthBiasEnable);
+				optionStr = "depth bias constant factor";
+				optionStr += extension;
+				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasConstantFactor, 0.1f, 0.f, 100.f);
+				optionStr = "depth bias clamp";
+				optionStr += extension;
+				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasConstantFactor, 0.1f, 0.f, 100.f);
+				optionStr = "depth bias slope factor";
+				optionStr += extension;
+				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasConstantFactor, 0.1f, 0.f, 100.f);
+				optionStr = "line width";
+				optionStr += extension;
+				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasConstantFactor, 0.1f, 0.f, 100.f);
+
+
+				ImGui::TreePop();
+			}
+
+			optionStr = "color blend";
+			optionStr += extension;
+			if (ImGui::TreeNode(optionStr.c_str())) {
+
+				optionStr = "blend constants";
+				optionStr += extension;
+				ImGui::DragFloat4(optionStr.c_str(), colorBlendInfo.blendConstants, 0.01, 0.f, 1.f);
+
+				optionStr = "logic op";
+				optionStr += extension;
+				//ImGui::SliderInt(optionStr.c_str(), reinterpret_cast<int*>(&colorBlendInfo.logicOp), 0, 15, magic_enum::enum_name(colorBlendInfo.logicOp).data());
+				imgui_enum(optionStr, colorBlendInfo.logicOp, 0, 15);
+
+				optionStr = "logic op enable";
+				optionStr += extension;
+				imgui_vkbool(optionStr, colorBlendInfo.logicOpEnable);
+				ImGui::TreePop();
+			}
+
+
+			//if(ImGui::TreeNode(optionStr.c_str(), ))
+
+			ImGui::TreePop();
+		}
+
+		
+	}
+#endif
 }

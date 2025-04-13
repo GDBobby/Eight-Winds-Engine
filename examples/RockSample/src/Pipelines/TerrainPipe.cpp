@@ -20,6 +20,9 @@ namespace EWE {
 		CreatePipeLayout();
 		CreatePipeline();
 	}
+	TerrainPipe::~TerrainPipe() {
+		Deconstruct(pipe);
+	}
 
 	void TerrainPipe::CreatePipeLayout() {
 		pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -59,19 +62,17 @@ namespace EWE {
         pipelineConfig.inputAssemblyInfo.flags = 0;
         pipelineConfig.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-        pipelineConfig.hasTesselation = true;
         pipelineConfig.tessCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
         pipelineConfig.tessCreateInfo.flags = 0;
         pipelineConfig.tessCreateInfo.patchControlPoints = 4;
         pipelineConfig.tessCreateInfo.pNext = nullptr;
 
-		const std::string vertString = "terrain.vert.spv";
-		const std::string fragString = "terrain.frag.spv";
-        const std::string tescString = "terrain.tesc.spv";
-        const std::string teseString = "terrain.tese.spv";
-        Pipeline_Helper_Functions::CreateShaderModule(tescString, &pipelineConfig.tessControlModule);
-        Pipeline_Helper_Functions::CreateShaderModule(teseString, &pipelineConfig.tessEvaluationModule);
+		ShaderStringStruct stringStruct;
+		stringStruct.filepath[Shader::vert] = "terrain.vert.spv";
+		stringStruct.filepath[Shader::frag] = "terrain.frag.spv";
+		stringStruct.filepath[Shader::tessControl] = "terrain.tesc.spv";
+		stringStruct.filepath[Shader::tessEval] = "terrain.tese.spv";
 
-		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
+		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 	}
 }

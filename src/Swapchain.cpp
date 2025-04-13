@@ -145,6 +145,11 @@ namespace EWE {
         auto result = syncHub->PresentKHR(presentInfo);
         return result;
     }
+    void EWESwapChain::BeginRender(uint8_t imageIndex) {
+        //std::cout << "before vkCmdBeginRendering : " << std::endl;
+        EWE_VK(vkCmdBeginRendering, VK::Object->GetFrameBuffer(), &dynamicStructs[imageIndex].render_info); //might need to use the frameIndex from renderer, not sure
+        //std::cout << "after vkCmdBeginRendering : " << std::endl;
+    }
 
     void EWESwapChain::CreateSwapChain() {
         //logFile << "creating swap chain \n";

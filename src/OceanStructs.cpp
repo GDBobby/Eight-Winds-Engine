@@ -366,12 +366,11 @@ namespace EWE {
             pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<SimpleVertex>();
             pipelineConfig.attributeDescriptions = SimpleVertex::GetAttributeDescriptions();
 
-            std::string vertString = "ocean.vert.spv";
-            std::string fragString = "ocean.frag.spv";
+            ShaderStringStruct stringStruct{};
+            stringStruct.filepath[Shader::vert] = "ocean.vert.spv";
+            stringStruct.filepath[Shader::frag] = "ocean.frag.spv";
 
-            //EWEPipeline* tempPtr = new EWEPipeline(vertString, fragString, pipelineConfig);
-
-            pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
+            pipe = std::make_unique<EWEPipeline>(stringStruct, pipelineConfig);
 
         }
         void OceanGraphicsGPUData::CreateModel() {

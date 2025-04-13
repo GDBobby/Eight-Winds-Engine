@@ -48,19 +48,18 @@ namespace EWE {
 		pipelineConfig.cache = cache;
 		pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		{
-			const std::string vertString = "texture2D_array.vert.spv";
-			const std::string fragString = "texture2D_array.frag.spv";
-#if EWE_DEBUG
-			printf("before constructing with ui shaders - %s - %s\n", vertString.c_str(), fragString.c_str());
-#endif
-			pipe_array = Construct<EWEPipeline>({ vertString, fragString, pipelineConfig });
+			ShaderStringStruct stringStruct;
+			stringStruct.filepath[Shader::vert] = "texture2D_array.vert.spv";
+			stringStruct.filepath[Shader::frag] = "texture2D_array.frag.spv";
+			pipe_array = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 		}
 		pipelineConfig.pipelineLayout = PL_single;
 		pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		{
-			const std::string vertString = "texture2D_singular.vert.spv";
-			const std::string fragString = "texture2D_singular.frag.spv";
-			pipe_single = Construct<EWEPipeline>({ vertString, fragString, pipelineConfig });
+			ShaderStringStruct stringStruct;
+			stringStruct.filepath[Shader::vert] = "texture2D_singular.vert.spv";
+			stringStruct.filepath[Shader::frag] = "texture2D_singular.frag.spv";
+			pipe_single = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 		}
 
 

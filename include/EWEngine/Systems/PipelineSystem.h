@@ -5,6 +5,8 @@
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Data/EngineDataTypes.h"
 
+#include "EWEngine/Data/magic_enum.hpp"
+
 #include <unordered_map>
 #include <memory>
 
@@ -24,7 +26,18 @@ namespace EWE {
 	public:
 		virtual ~PipelineSystem() {}
 		static PipelineSystem* At(PipelineID pipeID);
+
+#if PIPELINE_HOT_RELOAD
+		static void Emplace(std::string const& pipeName, PipelineID pipeID, PipelineSystem* pipeSys);
+		template<typename T>
+		static void Emplace(T pipeID, PipelineSystem* pipeSys) {
+			const std::string pipeName = std::string(magic_enum::enum_name(pipeID));
+			Emplace(pipeName, pipeID, pipeSys);
+		}
+		static void RenderPipelinesIMGUI();
+#else
 		static void Emplace(PipelineID pipeID, PipelineSystem* pipeSys);
+#endif
 		static void Destruct();
 		static void DestructAt(PipelineID pipeID);
 
@@ -41,9 +54,14 @@ namespace EWE {
 		[[nodiscard]] EWEDescriptorSetLayout* GetDSL() {
 			return eDSL;
 		}
-
+#if PIPELINE_HOT_RELOAD
+		EWEPipeline* pipe{ nullptr };
 	protected:
-		std::unique_ptr<EWEPipeline> pipe{nullptr};
+#else
+	protected:
+		EWEPipeline* pipe{ nullptr };
+#endif
+
 		VkPipelineLayout pipeLayout{};
 		VkDescriptorSet bindedTexture = VK_NULL_HANDLE;
 		//VkPipelineCache cache{VK_NULL_HANDLE};
@@ -54,6 +72,5 @@ namespace EWE {
 #if EWE_DEBUG
 		PipelineID myID;
 #endif
-
 	};
 }

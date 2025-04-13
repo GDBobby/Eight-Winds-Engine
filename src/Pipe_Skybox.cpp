@@ -11,6 +11,9 @@ namespace EWE {
 
 		CreatePipeline();
 	}
+	Pipe_Skybox::~Pipe_Skybox() {
+		Deconstruct(pipe);
+	}
 
 
 	void Pipe_Skybox::CreatePipeLayout() {
@@ -41,10 +44,11 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<SkyVertex>();
 		pipelineConfig.attributeDescriptions = SkyVertex::GetAttributeDescriptions();
 
-		std::string vertString = "skybox.vert.spv";
-		std::string fragString = "skybox.frag.spv";
+		ShaderStringStruct stringStruct{};
+		stringStruct.filepath[Shader::vert] = "skybox.vert.spv";
+		stringStruct.filepath[Shader::frag] = "skybox.frag.spv";
 
-		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
+		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 #if DEBUG_NAMING
 		pipe->SetDebugName("skybox pipeline");
 		DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "skybox pipe layout");

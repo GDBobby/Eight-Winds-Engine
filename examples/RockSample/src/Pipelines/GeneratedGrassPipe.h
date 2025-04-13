@@ -18,7 +18,7 @@ namespace EWE {
 	class GeneratedGrassPipe : public PipelineSystem {
 	public:
 		GeneratedGrassPipe();
-		~GeneratedGrassPipe() {}
+		~GeneratedGrassPipe();
 
 		void CreatePipeLayout() final;
 		void CreatePipeline() final;

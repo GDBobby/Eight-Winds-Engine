@@ -36,6 +36,7 @@ namespace EWE {
 		for (auto& buffer : leafBuffer) {
 			Deconstruct(buffer);
 		}
+		Deconstruct(pipe);
 #if DECONSTRUCTION_DEBUG
 		printf("end deconstructing leaf system \n");
 #endif
@@ -395,7 +396,7 @@ namespace EWE {
 		Pipeline_Helper_Functions::CreateShaderModule("leaf.vert.spv", &vertexShaderModule);
 		Pipeline_Helper_Functions::CreateShaderModule("leaf.frag.spv", &fragmentShaderModule);
 
-		pipe = std::make_unique<EWEPipeline>(vertexShaderModule, fragmentShaderModule, pipelineConfig);
+		pipe = Construct<EWEPipeline>({ vertexShaderModule, fragmentShaderModule, pipelineConfig });
 	}
 	void LeafSystem::CreatePipeLayout() {
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};

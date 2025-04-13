@@ -10,6 +10,9 @@ namespace EWE {
 #endif
 		CreatePipeline();
 	}
+	Pipe_SimpleTextured::~Pipe_SimpleTextured() {
+		Deconstruct(pipe);
+	}
 
 	void Pipe_SimpleTextured::CreatePipeLayout() {
 		
@@ -51,12 +54,11 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
-		std::string vertString = "texture_shader.vert.spv";
-		std::string fragString = "texture_shader.frag.spv";
+		ShaderStringStruct stringStruct{};
+		stringStruct.filepath[Shader::vert] = "texture_shader.vert.spv";
+		stringStruct.filepath[Shader::frag] = "texture_shader.frag.spv";
 
-		//EWEPipeline* tempPtr = new EWEPipeline(vertString, fragString, pipelineConfig);
-
-		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
+		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 #if DEBUG_NAMING
 		pipe->SetDebugName("simple textured pipeline");
 		DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "simple textured pipe layout");

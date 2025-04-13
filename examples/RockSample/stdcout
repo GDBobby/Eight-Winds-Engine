@@ -1,0 +1,15 @@
+UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging(WARN / SPEC): msgNum: -2111305990 - Validation Warning: [ UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging ] | MessageID = 0x822806fa | vkCreateInstance():  Attempting to enable extension VK_EXT_debug_utils, but this extension is intended to support use by applications when debugging and it is strongly recommended that it be otherwise avoided.
+    Objects: 0
+WARNING-CreateInstance-status-message(INFO / SPEC): msgNum: 601872502 - Validation Information: [ WARNING-CreateInstance-status-message ] Object 0: handle = 0x1caa4956060, type = VK_OBJECT_TYPE_INSTANCE; | MessageID = 0x23dfd876 | vkCreateInstance():  Khronos Validation Layer Active:
+    Settings File: Found at C:\Users\gigag\AppData\Local\LunarG\vkconfig\override\vk_layer_settings.txt specified by VkConfig application override.
+    Current Enables: VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT, VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD, VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA, VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT, VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION.
+    Current Disables: None.
+
+    Objects: 1
+        [0] 0x1caa4956060, type: 1, name: NULL
+UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension(WARN / SPEC): msgNum: 181611958 - Validation Warning: [ UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension ] Object 0: handle = 0x1caa4956060, type = VK_OBJECT_TYPE_INSTANCE; | MessageID = 0xad32db6 | vkCreateDevice():  Attempting to enable deprecated extension VK_KHR_synchronization2, but this extension has been promoted to VK_VERSION_1_3.
+    Objects: 1
+        [0] 0x1caa4956060, type: 1, name: NULL
+UNASSIGNED-BestPractices-CreateDevice-PageableDeviceLocalMemory(WARN / PERF): msgNum: 781823434 - Validation Performance Warning: [ UNASSIGNED-BestPractices-CreateDevice-PageableDeviceLocalMemory ] Object 0: handle = 0x1caa4956060, type = VK_OBJECT_TYPE_INSTANCE; | MessageID = 0x2e99adca | vkCreateDevice():  [NVIDIA] called without pageable device local memory. Use pageableDeviceLocalMemory from VK_EXT_pageable_device_local_memory when it is available.
+    Objects: 1
+        [0] 0x1caa4956060, type: 1, name: NULL

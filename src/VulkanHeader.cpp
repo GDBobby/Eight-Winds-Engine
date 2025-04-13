@@ -1,5 +1,14 @@
 #include "EWEngine/Graphics/VulkanHeader.h"
 
+#if CALL_TRACING
+#if _WIN32
+#include <Windows.h>
+#include <DbgHelp.h>
+#pragma comment(lib, "Dbghelp.lib")
+#endif
+#endif
+
+
 #if USING_VMA
 #define VMA_IMPLEMENTATION
 #include "EWEngine/Graphics/vk_mem_alloc.h"
@@ -16,6 +25,17 @@ void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation
         logFile.open(GPU_LOG_FILE, std::ios::app);
         assert(logFile.is_open() && "Failed to open log file");
         logFile << "VK_ERROR : " << sourceLocation.file_name() << '(' << sourceLocation.line() << ") : " << sourceLocation.function_name() << " : VkResult(" << vkResult << ")\n";
+        
+        logFile << "current frame index - " << EWE::VK::Object->frameIndex << std::endl;
+        for (uint8_t i = 0; i < EWE::VK::Object->renderCommands.size(); i++) {
+
+            while (EWE::VK::Object->renderCommands[i].usageTracking.size() > 0) {
+                for (auto& usage : EWE::VK::Object->renderCommands[i].usageTracking.front()) {
+                    logFile << "cb(" << +i  << ")(" << EWE::VK::Object->renderCommands[i].usageTracking.size() << ") : " << usage.funcName << '\n';
+                }
+                EWE::VK::Object->renderCommands[i].usageTracking.pop();
+            }
+        }
         logFile.close();
         assert(vkResult == VK_SUCCESS && "VK_ERROR");
     }
@@ -214,10 +234,47 @@ namespace EWE {
         VkCommandBufferResetFlags flags = 0;
         EWE_VK(vkResetCommandBuffer, *this, flags);
         inUse = false;
+    }
 
 #if COMMAND_BUFFER_TRACING
-        usageTracking.clear();
+    namespace PLEASE {
+        std::string GetFuncName(void* funcPtr) {
+
+#if _WIN32
+            static bool initialized = false;
+            if (!initialized) {
+                SymInitialize(GetCurrentProcess(), nullptr, TRUE);
+                initialized = true;
+            }
+
+            DWORD64 address = reinterpret_cast<DWORD64>(funcPtr);
+
+            char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+            SYMBOL_INFO* symbol = reinterpret_cast<SYMBOL_INFO*>(buffer);
+            symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+            symbol->MaxNameLen = MAX_SYM_NAME;
+
+            if (SymFromAddr(GetCurrentProcess(), address, nullptr, symbol)) {
+                return std::string(symbol->Name);
+            }
+
+            return "<unknown symbol>";
 #endif
+        }
+    }
+#endif
+    void CommandBuffer::Begin() {
+        inUse = true;
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.pNext = nullptr;
+#if CALL_TRACING
+        if (usageTracking.size() > 2) {
+            usageTracking.pop();
+        }
+        usageTracking.push({});
+#endif
+        EWE_VK(vkBeginCommandBuffer, *this, &beginInfo);
     }
     void CommandBuffer::BeginSingleTime() {
         inUse = true;
@@ -225,6 +282,12 @@ namespace EWE {
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.pNext = nullptr;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+#if CALL_TRACING
+        if (usageTracking.size() > 2) {
+            usageTracking.pop();
+        }
+        usageTracking.push({});
+#endif
         EWE_VK(vkBeginCommandBuffer, *this, &beginInfo);
     }
     void VK::CopyBuffer(CommandBuffer& cmdBuf, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {

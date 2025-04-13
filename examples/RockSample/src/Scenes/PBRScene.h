@@ -72,8 +72,8 @@ namespace EWE {
 		std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> grassBuffer;
 		//std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> ttmGrassBuffer;
 		VkDescriptorSet grassDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
-		bool grassActive = true;
-		glm::ivec3 grassGroup{ 8, 1, 8 };
+		bool grassActive = false;
+		glm::ivec3 grassGroup{ 256, 1, 256 };
 		bool displayGrassLOD = true;
 
 

@@ -157,6 +157,7 @@ layout(local_size_x = GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 void main(){
 
     
+    uint inLOD = uint(IN.lod[gl_WorkGroupID.x]);
     //debugPrintfEXT("num work groups - (%d)(%d)(%d)", gl_NumWorkGroups.x, gl_NumWorkGroups.y, gl_NumWorkGroups.z);
     //debugPrintfEXT("work group id - (%d)(%d)(%d)", gl_WorkGroupID.x, gl_WorkGroupID.y, gl_WorkGroupID.z);
     //debugPrintfEXT("invocation - (%d)(%d)(%d)", gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
@@ -200,7 +201,7 @@ void main(){
     }
     //nvidia - want one blade per invocation.
     //AMD - want 1 primitive per invocation??
-    const uint verticesPerBladeEdge = uint(IN.lod[gl_WorkGroupID.x]);
+    const uint verticesPerBladeEdge = min(inLOD, 2);
     const uint verticesPerBlade =  verticesPerBladeEdge * 2;
     const uint trianglesPerBlade = verticesPerBlade - 2;
 

@@ -6,7 +6,7 @@ namespace EWE {
 	class TerrainPipeWireMesh : public PipelineSystem {
 	public:
 		TerrainPipeWireMesh();
-		~TerrainPipeWireMesh() {}
+		~TerrainPipeWireMesh();
 
 		void CreatePipeLayout() final;
 		void CreatePipeline() final;

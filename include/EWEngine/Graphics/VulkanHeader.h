@@ -13,6 +13,10 @@
 #include <string>
 #endif
 
+#if COMMAND_BUFFER_TRACING
+#include <queue>
+#endif
+
 #include <mutex>
 
 #include <functional>
@@ -49,7 +53,7 @@ namespace EWE{
             std::source_location srcLoc;
             Tracking(std::string const& funcName, std::source_location const& srcLoc) : funcName{ funcName }, srcLoc{ srcLoc } {}
         };
-        std::vector<Tracking> usageTracking;
+        std::queue<std::vector<Tracking>> usageTracking;
 
         CommandBuffer() : cmdBuf{ VK_NULL_HANDLE }, inUse{ false }, usageTracking{} {}
 #else
@@ -68,9 +72,8 @@ namespace EWE{
         }
 
         void Reset();
+        void Begin();
         void BeginSingleTime();
-
-        //void Begin();
     };
 
     struct ThreadedSingleTimeCommands {
@@ -190,17 +193,24 @@ void EWE_VK_RESULT(VkResult vkResult, const std::source_location& sourceLocation
 #if COMMAND_BUFFER_TRACING
 namespace Recasting {
 
+
     template<typename Arg>
     auto ArgumentCasting(std::string const& funcName, std::source_location const& sourceLocation, Arg&& arg) {
 
         static_assert(!std::is_same_v<Arg, VkCommandBuffer>);
 
-        if constexpr (requires{arg.usageTracking.emplace_back(funcName, sourceLocation); }) {
-            arg.usageTracking.emplace_back(funcName, sourceLocation);
+        if constexpr (requires{arg.usageTracking.back().emplace_back(funcName, sourceLocation); }) {
+            //if (arg.usageTracking.size() == 0) {
+            //    arg.usageTracking.emplace_back();
+            //}
+            arg.usageTracking.back().emplace_back(funcName, sourceLocation);
             return std::forward<VkCommandBuffer>(arg.cmdBuf);
         }
-        else if constexpr (requires{arg->usageTracking.emplace_back(funcName, sourceLocation); }) {
-            arg->usageTracking.emplace_back(funcName, sourceLocation);
+        else if constexpr (requires{arg->usageTracking.back().emplace_back(funcName, sourceLocation); }) {
+            //if (arg->usageTracking.size() == 0) {
+            //    arg->usageTracking.emplace_back();
+            //}
+            arg->usageTracking.back().emplace_back(funcName, sourceLocation);
             return std::forward<VkCommandBuffer*>(&arg->cmdBuf);
         }
         else {
@@ -250,6 +260,12 @@ namespace Recasting {
         }
     }
 }
+
+namespace EWE {
+    namespace PLEASE {
+        std::string GetFuncName(void* funcPtr);
+    }
+}
 #endif
 
 
@@ -271,7 +287,7 @@ struct EWE_VK {
 #endif
 
 #if COMMAND_BUFFER_TRACING
-        const std::string funcName = typeid(func).name();
+        const std::string funcName = EWE::PLEASE::GetFuncName(+func);
         auto reinterpretedArgs = Recasting::ReinterpretArguments(funcName, sourceLocation, std::forward<Args>(args)...);
         Recasting::CallWithReinterpretedArguments(sourceLocation, func, std::move(reinterpretedArgs));
 #else

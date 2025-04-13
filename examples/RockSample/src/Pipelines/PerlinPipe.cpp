@@ -8,10 +8,14 @@ namespace EWE {
 #if EWE_DEBUG
 		: PipelineSystem{ Pipe::Perlin} {
 #else
-			{
+	{
 #endif
 				CreatePipeline();
-			}
+	}
+
+	PerlinPipe::~PerlinPipe() {
+		Deconstruct(pipe);
+	}
 
 	void PerlinPipe::CreatePipeLayout() {
 
@@ -52,12 +56,11 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
-		std::string vertString = "texture_shader.vert.spv";
-		std::string fragString = "perlin.frag.spv";
+		ShaderStringStruct stringStruct{};
+		stringStruct.filepath[Shader::vert] = "texture_shader.vert.spv";
+		stringStruct.filepath[Shader::frag] = "perlin.frag.spv";
 
-		//EWEPipeline* tempPtr = new EWEPipeline(vertString, fragString, pipelineConfig);
-
-		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
+		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 #if DEBUG_NAMING
 		pipe->SetDebugName("perlin pipeline");
 		DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "perlin pipe layout");

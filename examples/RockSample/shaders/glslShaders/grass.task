@@ -65,7 +65,19 @@ void main() {
     //debugPrintfEXT("num work groups - (%d)(%d)(%d)", gl_NumWorkGroups.x, gl_NumWorkGroups.y, gl_NumWorkGroups.z);
     //debugPrintfEXT("work group id - (%d)(%d)(%d)", gl_WorkGroupID.x, gl_WorkGroupID.y, gl_WorkGroupID.z);
     //debugPrintfEXT("invocation - (%d)(%d)(%d)", gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
-    
+
+    /*
+    the plan currently is to have a separate LOD for patch density. the idea is to have the current close areas be same density
+    as it gets further, im thinking up to 1/4 density, maybe 1/8 or 1/16
+    to rephrase, 1/X density
+    static const uint density = X;
+
+    so ill need to do groups of X patches
+    ill do a frustum check on the entire group. im not sure if frustum checking individual patches is necessary yet. worth benchmarking
+
+    to find the position of patches, do a NDC corner check. im not entirely sure how to do that yet
+    im thinking just ground the back and raycast in a direction from there. idk
+    */
 
     //i need to do some adjustment so the grass doesnt move
 
@@ -108,7 +120,7 @@ void main() {
                 const float distanceToCamera = distance(point, ubo.cameraPos.xyz);
                 if(distanceToCamera < gbo.endDistance.w){
                     if(CheckFrustum(point)){
-                        float lod = clamp(floor(-gbo.endDistance.x / log(gbo.endDistance.y + 1.0) * log(distanceToCamera + 1.0) + gbo.endDistance.z), 2.0, 8.0);
+                        float lod = clamp(floor(-gbo.endDistance.x / log(gbo.endDistance.y + 1.0) * log(distanceToCamera + 1.0) + gbo.endDistance.z), 0.0, 8.0);
                         //need frustum culling here too
                         OUT.patchCenter[outputCount] = point.xz;
                         //debugPrintfEXT("point - (%d)(%d)(%f)(%f)", x, z, point.x, point.z);

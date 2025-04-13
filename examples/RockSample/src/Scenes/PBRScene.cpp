@@ -502,10 +502,24 @@ namespace EWE {
 				}
 				else {
 					pipe = PipelineSystem::At(Pipe::SimpleTerrain);
-					pipe->BindPipeline();
-					pipe->BindDescriptor(0, &terrainDesc[RS_Simple][VK::Object->frameIndex]);
-					pipe->BindModel(terrainTriModel);
-					pipe->DrawModel();
+					//if (pipe->pipe->stalePipeline == VK_NULL_HANDLE) {
+						pipe->BindPipeline();
+						pipe->BindDescriptor(0, &terrainDesc[RS_Simple][VK::Object->frameIndex]);
+						pipe->BindModel(terrainTriModel);
+						pipe->DrawModel();
+					//}
+					//else {
+					//	EWERenderer::BindGraphicsPipeline(pipe->pipe->stalePipeline);
+					//	EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(),
+					//		VK_PIPELINE_BIND_POINT_GRAPHICS,
+					//		pipe->pipe->copyConfigInfo.pipelineLayout,
+					//		0, 1,
+					//		&terrainDesc[RS_Simple][VK::Object->frameIndex],
+					//		0, nullptr
+					//	);
+					//	terrainTriModel->Bind();
+					//	terrainTriModel->Draw();
+					//}
 				}
 			}
 
@@ -540,6 +554,8 @@ namespace EWE {
 			ewEngine.uiHandler.EndTextRender();
 
 			imguiHandler.beginRender();
+			PipelineSystem::RenderPipelinesIMGUI();
+
 			RenderLBOControls();
 			RenderCameraData();
 			RenderControlledSphereControls();

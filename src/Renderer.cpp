@@ -8,9 +8,7 @@
 
 namespace EWE {
 	void EWERenderer::BindGraphicsPipeline(VkPipeline graphicsPipeline) {
-#if EWE_DEBUG
 		assert(instance != nullptr);
-#endif
 
 		EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 		EWE_VK(vkCmdSetViewport, VK::Object->GetFrameBuffer(), 0, 1, &instance->viewport);
@@ -25,21 +23,7 @@ namespace EWE {
 		instance = this;
 		//printf("EWE renderer constructor \n");
 		EWEDescriptorPool::BuildGlobalPool();
-#if GPU_LOGGING
-		{
-			std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-			logFile << "before creating swap chain" << std::endl;
-			logFile.close();
-		}
-#endif
 		RecreateSwapChain();
-#if GPU_LOGGING
-		{
-			std::ofstream logFile{ GPU_LOG_FILE, std::ios::app };
-			logFile << "after creating swap chain" << std::endl;
-			logFile.close();
-		}
-#endif
 
 	}
 
@@ -88,9 +72,7 @@ namespace EWE {
 	}
 
 	bool EWERenderer::BeginFrame() {
-#if EWE_DEBUG
 		assert(!isFrameStarted && "cannot call begin frame while frame is in progress!");
-#endif
 
 		//std::cout << "begin frame 1" << std::endl;
 		if (eweSwapChain->AcquireNextImage(&currentImageIndex)) {
@@ -108,8 +90,8 @@ namespace EWE {
 
 		//std::cout << "begin frame 4" << std::endl;
 		
-
-		EWE_VK(vkBeginCommandBuffer, VK::Object->GetFrameBuffer(), &beginInfo);
+		VK::Object->GetFrameBuffer().Begin();
+		//EWE_VK(vkBeginCommandBuffer, VK::Object->GetFrameBuffer(), &beginInfo);
 #if DEBUG_NAMING
 		DebugNaming::SetObjectName(VK::Object->GetVKCommandBufferDirect(), VK_OBJECT_TYPE_COMMAND_BUFFER, "graphics cmd buffer");
 #endif
@@ -164,9 +146,7 @@ namespace EWE {
 	}
 	/**/
 	void EWERenderer::BeginSwapChainRender() {
-#if EWE_DEBUG
 		assert(isFrameStarted && "Can't call beginSwapChainRenderPass if frame is not in progress!");
-#endif
 		/*
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

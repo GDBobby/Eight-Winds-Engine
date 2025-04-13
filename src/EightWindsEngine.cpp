@@ -393,7 +393,7 @@ namespace EWE {
 					totalElapsedGPUMS = 0.f;
 				}
 #else //get only if available
-				EWE_VK(vkGetQueryPoolResults, 
+				VkResult result = vkGetQueryPoolResults(
 					VK::Object->vkDevice, queryPool[VK::Object->frameIndex], 
 					0, 2, 
 					sizeof(uint64_t) * 4, 
@@ -401,6 +401,10 @@ namespace EWE {
 					sizeof(uint64_t) * 2, 
 					VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT
 				);
+				if (result != VK_SUCCESS && result != VK_NOT_READY) {
+					EWE_VK_RESULT(result);
+				}
+
 				if (timestampStart.result != 0) {
 					elapsedGPUMS = static_cast<float>(timestampEnd.result - timestampStart.result) * gpuTicksPerSecond;
 					totalElapsedGPUMS += elapsedGPUMS;

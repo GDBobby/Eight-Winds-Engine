@@ -20,6 +20,9 @@ namespace EWE {
 		CreatePipeLayout();
 		CreatePipeline();
 	}
+	Simple_Terrain_Pipe::~Simple_Terrain_Pipe() {
+		Deconstruct(pipe);
+	}
 
 	void Simple_Terrain_Pipe::CreatePipeLayout() {
 		pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -56,8 +59,9 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
-		const std::string vertString = "simple_terrain.vert.spv";
-		const std::string fragString = "simple_terrain.frag.spv";
-		pipe = std::make_unique<EWEPipeline>(vertString, fragString, pipelineConfig);
+		ShaderStringStruct stringStruct{};
+		stringStruct.filepath[Shader::vert] = "simple_terrain.vert.spv";
+		stringStruct.filepath[Shader::frag] = "simple_terrain.frag.spv";
+		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 	}
 }

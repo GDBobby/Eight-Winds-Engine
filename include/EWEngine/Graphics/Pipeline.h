@@ -11,9 +11,9 @@
 #include <map>
 
 
-
+/*
 #define PIPELINE_DERIVATIVES 0 //pipeline derivatives are not currently recommended by hardware vendors
-/* https://developer.nvidia.com/blog/vulkan-dos-donts/ */
+https://developer.nvidia.com/blog/vulkan-dos-donts/ */
 
 //#define DYNAMIC_PIPE_LAYOUT_COUNT 24 //MAX_TEXTURE_COUNT * 4 //defined in descriptorhandler.h
 
@@ -31,31 +31,6 @@ namespace EWE {
 			ENGINE_MAX_COUNT,
 		};
 	} //namespace Pipe
-	//namespace PL{
-	//enum PipeLayout_Enum : uint32_t { //uint32_t is the same as PipelineID, but using uint32_t to avoid confusion
-	//	pointLight,
-	//	lightning,
-	//	spikyBall,
-	//	grass,
-	//	textured,
-	//	//PL_material,
-	//	twod,
-	//	boned,
-	//	//PL_fbx,
-	//	skybox,
-	//	sprite,
-	//	//PL_boneWeapon,
-	//	visualEffect,
-	//	//PL_metalRough,
-	//	loading,
-
-	//	nineUI,
-
-	//	MAX_COUNT,
-	//};
-	//} //namespace PL
-
-	//typedef uint8_t MaterialFlags; this in engine/data/enginedatatypes.h
 
 	namespace Pipeline_Helper_Functions {
 		void CreateShaderModule(std::string const& file_path, VkShaderModule* shaderModule);
@@ -68,6 +43,28 @@ namespace EWE {
 		void CreateShaderModule(const std::vector<T>& data, VkShaderModule* shaderModule);
 	}
 
+	namespace Shader {
+		enum Stage { //i dont know if the order matters
+			vert = 0,
+			tessControl,
+			tessEval,
+			geom,
+			task,
+			mesh,
+			frag,
+
+			COUNT
+		};
+	}
+	struct ShaderStringStruct {
+		std::string filepath[Shader::Stage::COUNT] = { {}, {}, {}, {}, {}, {}, {} };
+
+		uint8_t Count() const;
+
+		void RenderIMGUI();
+		int16_t imguiIndex = -1;
+	};
+
 	class EWE_Compute_Pipeline {
 	public:
 		VkPipelineLayout pipe_layout;
@@ -75,7 +72,7 @@ namespace EWE {
 
 		static EWE_Compute_Pipeline CreatePipeline(std::vector<VkDescriptorSetLayout> computeDSL, std::string compute_path);
 		static EWE_Compute_Pipeline CreatePipeline(VkPipelineLayout pipe_layout, std::string compute_path);
-		void Bind(CommandBuffer cmdBuf) {
+		void Bind(CommandBuffer& cmdBuf) {
 			EWE_VK(vkCmdBindPipeline, cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 		}
 	private:
@@ -88,16 +85,21 @@ namespace EWE {
 
 		struct PipelineConfigInfo {
 			PipelineConfigInfo() = default;
+			void RenderIMGUI();
+			int16_t imguiIndex = -1;
+#if PIPELINE_HOT_RELOAD
+			PipelineConfigInfo(PipelineConfigInfo const&);
+#else
 			PipelineConfigInfo(const PipelineConfigInfo&) = delete;
-			PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
+#endif
+			PipelineConfigInfo& operator=(PipelineConfigInfo const&) = delete;
+			PipelineConfigInfo(PipelineConfigInfo&&) = delete;
+			PipelineConfigInfo& operator=(PipelineConfigInfo&&) = delete;
 
-			void AddGeomShaderModule(std::string const& geomFilepath);
-			void AddGeomShaderModule(const MaterialFlags flags);
+			//void AddGeomShaderModule(const MaterialFlags flags); //i need to figure out a different way to do this
 
-			VkViewport viewport;
-			VkRect2D scissor;
-
-			VkShaderModule geomShaderModule{ VK_NULL_HANDLE };
+			//VkViewport viewport;
+			//VkRect2D scissor;
 
 			std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
 			std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
@@ -113,13 +115,7 @@ namespace EWE {
 			std::vector<VkDynamicState> dynamicStateEnables{};
 			VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
 
-			bool hasTesselation = false;
 			VkPipelineTessellationStateCreateInfo tessCreateInfo{};
-			VkShaderModule tessControlModule{VK_NULL_HANDLE};
-			VkShaderModule tessEvaluationModule{VK_NULL_HANDLE};
-
-			VkShaderModule meshShaderModule{ VK_NULL_HANDLE };
-			VkShaderModule taskShaderModule{ VK_NULL_HANDLE };
 
 			VkPipelineLayout pipelineLayout = nullptr;
 			//VkPipelineRenderingCreateInfo const& pipeRenderInfo = nullptr;
@@ -137,11 +133,10 @@ namespace EWE {
 			static VkPipelineRenderingCreateInfo* pipelineRenderingInfoStatic;
 		};
 
-		EWEPipeline(std::string const& vertFilepath, std::string const& fragFilepath, PipelineConfigInfo const& configInfo);
+		EWEPipeline(ShaderStringStruct const& stringStruct, PipelineConfigInfo const& configInfo);
+		EWEPipeline(ShaderStringStruct const& stringStruct, MaterialFlags const flags, PipelineConfigInfo& configInfo);
 		EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, PipelineConfigInfo const& configInfo);
-		EWEPipeline(std::string const& vertFilePath, MaterialFlags const flags, PipelineConfigInfo& configInfo);
 		EWEPipeline(uint16_t boneCount, MaterialFlags flags, PipelineConfigInfo const& configInfo);
-		EWEPipeline(std::string const& fragFilepath, PipelineConfigInfo const& configInfo);
 
 		~EWEPipeline();
 
@@ -153,23 +148,28 @@ namespace EWE {
 		static void Enable2DConfig(PipelineConfigInfo& configInfo);
 		static void EnableAlphaBlending(PipelineConfigInfo& configInfo);
 
-		static void CleanShaderModules() {
-			for (auto iter = shaderModuleMap.begin(); iter != shaderModuleMap.end(); iter++) {
-				EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, iter->second, nullptr);
-			}
-			shaderModuleMap.clear();
-		}
+		static void CleanShaderModules();
 #if DEBUG_NAMING
 		void SetDebugName(std::string const& name);
 #endif
+#if PIPELINE_HOT_RELOAD
+		void ReloadShaderModules();
+		void HotReloadPipeline(bool reloadShaders);
+
+		//void RecompileShaderModules(ShaderStringStruct const& stringStruct);
+		//void ReloadConfig(PipelineConfigInfo const& configInfo);
+
+		ShaderStringStruct copyStringStruct;
+		PipelineConfigInfo copyConfigInfo;
+		uint16_t framesSinceSwap = 0;
+		VkPipeline stalePipeline = VK_NULL_HANDLE; //going to let it tick for MAX_FRAMES_IN_FLIGHT + 1 then delete it
+		int32_t imguiIndex = -1;
+#endif
 
 	private:
-		//static materials
-		static std::map<std::string, VkShaderModule> shaderModuleMap;
 
 		VkPipeline graphicsPipeline;
-		VkShaderModule vertShaderModule;
-		VkShaderModule fragShaderModule;
+		VkShaderModule shaderModules[Shader::Stage::COUNT] = { {VK_NULL_HANDLE}, {VK_NULL_HANDLE}, {VK_NULL_HANDLE}, {VK_NULL_HANDLE}, {VK_NULL_HANDLE}, {VK_NULL_HANDLE}, {VK_NULL_HANDLE} };
 
 		void CreateGraphicsPipeline(PipelineConfigInfo const& configInfo);
 

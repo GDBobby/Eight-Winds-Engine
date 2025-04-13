@@ -21,7 +21,7 @@ namespace EWE {
 	class TerrainPipe : public PipelineSystem {
 	public:
 		TerrainPipe();
-		~TerrainPipe() {}
+		~TerrainPipe() override;
         
 		void CreatePipeLayout() final;
 		void CreatePipeline() final;

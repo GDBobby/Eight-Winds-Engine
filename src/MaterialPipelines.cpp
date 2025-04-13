@@ -95,11 +95,9 @@ namespace EWE {
 #endif
 	}
 
-	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilepath, std::string const& fragFilepath, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertFilepath, fragFilepath, configInfo } {}
-
 	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertShaderModu, fragShaderModu, configInfo } {}
 
-	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, std::string const& vertFilePath, MaterialFlags flags, EWEPipeline::PipelineConfigInfo& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertFilePath, flags, configInfo } {}
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, ShaderStringStruct const& stringStruct, MaterialFlags flags, EWEPipeline::PipelineConfigInfo& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ stringStruct, flags, configInfo } {}
 
 	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, uint16_t boneCount, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ boneCount, flags, configInfo } {}
 
@@ -462,7 +460,7 @@ namespace EWE {
 		const bool hasBumps = flags & Material::Flags::Texture::Bump;
 		const bool instanced = flags & Material::Flags::Other::Instanced;
 
-		std::string vertString;
+		ShaderStringStruct stringStruct{};
 
 		if (hasBones) {
 			if (hasNormal) {
@@ -470,13 +468,13 @@ namespace EWE {
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
 				pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
 
-				vertString = "bone_Tangent.vert.spv";
+				stringStruct.filepath[Shader::vert] = "bone_Tangent.vert.spv";
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertexNoTangent>();
 				pipelineConfig.attributeDescriptions = boneVertexNoTangent::GetAttributeDescriptions();
-				vertString = "bone_NT.vert.spv";
+				stringStruct.filepath[Shader::vert] = "bone_NT.vert.spv";
 			}
 		}
 		else {
@@ -488,34 +486,34 @@ namespace EWE {
 				else if (hasNormal) {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-					vertString = "material_tangent_instance.vert.spv";
+					stringStruct.filepath[Shader::vert] = "material_tangent_instance.vert.spv";
 				}
 				else {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 					pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
-					vertString = "material_nn_instance.vert.spv";
+					stringStruct.filepath[Shader::vert] = "material_nn_instance.vert.spv";
 				}
 			}
 			else {
 				if (hasBumps) {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-					vertString = "material_bump.vert.spv";
+					stringStruct.filepath[Shader::vert] = "material_bump.vert.spv";
 				}
 				else if (hasNormal) {
 					//printf("AVertex, flags:%d \n", newFlags);
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-					vertString = "material_Tangent.vert.spv";
+					stringStruct.filepath[Shader::vert] = "material_Tangent.vert.spv";
 				}
 				else {
 					//printf("AVertexNT, flags:%d \n", newFlags);
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 					pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
-					vertString = "material_nn.vert.spv";
+					stringStruct.filepath[Shader::vert] = "material_nn.vert.spv";
 				}
 			}
 		}
-		return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, vertString, flags, pipelineConfig})).first->second;
+		return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, stringStruct, flags, pipelineConfig})).first->second;
 	}
 }
