@@ -51,33 +51,26 @@ bool CheckFrustum(const vec3 point){
     return true;
 }
 
-#define DISPATCH_X 1
-#define DISPATCH_Z 1
+//#define DISPATCH_X 1
+//#define DISPATCH_Z 1
 
+layout(local_size_x = 8, local_size_y = 1, local_size_z = 8) in;
 void main() {
-    for(uint i = 0; i < 64; i++){
-        vec2 zeroVec = vec2(-7.0, 10);
-        OUT.patchCenter[i] = zeroVec;
-        OUT.lod[i] = 2;
-    }
     
     //debugPrintfEXT("num work groups - (%d)(%d)(%d)", gl_NumWorkGroups.x, gl_NumWorkGroups.y, gl_NumWorkGroups.z);
     //debugPrintfEXT("work group id - (%d)(%d)(%d)", gl_WorkGroupID.x, gl_WorkGroupID.y, gl_WorkGroupID.z);
-    //debugPrintfEXT("invocation - (%d)(%d)(%d)", gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
+    debugPrintfEXT("invocation - (%d)(%d)(%d)", gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
 
     //EmitMeshTasksEXT(16, 1, 1);
 
-        const vec3 halfGroup = vec3(
-        -float(gl_NumWorkGroups.x) * gbo.spacing * DISPATCH_X / 2.0,
+    const vec3 halfGroup = vec3(
+        -float(gl_NumWorkGroups.x) * gbo.spacing * 4.0, //4.0 is 8.0, local_size_x / 2.0
         0.0,
-        -float(gl_NumWorkGroups.z) * gbo.spacing * DISPATCH_Z / 2.0
+        -float(gl_NumWorkGroups.z) * gbo.spacing * 4.0
     );
 
-
-    const float invocationXOffset = float(gl_WorkGroupID.x) * DISPATCH_X;
-    const float invocationZOffset = float(gl_WorkGroupID.z) * DISPATCH_Z;
-
-    
+    const float invocationXOffset = float(gl_WorkGroupID.x) * 8.0;
+    const float invocationZOffset = float(gl_WorkGroupID.z) * 8.0;
     
     bool bigCornerOverlap = false;
     { //scope
@@ -98,8 +91,8 @@ void main() {
         
         vec3 point;
         
-        for(uint x = 0; x < DISPATCH_X; ++x){
-            for(uint z = 0; z < DISPATCH_Z; ++z){
+        //for(uint x = 0; x < 8; ++x){
+            //for(uint z = 0; z < gl_LocalInvocationID.z; ++z){
                 point = halfGroup;
                 point.x += gbo.spacing * (float(x) + invocationXOffset) * 2.0;
                 point.z += gbo.spacing * (float(z) + invocationZOffset) * 2.0;
@@ -118,8 +111,8 @@ void main() {
                     }
                 }
 
-            }
-        }
+            //}
+        //}
         
         //thse numbers define gl_NumWorkGroups inside the mesh shader. the question would be do i even need that?
         //i dont know what the difference would be between calling 1,1,1 1 million times and 1000,1,1000 once
