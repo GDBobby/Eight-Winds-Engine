@@ -78,7 +78,7 @@ void main() {
     const float invocationZOffset = float(gl_WorkGroupID.z) * DISPATCH_Z;
 
     
-
+    
     bool bigCornerOverlap = false;
     { //scope
         vec3 corners[4] = vec3[4](
@@ -92,9 +92,12 @@ void main() {
             bigCornerOverlap = bigCornerOverlap || CheckFrustum(corners[i]);
         }
     }
+    
+    int outputCount = 0;
     if(bigCornerOverlap){
-        int outputCount = 0;
+        
         vec3 point;
+        
         for(uint x = 0; x < DISPATCH_X; ++x){
             for(uint z = 0; z < DISPATCH_Z; ++z){
                 point = halfGroup;
@@ -117,9 +120,10 @@ void main() {
 
             }
         }
+        
         //thse numbers define gl_NumWorkGroups inside the mesh shader. the question would be do i even need that?
         //i dont know what the difference would be between calling 1,1,1 1 million times and 1000,1,1000 once
-        EmitMeshTasksEXT(outputCount, 1, 1);
     }
+    EmitMeshTasksEXT(outputCount, 1, 1);
     
 }
