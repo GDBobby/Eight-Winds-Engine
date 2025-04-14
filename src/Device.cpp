@@ -19,7 +19,7 @@
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
 //if you have two discrete amd gpus, and an nvidia gpu, itll randomly select an amd gpu with amd target
-#define AMD_TARGET false
+#define AMD_TARGET true
 #define NVIDIA_TARGET (false && !AMD_TARGET) //not currently setup to correctly
 #define INTEGRATED_TARGET (false && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
 
@@ -49,9 +49,11 @@ namespace EWE {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
             std::cout << "validation info: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
             break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: {
+            std::string idName = pCallbackData->pMessageIdName;
             std::cout << "validation warning: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
             break;
+        }
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: {
             std::cout << "validation error: " << messageType << ":" << pCallbackData->pMessage << '\n' << std::endl;
 
@@ -70,7 +72,7 @@ namespace EWE {
 #endif
 
 
-            assert(false && "validation layer error");
+            //assert(false && "validation layer error");
             break;
         }
         default:
@@ -226,10 +228,10 @@ namespace EWE {
 
     // class member functions
     EWEDevice::EWEDevice(MainWindow& window) :
-        validationLayers{ "VK_LAYER_KHRONOS_validation" },
+        validationLayers{ "VK_LAYER_KHRONOS_validation",  },
         deviceExtensions{
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-            VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+            //VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
         },
         window{ window },
         optionalExtensions{
@@ -306,7 +308,7 @@ namespace EWE {
             EWE_VK(vkDestroyCommandPool, VK::Object->vkDevice, VK::Object->renderCmdPool, nullptr);
         }
 #if USING_VMA
-        vmaDestroyAllocator(allocator);
+        vmaDestroyAllocator(VK::Object->vmaAllocator);
 #endif
         eweDevice = nullptr;
         EWE_VK(vkDestroyDevice, VK::Object->vkDevice, nullptr);
@@ -367,12 +369,23 @@ namespace EWE {
         createInfo.ppEnabledExtensionNames = extensions.data();
 
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+#if 0
+        VkValidationFeaturesEXT validationFeatures{};
+        std::vector<VkValidationFeatureEnableEXT>  validation_feature_enables = { VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT };
+        validationFeatures.enabledValidationFeatureCount = static_cast<uint32_t>(validation_feature_enables.size());
+        validationFeatures.pEnabledValidationFeatures = validation_feature_enables.data();
+        validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+        validationFeatures.pNext = nullptr;
+#endif
         if (enableValidationLayers) {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
             createInfo.ppEnabledLayerNames = validationLayers.data();
 
             PopulateDebugMessengerCreateInfo(debugCreateInfo);
             createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+#if 0
+            debugCreateInfo.pNext = &validationFeatures;
+#endif
         }
         else {
             createInfo.enabledLayerCount = 0;
@@ -538,6 +551,7 @@ namespace EWE {
         //nvMeshStruct.taskShader = VK_TRUE;
         //nvMeshStruct.meshShader = VK_TRUE;
 
+        
         VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{};
         meshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
         meshShaderFeatures.meshShader = VK_TRUE;
@@ -550,10 +564,8 @@ namespace EWE {
         //}
         //meshShaderFeatures.meshShaderQueries = VK_TRUE;
 
-        //VkPhysicalDeviceFeatures2 testDeviceFeatures2{};
-        //testDeviceFeatures2.pNext = nullptr;
-        //testDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        //EWE_VK(vkGetPhysicalDeviceFeatures2, VK::Object->physicalDevice, &testDeviceFeatures2);
+        //VkPhysicalDeviceMeshShaderPropertiesEXT
+        
 
         VkPhysicalDeviceFeatures2 deviceFeatures2{};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -651,6 +663,17 @@ namespace EWE {
         }
         EWE_VK(vkCreateDevice, VK::Object->physicalDevice, &createInfo, nullptr, &VK::Object->vkDevice);
 
+
+        if (optionalExtensions.at(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
+            VK::Object->meshShaderProperties = Construct<VkPhysicalDeviceMeshShaderPropertiesEXT>({});
+            VK::Object->meshShaderProperties->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
+            VK::Object->meshShaderProperties->pNext = nullptr;
+            VkPhysicalDeviceProperties2 testDeviceFeatures2{};
+            testDeviceFeatures2.pNext = VK::Object->meshShaderProperties;
+            testDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            EWE_VK(vkGetPhysicalDeviceProperties2, VK::Object->physicalDevice, &testDeviceFeatures2);
+        }
+
         VK::CmdDrawMeshTasksEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksEXT>(vkGetDeviceProcAddr(VK::Object->vkDevice, "vkCmdDrawMeshTasksEXT"));
 #if EWE_DEBUG
         std::cout << "getting device queues \n";
@@ -683,12 +706,12 @@ namespace EWE {
         VmaAllocatorCreateInfo allocatorCreateInfo{};
         allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
         allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
-        allocatorCreateInfo.VK::Object->physicalDevice = VK::Object->physicalDevice;
+        allocatorCreateInfo.physicalDevice = VK::Object->physicalDevice;
         allocatorCreateInfo.device = VK::Object->vkDevice;
-        allocatorCreateInfo.instance = instance;
+        allocatorCreateInfo.instance = VK::Object->instance;
         allocatorCreateInfo.pVulkanFunctions = nullptr;
-        VkResult result = vmaCreateAllocator(&allocatorCreateInfo, &allocator);
-        EWE_VK_RESULT_ASSERT(result);
+        VkResult result = vmaCreateAllocator(&allocatorCreateInfo, &VK::Object->vmaAllocator);
+        EWE_VK_RESULT(result);
     }
 #endif
 

@@ -245,7 +245,8 @@ namespace EWE {
         StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ totalSize });
 
         void* data; //void* normally, but I want to be able to control it by the byte
-        EWE_VK(vkMapMemory, VK::Object->vkDevice, stagingBuffer->memory, 0, totalSize, 0, &data);
+        stagingBuffer->Map(data);
+        stagingBuffer->Stage(data, totalSize);
 
         const std::size_t verticalCount = firstImage.height / layerHeight;
         const std::size_t horiCount = firstImage.width / layerWidth;
@@ -280,7 +281,7 @@ namespace EWE {
 
         //memcpy(data, firstImage.pixels, totalSize);
         free(firstImage.pixels);
-        EWE_VK(vkUnmapMemory, VK::Object->vkDevice, stagingBuffer->memory);
+        stagingBuffer->Unmap();
         //mips here, if desired. currently no
 
         VkImageCreateInfo imageCreateInfo{};

@@ -1,6 +1,6 @@
 #version 450
 #extension GL_EXT_mesh_shader : require
-//#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_debug_printf : enable
 #extension GL_GOOGLE_include_directive : enable
 
 #include "SimplexNoise.glsl"
@@ -55,34 +55,19 @@ bool CheckFrustum(const vec3 point){
 #define DISPATCH_Z 1
 
 void main() {
-    //im going to ignore near and far on the camera, and take only 4 frustums
-    //enum side { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, NEAR = 4, FAR = 5 };
-
-    //invocation is always 0,0,0
-    //workgroupid is what changes
-    //so the amount of times this is ran is completely controlled by the CPU dispatch call
-
+    for(uint i = 0; i < 64; i++){
+        vec2 zeroVec = vec2(-7.0, 10);
+        OUT.patchCenter[i] = zeroVec;
+        OUT.lod[i] = 2;
+    }
+    
     //debugPrintfEXT("num work groups - (%d)(%d)(%d)", gl_NumWorkGroups.x, gl_NumWorkGroups.y, gl_NumWorkGroups.z);
     //debugPrintfEXT("work group id - (%d)(%d)(%d)", gl_WorkGroupID.x, gl_WorkGroupID.y, gl_WorkGroupID.z);
     //debugPrintfEXT("invocation - (%d)(%d)(%d)", gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
 
-    /*
-    the plan currently is to have a separate LOD for patch density. the idea is to have the current close areas be same density
-    as it gets further, im thinking up to 1/4 density, maybe 1/8 or 1/16
-    to rephrase, 1/X density
-    static const uint density = X;
+    //EmitMeshTasksEXT(16, 1, 1);
 
-    so ill need to do groups of X patches
-    ill do a frustum check on the entire group. im not sure if frustum checking individual patches is necessary yet. worth benchmarking
-
-    to find the position of patches, do a NDC corner check. im not entirely sure how to do that yet
-    im thinking just ground the back and raycast in a direction from there. idk
-    */
-
-    //i need to do some adjustment so the grass doesnt move
-
-    //iterating 8x8 per invocation here
-    const vec3 halfGroup = vec3(
+        const vec3 halfGroup = vec3(
         -float(gl_NumWorkGroups.x) * gbo.spacing * DISPATCH_X / 2.0,
         0.0,
         -float(gl_NumWorkGroups.z) * gbo.spacing * DISPATCH_Z / 2.0
@@ -136,4 +121,5 @@ void main() {
         //i dont know what the difference would be between calling 1,1,1 1 million times and 1000,1,1000 once
         EmitMeshTasksEXT(outputCount, 1, 1);
     }
+    
 }

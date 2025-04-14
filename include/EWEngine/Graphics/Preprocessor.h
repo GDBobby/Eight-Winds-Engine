@@ -33,7 +33,7 @@
 
 #define RENDER_DEBUG false
 
-#define USING_VMA false
+#define USING_VMA true
 #define DEBUGGING_MEMORY_WITH_VMA (USING_VMA && false)
 
 #define SEMAPHORE_TRACKING (true && DEBUG_NAMING && EWE_DEBUG)

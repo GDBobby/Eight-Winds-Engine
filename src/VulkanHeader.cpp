@@ -106,7 +106,7 @@ namespace EWE {
             VMA_ALLOCATION_CREATE_MAPPED_BIT;
         EWE_VK(vmaCreateBuffer, VK::Object->vmaAllocator, &bufferCreateInfo, &vmaAllocCreateInfo, &buffer, &vmaAlloc, &vmaAllocInfo);
 
-        Stage(vmaAllocator, data, size);
+        Stage(data, size);
     }
     StagingBuffer::StagingBuffer(VkDeviceSize size) {
         VkBufferCreateInfo bufferCreateInfo{};
@@ -211,21 +211,29 @@ namespace EWE {
         EWE_VK(vmaMapMemory, VK::Object->vmaAllocator, vmaAlloc, &stagingData);
         memcpy(stagingData, data, bufferSize);
         EWE_VK(vmaUnmapMemory, VK::Object->vmaAllocator, vmaAlloc);
+    }
+    void StagingBuffer::Map(void*& data) {
+        EWE_VK(vmaMapMemory, VK::Object->vmaAllocator, vmaAlloc, &data);
+    }
+    void StagingBuffer::Unmap() {
+        EWE_VK(vmaUnmapMemory, VK::Object->vmaAllocator, vmaAlloc);
+    }
 #else
     void StagingBuffer::Stage(const void* data, VkDeviceSize bufferSize) {
         void* stagingData;
         EWE_VK(vkMapMemory, VK::Object->vkDevice, memory, 0, bufferSize, 0, &stagingData);
         memcpy(stagingData, data, bufferSize);
         EWE_VK(vkUnmapMemory, VK::Object->vkDevice, memory);
-#endif
     }
 
-    void StagingBuffer::Map(void*& data){
-            EWE_VK(vkMapMemory, VK::Object->vkDevice, memory, 0, bufferSize, 0, &data);
+    void StagingBuffer::Map(void*& data) {
+        EWE_VK(vkMapMemory, VK::Object->vkDevice, memory, 0, bufferSize, 0, &data);
     }
     void StagingBuffer::Unmap() {
         EWE_VK(vkUnmapMemory, VK::Object->vkDevice, memory);
     }
+#endif
+
 
 
 

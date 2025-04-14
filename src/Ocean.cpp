@@ -52,6 +52,9 @@ namespace EWE {
 		void Ocean::CreateBuffers() {
 		
 			frequencyBuffer = Construct<EWEBuffer>({ cascade_count * OCEAN_WAVE_COUNT * OCEAN_WAVE_COUNT * sizeof(float) * 4, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
+#if DEBUG_NAMING
+			frequencyBuffer->SetName("ocean frequency buffer");
+#endif
 			
 		}
 
@@ -92,6 +95,10 @@ namespace EWE {
 			imageCreateInfo.arrayLayers = cascade_count;
 			Image::CreateImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, oceanFreqImages, oceanFreqImageMemory);
 
+#if DEBUG_NAMING
+			DebugNaming::SetObjectName(oceanOutputImages, VK_OBJECT_TYPE_IMAGE, "ocean output images");
+			DebugNaming::SetObjectName(oceanFreqImages, VK_OBJECT_TYPE_IMAGE, "ocean frequency images");
+#endif
 
 			SyncHub* syncHub = SyncHub::GetSyncHubInstance();
 			//directly to graphics because no data is being uploaded
@@ -136,7 +143,9 @@ namespace EWE {
 			samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 			oceanOutputImageInfoDescriptorCompute.sampler = Sampler::GetSampler(samplerInfo); //why is this being discarded
 			oceanOutputImageInfoDescriptorGraphics.sampler = oceanOutputImageInfoDescriptorCompute.sampler;
-
+#if DEBUG_NAMING
+			DebugNaming::SetObjectName(oceanOutputImageInfoDescriptorCompute.sampler, VK_OBJECT_TYPE_SAMPLER, "ocean output image sampler");
+#endif
 			// Create image view
 			VkImageViewCreateInfo view{};
 			view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

@@ -78,6 +78,9 @@ namespace EWE {
             pipelineLayoutInfo.pSetLayouts = eweDSL->GetDescriptorSetLayout();
 
             EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "ocean ifs pipe layout");
+#endif
         }
         void InitialFrequencySpectrumGPUData::CreatePipeline() {
             VkComputePipelineCreateInfo pipelineInfo{};
@@ -92,9 +95,16 @@ namespace EWE {
             computeShaderStageInfo.pName = "main";
             pipelineInfo.stage = computeShaderStageInfo;
             EWE_VK(vkCreateComputePipelines, VK::Object->vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE, "ocean ifs pipe");
+#endif
         }
         void InitialFrequencySpectrumGPUData::CreateBuffers() {
             jonswapBuffer = EWEBuffer::CreateAndInitBuffer(&jonswapParams, sizeof(JONSWAP_Parameters), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+#if DEBUG_NAMING
+            jonswapBuffer->SetName("jonswap buffer");
+#endif
         }
         void InitialFrequencySpectrumGPUData::CreateDescriptorSet(VkDescriptorImageInfo* descImageInfo) {
 
@@ -103,6 +113,10 @@ namespace EWE {
             descWriter.WriteBuffer(jonswapBuffer->DescriptorInfo());
             descriptorSet[0] = descWriter.Build();
             descriptorSet[1] = descWriter.Build();
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(descriptorSet[0], VK_OBJECT_TYPE_DESCRIPTOR_SET, "ifs desc [0]");
+            DebugNaming::SetObjectName(descriptorSet[1], VK_OBJECT_TYPE_DESCRIPTOR_SET, "ifs desc [1]");
+#endif
         }
         void InitialFrequencySpectrumGPUData::Compute() {
             EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
@@ -164,6 +178,9 @@ namespace EWE {
             pipelineLayoutInfo.pSetLayouts = eweDSL->GetDescriptorSetLayout();
 
             EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "ocean tdfs layout");
+#endif
         }
         void TimeDependentFrequencySpectrumGPUData::CreatePipeline() {
 
@@ -179,6 +196,9 @@ namespace EWE {
             computeShaderStageInfo.pName = "main";
             pipelineInfo.stage = computeShaderStageInfo;
             EWE_VK(vkCreateComputePipelines, VK::Object->vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(pipeline, VK_OBJECT_TYPE_PIPELINE, "ocean tdfs pipeline");
+#endif
         }
         void TimeDependentFrequencySpectrumGPUData::CreateDescriptorSet(VkDescriptorImageInfo* frequencyImage, VkDescriptorImageInfo* outputImage) {
 
@@ -186,6 +206,9 @@ namespace EWE {
             descWriter.WriteImage(frequencyImage);
             descWriter.WriteImage(outputImage);
             descriptorSet = descWriter.Build();
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(descriptorSet, VK_OBJECT_TYPE_DESCRIPTOR_SET, "ocean tdfs desc");
+#endif
         }
         void TimeDependentFrequencySpectrumGPUData::Compute(float dt) {
             EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
@@ -225,6 +248,9 @@ namespace EWE {
             EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
             descWriter.WriteImage(outputImage);
             descriptorSet = descWriter.Build();
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(descriptorSet, VK_OBJECT_TYPE_DESCRIPTOR_SET, "ocean fft desc");
+#endif
         }
 
         void FFTGPUData::CreatePipeLayout() {
@@ -248,6 +274,9 @@ namespace EWE {
             pipelineLayoutInfo.pSetLayouts = eweDSL->GetDescriptorSetLayout();
 
             EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "ocean fft pipeLayout");
+#endif
         }
         void FFTGPUData::CreatePipeline() {
 
@@ -263,6 +292,9 @@ namespace EWE {
             computeShaderStageInfo.pName = "main";
             pipelineInfo.stage = computeShaderStageInfo;
             EWE_VK(vkCreateComputePipelines, VK::Object->vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(pipeline, VK_OBJECT_TYPE_PIPELINE, "ocean fft pipeline");
+#endif
         }
         void FFTGPUData::Compute(float dt) {
             EWE_VK(vkCmdBindPipeline, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
@@ -322,6 +354,10 @@ namespace EWE {
             renderData[1]->Flush();
             renderData[1]->Unmap();
 
+#if DEBUG_NAMING
+            renderData[0]->SetName("ocean graphics renderData[0]");
+            renderData[0]->SetName("ocean graphics renderData[1]");
+#endif
 
             for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
                 EWEDescriptorWriter descWriter{ eweDSL, DescriptorPool_Global };
@@ -330,6 +366,9 @@ namespace EWE {
                 descWriter.WriteImage(outputImage);
                 descWriter.WriteImage(skyboxImage);
                 descriptorSet[i] = descWriter.Build();
+#if DEBUG_NAMING
+                DebugNaming::SetObjectName(descriptorSet[i], VK_OBJECT_TYPE_DESCRIPTOR_SET, "ocean render desc");
+#endif
             }
         }
         void OceanGraphicsGPUData::UpdateBuffers() {
@@ -357,6 +396,9 @@ namespace EWE {
             pipelineLayoutInfo.setLayoutCount = 1;
             pipelineLayoutInfo.pSetLayouts = eweDSL->GetDescriptorSetLayout();
             EWE_VK(vkCreatePipelineLayout, VK::Object->vkDevice, &pipelineLayoutInfo, nullptr, &pipeLayout);
+#if DEBUG_NAMING
+            DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "ocean render pipeline layout");
+#endif
         }
         void OceanGraphicsGPUData::CreatePipeline(){
             EWEPipeline::PipelineConfigInfo pipelineConfig{};
@@ -371,6 +413,10 @@ namespace EWE {
             stringStruct.filepath[Shader::frag] = "ocean.frag.spv";
 
             pipe = std::make_unique<EWEPipeline>(stringStruct, pipelineConfig);
+
+#if DEBUG_NAMING
+            pipe->SetDebugName("ocean render pipeline");
+#endif
 
         }
         void OceanGraphicsGPUData::CreateModel() {
@@ -421,6 +467,10 @@ namespace EWE {
             }
 
             oceanModel = Construct<EWEModel>({ gridVertices.data(), gridVertices.size(), sizeof(gridVertices[0]), gridIndices});
+
+#if DEBUG_NAMING
+            oceanModel->SetDebugNames("coean model");
+#endif
         }
 
         void OceanGraphicsGPUData::Render() {

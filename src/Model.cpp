@@ -310,7 +310,7 @@ namespace EWE {
         uint64_t alignmentSize = EWEBuffer::GetAlignment(instanceSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT) * instanceCount;
 
 #if USING_VMA
-        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, EWEDevice::GetAllocator(), data });
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, data });
 #else
         StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ alignmentSize, data });
 #endif
@@ -356,7 +356,7 @@ namespace EWE {
         this->vertexCount = vertexCount;
 
 #if USING_VMA
-        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetAllocator(), data });
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, data });
 #else
         StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, data });
 #endif
@@ -386,7 +386,7 @@ namespace EWE {
 
         VkDeviceSize bufferSize = indexSize * indexCount;
 #if USING_VMA
-        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, EWEDevice::GetAllocator(), indexData });
+        StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, indexData });
 #else
         StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ bufferSize, indexData });
 #endif

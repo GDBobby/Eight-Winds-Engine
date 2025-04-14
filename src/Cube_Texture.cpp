@@ -21,14 +21,8 @@ namespace EWE {
             VkDeviceSize imageSize = layerSize * cubeImage.arrayLayers;
 
             void* data;
-#if USING_VMA
-
-            StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize, EWEDevice::GetAllocator() });
-            EWE_VK(vmaMapMemory, EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc, &data);
-#else
             StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize });
-            EWE_VK(vkMapMemory, VK::Object->vkDevice, stagingBuffer->memory, 0, imageSize, 0, &data);
-#endif
+            stagingBuffer->Map(data);
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
             cubeImage.mipLevels = 1;
             for (int i = 0; i < 6; i++) {
@@ -36,12 +30,7 @@ namespace EWE {
                 stbi_image_free(pixelPeek[i].pixels);
                 memAddress += layerSize;
             }
-#if USING_VMA
-            EWE_VK(vmaUnmapMemory, EWEDevice::GetAllocator(), stagingBuffer->vmaAlloc);
-#else
-            EWE_VK(vkUnmapMemory, VK::Object->vkDevice, stagingBuffer->memory);
-
-#endif
+            stagingBuffer->Unmap();
 
             VkImageCreateInfo imageCreateInfo;
             imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

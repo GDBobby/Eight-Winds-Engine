@@ -536,11 +536,10 @@ namespace EWE {
 
 #if USING_VMA
             StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize });
-            vmaMapMemory(VK::Object->vmaAllocatgor, stagingBuffer->vmaAlloc, &data);
 #else
             StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ imageSize });
-            EWE_VK(vkMapMemory, VK::Object->vkDevice, stagingBuffer->memory, 0, imageSize, 0, &data);
 #endif
+            stagingBuffer->Map(data);
             uint64_t memAddress = reinterpret_cast<uint64_t>(data);
 
             for (int i = 0; i < pixelPeek.size(); i++) {
@@ -548,11 +547,7 @@ namespace EWE {
                 stbi_image_free(pixelPeek[i].pixels);
                 memAddress += layerSize;
             }
-#if USING_VMA
-            vmaUnmapMemory(VK::Object->vmaAllocator, stagingBuffer->vmaAlloc);
-#else
-            EWE_VK(vkUnmapMemory, VK::Object->vkDevice, stagingBuffer->memory);
-#endif
+            stagingBuffer->Unmap();
 
             return stagingBuffer;
         }

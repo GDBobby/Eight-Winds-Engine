@@ -304,7 +304,7 @@ namespace EWE {
 #endif
                 imageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
                 imageBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
+                imageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // Access mask for compute shader writes
                 imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // Access mask for transfer read operation
 
                 EWE_VK(vkCmdPipelineBarrier,

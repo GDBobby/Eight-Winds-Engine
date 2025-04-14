@@ -78,7 +78,7 @@ namespace EWE {
         for (int i = 0; i < depthImages.size(); i++) {
             EWE_VK(vkDestroyImageView, VK::Object->vkDevice, depthImageViews[i], nullptr);
 #if USING_VMA
-            vmaDestroyImage(EWEDevice::GetAllocator(), depthImages[i], depthImageMemorys[i]);
+            vmaDestroyImage(VK::Object->vmaAllocator, depthImages[i], depthImageMemorys[i]);
 #else
             EWE_VK(vkDestroyImage, VK::Object->vkDevice, depthImages[i], nullptr);
             EWE_VK(vkFreeMemory, VK::Object->vkDevice, depthImageMemorys[i], nullptr);

@@ -532,11 +532,11 @@ namespace EWE {
 			}
 			if (oceanActive) {
 #if DEBUG_NAMING
-				DebugNaming::BeginLabel("ocean render", 0.f, 0.f, 1.f);
+				//DebugNaming::BeginLabel("ocean render", 0.f, 0.f, 1.f);
 #endif
 				ocean->RenderOcean();
 #if DEBUG_NAMING
-				DebugNaming::EndLabel();
+				//DebugNaming::EndLabel();
 #endif
 			}
 

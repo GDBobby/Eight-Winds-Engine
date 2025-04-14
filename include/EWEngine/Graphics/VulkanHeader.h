@@ -124,6 +124,7 @@ namespace EWE{
         std::array<int, Queue::_count> queueIndex;
         VkSurfaceKHR surface;
         VkPhysicalDeviceProperties properties;
+        VkPhysicalDeviceMeshShaderPropertiesEXT* meshShaderProperties{ nullptr };
 
         float screenWidth;
         float screenHeight;
@@ -157,11 +158,11 @@ namespace EWE{
         VkDeviceSize bufferSize;
 #if USING_VMA
         VmaAllocation vmaAlloc{};
-        StagingBuffer(VkDeviceSize size, VmaAllocator vmaAllocator);
-        StagingBuffer(VkDeviceSize size, VmaAllocator vmaAllocator, const void* data);
-        void Free(VmaAllocator vmaAllocator);
-        void Free(VmaAllocator vmaAllocator) const;
-        void Stage(VmaAllocator vmaAllocator, const void* data, uint64_t bufferSize);
+        StagingBuffer(VkDeviceSize size);
+        StagingBuffer(VkDeviceSize size, const void* data);
+        void Free();
+        void Free() const;
+        void Stage(const void* data, uint64_t bufferSize);
 #else
         VkDeviceMemory memory{ VK_NULL_HANDLE };
         StagingBuffer(VkDeviceSize size);
@@ -169,9 +170,9 @@ namespace EWE{
         void Free();
         void Free() const;
         void Stage(const void* data, VkDeviceSize bufferSize);
+#endif
         void Map(void*& data);
         void Unmap();
-#endif
     };
 
 
@@ -203,14 +204,18 @@ namespace Recasting {
             //if (arg.usageTracking.size() == 0) {
             //    arg.usageTracking.emplace_back();
             //}
-            arg.usageTracking.back().emplace_back(funcName, sourceLocation);
+            if (arg.usageTracking.size() > 0) {
+                arg.usageTracking.back().emplace_back(funcName, sourceLocation);
+            }
             return std::forward<VkCommandBuffer>(arg.cmdBuf);
         }
         else if constexpr (requires{arg->usageTracking.back().emplace_back(funcName, sourceLocation); }) {
             //if (arg->usageTracking.size() == 0) {
             //    arg->usageTracking.emplace_back();
             //}
-            arg->usageTracking.back().emplace_back(funcName, sourceLocation);
+            if (arg->usageTracking.size() > 0) {
+                arg->usageTracking.back().emplace_back(funcName, sourceLocation);
+            }
             return std::forward<VkCommandBuffer*>(&arg->cmdBuf);
         }
         else {
@@ -283,6 +288,11 @@ struct EWE_VK {
             for (uint32_t i = 0; i < descriptorSetCount; i++) {
                 assert((pDescriptorSets[i] != VK_NULL_HANDLE) && (reinterpret_cast<std::size_t>(pDescriptorSets[i]) != 0xCDCDCDCDCDCDCDCD));
             }
+        }
+#endif
+#if USING_VMA
+        if constexpr (std::is_same_v<std::decay_t<F>, PFN_vkAllocateMemory>) {
+            printf("using allocate memory iwth vma\n");
         }
 #endif
 
