@@ -41,12 +41,12 @@ float3 SampleDisplacement(float viewDist, float2 worldUV, float cascadeFadeDista
 
     const float height = NoiseWithOctaves(worldUV / 1000.0, 8); // this should scale from something like -sqrt(2) to sqrt(2)
 
-    float3 displace = float3(0.0); // oceanTextures.SampleLevel(float3(worldUV / oceanData.lengthScales[0], 0.0), 0.0).xyz * weights[0];
+    float3 displace = oceanTextures.SampleLevel(float3(worldUV / oceanData.lengthScales[0], 0.0), 0.0).xyz * weights[0];
 
-    const float depthTesting = saturate(height * oceanData.beachScale.z + oceanData.beachScale.x) * oceanData.beachScale.y;
-    if (depthTesting > 0.0) {
-      displace += oceanTextures.SampleLevel(float3(worldUV / oceanData.lengthScales[0], 0.0), 0.0).xyz * depthTesting;
-    }
+    //const float depthTesting = saturate(height * oceanData.beachScale.z + oceanData.beachScale.x) * oceanData.beachScale.y;
+    //if (depthTesting > 0.0) {
+    //  displace += oceanTextures.SampleLevel(float3(worldUV / oceanData.lengthScales[0], 0.0), 0.0).xyz * depthTesting;
+    //}
 
 
     [unroll] for (uint cascade = 1; cascade < CASCADE_COUNT; cascade++) {

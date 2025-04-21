@@ -773,10 +773,14 @@ namespace EWE {
 				optionStr = "cullMode";
 				optionStr += extension;
 				ImGui::DragInt(optionStr.c_str(), reinterpret_cast<int*>(&rasterizationInfo.cullMode), 1, 0, 100);
+				VkCullModeFlagBits copyCull = static_cast<VkCullModeFlagBits>(rasterizationInfo.cullMode);
+				imgui_enum(optionStr.c_str(), copyCull, 0, 3);
+				rasterizationInfo.cullMode = copyCull;
 				optionStr = "frontFace";
 				optionStr += extension;
 				imgui_enum(optionStr, rasterizationInfo.frontFace, 0, 1);
 				optionStr = "depthBiasEnable";
+
 				optionStr += extension;
 				imgui_vkbool(optionStr, rasterizationInfo.depthBiasEnable);
 				optionStr = "depth bias constant factor";
@@ -784,13 +788,13 @@ namespace EWE {
 				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasConstantFactor, 0.1f, 0.f, 100.f);
 				optionStr = "depth bias clamp";
 				optionStr += extension;
-				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasConstantFactor, 0.1f, 0.f, 100.f);
+				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasClamp, 0.1f, 0.f, 100.f);
 				optionStr = "depth bias slope factor";
 				optionStr += extension;
-				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasConstantFactor, 0.1f, 0.f, 100.f);
+				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasSlopeFactor, 0.1f, 0.f, 100.f);
 				optionStr = "line width";
 				optionStr += extension;
-				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.depthBiasConstantFactor, 0.1f, 0.f, 100.f);
+				ImGui::DragFloat(optionStr.c_str(), &rasterizationInfo.lineWidth, 0.1f, 0.f, 100.f);
 
 
 				ImGui::TreePop();

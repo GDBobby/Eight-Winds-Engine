@@ -14,6 +14,21 @@ layout(set = 0, binding = 2) uniform GrassBufferObject{
     int displayLOD;
 } gbo;
 
+layout(set = 0, binding = 3) uniform TescBO{
+    mat4 projection;
+    mat4 view;
+    vec4 frustumPlanes[6]; //world space
+    vec2 viewportDim;
+    float displacementFactor;
+    float tessFactor;
+    float tessEdgeSize;
+	int octaves;
+	float worldPosNoiseScaling;
+    float sandHeight;
+    float grassHeight;
+    int renderUnderwater;
+} tbo;
+
 layout(location = 0) in PerVertexData{
     vec3 worldPos;
     vec3 worldNormal;
@@ -30,7 +45,9 @@ void main(){
     const float selfshadow = min(heightShadow, midShadow);
     //debugPrintfEXT("self shadow - (%f)", selfshadow);
     
-    if(gbo.displayLOD == 1){
+    const bool isRightSide = gl_FragCoord.x > (tbo.viewportDim.x / 2.0);
+    if(isRightSide && (gbo.displayLOD == 1)){
+    //if(gbo.displayLOD == 1){
         uint uintLOD = uint(v_in.worldNormal.x);
         switch(uintLOD){
             case 0:{

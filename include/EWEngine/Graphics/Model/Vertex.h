@@ -15,14 +15,42 @@
 
 #define MAX_BONE_INFLUENCE 4
 namespace EWE {
+    /*
+    template<uint8_t InfluenceCount = MAX_BONE_INFLUENCE> requires(InfluenceCount <= MAX_BONE_INFLUENCE)
     struct BoneInfo {
-        /*id is index in finalBoneMatrices*/
-        int id;
-
-        /*offset matrix transforms vertex from model space to bone space*/
-        glm::mat4 offset;
+        int id[InfluenceCount];
+        glm::mat4 offset[InfluenceCount];
 
     };
+
+    struct Position_V {
+        glm::vec3 position;
+    };
+    struct Color_V {
+        glm::vec3 color;
+    };
+    struct Normal_V {
+        glm::vec3 normal;
+    };
+    struct Tangent_V {
+        glm::vec3 tangent;
+    };
+    struct UV_V {
+        glm::vec2 uv;
+    };
+
+    template <typename... Components>
+    struct VertexTemplate : public Components...
+    {
+        VertexTemplate() = default;
+
+        template <typename... Args>
+        VertexTemplate(Args&&... args)
+            : Components(std::forward<Args>(args))...
+        {}
+    };
+    */
+
     struct boneVertex {
         glm::vec3 position{ 0.f };
         glm::vec3 normal{ 0.f };

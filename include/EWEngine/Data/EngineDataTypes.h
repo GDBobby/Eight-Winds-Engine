@@ -15,8 +15,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
 
-//#define COORDINATE_SYSTEM CS_NegZNegY 
-
 namespace EWE {
 	typedef uint16_t MaterialFlags;
 	namespace Material {

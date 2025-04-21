@@ -19,7 +19,7 @@
 //my NVIDIA card is chosen before my AMD card.
 //on a machine with an AMD card chosen before the NVIDIA card, NVIDIA_TARGET preprocessor is required for nvidia testing
 //if you have two discrete amd gpus, and an nvidia gpu, itll randomly select an amd gpu with amd target
-#define AMD_TARGET true
+#define AMD_TARGET false
 #define NVIDIA_TARGET (false && !AMD_TARGET) //not currently setup to correctly
 #define INTEGRATED_TARGET (false && ((!NVIDIA_TARGET) && (!AMD_TARGET)))
 
