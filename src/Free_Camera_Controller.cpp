@@ -80,13 +80,13 @@ namespace EWE {
     */
 
 
-    void CameraController::Move(TransformComponent& transform) {
+    void CameraController::Move(lab::Transform<float, 3>& transform) {
         //ImGuiIO& io = ImGui::GetIO();
         //if (io.WantCaptureKeyboard) {
         //    return;
         //}
 
-        glm::vec3 rotate{ 0.f };
+        lab::vec3 rotate{ 0.f };
 
         isMoveFast = (glfwGetKey(window, keys.moveFast) == GLFW_PRESS);
         isMoveSlow = (glfwGetKey(window, keys.moveSlow) == GLFW_PRESS);
@@ -97,19 +97,19 @@ namespace EWE {
         if (glfwGetKey(window, keys.lookDown) == GLFW_PRESS) rotate.x += 1.f;
         
 
-        if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon()) {
-            transform.rotation += lookSpeed * glm::normalize(rotate);
+        if (rotate.SquaredMagnitude() > std::numeric_limits<float>::epsilon()) {
+            transform.rotation += rotate.Normalized() * lookSpeed;
         }
 
         // limit pitch values between about +/- 85ish degrees
-        transform.rotation.x = glm::clamp(transform.rotation.x, -glm::half_pi<float>(), glm::half_pi<float>());
-        transform.rotation.y = glm::mod(transform.rotation.y, glm::two_pi<float>());
+        transform.rotation.x = lab::PhaseTo(transform.rotation.x, -lab::GetPI_DividedBy(2.f), lab::GetPI_DividedBy(2.f));
+        transform.rotation.y = lab::Mod(transform.rotation.y, lab::GetPI(2.f));
 
-        const glm::vec3 forwardDir{ sin(transform.rotation.y), 0.f, cos(transform.rotation.y) };
-        const glm::vec3 rightDir{ forwardDir.z, 0.f, -forwardDir.x };
-        //glm::vec3 upDir{ 0.f, 1.f, 0.f };
+        const lab::vec3 forwardDir{ transform.GetHorizontalForwardDir() };
+        const lab::vec3 rightDir{ forwardDir.z, 0.f, -forwardDir.x };
+        //lab::vec3 upDir{ 0.f, 1.f, 0.f };
 
-        glm::vec3 moveDir{ 0.f };
+        lab::vec3 moveDir{ 0.f };
         
         if (GK_MACRO(keys.moveForward)) {
             //printf("forward \n");
@@ -136,12 +136,12 @@ namespace EWE {
             moveDir.y += 1.f;
         }
 
-        if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
+        if (moveDir.SquaredMagnitude() > std::numeric_limits<float>::epsilon()) {
             //printf("moving camera? \n");
-            transform.translation += ((moveSpeed + (isMoveFast * 4.f * moveSpeed))) * (1.f - (isMoveSlow * 0.8f)) * glm::normalize(moveDir);
+            transform.translation += ((moveSpeed + (isMoveFast * 4.f * moveSpeed))) * (1.f - (isMoveSlow * 0.8f)) * moveDir.Normalized();
         }
     }
-    void CameraController::RotateCam(TransformComponent& transform) {
+    void CameraController::RotateCam(lab::Transform<float, 3>& transform) {
         double xPos = 0.0;
         double yPos = 0.0;
         glfwGetCursorPos(window, &xPos, &yPos);
@@ -151,8 +151,8 @@ namespace EWE {
             transform.rotation.x += lookSpeed * yDiff;
             transform.rotation.y -= lookSpeed * xDiff;
 
-            transform.rotation.x = glm::clamp(transform.rotation.x, -glm::half_pi<float>(), glm::half_pi<float>());
-            transform.rotation.y = glm::mod(transform.rotation.y, glm::two_pi<float>());
+            transform.rotation.x = lab::PhaseTo(transform.rotation.x, -lab::GetPI_DividedBy(2.f), lab::GetPI_DividedBy(2.f));
+            transform.rotation.y = lab::Mod(transform.rotation.y, lab::GetPI(2.f));
         }
 
 
@@ -160,21 +160,18 @@ namespace EWE {
         mousePos.second = yPos;
     }
 
-    void CameraController::Zoom(TransformComponent& transform) {
-        forwardDirZoom = { glm::sin(transform.rotation.y), -glm::sin(transform.rotation.x), glm::cos(transform.rotation.y) };
-
-        //forwardDirZoom.y = -forwardDirZoom.y;
-        forwardDirZoom = glm::normalize(forwardDirZoom);
+    void CameraController::Zoom(lab::Transform<float, 3>& transform) {
+        forwardDirZoom = transform.GetNormalizedForwardDir();
 
         transform.translation -= forwardDirZoom * storedZoom * ((.1f + (isMoveFast * .4f)) * (1.f - (isMoveSlow * 0.8f)));
 
         storedZoom = 0.0;
     }
 
-    void CameraController::Move2DPlaneXZ(float dt, Transform2D& transform2d) {
+    void CameraController::Move2DPlaneXZ(float dt, lab::Transform<float, 2>& transform2d) {
 
         /*
-        glm::vec3 moveDir{ 0.f };
+        lab::vec3 moveDir{ 0.f };
         if (glfwGetKey(window, keys.moveForward) == GLFW_PRESS) transform2d.translation.y += 0.01f;
         if (glfwGetKey(window, keys.moveBackward) == GLFW_PRESS) transform2d.translation.y -= 0.01f;
         if (glfwGetKey(window, keys.moveRight) == GLFW_PRESS) transform2d.translation.x += 0.01f;

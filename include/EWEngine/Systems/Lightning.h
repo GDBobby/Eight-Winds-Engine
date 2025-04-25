@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EWEngine/EWE_GameObject.h"
-
+#include "LAB/Vector.h"
+#include "LAB/Matrix.h"
 
 #include <cmath>
 #include <random>
@@ -9,7 +9,7 @@
 namespace EWE {
 	class LightningSystem {
 	public:
-		LightningSystem() : r{}, randomGen{ r() }, branchDistribution{ 4,6 }, rotationDistribution{ 0.f, glm::pi<float>() } {
+		LightningSystem() : r{}, randomGen{ r() }, branchDistribution{ 4,6 }, rotationDistribution{ 0.f, lab::PI<float> } {
 
 			translations.resize(50);
 			for (int i = 0; i < translations.size() - 1; i++) {
@@ -27,20 +27,20 @@ namespace EWE {
 		std::uniform_real_distribution<float> rotationDistribution;
 		
 		//i dont understand 3d math but this works
-		glm::vec4 beginningOffset = { -62.555f, 105.59201f, 26.48977f, 1.f };
+		lab::vec4 beginningOffset = { -62.555f, 105.59201f, 26.48977f, 1.f };
 
 		bool active = true;
 
-		std::vector<std::vector<glm::vec3>> translations{};
+		std::vector<std::vector<lab::vec3>> translations{};
 
 		uint32_t updateTimer = 0;
 		uint32_t updateDelay = 48;
 
 		void beginLightning();
 
-		void update(glm::mat4* swordMatrix, float rotation, std::array<float, 3>& startingTranslation, glm::vec3& secondTranslation, std::array<float, 3>& finalTranslation);
+		void update(lab::mat4* swordMatrix, float rotation, std::array<float, 3>& startingTranslation, lab::vec3& secondTranslation, std::array<float, 3>& finalTranslation);
 
-		void update(const glm::mat4& startingMatrix, float rotation, std::vector<glm::vec3*>& translations);
+		void update(const lab::mat4& startingMatrix, float rotation, std::vector<lab::vec3*>& translations);
 
 		uint8_t getCurrentActive() { return currentActive; }
 		uint8_t currentActive{ 0 };

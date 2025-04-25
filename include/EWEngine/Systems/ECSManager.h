@@ -32,19 +32,19 @@ namespace EWE {
 		uint16_t animFrame;
 	};
 	struct ModelMatrix {
-		glm::mat4 modelMatrix;
+		lab::mat4 modelMatrix;
 	};
 	struct SkeleJointMatrices {
-		glm::mat4 matrices[68];
+		lab::mat4 matrices[68];
 	};
 	struct DeerJointMatrices {
-		glm::mat4 matrices[68];
+		lab::mat4 matrices[68];
 	};
 	struct LichJointMatrices {
-		glm::mat4 matrices[68];
+		lab::mat4 matrices[68];
 	};
 	struct DevilJointMatrices {
-		glm::mat4 matrices[68];
+		lab::mat4 matrices[68];
 	};
 
 	class ECSManager {

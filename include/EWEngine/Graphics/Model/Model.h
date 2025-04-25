@@ -2,7 +2,6 @@
 
 #include "EWEngine/Graphics/Device_Buffer.h"
 #include "EWEngine/Graphics/Device.hpp"
-#include "EWEngine/Data/TransformInclude.h"
 #include "Vertex.h"
 
 // libs
@@ -27,11 +26,11 @@ namespace EWE {
 
     struct MaterialComponent {
         //
-        //glm::vec3 ambient{ 0.f };
-        //glm::vec3 diffuse{ 0.f };
-        //glm::vec3 specular{ 0.f };
+        //lab::vec3 ambient{ 0.f };
+        //lab::vec3 diffuse{ 0.f };
+        //lab::vec3 specular{ 0.f };
         //float shininess{ 0.f };
-        glm::vec4 metallicRoughnessOpacity;
+        lab::vec4 metallicRoughnessOpacity;
         //float metallic;
         //float roughness;
     };

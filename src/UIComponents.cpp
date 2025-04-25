@@ -11,7 +11,7 @@ namespace EWE {
 	ClickTextBox::ClickTextBox(TextStruct textStruct) : textStruct{ textStruct } {
 		UIComp::TextToTransform(transform, textStruct, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
-	void ClickTextBox::ResizeWindow(glm::vec2 rescalingRatio) {
+	void ClickTextBox::ResizeWindow(lab::vec2 rescalingRatio) {
 		//printf("click text resize \n");
 		textStruct.x *= rescalingRatio.x;
 		textStruct.y *= rescalingRatio.y;
@@ -94,7 +94,7 @@ namespace EWE {
 		keyReturnPointer = keyReturnFunction;
 	}
 
-	void TypeBox::ResizeWindow(glm::vec2 rescalingRatio) {
+	void TypeBox::ResizeWindow(lab::vec2 rescalingRatio) {
 		printf("click text resize \n");
 		textStruct.x *= rescalingRatio.x;
 		textStruct.y *= rescalingRatio.y;
@@ -111,7 +111,7 @@ namespace EWE {
 	}
 	
 	// ~~~~~~~~~~~~~~~~~~~~~ SLIDER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	void Slider::SetTransform(glm::vec2 newTrans) {
+	void Slider::SetTransform(lab::vec2 newTrans) {
 		bracket.translation = newTrans;
 		slider.translation = newTrans;
 		bracketButtons.first.translation = newTrans;
@@ -119,12 +119,12 @@ namespace EWE {
 		bracketButtons.first.translation.x -= 0.1f;
 		bracketButtons.second.translation.x += 0.1f;
 	}
-	void Slider::Init(glm::vec2 initTrans, uint8_t currentSens) {
+	void Slider::Init(lab::vec2 initTrans, uint8_t currentSens) {
 		VolumeTrueSensFalse = false;
 		mySens = currentSens;
 		Init(initTrans, static_cast<float>(currentSens) / 100.f);
 	}
-	void Slider::Init(glm::vec2 initTrans, float currentVolume) {
+	void Slider::Init(lab::vec2 initTrans, float currentVolume) {
 		bracket.translation = initTrans;
 
 		bracketButtons.first.scale = { 0.1f, 0.2f };
@@ -245,17 +245,17 @@ namespace EWE {
 	void Slider::Render(Array2DPushConstantData& push, uint8_t drawID) {
 		switch (drawID) {
 		case 0: {
-			push.scaleOffset = glm::vec4(slider.scale, slider.translation);
+			push.scaleOffset = lab::vec4(slider.scale, slider.translation);
 			break;
 		}
 		case 1: {
-			push.scaleOffset = glm::vec4(bracketButtons.first.scale, bracketButtons.first.translation);
+			push.scaleOffset = lab::vec4(bracketButtons.first.scale, bracketButtons.first.translation);
 			Dimension2::PushAndDraw(push);
-			push.scaleOffset = glm::vec4(bracketButtons.second.scale, bracketButtons.second.translation);
+			push.scaleOffset = lab::vec4(bracketButtons.second.scale, bracketButtons.second.translation);
 			break;
 		}
 		case 2: {
-			push.scaleOffset = glm::vec4(bracket.scale, bracket.translation);
+			push.scaleOffset = lab::vec4(bracket.scale, bracket.translation);
 			break;
 		}
 		}
@@ -285,7 +285,7 @@ namespace EWE {
 
 		comboOptions.back().clickBox.x = activeOption.clickBox.x;
 		comboOptions.back().clickBox.z = activeOption.clickBox.z;
-		UIComp::ConvertScreenTo2D(glm::ivec2{ (comboOptions.back().clickBox.x + comboOptions.back().clickBox.z) / 2 ,
+		UIComp::ConvertScreenTo2D(lab::ivec2{ (comboOptions.back().clickBox.x + comboOptions.back().clickBox.z) / 2 ,
 			(comboOptions.back().clickBox.y + comboOptions.back().clickBox.w) / 2 }, comboOptions.back().transform.translation, VK::Object->screenWidth, VK::Object->screenHeight);
 		comboOptions.back().transform.scale.x = activeOption.transform.scale.x;
 	}
@@ -317,7 +317,7 @@ namespace EWE {
 		}
 		return false;
 	}
-	void ComboBox::ResizeWindow(glm::vec2 rescalingRatio) {
+	void ComboBox::ResizeWindow(lab::vec2 rescalingRatio) {
 
 		activeOption.ResizeWindow(rescalingRatio);
 		for (int i = 0; i < comboOptions.size(); i++) {
@@ -329,7 +329,7 @@ namespace EWE {
 				activeOption.clickBox.z = activeOption.clickBox.x + comboOptions[i].clickBox.z - comboOptions[i].clickBox.x;
 				for (int j = 0; j < i; j++) {
 					comboOptions[j].clickBox.z = activeOption.clickBox.z;
-					UIComp::ConvertScreenTo2D(glm::ivec2{ (comboOptions[j].clickBox.x + comboOptions[j].clickBox.z) / 2 ,
+					UIComp::ConvertScreenTo2D(lab::ivec2{ (comboOptions[j].clickBox.x + comboOptions[j].clickBox.z) / 2 ,
 						(comboOptions[j].clickBox.y + comboOptions[j].clickBox.w) / 2 }, comboOptions[j].transform.translation, VK::Object->screenWidth, VK::Object->screenHeight);
 				}
 			}
@@ -352,9 +352,9 @@ namespace EWE {
 				push.scaleOffset.x = comboOptions[j].transform.scale.x;
 				push.scaleOffset.y = comboOptions[j].transform.scale.y;
 				if (j == currentlySelected) {
-					push.color = glm::vec3{ .4f, .4f, 1.f };
+					push.color = lab::vec3{ .4f, .4f, 1.f };
 					Dimension2::PushAndDraw(push);
-					push.color = glm::vec3{ .5f, .35f, .25f };
+					push.color = lab::vec3{ .5f, .35f, .25f };
 				}
 				else {
 					Dimension2::PushAndDraw(push);
@@ -423,21 +423,21 @@ namespace EWE {
 			}
 		}
 
-		glm::ivec4 bigBox;
+		lab::ivec4 bigBox;
 		bigBox.x = clickBoxes[0].x;
 		bigBox.z = clickBoxes[0].z;
 
 		bigBox.y = clickBoxes[0].y;
 		bigBox.w = clickBoxes.back().w;
 
-		glm::ivec2 screenPosition;
+		lab::ivec2 screenPosition;
 		screenPosition.x = (bigBox.x + bigBox.z) / 2;
 		screenPosition.y = (bigBox.y + bigBox.w) / 2;
 
 		UIComp::ConvertScreenTo2D(screenPosition, dropBackground.translation, VK::Object->screenWidth, VK::Object->screenHeight);
 		printf("translation - %.2f : %.2f \n", dropBackground.translation.x, dropBackground.translation.y);
 
-		dropBackground.scale = glm::vec2(biggestWidth * VK::Object->screenWidth / DEFAULT_WIDTH, scale * clickBoxes.size() / 19.f);
+		dropBackground.scale = lab::vec2(biggestWidth * VK::Object->screenWidth / DEFAULT_WIDTH, scale * clickBoxes.size() / 19.f);
 	}
 
 	int8_t DropBox::Clicked(double xpos, double ypos) {
@@ -468,12 +468,12 @@ namespace EWE {
 		push.scaleOffset.w = dropper.transform.translation.y;
 		//need color array
 		if (currentlyDropped) {
-			push.color = glm::vec3{ .75f, .35f, .25f };
+			push.color = lab::vec3{ .75f, .35f, .25f };
 		}
 		push.scaleOffset.x = dropper.transform.scale.x;
 		push.scaleOffset.y = dropper.transform.scale.y;
 		Dimension2::PushAndDraw(push);
-		push.color = glm::vec3{ .5f, .35f, .25f };
+		push.color = lab::vec3{ .5f, .35f, .25f };
 		if (currentlyDropped) {
 			push.scaleOffset.z = dropBackground.translation.x;
 			push.scaleOffset.w = dropBackground.translation.y;
@@ -484,22 +484,22 @@ namespace EWE {
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~ BUTTON ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	Button::Button(glm::vec2 translation) {
+	Button::Button(lab::vec2 translation) {
 		transform.translation = translation;
 		transform.scale.y = 1.f / 20.f;
 		transform.scale.x = transform.scale.y * VK::Object->screenHeight / VK::Object->screenWidth;
 		UIComp::ConvertTransformToClickBox(transform, clickBox, VK::Object->screenWidth, VK::Object->screenHeight);
 	}
 	void Button::Render(Array2DPushConstantData& push) {
-		push.scaleOffset = glm::vec4(transform.scale, transform.translation);
+		push.scaleOffset = lab::vec4(transform.scale, transform.translation);
 		Dimension2::PushAndDraw(push);
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~ CHECKBOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	Checkbox::Checkbox(std::string labelString, glm::vec2 translation, DefaultOffsets labelOffset) : button{ translation } {
+	Checkbox::Checkbox(std::string labelString, lab::vec2 translation, DefaultOffsets labelOffset) : button{ translation } {
 		TextAlign alignment = TA_center;
 
-		glm::vec2 textPos = glm::vec2{ (button.clickBox.x + button.clickBox.z) / 2, button.clickBox.y };
+		lab::vec2 textPos = lab::vec2{ static_cast<float>(button.clickBox.x + button.clickBox.z) / 2.f, static_cast<float>(button.clickBox.y) };
 		switch (labelOffset) {
 		case DO_left: {
 			textPos.x = static_cast<float>(button.clickBox.x);
@@ -525,10 +525,10 @@ namespace EWE {
 
 		label = TextStruct{ labelString, textPos.x, textPos.y, alignment, 1.f };
 	}
-	Checkbox::Checkbox(std::string labelString, glm::vec2 translation, glm::vec2 labelOffset, TextAlign alignment) : button{ translation} {
+	Checkbox::Checkbox(std::string labelString, lab::vec2 translation, lab::vec2 labelOffset, TextAlign alignment) : button{ translation} {
 		label = TextStruct{ labelString, button.transform.translation.x + labelOffset.x, button.transform.translation.y + labelOffset.y, (unsigned char)alignment, 1.f };
 	}
-	void Checkbox::ResizeWindow(glm::vec2 rescalingRatio) {
+	void Checkbox::ResizeWindow(lab::vec2 rescalingRatio) {
 		label.x *= rescalingRatio.x;
 		label.y *= rescalingRatio.y;
 		button.ResizeWindow();
@@ -542,7 +542,7 @@ namespace EWE {
 		return false;
 	}
 	void Checkbox::Render(Array2DPushConstantData& push) {
-		push.scaleOffset = glm::vec4(button.transform.scale, button.transform.translation);
+		push.scaleOffset = lab::vec4(button.transform.scale, button.transform.translation);
 		Dimension2::PushAndDraw(push);
 	}
 

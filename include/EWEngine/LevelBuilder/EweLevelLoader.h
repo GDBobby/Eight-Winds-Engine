@@ -12,12 +12,12 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-void inline convertVec3(glm::vec3& glmvec3, float* setter) {
+void inline convertVec3(lab::vec3& glmvec3, float* setter) {
 	glmvec3.x = setter[0];
 	glmvec3.y = setter[1];
 	glmvec3.z = setter[2];
 }
-void inline convertVec4(glm::vec4& glmvec4, float* setter3, float wSetter) {
+void inline convertVec4(lab::vec4& glmvec4, float* setter3, float wSetter) {
 	glmvec4.x = setter3[0];
 	glmvec4.y = setter3[1];
 	glmvec4.z = setter3[2];

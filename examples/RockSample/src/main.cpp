@@ -25,14 +25,14 @@ int main() {
 				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
 			}
 
-			ewEngine.EndEngineLoadScreen();
+			ewEngine.renderFramework.EndEngineLoadScreen();
 		};
 		EWE::ThreadPool::EnqueueVoid(loadPart2);
 
 		//these threads are in a weird order
 		//the loading screen won't finish until the threads are finished, but then we wait on threads. then we call the projects main loop,
 		//and the main loop waits ont he loading screen
-		ewEngine.LoadingScreen();
+		ewEngine.renderFramework.LoadingScreen();
 
 		printf("waiting for completion\n");
 		EWE::ThreadPool::WaitForCompletion();

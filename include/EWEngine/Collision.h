@@ -1,8 +1,9 @@
 #pragma once
 
-
-#include "EWE_GameObject.h"
-
+#include <array>
+#include "LAB/Vector.h"
+#include "LAB/Matrix.h"
+#include "LAB/Transform.h"
 //class ObjectManager;
 
 enum collisionTypes {
@@ -45,13 +46,13 @@ namespace EWE {
 
 		//this float* need to be a float[3]
 		static bool checkIfStillGrounded(std::array<float, 3>& translation, float radius);
-		static bool checkForWallCollision(std::array<float, 3>& translationA, glm::vec3 intendedMovement, float radius, float height);
+		static bool checkForWallCollision(std::array<float, 3>& translationA, lab::vec3 intendedMovement, float radius, float height);
 
-		static void AddFloor(TransformComponent& transform);
-		static void AddWall(TransformComponent& transform);
+		static void AddFloor(lab::Transform3& transform);
+		static void AddWall(lab::Transform3& transform);
 
 		static void ClearCollision();
-		static void RemoveCollider(TransformComponent& transform);
+		static void RemoveCollider(lab::Transform3& transform);
 
 	private:
 

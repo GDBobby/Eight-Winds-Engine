@@ -100,6 +100,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(vma)
 
+FetchContent_Declare(
+	lab
+	GIT_REPOSITORY https://github.com/GDBobby/LAB
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/lab"
+	GIT_TAG main
+)
+FetchContent_MakeAvailable(lab)
+
 #glslang
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
 set(BUILD_EXTERNAL ON CACHE BOOL "")
@@ -174,6 +182,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	${Vulkan_INCLUDE_DIR}
 	${rapidjson_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/external/include
+
+	${LinearAlgebra_SOURCE_DIR}
 )
 #set(EWENGINE_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "Build directory for EWEngine")
 
@@ -183,6 +193,8 @@ message(STATUS "linking directories")
 target_link_directories(${PROJECT_NAME} PUBLIC
 	${Vulkan_LIB_DIR}
 	$<$<CONFIG:Debug>:${AFTERMATH_LIB_DIR}>
+	$<$<CONFIG:Debug>:${LinearAlgebra_SOURCE_DIR}/Debug>
+	$<$<CONFIG:Release>:${LinearAlgebra_SOURCE_DIR}/Release>
 )
 
 message(STATUS "linking libs")
@@ -193,6 +205,7 @@ target_link_libraries(${PROJECT_NAME}
 	${Vulkan_LIBRARY}
 	${GLSLANG_LIBS}
 	$<$<CONFIG:Debug>:${AFTERMATH_LIBS}>
+	LinearAlgebra LinearAlgebra-compile-options
 )
 
 if(EWE_EXAMPLES)

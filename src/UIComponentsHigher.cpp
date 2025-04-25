@@ -19,8 +19,8 @@ namespace EWE {
 
 		float ratioWidth = width * VK::Object->screenWidth / DEFAULT_WIDTH;
 
-		glm::ivec2 buttonScreen;
-		glm::vec2 buttonTranslation;
+		lab::ivec2 buttonScreen;
+		lab::vec2 buttonTranslation;
 		float verticalSpacing = 26.6f * VK::Object->screenHeight / DEFAULT_HEIGHT;
 
 
@@ -33,7 +33,7 @@ namespace EWE {
 			typeRef.transform.translation.x = ((typeRef.clickBox.x + ratioWidth / 2) - (VK::Object->screenWidth / 2.f)) / (VK::Object->screenWidth / 2.f);
 			typeRef.transform.scale.x = (ratioWidth / (DEFAULT_WIDTH / 2.f));
 
-			buttonScreen = glm::ivec2(dataLabel.x + ratioWidth, (typeRef.clickBox.y + typeRef.clickBox.w) / 2); //? this is lining up the buttons with the top of textbox
+			buttonScreen = lab::ivec2(dataLabel.x + ratioWidth, (typeRef.clickBox.y + typeRef.clickBox.w) / 2); //? this is lining up the buttons with the top of textbox
 			UIComp::ConvertScreenTo2D(buttonScreen, buttonTranslation, VK::Object->screenWidth, VK::Object->screenHeight);
 
 			std::pair<Button, Button>& buttonRef = buttons.emplace_back(std::piecewise_construct, std::make_tuple(buttonTranslation), std::make_tuple(buttonTranslation));
@@ -88,7 +88,7 @@ namespace EWE {
 		}
 		return false;
 	}
-	void VariableControl::ResizeWindow(glm::vec2 resizeRatio) {
+	void VariableControl::ResizeWindow(lab::vec2 resizeRatio) {
 
 		for (int i = 0; i < buttons.size(); i++) {
 			buttons[i].first.clickBox.x = static_cast<int>(static_cast<float>(buttons[i].first.clickBox.x) * resizeRatio.x);
@@ -355,12 +355,12 @@ namespace EWE {
 	//void VariableControl::render(NineUIPushConstantData& push) {
 	//	for (int k = 0; k < typeBoxes.size(); k++) {
 	//		if (isSelected(k)) {
-	//			push.color = glm::vec3{ .6f, .5f, .4f };
+	//			push.color = lab::vec3{ .6f, .5f, .4f };
 	//		}
 	//		else {
-	//			push.color = glm::vec3{ .5f, .35f, .25f };
+	//			push.color = lab::vec3{ .5f, .35f, .25f };
 	//		}
-	//		push.offset = glm::vec4(typeBoxes[k].transform.translation, 1.f, 1.f);
+	//		push.offset = lab::vec4(typeBoxes[k].transform.translation, 1.f, 1.f);
 	//		push.scale = typeBoxes[k].transform.scale;
 	//		Dimension2::PushAndDraw(push);
 	//	}
@@ -401,7 +401,7 @@ namespace EWE {
 		ratioWidth = width * screenWidth / DEFAULT_WIDTH;
 
 		//glm::ivec2 buttonScreen;
-		//glm::vec2 buttonTranslation;
+		//lab::vec2 buttonTranslation;
 		//(GLFWwindow* windowPtr, float posX, float posY, float screenWidth, float screenHeight, TextStruct dataLabel, void* dataPointer, UIComp::VariableType dataType, uint8_t dataCount, void* steps)
 		VariableControl& backRef = variableControls.emplace_back(windowPtr, label.x, label.y + startingOffset, width, dataLabel, dataPointer, dataType, dataCount, steps);
 
@@ -481,7 +481,7 @@ namespace EWE {
 		//then readjust the back Controller window
 	}
 
-	void ControlBox::ResizeWindow(glm::vec2 resizeRatio) {
+	void ControlBox::ResizeWindow(lab::vec2 resizeRatio) {
 
 		for (int i = 0; i < variableControls.size(); i++) {
 			variableControls[i].ResizeWindow(resizeRatio);
@@ -496,8 +496,8 @@ namespace EWE {
 	//	for (auto& object : variableControls) {
 	//		object.render(push);
 	//	}
-	//	push.color = glm::vec3{ .3f, .25f, .15f };
-	//	push.offset = glm::vec4(transform.translation, 1.f, 1.f);
+	//	push.color = lab::vec3{ .3f, .25f, .15f };
+	//	push.offset = lab::vec4(transform.translation, 1.f, 1.f);
 	//	push.scale = transform.scale;
 	//	Dimension2::PushAndDraw(push);
 	//}
@@ -566,12 +566,12 @@ namespace EWE {
 	void MenuBar::Render(Array2DPushConstantData& push, uint8_t drawID) {
 		if (drawID == 0) {
 			if (dropBoxes.size() > 0) { //drawing these here instead of tumblingg these with the earlier drop boxes because i dont want to draw the dropper box
-				push.color = glm::vec3{ .5f, .35f, .25f };
+				push.color = lab::vec3{ .5f, .35f, .25f };
 				for (int j = 0; j < dropBoxes.size(); j++) {
-					push.color = glm::vec3{ .5f, .35f, .25f };
+					push.color = lab::vec3{ .5f, .35f, .25f };
 					if (dropBoxes[j].currentlyDropped) {
-						push.scaleOffset = glm::vec4(dropBoxes[j].dropBackground.scale, dropBoxes[j].dropBackground.translation);
-						//push.offset = glm::vec4(dropBoxes[j].dropBackground.translation, 0.5f, 1.f);
+						push.scaleOffset = lab::vec4(dropBoxes[j].dropBackground.scale, dropBoxes[j].dropBackground.translation);
+						//push.offset = lab::vec4(dropBoxes[j].dropBackground.translation, 0.5f, 1.f);
 						//push.scale = dropBoxes[j].dropBackground.scale;
 						Dimension2::PushAndDraw(push);
 						break; //i think only 1 can be dropped
@@ -580,9 +580,9 @@ namespace EWE {
 			}
 		}
 		else {
-			push.color = glm::vec3{ .86f, .5f, .5f };
-			push.scaleOffset = glm::vec4(transform.scale, transform.translation);
-			//push.offset = glm::vec4(transform.translation, 0.1f, 1.f);
+			push.color = lab::vec3{ .86f, .5f, .5f };
+			push.scaleOffset = lab::vec4(transform.scale, transform.translation);
+			//push.offset = lab::vec4(transform.translation, 0.1f, 1.f);
 			//push.scale = transform.scale;
 			Dimension2::PushAndDraw(push);
 		}

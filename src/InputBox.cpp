@@ -27,7 +27,7 @@ namespace EWE {
 			removeThis{ {0.f,0.f}, screenWidth, screenHeight },
 			structureManager{ structureManager }
 		{
-			glm::vec2 screen{ xPos + 400.f * screenWidth / DEFAULT_WIDTH, yPos + 18.f * screenHeight / DEFAULT_HEIGHT };
+			lab::vec2 screen{ xPos + 400.f * screenWidth / DEFAULT_WIDTH, yPos + 18.f * screenHeight / DEFAULT_HEIGHT };
 			UIComp::convertScreenTo2D(screen, removeThis.transform.translation, screenWidth, screenHeight);
 			removeThis.resizeWindow(screenWidth, screenHeight);
 			populateCombo(screenWidth, screenHeight);
@@ -145,7 +145,7 @@ namespace EWE {
 			screenWidth{ screenWidth },
 			screenHeight{ screenHeight },
 			name{ "", xPos, yPos, TA_left, 1.5f },
-			addVariable{ glm::vec2{0.f}, screenWidth, screenHeight }
+			addVariable{ lab::vec2{0.f}, screenWidth, screenHeight }
 		{
 			glm::ivec2 screen = { static_cast<int>(xPos + 400.f * screenWidth / DEFAULT_WIDTH), static_cast<int>(yPos + 108.f * screenHeight / DEFAULT_HEIGHT) };
 			UIComp::convertScreenTo2D(screen, addVariable.transform.translation, screenWidth, screenHeight);
@@ -332,15 +332,15 @@ namespace EWE {
 		void InputBox::render(Simple2DPushConstantData& push, uint8_t drawID) {
 
 			if (drawID == 0) {
-				//push.color = glm::vec3{ .125f, .0875f, .0625f };
+				//push.color = lab::vec3{ .125f, .0875f, .0625f };
 				push.color.r = .05f;
 				push.color.g = .05f;
 				push.color.b = .05f;
-				push.scaleOffset = glm::vec4(background.scale, background.translation);
+				push.scaleOffset = lab::vec4(background.scale, background.translation);
 				Dimension2::PushAndDraw(push);
 			}
 			else {
-				push.color = glm::vec3{ 1.f, 1.f, 1.f };
+				push.color = lab::vec3{ 1.f, 1.f, 1.f };
 
 				for (int i = 0; i < variables.size(); i++) {
 					variables[i].removeThis.render(push);
@@ -353,14 +353,14 @@ namespace EWE {
 		void InputBox::render(NineUIPushConstantData& push) {
 
 			Dimension2::bindTexture9(MenuModule::textureIDs[MT_NineUI]);
-			push.color = glm::vec3{ .5f, .35f, .25f };
+			push.color = lab::vec3{ .5f, .35f, .25f };
 
 			if (variables.size() > 0) {
-				push.color = glm::vec3{ .5f, .35f, .25f };
+				push.color = lab::vec3{ .5f, .35f, .25f };
 				for (int i = 0; i < variables.size(); i++) {
-					push.color = glm::vec3{ .5f, .35f, .25f };
+					push.color = lab::vec3{ .5f, .35f, .25f };
 
-					push.offset = glm::vec4(variables[i].variableCombo.activeOption.transform.translation, 1.f, 1.f);
+					push.offset = lab::vec4(variables[i].variableCombo.activeOption.transform.translation, 1.f, 1.f);
 					//need color array
 					push.scale = variables[i].variableCombo.activeOption.transform.scale;
 					Dimension2::PushAndDraw(push);

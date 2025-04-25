@@ -1,6 +1,4 @@
 #pragma once
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Graphics/Model/Vertex.h"
@@ -19,7 +17,7 @@ namespace EWE {
     public:
         struct boneEData {
             uint32_t boneID{ 69420 };
-            glm::mat4 boneTransform;
+            lab::mat4 boneTransform;
 
             boneEData() {}
 
@@ -83,7 +81,7 @@ namespace EWE {
 
         struct AnimData {
             std::string versionTracker = "";
-            std::vector<glm::mat4> defaultBoneValues; //T-POSE or something, for when an animation doesn't cover everything
+            std::vector<lab::mat4> defaultBoneValues; //T-POSE or something, for when an animation doesn't cover everything
 
             int32_t handBone = -1;
 
@@ -107,7 +105,7 @@ namespace EWE {
             std::vector< //each animation
                 std::vector< //animation frame duration
                 std::vector< //boneCount
-                glm::mat4>>> animations;
+                lab::mat4>>> animations;
 
 
             void ReadFromFile(std::ifstream& inFile);

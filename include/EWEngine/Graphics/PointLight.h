@@ -1,13 +1,16 @@
 #pragma once
-#include "EWEngine/EWE_GameObject.h"
+
+#include <LAB/Transform.h>
+
+#include <vector>
 
 namespace EWE {
 
-	class PointLight : public EWEGameObject
+	class PointLight
 	{
 	public:
 
-		static PointLight makePointLight(float intensity = 1.f, float radius = 0.1f, glm::vec3 lightColor = glm::vec3(1.f)) {
+		static PointLight makePointLight(float intensity = 1.f, float radius = 0.1f, lab::vec3 lightColor = lab::vec3(1.f)) {
 			return PointLight{ intensity, radius, lightColor };
 		}
 		//static PointLight makeTextBilboard(float size, std::string text, int xPos, int yPos);
@@ -20,23 +23,25 @@ namespace EWE {
 		void static update(float frameTime, std::vector<PointLight>& pointLights);
 
 		float lightIntensity = 1.0f;
-		glm::vec3 color{ 1.f };
+		lab::vec3 color{ 1.f };
+		lab::Transform<float, 3> transform;
 	private:
-		PointLight(float intensity, float radius, glm::vec3 lightColor);
+		PointLight(float intensity, float radius, lab::vec3 lightColor);
 	};
 
-	class SpotLight : public EWEGameObject {
+	class SpotLight {
 	public:
 		float lightIntensity = 1.0f;
-		glm::vec3 color{ 1.f };
-		glm::vec3 direction;
+		lab::vec3 color{ 1.f };
+		lab::vec3 direction;
 		float cutoff;
-		static SpotLight makeSpotLight(glm::vec3 position, glm::vec3 lightColor, float intensity, glm::vec3 direction, float cutoff = (glm::pi<float>() / 3)) {
+		lab::Transform<float, 3> transform;
+		static SpotLight makeSpotLight(lab::vec3 position, lab::vec3 lightColor, float intensity, lab::vec3 direction, float cutoff = lab::GetPI_DividedBy(3.f)) {
 			return SpotLight{position, lightColor, intensity, direction, cutoff};
 		}
 
 	private:
-		SpotLight(glm::vec3 position, glm::vec3 lightColor, float intensity, glm::vec3 lightDirection, float angleCutoff = (glm::pi<float>() / 3)) {
+		SpotLight(lab::vec3 position, lab::vec3 lightColor, float intensity, lab::vec3 lightDirection, float angleCutoff = lab::GetPI_DividedBy(3.f)) {
 			transform.translation = position;
 			color = lightColor;
 			lightIntensity = intensity;

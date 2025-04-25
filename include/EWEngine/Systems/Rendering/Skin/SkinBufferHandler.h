@@ -25,7 +25,7 @@ namespace EWE {
 
 		InstancedSkinBufferHandler(uint16_t boneCount, uint16_t maxActorCount);
 
-		void WriteData(glm::mat4* modelMatrix, void* finalBoneMatrices);
+		void WriteData(lab::mat4* modelMatrix, void* finalBoneMatrices);
 		void Flush();
 
 		void ResetInstanceCount() {

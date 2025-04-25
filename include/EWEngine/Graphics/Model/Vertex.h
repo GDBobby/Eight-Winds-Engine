@@ -2,7 +2,6 @@
 
 
 #include "EWEngine/Graphics/Device.hpp"
-#include "EWEngine/Data/TransformInclude.h"
 #include "EWEngine/Data/ReadEWEFromFile.h"
 
 #include <vector>
@@ -19,24 +18,24 @@ namespace EWE {
     template<uint8_t InfluenceCount = MAX_BONE_INFLUENCE> requires(InfluenceCount <= MAX_BONE_INFLUENCE)
     struct BoneInfo {
         int id[InfluenceCount];
-        glm::mat4 offset[InfluenceCount];
+        lab::mat4 offset[InfluenceCount];
 
     };
 
     struct Position_V {
-        glm::vec3 position;
+        lab::vec3 position;
     };
     struct Color_V {
-        glm::vec3 color;
+        lab::vec3 color;
     };
     struct Normal_V {
-        glm::vec3 normal;
+        lab::vec3 normal;
     };
     struct Tangent_V {
-        glm::vec3 tangent;
+        lab::vec3 tangent;
     };
     struct UV_V {
-        glm::vec2 uv;
+        lab::vec2 uv;
     };
 
     template <typename... Components>
@@ -52,10 +51,10 @@ namespace EWE {
     */
 
     struct boneVertex {
-        glm::vec3 position{ 0.f };
-        glm::vec3 normal{ 0.f };
-        glm::vec2 uv{ 0.f };
-        glm::vec3 tangent{ 0.f };
+        lab::vec3 position{ 0.f };
+        lab::vec3 normal{ 0.f };
+        lab::vec2 uv{ 0.f };
+        lab::vec3 tangent{ 0.f };
 
         int m_BoneIDs[MAX_BONE_INFLUENCE];
         float m_Weights[MAX_BONE_INFLUENCE];
@@ -65,9 +64,9 @@ namespace EWE {
         void swapEndian();
     };
     struct boneVertexNoTangent {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec2 uv;
+        lab::vec3 position;
+        lab::vec3 normal;
+        lab::vec2 uv;
 
         int m_BoneIDs[MAX_BONE_INFLUENCE];
         float m_Weights[MAX_BONE_INFLUENCE];
@@ -77,27 +76,27 @@ namespace EWE {
         void swapEndian();
     };
     struct SkyVertex {
-        glm::vec3 position{ 0.f };
+        lab::vec3 position{ 0.f };
 
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
     };
     struct Vertex {
-        glm::vec3 position{ 0.f };
-        glm::vec3 normal{ 0.f };
-        glm::vec2 uv{ 0.f };
-        glm::vec3 tangent{ 0.f };
+        lab::vec3 position{ 0.f };
+        lab::vec3 normal{ 0.f };
+        lab::vec2 uv{ 0.f };
+        lab::vec3 tangent{ 0.f };
 
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
         void swapEndian();
     };
     struct VertexNT {
-        glm::vec3 position{ 0.f };
-        glm::vec3 normal{ 0.f };
-        glm::vec2 uv{ 0.f };
+        lab::vec3 position{ 0.f };
+        lab::vec3 normal{ 0.f };
+        lab::vec2 uv{ 0.f };
         VertexNT() {}
-        VertexNT(glm::vec3 position) : position{ position } {}
-        VertexNT(glm::vec3 position, glm::vec3 normal, glm::vec2 uv) : position{ position } {}
+        VertexNT(lab::vec3 position) : position{ position } {}
+        VertexNT(lab::vec3 position, lab::vec3 normal, lab::vec2 uv) : position{ position } {}
 
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
@@ -108,15 +107,15 @@ namespace EWE {
         void swapEndian();
     };
     struct SimpleVertex {
-        glm::vec3 position{ 0.f };
+        lab::vec3 position{ 0.f };
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
         bool operator ==(const SimpleVertex& other) const {
             return position == other.position;
         }
     };
     struct GrassVertex {
-        glm::vec3 position{ 0.f };
-        glm::vec3 color{ 0.f };
+        lab::vec3 position{ 0.f };
+        lab::vec3 color{ 0.f };
         //float uv;
         static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions();
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
@@ -125,21 +124,21 @@ namespace EWE {
         }
     };
     struct GrassInstance {
-        glm::mat4 transform;
-        GrassInstance(glm::mat4 transform) : transform{ transform } {}
+        lab::mat4 transform;
+        GrassInstance(lab::mat4 transform) : transform{ transform } {}
     };
 
     struct TransformInstance {
-        glm::mat4 transform;
-        TransformInstance(glm::mat4 transform) : transform{ transform } {}
+        lab::mat4 transform;
+        TransformInstance(lab::mat4 transform) : transform{ transform } {}
     };
 
     struct EffectVertex {
-        glm::vec3 position{ 0.f };
-        glm::vec2 uv{ 0.f };
+        lab::vec3 position{ 0.f };
+        lab::vec2 uv{ 0.f };
         EffectVertex() {}
-        EffectVertex(glm::vec3 position) : position{ position } {}
-        EffectVertex(glm::vec3 position, glm::vec2 uv) : position{ position }, uv{ uv } {}
+        EffectVertex(lab::vec3 position) : position{ position } {}
+        EffectVertex(lab::vec3 position, lab::vec2 uv) : position{ position }, uv{ uv } {}
 
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
         bool operator ==(const EffectVertex& other) const {
@@ -147,7 +146,7 @@ namespace EWE {
         }
     };
     struct TileVertex {
-        glm::vec2 uv{ 0.f };
+        lab::vec2 uv{ 0.f };
         static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions();
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
         bool operator ==(const TileVertex& other) const {
@@ -155,14 +154,14 @@ namespace EWE {
         }
     };
     struct TileInstance{
-        glm::vec2 uvOffset;
-        TileInstance(glm::vec2 uv) : uvOffset{ uv } {}
+        lab::vec2 uvOffset;
+        TileInstance(lab::vec2 uv) : uvOffset{ uv } {}
     };
     //struct Vertex {
-    //    glm::vec3 position{ 0.f };
-    //    glm::vec3 normal{ 0.f };
-    //    glm::vec2 uv{ 0.f };
-    //    glm::vec3 color{ 0.f };
+    //    lab::vec3 position{ 0.f };
+    //    lab::vec3 normal{ 0.f };
+    //    lab::vec2 uv{ 0.f };
+    //    lab::vec3 color{ 0.f };
 
     //    static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
@@ -172,10 +171,10 @@ namespace EWE {
     //    }
     //};
     struct VertexColor {
-        glm::vec3 position{ 0.f };
-        glm::vec3 normal{ 0.f };
-        glm::vec2 uv{ 0.f };
-        glm::vec3 color{ 0.f };
+        lab::vec3 position{ 0.f };
+        lab::vec3 normal{ 0.f };
+        lab::vec2 uv{ 0.f };
+        lab::vec3 color{ 0.f };
 
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
 
@@ -186,13 +185,13 @@ namespace EWE {
     };
 
     struct VertexUI {
-        glm::vec2 position{ 0.f };
-        glm::vec2 uv{ 0.f };
+        lab::vec2 position{ 0.f };
+        lab::vec2 uv{ 0.f };
 
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
     };
     struct VertexGrid2D {
-        glm::vec2 position;
+        lab::vec2 position;
         VertexGrid2D() : position{ 0.f } {}
         VertexGrid2D(float x, float y) : position{ x, y } {}
 

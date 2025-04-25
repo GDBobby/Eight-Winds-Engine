@@ -1,5 +1,7 @@
 #include "EWEngine/GUI/AudioMM.h"
 
+#include <LAB/SupportingMath.h>
+
 namespace EWE {
 	AudioMM* AudioMM::audioPtr{ nullptr };
 
@@ -123,11 +125,11 @@ namespace EWE {
 				if (soundEngine->deviceNames[i][j] == ' ') { spacePos = j; break; }
 			}
 			if (parenPos > 0 && spacePos > 0) {
-				strLength = glm::min(parenPos, spacePos);
+				strLength = lab::Min(parenPos, spacePos);
 			}
 			else {
 				//one is 0, or both are 0. so i want the one that is longer, or if both are 0, this will return 0
-				strLength = glm::max(parenPos, spacePos);
+				strLength = lab::Max(parenPos, spacePos);
 			}
 			//printf("before : %s \n", soundEngine->deviceNames[i].c_str());
 			if (strLength != 0) {

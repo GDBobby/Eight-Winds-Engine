@@ -16,11 +16,11 @@ namespace EWE {
 
 		void initVolumes(float master, float music, float sfx) {
 			sliders.emplace_back();
-			sliders[0].Init(glm::vec2{ 0.f, -.4f }, master);
+			sliders[0].Init(lab::vec2{ 0.f, -.4f }, master);
 			sliders.emplace_back();
-			sliders[1].Init(glm::vec2{ 0.f, -.4f + .25f }, sfx);
+			sliders[1].Init(lab::vec2{ 0.f, -.4f + .25f }, sfx);
 			sliders.emplace_back();
-			sliders[2].Init(glm::vec2{ 0.f, -.4f + (.25f * 2.f) }, music);
+			sliders[2].Init(lab::vec2{ 0.f, -.4f + (.25f * 2.f) }, music);
 
 		}
 		void resetSounds(float master, float music, float sfx);

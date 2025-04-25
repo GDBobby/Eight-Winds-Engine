@@ -7,7 +7,7 @@ namespace EWE {
 		: ewEngine{ ewEngine }, 
 			menuManager{ ewEngine.menuManager }, 
 			soundEngine{ SoundEngine::GetSoundEngineInstance() },
-			windowPtr{ ewEngine.mainWindow.getGLFWwindow() },
+			windowPtr{ ewEngine.renderFramework.mainWindow.getGLFWwindow() },
 			camControl{ windowPtr }
 	{}
 
@@ -28,7 +28,7 @@ namespace EWE {
 		//soundEngine->playMusic(Music_Menu);
 
 		menuManager.ChangeMenuState(menu_main, 0);
-		ewEngine.camera.SetPerspectiveProjection(glm::radians(70.0f), ewEngine.eweRenderer.GetAspectRatio(), 0.1f, 1000000.0f);
+		ewEngine.camera.SetPerspectiveProjection(lab::DegreesToRadians(70.0f), ewEngine.renderFramework.eweRenderer.GetAspectRatio(), 0.1f, 1000000.0f);
 
 		//old method
 		//why is this done twice?
@@ -54,7 +54,7 @@ namespace EWE {
 		camControl.Move(camTransform);
 		camControl.RotateCam(camTransform);
 		camControl.Zoom(camTransform);
-		ewEngine.camera.SetViewYXZ(camTransform.translation, camTransform.rotation);
+		ewEngine.camera.ViewRotation<CS>(camTransform.translation, camTransform.rotation);
 		
 		if (ewEngine.BeginFrame()) {
 			//printf("drawing \n");

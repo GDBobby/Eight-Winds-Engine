@@ -264,8 +264,8 @@ namespace EWE {
                 if (!obj.drawable) {
                     continue;
                 }
-                push.modelMatrix = obj.ownerTransform->mat4();
-                push.normalMatrix = obj.ownerTransform->normalMatrix();
+                push.modelMatrix = obj.ownerTransform->GetMatrix();
+                push.normalMatrix = obj.ownerTransform->GetNormalMatrix();
 
                 pipe->BindModel(obj.meshPtr);
                 pipe->PushAndDraw(&push);
@@ -401,17 +401,17 @@ namespace EWE {
                 }
             }
         }
-        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable, EWEBuffer* materialBuffer) {
+        void AddMaterialObject(MaterialInfo materialInfo, lab::Transform<float, 3>* ownerTransform, EWEModel* modelPtr, bool* drawable, EWEBuffer* materialBuffer) {
             MaterialObjectInfo paramPass{ ownerTransform, modelPtr, drawable };
             assert((modelPtr != nullptr) && (ownerTransform != nullptr) && (drawable != nullptr));
             AddMaterialObject(materialInfo, paramPass, materialBuffer);
         }
-        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable, std::array<EWEBuffer*, 2> materialBuffer) {
+        void AddMaterialObject(MaterialInfo materialInfo, lab::Transform<float, 3>* ownerTransform, EWEModel* modelPtr, bool* drawable, std::array<EWEBuffer*, 2> materialBuffer) {
             MaterialObjectInfo paramPass{ ownerTransform, modelPtr, drawable };
             assert((modelPtr != nullptr) && (ownerTransform != nullptr) && (drawable != nullptr));
             AddMaterialObject(materialInfo, paramPass, materialBuffer);
         }
-        void RemoveByTransform(TransformComponent* ownerTransform) {
+        void RemoveByTransform(lab::Transform<float, 3>* ownerTransform) {
 
             for (auto& mat : *materialMap) {
                 for (auto& material : mat.second.materialVec) {

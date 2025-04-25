@@ -24,7 +24,7 @@ namespace EWE {
 
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
+			ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, lab::vec3(0.f, 1.f, 0.f));
 		}
 	}
 	void ShaderGenerationScene::Exit() {

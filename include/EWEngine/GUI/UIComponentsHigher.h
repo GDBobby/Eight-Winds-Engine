@@ -48,7 +48,7 @@ namespace EWE {
 			return checkSelection == selectedTypeBox;
 		}
 
-		void ResizeWindow(glm::vec2 resizeRatio);
+		void ResizeWindow(lab::vec2 resizeRatio);
 
 		void moveBox(int freshX, int freshY);
 		void giveGLFWCallbacks(GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction);
@@ -88,8 +88,8 @@ namespace EWE {
 		float width = 100.f;
 
 		TextStruct label;
-		Transform2D transform; //the background box
-		glm::ivec4 dragBox; //height is about the size of the label string, width is the width of the full background box
+		lab::Transform<float, 2> transform; //the background box
+		lab::ivec4 dragBox; //height is about the size of the label string, width is the width of the full background box
 
 		ControlBox(GLFWwindow* windowPtr, std::string labelString, float x, float y, float width, float screenWidth, float screenHeight);
 
@@ -99,7 +99,7 @@ namespace EWE {
 
 		bool Clicked(double xpos, double ypos);
 
-		void ResizeWindow(glm::vec2 resizeRatio);
+		void ResizeWindow(lab::vec2 resizeRatio);
 
 		std::vector<VariableControl> variableControls;
 		void giveGLFWCallbacks(GLFWmousebuttonfun mouseReturnFunction, GLFWkeyfun keyReturnFunction);
@@ -132,7 +132,7 @@ namespace EWE {
 		MenuBar(float x, float y, float width, float height, float screenWidth, float screenHeight);
 		std::pair<float, float> screenCoordinates;
 		std::pair<float, float> screenDimensions;
-		Transform2D transform;
+		lab::Transform<float, 2> transform;
 
 		void pushDropper(std::string dropperName, std::vector<std::string>& options, float screenWidth, float screenHeight);
 		std::vector<DropBox> dropBoxes{};

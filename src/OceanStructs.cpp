@@ -30,9 +30,9 @@ namespace EWE {
 #else
             mCutoffLow[0] = 0.f;
 
-            mCutoffLow[1] = glm::max(lowMulti / mLengthScale[1], mCutoffHigh[0]);
-            mCutoffLow[2] = glm::max(lowMulti / mLengthScale[2], mCutoffHigh[1]);
-            mCutoffLow[3] = glm::max(lowMulti / mLengthScale[3], mCutoffHigh[2]);
+            mCutoffLow[1] = lab::Max(lowMulti / mLengthScale[1], mCutoffHigh[0]);
+            mCutoffLow[2] = lab::Max(lowMulti / mLengthScale[2], mCutoffHigh[1]);
+            mCutoffLow[3] = lab::Max(lowMulti / mLengthScale[3], mCutoffHigh[2]);
 #endif
             mDepth = 100.f;
         }
@@ -427,12 +427,12 @@ namespace EWE {
             const float gridScale = 1.f;
 
 
-            glm::vec3 baseTranslation = {
+            lab::vec3 baseTranslation = {
                 -float(GRID_SIZE) / 2.f * gridScale,
                 0.f,
                 -float(GRID_SIZE) / 2.f * gridScale
             };
-            glm::vec3 vertexTranslation = baseTranslation;
+            lab::vec3 vertexTranslation = baseTranslation;
 
             std::vector<SimpleVertex> gridVertices{};
             gridVertices.resize(vertex_width * vertex_width);

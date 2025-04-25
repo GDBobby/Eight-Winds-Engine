@@ -1,11 +1,9 @@
 #include "EWEngine/Collision.h"
 
-#include <glm/gtc/matrix_transform.hpp>
-
-
+#include <vector>
 namespace EWE {
-	std::vector<TransformComponent*> floors;
-	std::vector<TransformComponent*> walls;
+	std::vector<lab::Transform3*> floors;
+	std::vector<lab::Transform3*> walls;
 
 	collisionReturn Collision::checkForGround(std::array<float, 3>& translationA, float attemptedVerticalMovement, float radius) { //return the y coordinate for the ground checked, if found
 		//std::cout << "beginning of checkforground: " << std::endl;
@@ -42,7 +40,7 @@ namespace EWE {
 		return ret.check == false && ret.checkLocation == -69.f;
 	}
 
-	bool Collision::checkForWallCollision(std::array<float, 3>& translationA, glm::vec3 intendedMovement, float radius, float height) {
+	bool Collision::checkForWallCollision(std::array<float, 3>& translationA, lab::vec3 intendedMovement, float radius, float height) {
 		
 		for (auto& transform : walls) {
 			if (((translationA[0] + radius) > (transform->translation.x - (transform->scale.x))) &&
@@ -60,7 +58,7 @@ namespace EWE {
 		return false;
 	}
 
-	void Collision::AddFloor(TransformComponent& transform) {
+	void Collision::AddFloor(lab::Transform3& transform) {
 #if EWE_DEBUG
 		for (auto& floor : floors) {
 			assert(floor != &transform);
@@ -68,7 +66,7 @@ namespace EWE {
 #endif
 		floors.push_back(&transform);
 	}
-	void Collision::AddWall(TransformComponent& transform) {
+	void Collision::AddWall(lab::Transform3& transform) {
 #if EWE_DEBUG
 		for (auto& wall : walls) {
 			assert(wall != &transform);
@@ -76,8 +74,8 @@ namespace EWE {
 #endif
 		walls.push_back(&transform);
 	}
-	void Collision::RemoveCollider(TransformComponent& transform) {
-		TransformComponent* check = &transform;
+	void Collision::RemoveCollider(lab::Transform3& transform) {
+		lab::Transform3* check = &transform;
 		for (uint16_t i = 0; i < floors.size(); i++) {
 			if (floors[i] == check) {
 				floors.erase(floors.begin() + i);

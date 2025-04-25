@@ -10,9 +10,9 @@ namespace EWE {
 		size_t alignment = 0;
 		alignment = VK::Object->properties.limits.minStorageBufferOffsetAlignment;
 
-		alignment = static_cast<std::size_t>(std::ceil(static_cast<double>((sizeof(glm::mat4) + sizeof(glm::mat3))) / alignment) * alignment);
+		alignment = static_cast<std::size_t>(std::ceil(static_cast<double>((sizeof(lab::mat4) + sizeof(lab::mat3))) / alignment) * alignment);
 
-		transformBuffer = std::make_unique<EWEBuffer>(sizeof(glm::mat4) + sizeof(glm::mat3), modelLimit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);// , device.getProperties().limits.minStorageBufferOffsetAlignment);
+		transformBuffer = std::make_unique<EWEBuffer>(sizeof(lab::mat4) + sizeof(lab::mat3), modelLimit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);// , device.getProperties().limits.minStorageBufferOffsetAlignment);
 	}
 
 	void StaticRenderSystem::InitStaticRS(uint32_t pipelineCount, uint32_t modelLimit) {
@@ -25,7 +25,7 @@ namespace EWE {
 
 		Deconstruct(statMainObject);
 	}
-	bool StaticRenderSystem::AddStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, ImageID imgID, TransformComponent& transform) {
+	bool StaticRenderSystem::AddStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, ImageID imgID, lab::Transform<float, 3>& transform) {
 
 		return false;
 	}

@@ -129,8 +129,8 @@ namespace EWE {
 		static uint8_t font24pixels[fontWidth][fontHeight];
 		stb_font_consolas_24_latin1(stbFontData, font24pixels, fontHeight);
 
-		vertexBuffer[0] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
-		vertexBuffer[1] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(glm::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
+		vertexBuffer[0] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(lab::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
+		vertexBuffer[1] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(lab::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
 
 #if DEBUG_NAMING
 		vertexBuffer[0]->SetName("textoverlay vertex buffer 0");
@@ -473,7 +473,7 @@ namespace EWE {
 		//printf("after dynamic state enables \n");
 		VkVertexInputBindingDescription vertexInputBindings;
 		vertexInputBindings.binding = 0;
-		vertexInputBindings.stride = sizeof(glm::vec4);
+		vertexInputBindings.stride = sizeof(lab::vec4);
 		vertexInputBindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 		//printf("after vertex input binding \n");
 		VkVertexInputAttributeDescription vertexInputAttributes;
@@ -686,7 +686,7 @@ namespace EWE {
 
 	void TextOverlay::BeginTextUpdate() {
 		vertexBuffer[VK::Object->frameIndex]->Map();
-		mapped = reinterpret_cast<glm::vec4*>(vertexBuffer[VK::Object->frameIndex]->GetMappedMemory());
+		mapped = reinterpret_cast<lab::vec4*>(vertexBuffer[VK::Object->frameIndex]->GetMappedMemory());
 		numLetters = 0;
 	}
 

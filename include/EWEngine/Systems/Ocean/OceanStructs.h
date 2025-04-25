@@ -5,7 +5,6 @@
 #include "EWEngine/Graphics/Pipeline.h"
 #include "EWEngine/Graphics/Model/Model.h"
 
-#include <glm/glm.hpp>
 #include <array>
 
 namespace EWE {
@@ -18,17 +17,17 @@ namespace EWE {
 
         struct IntialFrequencySpectrumPushData {
 
-            glm::vec4 mLengthScale;
-            glm::vec4 mCutoffLow;
-            glm::vec4 mCutoffHigh;
+            lab::vec4 mLengthScale;
+            lab::vec4 mCutoffLow;
+            lab::vec4 mCutoffHigh;
             float  mDepth;
 
             IntialFrequencySpectrumPushData();
         };
         struct TimeDependentFrequencySpectrumPushData {
-            glm::vec4 mLengthScale;
-            glm::vec4 mCutoffLow;
-            glm::vec4 mCutoffHigh;
+            lab::vec4 mLengthScale;
+            lab::vec4 mCutoffLow;
+            lab::vec4 mCutoffHigh;
             float  mDepth;
             float  mTime;
             TimeDependentFrequencySpectrumPushData() : mTime{ 0.f } {}
@@ -122,9 +121,9 @@ namespace EWE {
             float mSpread = 0.2f;
             float m__Padding0;
             float m__Padding1;
-            glm::vec3 mColor{ 0.13333334f, 0.9411765f, 0.6039216f };
+            lab::vec3 mColor{ 0.13333334f, 0.9411765f, 0.6039216f };
             float  m__Padding2;
-            glm::vec3 mColorMulti{ 0.0f, 0.025490196f, 0.02745098f };
+            lab::vec3 mColorMulti{ 0.0f, 0.025490196f, 0.02745098f };
         };
         struct FoamRenderData {
             float mUnderwaterFoamParallax{ 1.2f };
@@ -139,26 +138,26 @@ namespace EWE {
             //should probably pack bias into the albedo's alpha channel, right now its only reading rgb
             float m__Padding4[3];
 
-            glm::vec3 mTint{ 0.66087574f, 0.7406194f, 0.7924528f };
+            lab::vec3 mTint{ 0.66087574f, 0.7406194f, 0.7924528f };
             float  m__Padding0;
-            glm::vec3 mAlbedo{ 0.49302f, 0.72549f, 1.0f }; //if there is an albedo texture, remove this
+            lab::vec3 mAlbedo{ 0.49302f, 0.72549f, 1.0f }; //if there is an albedo texture, remove this
             float m__Padding1; //not sure if this is necessary
-            glm::vec4 mCascadeWeights{ 0.0f, 1.0f, 0.5f, 0.3f };
-            glm::vec4 mNormalWeights{ 1.0f, 0.66f, 0.33f, 0.0f };
+            lab::vec4 mCascadeWeights{ 0.0f, 1.0f, 0.5f, 0.3f };
+            lab::vec4 mNormalWeights{ 1.0f, 0.66f, 0.33f, 0.0f };
         };
         struct OceanFragmentData {
-            glm::vec4 beachScales{ 0.f, 1.f, -3.7f, 1.f };
-            glm::vec4 mLengthScales;
+            lab::vec4 beachScales{ 0.f, 1.f, -3.7f, 1.f };
+            lab::vec4 mLengthScales;
             float mWindSpeed;
             float mWaveScale{ 1.f };
             float mWaveAlignment{ 1.f };
             float mReferenceWaveHeight{ 1.f };
-            glm::vec2 mWindDirection{ 1.f, 0.f };
+            lab::vec2 mWindDirection{ 1.f, 0.f };
 
             // stuffing these in here for simplicity, remove later
             float mHorizon_fog{ 0.f };
             OceanFragmentData() {}
-            OceanFragmentData(glm::vec4 const& lengthScale) : mLengthScales{ lengthScale } {
+            OceanFragmentData(lab::vec4 const& lengthScale) : mLengthScales{ lengthScale } {
             }
         };
         struct OceanRenderParameters {

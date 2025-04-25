@@ -6,7 +6,7 @@ namespace EWE {
 		: ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
 		soundEngine{ SoundEngine::GetSoundEngineInstance() },
-		cameraControl{ ewEngine.mainWindow.getGLFWwindow() }
+		cameraControl{ ewEngine.renderFramework.mainWindow.getGLFWwindow() }
 	{
 		transform.rotation.x = 0.001f;
 		transform.rotation.y = 0.001f;
@@ -28,11 +28,11 @@ namespace EWE {
 		//soundEngine->playMusic(Music_Menu);
 
 		menuManager.ChangeMenuState(menu_main, 0);
-		ewEngine.camera.SetPerspectiveProjection(glm::radians(70.0f), ewEngine.eweRenderer.GetAspectRatio(), 0.1f, 100000.0f);
+		ewEngine.camera.SetPerspectiveProjection(lab::DegreesToRadians(70.0f), ewEngine.renderFramework.eweRenderer.GetAspectRatio(), 0.1f, 100000.0f);
 
 		//old method
 		/*
-		ewEngine.camera.setViewTarget({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
+		ewEngine.camera.setViewTarget({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f }, lab::vec3(0.f, 1.f, 0.f));
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			ewEngine.camera.BindUBO(i);
 		}
@@ -61,7 +61,7 @@ namespace EWE {
 			cameraControl.RotateCam(transform);
 			cameraControl.Zoom(transform);
 
-			ewEngine.camera.SetViewYXZ(transform.translation, transform.rotation);
+			ewEngine.camera.ViewDirection<CS>(transform.translation, transform.rotation);
 			ewEngine.camera.BindUBO();
 
 			ewEngine.DrawObjects( dt);

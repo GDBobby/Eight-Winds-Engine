@@ -54,7 +54,7 @@ namespace EWE {
             }
             if (defaultMatrix.size() < biggestBoneCount) {
                 //printf("~~~~~~~~~~~~~~~~ resizing default matrix  ~~~~~~~~~~~~~~\n");
-                defaultMatrix.resize(biggestBoneCount, glm::mat4{ 1.f });
+                defaultMatrix.resize(biggestBoneCount, lab::mat4{ 1.f });
             }
             boneCount = static_cast<uint16_t>(defaultMatrix.size());
             handBone = importData.handBone;

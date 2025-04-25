@@ -1,6 +1,7 @@
 #pragma once
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Graphics/Pipeline.h"
+#include "LAB/Transform.h"
 
 namespace EWE {
 	class StaticRenderSystem {
@@ -27,7 +28,7 @@ namespace EWE {
 		static void InitStaticRS(uint32_t pipelineCount, uint32_t modelLimit);
 		static void DestructStaticRS();
 
-		static bool AddStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, ImageID imgID, TransformComponent& transform);
+		static bool AddStaticObject(uint16_t PipelineID, std::unique_ptr<EWEModel>& model, ImageID imgID, lab::Transform<float, 3>& transform);
 		static bool AddStaticToBack();
 
 

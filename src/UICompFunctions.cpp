@@ -4,20 +4,20 @@
 
 namespace EWE {
 	namespace UIComp {
-		void ConvertTransformToClickBox(Transform2D& transform, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
+		void ConvertTransformToClickBox(lab::Transform<float, 2>& transform, lab::ivec4& clickBox, float screenWidth, float screenHeight) {
 			clickBox.x = static_cast<int>(screenWidth + ((screenWidth / 2) * (transform.translation.x - 1.f)) - (screenWidth * transform.scale.x / 4));
 			clickBox.y = static_cast<int>(screenHeight + ((screenHeight / 2) * (transform.translation.y - 1.f)) - (screenHeight * transform.scale.y / 4));
 			clickBox.z = static_cast<int>(screenWidth + ((screenWidth / 2) * (transform.translation.x - 1.f)) + (screenWidth * transform.scale.x / 4));
 			clickBox.w = static_cast<int>(screenHeight + ((screenHeight / 2) * (transform.translation.y - 1.f)) + (screenHeight * transform.scale.y / 4));
 		}
-		bool CheckClickBox(glm::ivec4& clickBox, double mouseX, double mouseY) {
+		bool CheckClickBox(lab::ivec4& clickBox, double mouseX, double mouseY) {
 			return (mouseX > clickBox.x) && (mouseX < clickBox.z) && (mouseY > clickBox.y) && (mouseY < clickBox.w);
 		}
-		void PrintClickBox(glm::ivec4& clickBox) {
+		void PrintClickBox(lab::ivec4& clickBox) {
 			printf("print click box - hori(%d:%d), vert(%d:%d) \n", clickBox.x, clickBox.z, clickBox.y, clickBox.w);
 		}
 
-		void TextToTransform(Transform2D& transform, TextStruct& textStruct, glm::ivec4& clickBox, float screenWidth, float screenHeight) {
+		void TextToTransform(lab::Transform<float, 2>& transform, TextStruct& textStruct, lab::ivec4& clickBox, float screenWidth, float screenHeight) {
 			//std::cout << "bounds of tempPRinter : " << tempPrinter.x << ":" << tempPrinter.y << ":" << tempPrinter.z << ":" << tempPrinter.w << std::endl;
 			transform.scale.x = textStruct.GetWidth() * screenWidth / DEFAULT_WIDTH;
 			if (transform.scale.x < 0.0f) {
@@ -44,12 +44,12 @@ namespace EWE {
 			ConvertTransformToClickBox(transform, clickBox, screenWidth, screenHeight);
 
 		}
-		void ConvertScreenTo2D(glm::ivec2 const screen, glm::vec2& coord2D, float screenWidth, float screenHeight) {
+		void ConvertScreenTo2D(lab::ivec2 const screen, lab::vec2& coord2D, float screenWidth, float screenHeight) {
 			//screen to world?
 			coord2D.x = (screen.x - (screenWidth / 2.f)) / (screenWidth / 2.f);
 			coord2D.y = (screen.y - (screenHeight / 2.f)) / (screenHeight / 2.f);
 		}
-		void ConvertClickToTransform(glm::ivec4& clickBox, Transform2D& transform, float screenWidth, float screenHeight) {
+		void ConvertClickToTransform(lab::ivec4& clickBox, lab::Transform<float, 2>& transform, float screenWidth, float screenHeight) {
 
 			transform.translation.x = (((clickBox.x + clickBox.z) / 2) - (screenWidth / 2.f)) / (screenWidth / 2.f);
 			transform.translation.y = (((clickBox.y + clickBox.w) / 2) - (screenHeight / 2.f)) / (screenHeight / 2.f);
@@ -335,8 +335,8 @@ namespace EWE {
 			}
 		}
 
-		glm::ivec2 ConvertWorldCoordinatesToScreenCoordinates(glm::vec2 worldCoord, float screenWidth, float screenHeight) {
-			glm::ivec2 ret{ static_cast<int>(screenWidth / 2.f), static_cast<int>(screenHeight / 2.f)};
+		lab::ivec2 ConvertWorldCoordinatesToScreenCoordinates(lab::vec2 worldCoord, float screenWidth, float screenHeight) {
+			lab::ivec2 ret{ static_cast<int>(screenWidth / 2.f), static_cast<int>(screenHeight / 2.f)};
 
 			//1 adds a quarter, 2 adds a half
 

@@ -182,7 +182,7 @@ namespace EWE {
         uint64_t size;
         inFile.read((char*)&size, sizeof(uint64_t));
         defaultBoneValues.resize(size);
-        inFile.read(((char*)defaultBoneValues.data()), size * sizeof(glm::mat4));
+        inFile.read(((char*)defaultBoneValues.data()), size * sizeof(lab::mat4));
 
         inFile.read((char*)&size, sizeof(uint64_t));
         animations.resize(size);
@@ -209,7 +209,7 @@ namespace EWE {
         Reading::UInt64FromFileSwapEndian(inFile, &size);
 
         defaultBoneValues.resize(size);
-        inFile.read(((char*)defaultBoneValues.data()), size * sizeof(glm::mat4));
+        inFile.read(((char*)defaultBoneValues.data()), size * sizeof(lab::mat4));
         for (auto& defaultBone : defaultBoneValues) {
             Reading::swapGLMMat4Endian(defaultBone);
         }
@@ -247,7 +247,7 @@ namespace EWE {
             for (auto& boneCount : animationDuration) {
                 Reading::UInt64FromFile(inFile, &size);
                 boneCount.resize(size);
-                inFile.read(reinterpret_cast<char*>(&boneCount[0]), size * sizeof(glm::mat4));
+                inFile.read(reinterpret_cast<char*>(&boneCount[0]), size * sizeof(lab::mat4));
             }
         }
         Reading::IntFromFile(inFile, &handBone);
@@ -268,7 +268,7 @@ namespace EWE {
                 Reading::UInt64FromFileSwapEndian(inFile, &size);
                 boneCount.resize(size);
 
-                inFile.read((char*)boneCount.data(), size * sizeof(glm::mat4));
+                inFile.read((char*)boneCount.data(), size * sizeof(lab::mat4));
                 for (auto& bone : boneCount) {
                     Reading::swapGLMMat4Endian(bone);
                 }

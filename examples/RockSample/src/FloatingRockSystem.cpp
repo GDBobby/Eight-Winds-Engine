@@ -18,7 +18,7 @@ namespace EWE {
 
 		std::uniform_real_distribution<float> rotationalDistribution(-2.f, 2.f);
 		std::uniform_real_distribution<float> scaleDist(0.25f, 0.75f);
-		std::uniform_real_distribution<float> aziDist(0.f, glm::two_pi<float>());
+		std::uniform_real_distribution<float> aziDist(0.f, lab::GetPI(2.f));
 		std::uniform_real_distribution<float> speedDist(0.01f, 0.1f);
 		std::uniform_real_distribution<float> radiusDist(30.f, 35.f);
 		//std::uniform_real_distribution<float> trackRatioDist(0.0f, 1.0f);
@@ -56,9 +56,9 @@ namespace EWE {
 			const std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> materialBuffers = RigidRenderingSystem::GetBothMaterialBuffers(rockModel);
 
 			MaterialBuffer matData;
-			matData.albedo.r = 1.f;
-			matData.albedo.g = 1.f;
-			matData.albedo.b = 1.f;
+			matData.albedo.x = 1.f;
+			matData.albedo.y = 1.f;
+			matData.albedo.z = 1.f;
 			matData.metal = 0.f;
 			matData.rough = 0.5f;
 

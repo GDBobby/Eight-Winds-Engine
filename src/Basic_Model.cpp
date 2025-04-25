@@ -11,15 +11,15 @@ namespace EWE {
             }
 #endif
 
-            const glm::vec3 normal = { 0.f, -1.f, 0.f };
+            const lab::vec3 normal = { 0.f, -1.f, 0.f };
             std::vector<VertexNT> vertices{};
             vertices.push_back({ { 0.0f,0.0f,0.0f }, normal, { 0.5f,0.5f } });
 
-            const float angle = glm::two_pi<float>() / points;
+            const float angle = lab::GetPI(2.f) / points;
 
             for (uint16_t i = 0; i < points; i++) {
-                const float theSin = glm::sin(angle * static_cast<float>(i));
-                const float theCos = glm::cos(angle * static_cast<float>(i));
+                const float theSin = lab::Sin(angle * static_cast<float>(i));
+                const float theCos = lab::Cos(angle * static_cast<float>(i));
                 //std::cout << "theSin:theCos ~ " << theSin << " : " << theCos << std::endl; //shit is tiling when i want it to stretch
                 vertices.push_back({ {radius * theSin, 0.f, radius * theCos}, normal, {(theSin + 1.f) / 2.f, (theCos + 1.f) / 2.f} });
             }
@@ -36,7 +36,7 @@ namespace EWE {
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices} SRC_PASS);
         }
 
-        EWEModel* Quad(glm::vec2 uvScale SRC_PARAM) {
+        EWEModel* Quad(lab::vec2 uvScale SRC_PARAM) {
             std::vector<Vertex> vertices{
                 {{0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {uvScale.x,uvScale.y}, {1.f, 0.f, 0.f}},
                 {{-0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {0.0f,uvScale.y}, {1.f, 0.f, 0.f}},
@@ -46,7 +46,7 @@ namespace EWE {
             std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices} SRC_PASS);
         }
-        EWEModel* QuadPNU(glm::vec2 uvScale SRC_PARAM) {
+        EWEModel* QuadPNU(lab::vec2 uvScale SRC_PARAM) {
             std::vector<VertexNT> vertices{
                 {{0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {uvScale.x,uvScale.y}},
                 {{-0.5f,0.0f, -0.5f}, {0.f,1.f,0.f}, {0.0f,uvScale.y}},
@@ -56,7 +56,7 @@ namespace EWE {
             std::vector<uint32_t> indices{ 0, 1, 2, 2,3,0 };
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices} SRC_PASS);
         }
-        EWEModel* Simple3DQuad(glm::vec2 uvScale SRC_PARAM) {
+        EWEModel* Simple3DQuad(lab::vec2 uvScale SRC_PARAM) {
             std::vector<EffectVertex> vertices{
                 {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
                 {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},
@@ -67,7 +67,7 @@ namespace EWE {
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices } SRC_PASS);
         }
 
-        EWEModel* TileQuad3D(glm::vec2 uvScale SRC_PARAM) {
+        EWEModel* TileQuad3D(lab::vec2 uvScale SRC_PARAM) {
             std::vector<TileVertex> vertices{
                 {{uvScale.x,uvScale.y}},
                 {{0.0f,uvScale.y}},
@@ -80,7 +80,7 @@ namespace EWE {
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0])} SRC_PASS);
         }
 
-        EWEModel* Grid2D(glm::vec2 scale SRC_PARAM) {
+        EWEModel* Grid2D(lab::vec2 scale SRC_PARAM) {
             const float leftX = -1.f * scale.x;
             const float rightX = 1.f * scale.x;
             const float topY = -1.f * scale.y;
@@ -97,7 +97,7 @@ namespace EWE {
             //std::vector<uint32_t> indices{ 0, 1, 2, 2, 3, 0 };
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0])} SRC_PASS);
         }
-        EWEModel* Grid3DTrianglePrimitive(const uint32_t patchSize, const glm::vec2 uvScale SRC_PARAM) {
+        EWEModel* Grid3DTrianglePrimitive(const uint32_t patchSize, const lab::vec2 uvScale SRC_PARAM) {
             const uint32_t vertexCount = patchSize * patchSize;
             std::vector<VertexNT> vertices(vertexCount);
 
@@ -113,10 +113,10 @@ namespace EWE {
                     vertex.position.x = x * wx + wx / 2.0f - static_cast<float>(patchSize) * wx / 2.0f;
                     vertex.position.y = 0.0f;
                     vertex.position.z = y * wy + wy / 2.0f - static_cast<float>(patchSize) * wy / 2.0f;
-                    vertex.uv = glm::vec2(static_cast<float>(x) / wf, static_cast<float>(y) / wf) * uvScale;
+                    vertex.uv = lab::vec2(static_cast<float>(x) / wf, static_cast<float>(y) / wf) * uvScale;
 
                     // Placeholder normal
-                    vertex.normal = glm::vec3(0.f, -1.f, 0.f);
+                    vertex.normal = lab::vec3(0.f, -1.f, 0.f);
                 }
             }
 
@@ -148,7 +148,7 @@ namespace EWE {
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices } SRC_PASS);
         }
 
-        EWEModel* Grid3DQuadPrimitive(const uint32_t patchSize, const glm::vec2 uvScale SRC_PARAM){
+        EWEModel* Grid3DQuadPrimitive(const uint32_t patchSize, const lab::vec2 uvScale SRC_PARAM){
             
             const uint32_t vertexCount = patchSize * patchSize;
             std::vector<VertexNT> vertices(vertexCount);
@@ -164,10 +164,10 @@ namespace EWE {
                     vertex.position.x = x * wx + wx / 2.0f - static_cast<float>(patchSize) * wx / 2.0f;
                     vertex.position.y = 0.0f;
                     vertex.position.z = y * wy + wy / 2.0f - static_cast<float>(patchSize) * wy / 2.0f;
-                    vertex.uv = glm::vec2(static_cast<float>(x) / wf, static_cast<float>(y) / wf) * uvScale;
+                    vertex.uv = lab::vec2(static_cast<float>(x) / wf, static_cast<float>(y) / wf) * uvScale;
 
                     //temporary
-                    vertex.normal = glm::vec3(0.f, -1.f, 0.f);
+                    vertex.normal = lab::vec3(0.f, -1.f, 0.f);
                 }
             }
 
@@ -186,7 +186,7 @@ namespace EWE {
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices } SRC_PASS);
         }
 
-        EWEModel* Quad2D(glm::vec2 scale SRC_PARAM) {
+        EWEModel* Quad2D(lab::vec2 scale SRC_PARAM) {
             std::vector<VertexUI> vertices{
                 {{-0.5f, -0.5f}, {0.f, 0.f}},
                 {{0.5f, -0.5f}, {scale.x, 0.f}},
@@ -276,9 +276,9 @@ namespace EWE {
             const float s = 0.526f * radius;
 
             std::vector<VertexNT> vertices = {
-                {glm::vec3{-s, t, 0.f}}, {glm::vec3{s, t, 0.f}}, {glm::vec3{-s, -t, 0.f}}, {glm::vec3{s, -t, 0.f}},
-                {glm::vec3{0.f, -s, t}}, {glm::vec3{0.f, s, t}}, {glm::vec3{0.f, -s, -t}}, {glm::vec3{0.f, s, -t}},
-                {glm::vec3{t, 0.f, -s}}, {glm::vec3{t, 0.f, s}}, {glm::vec3{-t, 0.f, -s}}, {glm::vec3{-t, 0.f, s}}
+                {lab::vec3{-s, t, 0.f}}, {lab::vec3{s, t, 0.f}}, {lab::vec3{-s, -t, 0.f}}, {lab::vec3{s, -t, 0.f}},
+                {lab::vec3{0.f, -s, t}}, {lab::vec3{0.f, s, t}}, {lab::vec3{0.f, -s, -t}}, {lab::vec3{0.f, s, -t}},
+                {lab::vec3{t, 0.f, -s}}, {lab::vec3{t, 0.f, s}}, {lab::vec3{-t, 0.f, -s}}, {lab::vec3{-t, 0.f, s}}
             };
             std::vector<uint32_t> indices = {
                 0,11,5,  0,5,1,   0,1,7,    0,7,10,  0,10,11,
@@ -304,10 +304,10 @@ namespace EWE {
             }
 
             for (auto& vert : vertices) {
-                vert.position = glm::normalize(vert.position);
+                vert.position.Normalize();
                 vert.normal = vert.position;
-                vert.uv.x = 0.5f + std::atan2(vert.position.z, vert.position.x) / glm::two_pi<float>();
-                vert.uv.y = 0.5f - std::asin(vert.position.y) / glm::pi<float>();
+                vert.uv.x = 0.5f + std::atan2(vert.position.z, vert.position.x) / lab::GetPI(2.f);
+                vert.uv.y = 0.5f - std::asin(vert.position.y) / lab::PI<float>;
             }
 
             printf("sphere index to vert ratio : %.2f\n", static_cast<float>(indices.size()) / static_cast<float>(vertices.size()));
@@ -320,7 +320,7 @@ namespace EWE {
             return Construct<EWEModel>({ vertices.data(), vertices.size(), sizeof(vertices[0]), indices } SRC_PASS);
         }
         /*
-        EWEModel* generateSimpleZedQuad(glm::vec2 uvScale = glm::vec2{ 1.f }) {
+        EWEModel* generateSimpleZedQuad(lab::vec2 uvScale = lab::vec2{ 1.f }) {
             std::vector<EffectVertex> vertices{
                 {{0.5f,0.0f, -0.5f}, {uvScale.x,uvScale.y}},
                 {{-0.5f,0.0f, -0.5f}, {0.0f,uvScale.y}},

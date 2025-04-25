@@ -4,7 +4,6 @@
 #include "EWEngine/Graphics/Device.hpp"
 #include "EWEngine/Graphics/Swapchain.hpp"
 #include "EWEngine/Graphics/TextOverlay.h"
-#include "EWEngine/Graphics/Camera.h"
 
 #include <cassert>
 #include <memory>
@@ -19,7 +18,7 @@ namespace EWE {
 
 		static void BindGraphicsPipeline(VkPipeline graphicsPipeline);
 
-		EWERenderer(MainWindow& window, EWECamera& camera);
+		EWERenderer(MainWindow& window);
 		~EWERenderer();
 
 		EWERenderer(const EWERenderer&) = delete;
@@ -73,7 +72,6 @@ namespace EWE {
 
 		bool hasTextOverlayBeenMade = false;
 		
-		EWECamera& camera;
 		MainWindow& mainWindow;
 		std::unique_ptr<EWESwapChain> eweSwapChain;
 

@@ -59,7 +59,7 @@ namespace EWE {
 
 		struct RollingBufferEWE {
 			float Span;
-			std::vector<glm::vec2> data;
+			std::vector<lab::vec2> data;
 			RollingBufferEWE() {
 				Span = 10.0f;
 				data.reserve(2000);
@@ -77,7 +77,7 @@ namespace EWE {
 			int Offset;
 			float currentTime = 0.f;
 
-			std::vector<glm::vec2> data;
+			std::vector<lab::vec2> data;
 			ScrollingBufferEWE(int max_size = 2000) {
 				MaxSize = max_size;
 				Offset = 0;

@@ -2,6 +2,8 @@
 
 #include "EWEngine/Systems/PipelineSystem.h"
 
+#include <LAB/Transform.h>
+
 #include <random>
 
 //angF = angularFrequency * timestep
@@ -30,10 +32,10 @@ namespace EWE {
 		};
 
 		struct LeafStruct {
-			TransformComponent transform{};
-			glm::vec3 origin{ 0.f };
+			lab::Transform<float, 3> transform{};
+			lab::vec3 origin{ 0.f };
 			LeafFallMotions fallMotion{ LF_Steady };
-			glm::vec3 averageVelocity{ 0 };
+			lab::vec3 averageVelocity{ 0 };
 			float angF{ 0.f };
 			float ellRatio{ 0.f };
 			float rotRatio{ 0.f };

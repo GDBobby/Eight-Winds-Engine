@@ -42,7 +42,7 @@ namespace EWE {
         //struct for tangent mesh and meshNT?
 
         virtual void* GetFinalBones(uint8_t animState, uint16_t animFrames) = 0;
-        const glm::mat4& GetSwordMatrix() { return swordMatrix; }
+        const lab::mat4& GetSwordMatrix() { return swordMatrix; }
 
         uint32_t GetBoneCount() { return boneCount; }
         uint32_t GetSkeletonID() { return mySkeletonID; }
@@ -50,15 +50,15 @@ namespace EWE {
     protected:
         std::vector< //which animation
             std::vector< //which animation frame
-            std::map<uint32_t, glm::mat4>>> partialAnimationData{}; //the bone transform
+            std::map<uint32_t, lab::mat4>>> partialAnimationData{}; //the bone transform
 
         std::vector< //which animation
             std::vector< //which animation frame
-            std::vector<glm::mat4>>> fullAnimationData{}; //the bone transform
+            std::vector<lab::mat4>>> fullAnimationData{}; //the bone transform
 
-        std::vector<glm::mat4> finalMatrix{};
-        std::vector<glm::mat4> defaultMatrix{}; //a more natural T-Pose
-        glm::mat4 swordMatrix{ 1.f };
+        std::vector<lab::mat4> finalMatrix{};
+        std::vector<lab::mat4> defaultMatrix{}; //a more natural T-Pose
+        lab::mat4 swordMatrix{ 1.f };
 
         uint32_t mySkeletonID = 0;
         uint16_t boneCount = 0;

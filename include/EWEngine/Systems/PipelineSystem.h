@@ -4,8 +4,9 @@
 #include "EWEngine/Graphics/Pipeline.h"
 #include "EWEngine/Graphics/Model/Model.h"
 #include "EWEngine/Data/EngineDataTypes.h"
-
+#if PIPELINE_HOT_RELOAD
 #include "EWEngine/Data/magic_enum.hpp"
+#endif
 
 #include <unordered_map>
 #include <memory>

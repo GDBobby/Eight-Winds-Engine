@@ -8,12 +8,6 @@
 
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
 
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-
 //#include <array>
 //#include <chrono>
 #include <stdexcept>
@@ -35,53 +29,37 @@
 namespace EWE {
 
 
-	inline void printmat4(glm::mat4& theMatrix, const std::string& matrixName) {
+	inline void printmat4(lab::mat4& theMatrix, const std::string& matrixName) {
 		printf("matrix values : %s\n", matrixName.c_str());
 		for(uint8_t i = 0; i < 4; i++) {
-			printf("\t%.3f:%.3f:%.3f:%.3f\n", theMatrix[i].x, theMatrix[i].y, theMatrix[i].z, theMatrix[i].w);
+			printf("\t%.3f:%.3f:%.3f:%.3f\n", theMatrix.columns[i].x, theMatrix.columns[i].y, theMatrix.columns[i].z, theMatrix.columns[i].w);
 		}
-	}
-
-	void EightWindsEngine::EndEngineLoadScreen() {
-		printf("~~~~ ENDING LOADING SCREEN ~~~ \n");
-#if ONE_SUBMISSION_THREAD_PER_QUEUE
-		//dependent on this not being in the graphics thread, or it'll infinitely loop
-		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-
-		
-		while (!TransferCommandManager::Empty() || syncHub->CheckFencesForUsage()) {/*printf("waiting on fences\n");*/ std::this_thread::sleep_for(std::chrono::nanoseconds(1)); }
-#endif
-		loadingEngine = false;
 	}
 
 
 	EightWindsEngine::EightWindsEngine(std::string windowName) :
 		//first, any members not mentioned here with brackets will be initialized
 		//second, any memberss in this section will be initialized
-
-		mainWindow{ windowName },
-		eweDevice{ mainWindow },
-		eweRenderer{ mainWindow, camera },
+		renderFramework{windowName},
 		//imguiHandler{ mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT, eweRenderer.getSwapChainRenderPass() },
-		uiHandler{ SettingsJSON::settingsData.screenDimensions, mainWindow.getGLFWwindow(), eweRenderer.MakeTextOverlay() },
+		uiHandler{ SettingsJSON::settingsData.screenDimensions, renderFramework.mainWindow.getGLFWwindow(), renderFramework.eweRenderer.MakeTextOverlay() },
 		advancedRS{ menuManager },
-		imageManager{ },
-		menuManager{ mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay()},
+		menuManager{ renderFramework.mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay()},
 		skinnedRS{ }
 	{
 		printf("after finishing construction of engine\n");
-		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = eweRenderer.getPipelineInfo();
+		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = renderFramework.eweRenderer.getPipelineInfo();
 
 		printf("eight winds constructor, ENGINE_VERSION: %s \n", ENGINE_VERSION);
-		camera.SetPerspectiveProjection(glm::radians(70.0f), eweRenderer.GetAspectRatio(), 0.1f, 100000.0f);
+		camera.SetPerspectiveProjection(lab::DegreesToRadians(70.0f), renderFramework.eweRenderer.GetAspectRatio(), 0.1f, 10000.0f);
 
 		viewerTransform.translation = { -20.f, 21.f, -20.f };
-		camera.NewViewTarget(viewerTransform.translation, { 0.f, 19.5f, 0.f });
+		camera.UpdateViewData(viewerTransform.translation, { 0.f, 19.5f, 0.f });
 
 		//prettify this later
 		lbo.ambientColor = { 0.1f, 0.1f, 0.1f, 0.1f }; //w is alignment only?
 		lbo.sunlightDirection = { 1.f, 3.f, 1.f, 0.f };
-		lbo.sunlightDirection = glm::normalize(lbo.sunlightDirection);
+		lbo.sunlightDirection.Normalize();
 		lbo.sunlightColor = { 0.8f,0.8f, 0.8f, 0.5f };
 
 		DescriptorHandler::InitGlobalDescriptors(lbo);
@@ -90,7 +68,6 @@ namespace EWE {
 		advancedRS.takeUIHandlerPtr(&uiHandler);
 		//advancedRS.updateLoadingPipeline();
 		uiHandler.isActive = false;
-		leafSystem = Construct<LeafSystem>({});
 		Dimension2::Init();
 
 		PipelineSystem::Emplace(Pipe::skybox, reinterpret_cast<PipelineSystem*>(Construct<Pipe_Skybox>({})));
@@ -119,19 +96,18 @@ namespace EWE {
 
 		Dimension2::Destruct();
 		PipelineSystem::Destruct();
-		Deconstruct(leafSystem);
 #if DECONSTRUCTION_DEBUG
 		printf("beginning of EightWindsEngine deconstructor \n");
 #endif
+#if BENCHMARKING_GPU
 		EWE_VK(vkDestroyQueryPool, VK::Object->vkDevice, queryPool[0], nullptr);
 		EWE_VK(vkDestroyQueryPool, VK::Object->vkDevice, queryPool[1], nullptr);
+#endif
 		DescriptorHandler::Cleanup();
 
 
 		RigidRenderingSystem::Destruct();
 		MaterialPipelines::CleanupStaticVariables();
-
-		imageManager.Cleanup();
 
 		MenuModule::cleanup();
 
@@ -147,87 +123,8 @@ namespace EWE {
 		camera.SetBuffers();
 	}
 
-	void EightWindsEngine::LoadingScreen() {
-		printf("BEGINNING LEAF RENDER ~~~~~~~~~~~~~~~~ \n");
-		//printf("beginning of leaf loading screen, thread ID : %d \n", std::this_thread::get_id());
-		//QueryPerformanceCounter(&QPCstart);
-
-		viewerTransform.translation = { -20.f, 21.f, -20.f };
-		camera.NewViewTarget(viewerTransform.translation, { 0.f, 19.5f, 0.f }, glm::vec3(0.f, 1.f, 0.f));
-		camera.BindBothUBOs();
-		
-		//LARGE_INTEGER averageStart;
-		//QueryPerformanceCounter(&averageStart);
-		//LARGE_INTEGER averageEnd;
-		//printf("loading screen entry \n");
-		//SyncHub::GetSyncHubInstance()->waitOnTransferFence();
-		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
-#if EWE_DEBUG
-		printf("before init leaf data on GPU\n");
-#endif
-		leafSystem->InitData();
-#if EWE_DEBUG
-		printf("after init leaf data\n");
-#endif
-
-		double renderThreadTime = 0.0;
-		const double renderTimeCheck = 1000.0 / 60.0;
-		auto startThreadTime = std::chrono::high_resolution_clock::now();
-		auto endThreadTime = startThreadTime;
-		//printf("starting loading thread loop \n");
-		while (loadingEngine || (loadingTime < 2000.0)) {
-
-			endThreadTime = std::chrono::high_resolution_clock::now();
-			renderThreadTime += std::chrono::duration<double, std::chrono::milliseconds::period>(endThreadTime - startThreadTime).count();
-			startThreadTime = endThreadTime;
-
-			//auto newTime = std::chrono::high_resolution_clock::now();
-			//QueryPerformanceCounter(&QPCend);
-			//renderThreadTime += static_cast<double>(QPCend.QuadPart - QPCstart.QuadPart) / frequency.QuadPart;
-			//QPCstart = QPCend;
-			if (renderThreadTime > renderTimeCheck) {
-				loadingTime += renderTimeCheck;
-				//printf("rendering loading thread start??? \n");
-				syncHub->RunGraphicsCallbacks();
-
-				if (eweRenderer.BeginFrame()) {
-					
-					eweRenderer.BeginSwapChainRender();
-					leafSystem->FallCalculation(static_cast<float>(renderThreadTime / 1000.0));
-
-					leafSystem->Render();
-					//uiHandler.drawMenuMain(commandBuffer);
-					eweRenderer.EndSwapChainRender();
-					if (eweRenderer.EndFrame()) {
-						VkExtent2D swapExtent = eweRenderer.GetExtent();
-						SettingsInfo::ScreenDimensions resizeDimensions{};
-						resizeDimensions.width = swapExtent.width;
-						resizeDimensions.height = swapExtent.height;
-						menuManager.WindowResize(resizeDimensions);
-					}
-				}
-				else {
-
-					VkExtent2D swapExtent = eweRenderer.GetExtent();
-					SettingsInfo::ScreenDimensions resizeDimensions{};
-					resizeDimensions.width = swapExtent.width;
-					resizeDimensions.height = swapExtent.height;
-					menuManager.WindowResize(resizeDimensions);
-				}
-				
-				renderThreadTime = 0.0;
-				//printf("end rendering thread \n");
-			}
-			//printf("end of render thread loop \n");
-		}
-		finishedLoadingScreen = true;
-		CreateQueryPool();
-#if EWE_DEBUG
-		printf(" ~~~~ END OF LOADING SCREEN FUNCTION \n");
-#endif
-	}
 	bool EightWindsEngine::BeginFrame() {
-		if (eweRenderer.BeginFrame()) {
+		if (renderFramework.eweRenderer.BeginFrame()) {
 #if BENCHMARKING_GPU
 			QueryTimestampBegin();
 #endif
@@ -243,12 +140,12 @@ namespace EWE {
 
 	bool EightWindsEngine::BeginFrameAndRender() {
 		//printf("begin render \n");
-		if (eweRenderer.BeginFrame()) {
+		if (renderFramework.eweRenderer.BeginFrame()) {
 #if BENCHMARKING_GPU
 			QueryTimestampBegin();
 #endif
 
-			eweRenderer.BeginSwapChainRender();
+			renderFramework.eweRenderer.BeginSwapChainRender();
 			return true;
 		}
 		//else {
@@ -259,7 +156,7 @@ namespace EWE {
 		return false;
 	}
 	void EightWindsEngine::BeginRenderX() {
-		eweRenderer.BeginSwapChainRender();
+		renderFramework.eweRenderer.BeginSwapChainRender();
 	}
 
 	void EightWindsEngine::Draw2DObjects() {
@@ -272,13 +169,13 @@ namespace EWE {
 		DrawText(dt);
 	}
 	void EightWindsEngine::Draw3DObjects(double dt) {
-		timeTracker = glm::mod(timeTracker + dt, glm::two_pi<double>());
+		timeTracker = lab::Mod(timeTracker + dt, lab::GetPI(2.0));
 
 		if (pointLightsEnabled) {
 			PointLight::update(static_cast<float>(dt), advancedRS.pointLights);
 			for (int i = 0; i < advancedRS.pointLights.size(); i++) {
-				lbo.pointLights[i].position = glm::vec4(advancedRS.pointLights[i].transform.translation, 1.f);
-				lbo.pointLights[i].color = glm::vec4(advancedRS.pointLights[i].color, advancedRS.pointLights[i].lightIntensity);
+				lbo.pointLights[i].position = lab::vec4(advancedRS.pointLights[i].transform.translation, 1.f);
+				lbo.pointLights[i].color = lab::vec4(advancedRS.pointLights[i].color, advancedRS.pointLights[i].lightIntensity);
 			}
 			lbo.numLights = static_cast<uint8_t>(advancedRS.pointLights.size());
 
@@ -286,7 +183,7 @@ namespace EWE {
 
 		}
 
-		camera.ViewTargetDirect();
+		camera.UpdateCamera<CS>();
 #if RENDER_DEBUG
 		std::cout << "before rendering game objects \n";
 #endif
@@ -309,7 +206,7 @@ namespace EWE {
 		uiHandler.BeginTextRender();
 #if BENCHMARKING
 		if (displayingRenderInfo) {
-			uiHandler.Benchmarking(dt, peakRenderTime, averageRenderTime, highestRenderTime, averageLogicTime, BENCHMARKING_GPU, elapsedGPUMS, averageElapsedGPUMS);
+			uiHandler.Benchmarking(dt, peakRenderTime, averageRenderTime, highestRenderTime, BENCHMARKING_GPU, elapsedGPUMS, averageElapsedGPUMS);
 		}
 #endif
 
@@ -322,7 +219,7 @@ namespace EWE {
 	}
 
 	void EightWindsEngine::EndRender() {
-		eweRenderer.EndSwapChainRender();
+		renderFramework.eweRenderer.EndSwapChainRender();
 	}
 
 	void EightWindsEngine::EndFrame() {
@@ -331,17 +228,18 @@ namespace EWE {
 		QueryTimestampEnd();
 #endif
 		//printf("after ending swap chain \n");
-		if (eweRenderer.EndFrame()) {
+		if (renderFramework.eweRenderer.EndFrame()) {
 #if EWE_DEBUG
 			printf("dirty swap on end\n");
 #endif
 			//std::pair<uint32_t, uint32_t> tempPair = EWERenderer.getExtent(); //debugging swap chain recreation
 			//printf("swap chain extent? %i : %i", tempPair.first, tempPair.second);
 			//uiHandler.windowResize(eweRenderer.getExtent());
-			VkExtent2D swapExtent = eweRenderer.GetExtent();
+			VkExtent2D swapExtent = renderFramework.eweRenderer.GetExtent();
 			SettingsInfo::ScreenDimensions resizeDimensions{};
 			resizeDimensions.width = swapExtent.width;
 			resizeDimensions.height = swapExtent.height;
+			camera.SetPerspectiveProjection(lab::DegreesToRadians(70.0f), static_cast<float>(swapExtent.width) / static_cast<float>(swapExtent.height), 0.1f, 10000.0f);
 			menuManager.WindowResize(resizeDimensions);
 		}
 	}

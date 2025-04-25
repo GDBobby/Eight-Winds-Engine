@@ -10,7 +10,7 @@ namespace EWE {
 		PipelineSystem{ Pipe::loading },
 #endif
 		ranDev{}, randomGen{ ranDev() }, ellipseRatioDistribution{ 1.f,2.f }, rotRatioDistribution{ 1.f, 4.f },
-		angularFrequencyDistribution{ glm::pi<float>(), glm::two_pi<float>() }, initTimeDistribution{ 0.f, 20.f },
+		angularFrequencyDistribution{ lab::PI<float>, lab::GetPI(2.f)}, initTimeDistribution{0.f, 20.f},
 		motionDistribution{ 0, 100 }, ellipseOscDistribution{ 0.75f, 1.25f }, depthVarianceDistribution{ -5.f, 5.f },
 		widthVarianceDistribution{ -80.f, 60.f }, fallSwingVarianceDistribution{ 5.f, 10.f }, initHeightVarianceDistribution{ 2.f, 40.f }, varianceDistribution{ -.5f, .5f },
 		rockDist{ 1.75f, 2.25f }
@@ -56,7 +56,7 @@ namespace EWE {
 #endif
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			leafBuffer[i] = Construct<EWEBuffer>({ sizeof(glm::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
+			leafBuffer[i] = Construct<EWEBuffer>({ sizeof(lab::mat4) * LEAF_COUNT, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT });
 
 			leafBuffer[i]->Map();
 
@@ -96,31 +96,31 @@ namespace EWE {
 
 			float depth = depthVarianceDistribution(randomGen);
 			float width = widthVarianceDistribution(randomGen);
-			leaf.origin = glm::vec3{ 0.707106781f * (width - depth) - 3.f, 0.f, 0.707106781f * (depth - width) - 3.f };
+			leaf.origin = lab::vec3{ 0.707106781f * (width - depth) - 3.f, 0.f, 0.707106781f * (depth - width) - 3.f };
 
 			int motDis = motionDistribution(randomGen);
 			if (motDis < 10) {
 				leaf.fallMotion = LF_Steady;
-				leaf.transform.rotation.x = -glm::half_pi<float>() * .9f;
-				leaf.averageVelocity = glm::vec3(WIND_SPEED, gravity * glm::pi<float>() * 9.f / 4.f, -WIND_SPEED);
+				leaf.transform.rotation.x = -lab::GetPI_DividedBy(2.f) * .9f;
+				leaf.averageVelocity = lab::vec3(WIND_SPEED, gravity * lab::PI<float> * 9.f / 4.f, -WIND_SPEED);
 				leaf.transform.translation = leaf.origin - leaf.averageVelocity * (20.f - initTimeDistribution(randomGen) * 0.666f);
 			}
 			else if (motDis < 43) {
 				leaf.fallMotion = LF_Fluttering;
-				//velocity.y = (gravity + (leaf.swingAmplitude * glm::sin(2.f * leaf.angF * leaf.time)) / leaf.rotRatio) * leaf.ellOsc
-				leaf.averageVelocity = glm::vec3(WIND_SPEED, gravity * 3.f, -WIND_SPEED);
+				//velocity.y = (gravity + (leaf.swingAmplitude * lab::Sin(2.f * leaf.angF * leaf.time)) / leaf.rotRatio) * leaf.ellOsc
+				leaf.averageVelocity = lab::vec3(WIND_SPEED, gravity * 3.f, -WIND_SPEED);
 				leaf.transform.translation = leaf.origin - leaf.averageVelocity * (20.f - initTimeDistribution(randomGen));
 			}
 			else if (motDis < 75) {
 				leaf.fallMotion = LF_Chaotic;
 				leaf.time += initTimeDistribution(randomGen);
-				leaf.averageVelocity = glm::vec3(WIND_SPEED, gravity * 3.f, -WIND_SPEED);
+				leaf.averageVelocity = lab::vec3(WIND_SPEED, gravity * 3.f, -WIND_SPEED);
 				leaf.transform.translation = leaf.origin - leaf.averageVelocity * (20.f - initTimeDistribution(randomGen));
-				//velocity.y = (gravity + (leaf.swingAmplitude * glm::sin(2.f * leaf.angF * leaf.time)) / leaf.rotRatio) * leaf.ellOsc;
+				//velocity.y = (gravity + (leaf.swingAmplitude * lab::Sin(2.f * leaf.angF * leaf.time)) / leaf.rotRatio) * leaf.ellOsc;
 			}
 			else {
 				leaf.fallMotion = LF_Spiral;
-				leaf.averageVelocity = glm::vec3(WIND_SPEED, gravity * 3.f, -WIND_SPEED);
+				leaf.averageVelocity = lab::vec3(WIND_SPEED, gravity * 3.f, -WIND_SPEED);
 				leaf.origin -= leaf.averageVelocity * 20.f;
 				leaf.time = initTimeDistribution(randomGen);
 			}
@@ -128,9 +128,12 @@ namespace EWE {
 
 			//leaf.transform.translation = leaf.origin;
 			//fallSwingVarianceDistribution(randomGen);
-			const std::size_t memOffset = (sizeof(glm::mat4) / sizeof(float) * i);
-			leaf.transform.mat4(leafBufferData[0] + memOffset);
-			leaf.transform.mat4(leafBufferData[1] + memOffset);
+			const std::size_t memOffset = (sizeof(lab::mat4) / sizeof(float) * i);
+
+			auto tempMat = leaf.transform.GetMatrix();
+
+			memcpy(leafBufferData[0] + memOffset, &tempMat, sizeof(tempMat));
+			memcpy(leafBufferData[1] + memOffset, &tempMat, sizeof(tempMat));
 
 			
 		}
@@ -155,12 +158,12 @@ namespace EWE {
 			//theta = angle with xy plane
 			//	  ^ = sin(transform.rotation.x);
 			//a = angle with xz plane
-			//^ = dot(normalize(velocity), glm::vec3{0.f,-1.f,0.f});
+			//^ = dot(normalize(velocity), lab::vec3{0.f,-1.f,0.f});
 			//V is velocity
 			//p = density of leaf
 
 			//Ka = friction in the direction of the fall
-			glm::vec3 velocity{ 0.f };
+			lab::vec3 velocity{ 0.f };
 			float angFT = leaf.angF * leaf.time;
 
 			switch (leaf.fallMotion) {
@@ -169,7 +172,7 @@ namespace EWE {
 					//leaf.transform.translation.y = leaf.origin.y + gravity * leaf.time;
 					//leaf.transform.translation.z += varianceDistribution(randomGen);
 
-					//velocity = glm::vec3(0.f);
+					//velocity = lab::vec3(0.f);
 
 					velocity.x = varianceDistribution(randomGen) + (WIND_SPEED * leaf.ellOsc); //ellOsc for wind variance
 					velocity.y = gravity * 1.5f * leaf.rotSpeed; //ellOsc isnt related but im plugging it for gravity variance
@@ -181,54 +184,54 @@ namespace EWE {
 				}
 				case LF_Tumbling:
 				case LF_Fluttering:
-					leaf.transform.rotation.y -= glm::half_pi<float>() * timeStep * leaf.ellOsc; //ellOsc isnt related but im plugging it cause it fits
-					velocity.x = -leaf.fallAmplitude * glm::cos(angFT) * glm::sin(leaf.transform.rotation.y)
+					leaf.transform.rotation.y -= lab::GetPI_DividedBy(2.f) * timeStep * leaf.ellOsc; //ellOsc isnt related but im plugging it cause it fits
+					velocity.x = -leaf.fallAmplitude * lab::Cos(angFT) * lab::Sin(leaf.transform.rotation.y)
 						+ (WIND_SPEED * leaf.ellOsc); //wind, ellOsc for variance
-					velocity.y = (gravity + (leaf.swingAmplitude * glm::sin(2.f * leaf.angF * leaf.time)) / leaf.rotRatio) * leaf.ellOsc * 2.f; //JUST USING ROTRATIO AND ELLOSC FOR GRAVITY VARIANCE
-					velocity.z = -leaf.fallAmplitude * glm::cos(angFT) * glm::sin(leaf.transform.rotation.y)
+					velocity.y = (gravity + (leaf.swingAmplitude * lab::Sin(2.f * leaf.angF * leaf.time)) / leaf.rotRatio) * leaf.ellOsc * 2.f; //JUST USING ROTRATIO AND ELLOSC FOR GRAVITY VARIANCE
+					velocity.z = -leaf.fallAmplitude * lab::Cos(angFT) * lab::Sin(leaf.transform.rotation.y)
 						- (WIND_SPEED * leaf.ellOsc); //wind, ellOsc for variance
 					leaf.transform.translation += velocity * timeStep;
-					leaf.transform.rotation.z = -leaf.swingAmplitude * glm::sin(leaf.angF * (leaf.time - leaf.angF * 1.f / 16.f)) / (glm::two_pi<float>()) * glm::sin(leaf.transform.rotation.y) * .75f;
+					leaf.transform.rotation.z = -leaf.swingAmplitude * lab::Sin(leaf.angF * (leaf.time - leaf.angF * 1.f / 16.f)) / (lab::GetPI(2.f)) * lab::Sin(leaf.transform.rotation.y) * .75f;
 					break;
 
 
 				case LF_Chaotic:
-					//velocity.z = -leaf.fallAmplitude * glm::sin(leaf.angF * leaf.time);
+					//velocity.z = -leaf.fallAmplitude * lab::Sin(leaf.angF * leaf.time);
 					//all going clockwise
 
-					leaf.transform.rotation.y += glm::half_pi<float>() * timeStep * leaf.ellOsc;
-					velocity.x = -leaf.fallAmplitude * glm::cos(angFT) * glm::sin(leaf.transform.rotation.y)
+					leaf.transform.rotation.y += lab::GetPI_DividedBy(2.f) * timeStep * leaf.ellOsc;
+					velocity.x = -leaf.fallAmplitude * lab::Cos(angFT) * lab::Sin(leaf.transform.rotation.y)
 						+ (WIND_SPEED * leaf.ellOsc); //wind, ellOsc for variance
-					velocity.y = (gravity + (leaf.swingAmplitude * glm::sin(2.f * leaf.angF * leaf.time)) / leaf.rotRatio) * leaf.ellOsc * 2.f;//JUST USING ROTRATIO AND ELLOSC FOR GRAVITY VARIANCE
-					velocity.z = -leaf.fallAmplitude * glm::cos(angFT) * glm::sin(leaf.transform.rotation.y)
+					velocity.y = (gravity + (leaf.swingAmplitude * lab::Sin(2.f * leaf.angF * leaf.time)) / leaf.rotRatio) * leaf.ellOsc * 2.f;//JUST USING ROTRATIO AND ELLOSC FOR GRAVITY VARIANCE
+					velocity.z = -leaf.fallAmplitude * lab::Cos(angFT) * lab::Sin(leaf.transform.rotation.y)
 						- (WIND_SPEED * leaf.ellOsc); //wind, ellOsc for variance
 					leaf.transform.translation += velocity * timeStep;
-					leaf.transform.rotation.z = -leaf.swingAmplitude * glm::sin(leaf.angF * (leaf.time - leaf.angF * 1.f / 16.f)) / (glm::two_pi<float>()) * glm::sin(leaf.transform.rotation.y) * .75f;
-					//leaf.transform.rotation.x = -leaf.swingAmplitude * glm::sin(leaf.angF * (leaf.time - leaf.angF * 1.f / 16.f)) / (glm::two_pi<float>()) * glm::cos(leaf.transform.rotation.y) / 2.f;
+					leaf.transform.rotation.z = -leaf.swingAmplitude * lab::Sin(leaf.angF * (leaf.time - leaf.angF * 1.f / 16.f)) / (lab::GetPI(2.f)) * lab::Sin(leaf.transform.rotation.y) * .75f;
+					//leaf.transform.rotation.x = -leaf.swingAmplitude * lab::Sin(leaf.angF * (leaf.time - leaf.angF * 1.f / 16.f)) / (glm::two_pi<float>()) * lab::Cos(leaf.transform.rotation.y) / 2.f;
 
 					break;
 					/*
 				case LF_Tumbling:
 				case LF_Fluttering: {
-					//leaf.transform.translation.x = leaf.origin.x - (leaf.fallAmplitude / leaf.angF) * glm::sin(leaf.angF * leaf.time);
-					//leaf.transform.translation.y = leaf.origin.y + (gravity * leaf.time) - ((leaf.swingAmplitude/(2.f * leaf.angF)) * glm::cos(2.f * leaf.angF * leaf.time));
-					//velocity = glm::vec3(0.f);
+					//leaf.transform.translation.x = leaf.origin.x - (leaf.fallAmplitude / leaf.angF) * lab::Sin(leaf.angF * leaf.time);
+					//leaf.transform.translation.y = leaf.origin.y + (gravity * leaf.time) - ((leaf.swingAmplitude/(2.f * leaf.angF)) * lab::Cos(2.f * leaf.angF * leaf.time));
+					//velocity = lab::vec3(0.f);
 
-					velocity.x = -leaf.fallAmplitude * glm::cos(angFT);
-					velocity.y = gravity + leaf.swingAmplitude * glm::sin(2.f * angFT);
+					velocity.x = -leaf.fallAmplitude * lab::Cos(angFT);
+					velocity.y = gravity + leaf.swingAmplitude * lab::Sin(2.f * angFT);
 					//velocity.z = varianceDistribution(randomGen);
 
 
 					leaf.transform.translation += velocity * timeStep;
-					leaf.transform.rotation.z = -leaf.swingAmplitude * glm::sin(leaf.angF * (leaf.time - leaf.angF * 1.f / 16.f)) / (glm::two_pi<float>());
+					leaf.transform.rotation.z = -leaf.swingAmplitude * lab::Sin(leaf.angF * (leaf.time - leaf.angF * 1.f / 16.f)) / (glm::two_pi<float>());
 
 					break;
 				}
 				*/
 				case LF_Helix:
 				case LF_Spiral: {
-					//velocity = glm::vec3(0.f);
-					glm::vec3 oldPos = leaf.transform.translation;
+					//velocity = lab::vec3(0.f);
+					lab::vec3 oldPos = leaf.transform.translation;
 
 					leaf.transform.translation.x = leaf.origin.x + leaf.ellOsc * cos(angFT / 2.f) * (10.f + leaf.ellRatio * sin(leaf.rotRatio * angFT))
 						+ (WIND_SPEED * leaf.time * leaf.ellOsc); //wind, ellOsc for variance							
@@ -240,13 +243,13 @@ namespace EWE {
 					//leaf.rotRef = glm::mod(leaf.rotRef + , glm::half_pi<float>() / 2.f);
 					//leaf.transform.rotation.z = leaf.rotRef - glm::half_pi<float>() / 4.f;
 
-					//leaf.transform.rotation.z = glm::sin(leaf.rotRef);
-					float horiPerc = 1.f - (velocity.y / glm::length(velocity));
+					//leaf.transform.rotation.z = lab::Sin(leaf.rotRef);
+					const float horiPerc = 1.f - (velocity.y / velocity.Magnitude());
 
-					//leaf.transform.rotation.x = -glm::cos(horiPerc) * glm::quarter_pi<float>();
-					leaf.transform.rotation.x = -glm::sin(horiPerc * glm::quarter_pi<float>());
-					leaf.transform.rotation.y = glm::atan(velocity.x, velocity.z) + (glm::quarter_pi<float>() * 3.f);
-					leaf.transform.rotation.x = -glm::cos(horiPerc * glm::quarter_pi<float>());
+					//leaf.transform.rotation.x = -lab::Cos(horiPerc) * glm::quarter_pi<float>();
+					leaf.transform.rotation.x = -lab::Sin(horiPerc * lab::GetPI_DividedBy(4.f));
+					leaf.transform.rotation.y = lab::ArcTan2(velocity.x, velocity.z) + (lab::GetPI_DividedBy(4.f) * 3.f);
+					leaf.transform.rotation.x = -lab::Cos(horiPerc * lab::GetPI_DividedBy(4.f));
 					//leaf.transform.rotation.z = -glm::atan(velocity.x, velocity.y) - (glm::quarter_pi<float>() * 3.f);
 
 					//printf("leaf.transform.rotation.y : %.5f \n", leaf.transform.rotation.y);
@@ -278,29 +281,30 @@ namespace EWE {
 					leaf.time += initTimeDistribution(randomGen);
 				}
 				*/
-				//leaf.transform.rotation = glm::vec3(0.f, 0.f, -glm::quarter_pi<float>());
+				//leaf.transform.rotation = lab::vec3(0.f, 0.f, -glm::quarter_pi<float>());
 				//leaf.transform.rotation.x = glm::half_pi<float>();
 			}
 			else {
 
 				//forwardDir = { sin(player.FollowCamera->transform.rotation.y), -sin(player.FollowCamera->transform.rotation.x), cos(player.FollowCamera->transform.rotation.y) };
 				//^ following that logic
-				//leaf.transform.rotation = glm::vec3(glm::asin(velNorm.y), glm::asin(velNorm.x), glm::acos(velNorm.y));
+				//leaf.transform.rotation = lab::vec3(glm::asin(velNorm.y), glm::asin(velNorm.x), glm::acos(velNorm.y));
 
 
 				//get direction of velocity, reverse that into rotation
 
 
-				//leaf.transform.rotation.z += (-4 * leaf.transform.rotation.z - (3.f * glm::pi<float>() * leafDensity * (velocityXMag + velocityYMag) * glm::cos(beta) * glm::sin(beta))) * timeStep;
-				//(-3.f * glm::pi<float>() * leafDensity * (velocityXMag + velocityYMag) * glm::cos(beta) * glm::sin(beta)) dt
+				//leaf.transform.rotation.z += (-4 * leaf.transform.rotation.z - (3.f * glm::pi<float>() * leafDensity * (velocityXMag + velocityYMag) * lab::Cos(beta) * lab::Sin(beta))) * timeStep;
+				//(-3.f * glm::pi<float>() * leafDensity * (velocityXMag + velocityYMag) * lab::Cos(beta) * lab::Sin(beta)) dt
 
 
 				//glm::mod(leaf.transform.rotation.z, glm::two_pi<float>());
 			}
 
 
-
-			leaf.transform.mat4(leafBufferData[VK::Object->frameIndex] + (sizeof(glm::mat4) / sizeof(float) * i));
+			auto tempMat = leaf.transform.GetMatrix();
+			memcpy(leafBufferData[VK::Object->frameIndex] + (sizeof(lab::mat4) / sizeof(float) * i), &tempMat, sizeof(tempMat));
+			//leaf.transform.mat4(leafBufferData[VK::Object->frameIndex] + (sizeof(lab::mat4) / sizeof(float) * i));
 			/*
 			if (i == 0) {
 				printf("translation, motion Type - %.3f:%.3f:%.3f - %d \n", leaf.transform.translation.x, leaf.transform.translation.y, leaf.transform.translation.z, leaf.fallMotion);
@@ -310,7 +314,7 @@ namespace EWE {
 		}
 		leafBuffer[VK::Object->frameIndex]->Flush();
 		//printf("before instancing \n");
-		//return leafModel->updateInstancing(LEAF_COUNT, sizeof(glm::mat4), transformBuffer.data(), frameIndex, cmdBuf);
+		//return leafModel->updateInstancing(LEAF_COUNT, sizeof(lab::mat4), transformBuffer.data(), frameIndex, cmdBuf);
 		//printf("after instancing \n");
 		//printf("end of fall calculation \n");
 		//could use a buffer and trim instances that are out of view, might be a compute shader kinda thing

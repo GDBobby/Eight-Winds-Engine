@@ -23,6 +23,6 @@ namespace EWE {
 	protected:
 		Ocean::Ocean* ocean;
 		CameraController cameraControl;
-		TransformComponent transform{};
+		lab::Transform<float, 3> transform{};
 	};
 }

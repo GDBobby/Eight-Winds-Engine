@@ -5,6 +5,8 @@
 #include <EWEngine/Scene.h>
 #include "EWEngine/Free_Camera_Controller.h"
 
+#include <LAB/Transform.h>
+
 namespace EWE {
 	class MainMenuScene : public SceneBase {
 		EightWindsEngine& ewEngine;
@@ -25,7 +27,7 @@ namespace EWE {
 		GLFWwindow* windowPtr;
 		CameraController camControl;
 		bool paused = false;
-		TransformComponent camTransform{};
+		lab::Transform<float, 3> camTransform{};
 		
 	};
 }

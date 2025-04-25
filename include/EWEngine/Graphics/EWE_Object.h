@@ -1,8 +1,9 @@
 #pragma once
 
 #include "EWEngine/Data/EWE_Import.h"
-#include "EWEngine/EWE_GameObject.h"
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
+
+#include <LAB/Transform.h>
 
 #include <unordered_set>
 
@@ -25,7 +26,7 @@ namespace EWE {
         EweObject(std::string objectPath, bool globalTextures, SkeletonID ownerID, SkeletonID myID, uint32_t instanceCount);
         ~EweObject();
 
-		TransformComponent transform{};
+		lab::Transform<float, 3> transform{};
         std::vector<EWEModel*> meshes{};
         bool drawable = true;
         std::vector<MaterialInfo> ownedTextures{};

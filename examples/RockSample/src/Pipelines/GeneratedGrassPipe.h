@@ -8,7 +8,7 @@ struct GrassBufferObject {
 	float height;
 	float time;
 	float windDir;
-	glm::vec4 endDistance;
+	lab::vec4 endDistance;
 	float windStrength;
 	VkBool32 displayLOD;
 	//float lengthGroundPosV2;

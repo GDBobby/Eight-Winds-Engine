@@ -4,10 +4,6 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 #include "EWEngine/Graphics/Texture/Image_Manager.h"
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-
 #include <array>
 #include <iostream>
 
@@ -124,7 +120,7 @@ namespace EWE {
 		pipe->BindDescriptor(0, &grassDescriptors[VK::Object->frameIndex]);
 
 
-		UVScrollingPushData push{ glm::vec2{glm::mod(time / 6.f, 1.f), glm::mod(time / 9.f, 1.f)} };
+		UVScrollingPushData push{ lab::vec2{glm::mod(time / 6.f, 1.f), glm::mod(time / 9.f, 1.f)} };
 		pipe->Push(&push);
 
 		for (const auto& grassField : objectManager.grassField) {

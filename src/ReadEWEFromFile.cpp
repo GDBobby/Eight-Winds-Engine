@@ -5,10 +5,10 @@ namespace EWE {
     namespace Reading {
 
 
-        void GLM3FromFile(std::ifstream& inFile, glm::vec3& vec) {
+        void GLM3FromFile(std::ifstream& inFile, lab::vec3& vec) {
             inFile.read((char*)&vec, sizeof(float) * 3);
         }
-        void GLM3FromFileSwapEndian(std::ifstream& inFile, glm::vec3& vec) {
+        void GLM3FromFileSwapEndian(std::ifstream& inFile, lab::vec3& vec) {
             printf(" ~~~~~~~~~~~~~~~~~~~~~~ need to debug this and ensure it works ~~~~~~~~~~~~~~~~~~~~~~~~ \n");
 
             uint32_t buffer[3];
@@ -18,10 +18,10 @@ namespace EWE {
             }
             memcpy(&vec, &buffer, sizeof(float) * 3);
         }
-        void GLM2FromFile(std::ifstream& inFile, glm::vec2& vec) {
+        void GLM2FromFile(std::ifstream& inFile, lab::vec2& vec) {
             inFile.read((char*)&vec, sizeof(float) * 2);
         }
-        void GLM2FromFileSwapEndian(std::ifstream& inFile, glm::vec2& vec) {
+        void GLM2FromFileSwapEndian(std::ifstream& inFile, lab::vec2& vec) {
 
             uint32_t buffer[2];
             inFile.read((char*)buffer, sizeof(float) * 2);
@@ -31,16 +31,16 @@ namespace EWE {
 
             memcpy(&vec, &buffer, sizeof(float) * 2);
         }
-        void GLMMat4FromFile(std::ifstream& inFile, glm::mat4* mat) {
-            inFile.read((char*)mat, sizeof(glm::mat4));
+        void GLMMat4FromFile(std::ifstream& inFile, lab::mat4* mat) {
+            inFile.read((char*)mat, sizeof(lab::mat4));
         }
-        void GLMMat4FromFileSwapEndian(std::ifstream& inFile, glm::mat4* mat) {
+        void GLMMat4FromFileSwapEndian(std::ifstream& inFile, lab::mat4* mat) {
             uint32_t buffer[16];
-            inFile.read((char*)buffer, sizeof(glm::mat4));
+            inFile.read((char*)buffer, sizeof(lab::mat4));
             for (int i = 0; i < 16; i++) {
                 buffer[i] = ((buffer[i] & 0xFF) << 24) | (((buffer[i] >> 8) & 0xFF) << 16) | (((buffer[i] >> 16) & 0xFF) << 8) | ((buffer[i] >> 24) & 0xFF);
             }
-            memcpy(mat, buffer, sizeof(glm::mat4));
+            memcpy(mat, buffer, sizeof(lab::mat4));
         }
 
         void IntFromFile(std::ifstream& inFile, int* value) {
@@ -94,19 +94,19 @@ namespace EWE {
                 byte++;
             }
         }
-        void swapGLMVec3Endian(glm::vec3& vec) {
+        void swapGLMVec3Endian(lab::vec3& vec) {
             swapBasicEndian(&vec.x, sizeof(float));
             swapBasicEndian(&vec.y, sizeof(float));
             swapBasicEndian(&vec.z, sizeof(float));
         }
-        void swapGLMVec2Endian(glm::vec2& vec) {
+        void swapGLMVec2Endian(lab::vec2& vec) {
             swapBasicEndian(&vec.x, sizeof(float));
             swapBasicEndian(&vec.y, sizeof(float));
         }
-        void swapGLMMat4Endian(glm::mat4& mat) {
+        void swapGLMMat4Endian(lab::mat4& mat) {
             for (int x = 0; x < 4; x++) {
                 for (int y = 0; y < 4; y++) {
-                    swapBasicEndian(&mat[x][y], sizeof(float));
+                    swapBasicEndian(&mat.columns[x][y], sizeof(float));
                 }
             }
         }

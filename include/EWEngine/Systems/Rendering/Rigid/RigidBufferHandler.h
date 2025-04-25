@@ -12,10 +12,10 @@ namespace EWE {
 		RigidInstancedBufferHandler& operator=(RigidInstancedBufferHandler&& other);
 		~RigidInstancedBufferHandler();
 
-		void WritePartialTransformData(glm::mat4* transform, std::size_t offset);
+		void WritePartialTransformData(lab::mat4* transform, std::size_t offset);
 		//this is for sequential writing only, it's recommended to write to the entire buffer
-		void WritePartialTransformData(glm::mat4* transform);
-		void WriteFullTransformData(glm::mat4* transformData);
+		void WritePartialTransformData(lab::mat4* transform);
+		void WriteFullTransformData(lab::mat4* transformData);
 
 		void WritePartialMaterialData(MaterialBuffer* material, std::size_t offset);
 		//this is for sequential writing only, it's recommended to write to the entire buffer

@@ -10,6 +10,8 @@
 #include <EWEngine/imgui/imGuiHandler.h>
 #include <EWEngine/Systems/Ocean/Ocean.h>
 
+#include <LAB/CameraCSRuntime.h>
+
 
 enum RenderStrat { 
 	RS_Tess, 
@@ -33,7 +35,7 @@ namespace EWE {
 		std::shared_ptr<SoundEngine> soundEngine;
 		GLFWwindow* windowPtr;
 		CameraController camControl;
-		TransformComponent camTransform{};
+		lab::Transform<float, 3> camTransform{};
 
 
 		ImGUIHandler imguiHandler;
@@ -42,7 +44,7 @@ namespace EWE {
 		std::array<EWEBuffer*, 2> csmEWEBuffer; //csmEWE == controlled sphere material EWE buffer
 		MaterialBuffer controlledSphereMB;
 		int updatedCMB = MAX_FRAMES_IN_FLIGHT; //CMB == controlled material buffer
-		TransformComponent sphereTransform;
+		lab::Transform3 sphereTransform;
 		bool sphereDrawable = true;
 		MaterialObjectInfo controlledSphere;
 
@@ -72,7 +74,7 @@ namespace EWE {
 		//std::array<EWEBuffer*, MAX_FRAMES_IN_FLIGHT> ttmGrassBuffer;
 		VkDescriptorSet grassDesc[MAX_FRAMES_IN_FLIGHT] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		bool grassActive = false;
-		glm::ivec3 grassGroup{ 256, 1, 256 };
+		lab::ivec3 grassGroup{ 256, 1, 256 };
 		bool displayGrassLOD = true;
 
 
@@ -91,6 +93,12 @@ namespace EWE {
 		bool oceanEnabled = true;
 		bool oceanActive = oceanEnabled;
 		int oceanRenderParamsUpdated = 0;
+
+		float fov_degrees = 70.f;
+		bool updated_cam_data = false;
+		lab::Perspective::API cam_perspective = lab::Perspective::Vulkan;
+
+		lab::Runtime::CoordinateSystem runtimeCS{};
 	};
 }
 

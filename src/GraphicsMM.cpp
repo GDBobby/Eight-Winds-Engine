@@ -56,8 +56,8 @@ namespace EWE {
 			}
 		}
 
-		glm::vec2 translation;
-		glm::ivec2 screenCoords = { 800 * widthRescaling, 200 * heightRescaling };
+		lab::vec2 translation;
+		lab::ivec2 screenCoords = { static_cast<int>(800.f * widthRescaling), static_cast<int>(200.f * heightRescaling) };
 		/*
 		UIComp::convertScreenTo2D(screenCoords, translation, screenWidth, screenHeight);
 		printf("after converting chekcbox coords: %.2f:%.2f \n", translation.x, translation.y);
@@ -66,11 +66,11 @@ namespace EWE {
 
 		//printf("before checkboxes \n");
 
-		screenCoords = { 1000 * widthRescaling, 340 * heightRescaling };
+		screenCoords = { static_cast<int>(1000.f * widthRescaling), static_cast<int>(340.f * heightRescaling) };
 		UIComp::ConvertScreenTo2D(screenCoords, translation, VK::Object->screenWidth, VK::Object->screenHeight);
 		checkBoxes.emplace_back("Point Lights ", translation, Checkbox::DO_left);
 
-		screenCoords = { 1000 * widthRescaling, 380 * heightRescaling };
+		screenCoords = { static_cast<int>(1000.f * widthRescaling), static_cast<int>(380.f * heightRescaling) };
 		UIComp::ConvertScreenTo2D(screenCoords, translation, VK::Object->screenWidth, VK::Object->screenHeight);
 		checkBoxes.emplace_back("Render Info ", translation, Checkbox::DO_left);
 

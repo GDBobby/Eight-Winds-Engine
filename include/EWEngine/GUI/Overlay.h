@@ -1,7 +1,8 @@
 #pragma once
 
-#include "EWEngine/GameObject2D.h"
 #include "EWEngine/Graphics/TextOverlay.h"
+
+#include <LAB/Transform.h>
 
 namespace EWE {
 	class OverlayBase {
@@ -23,6 +24,6 @@ namespace EWE {
 	protected:
 		bool isActive = false;
 		std::vector<TextStruct> textStructs{};
-		std::vector<GameObject2D> gameObjects{};
+		std::vector<lab::Transform<float, 2>> gameObjects{};
 	};
 }

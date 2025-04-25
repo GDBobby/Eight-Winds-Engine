@@ -1,6 +1,7 @@
 #include "EWEngine/Sound_Engine.h"
 
 #include <filesystem>
+#include <cassert>
 
 #define EFFECTS_PATH "sounds/effects/"
 #define MUSIC_PATH "sounds/music/"

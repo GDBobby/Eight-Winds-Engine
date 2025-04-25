@@ -19,7 +19,7 @@ namespace EWE {
 
 	EWERenderer* EWERenderer::instance{ nullptr };
 
-	EWERenderer::EWERenderer(MainWindow& window, EWECamera& camera) : camera{ camera }, mainWindow{ window } {
+	EWERenderer::EWERenderer(MainWindow& window) : mainWindow{ window } {
 		instance = this;
 		//printf("EWE renderer constructor \n");
 		EWEDescriptorPool::BuildGlobalPool();
@@ -107,7 +107,6 @@ namespace EWE {
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
 			mainWindow.resetWindowResizedFlag();
 			RecreateSwapChain();
-			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 1000000.0f);
 			isFrameStarted = false;
 			VK::Object->frameIndex = (VK::Object->frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 			return true;
@@ -129,7 +128,6 @@ namespace EWE {
 		if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || mainWindow.wasWindowResized()) {
 			mainWindow.resetWindowResizedFlag();
 			RecreateSwapChain();
-			camera.SetPerspectiveProjection(glm::radians(70.0f), eweSwapChain->ExtentAspectRatio(), 0.1f, 1000000.0f);
 			SyncHub::GetSyncHubInstance()->WaitOnGraphicsFence();
 			isFrameStarted = false;
 			VK::Object->frameIndex = (VK::Object->frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;

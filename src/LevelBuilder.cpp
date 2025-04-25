@@ -136,7 +136,7 @@ namespace EWE {
 			ImGui::InputFloat("sunlight dir.z", &lbo->sunlightDirection.z);
 
 			if(ImGui::SmallButton("normalize")) {
-				glm::vec3 tempDir{ lbo->sunlightDirection.x, lbo->sunlightDirection.y, lbo->sunlightDirection.z };
+				lab::vec3 tempDir{ lbo->sunlightDirection.x, lbo->sunlightDirection.y, lbo->sunlightDirection.z };
 				tempDir = glm::normalize(tempDir);
 				lbo->sunlightDirection.x = tempDir.x;
 				lbo->sunlightDirection.y = tempDir.y;
@@ -604,12 +604,12 @@ namespace EWE {
 		ImGui::Text("x:%.2f y:%.2f z:%.2f", cameraObject->transform.translation.x, cameraObject->transform.translation.y, cameraObject->transform.translation.z);
 		ImGui::SameLine();
 		if(ImGui::SmallButton("Reset Camera Pos")) {
-			cameraObject->transform.translation = glm::vec3{ 0.f };
+			cameraObject->transform.translation = lab::vec3{ 0.f };
 		}
 		ImGui::Text("x:%.2f y:%.2f z:%.2f", cameraObject->transform.rotation.x, cameraObject->transform.rotation.y, cameraObject->transform.rotation.z);
 		ImGui::SameLine();
 		if (ImGui::SmallButton("Reset Camera Rotation")) {
-			cameraObject->transform.rotation = glm::vec3{ 0.f };
+			cameraObject->transform.rotation = lab::vec3{ 0.f };
 		}
 		ImGui::End();
 		bool hideGridOpen = true;

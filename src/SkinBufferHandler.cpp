@@ -2,7 +2,7 @@
 #include "EWEngine/Graphics/Texture/Image_Manager.h"
 
 namespace EWE {
-	SkinBufferHandler::SkinBufferHandler(uint16_t boneCount, uint8_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, maxActorCount{ maxActorCount }, gpuData{ InnerBufferStruct{maxActorCount, boneBlockSize}, InnerBufferStruct{maxActorCount, boneBlockSize} } {
+	SkinBufferHandler::SkinBufferHandler(uint16_t boneCount, uint8_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(lab::mat4)) }, maxActorCount{ maxActorCount }, gpuData{ InnerBufferStruct{maxActorCount, boneBlockSize}, InnerBufferStruct{maxActorCount, boneBlockSize} } {
 		/*
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			EWEDescriptorWriter descWriter{eDSL, DescriptorPool_Global};
@@ -58,7 +58,7 @@ namespace EWE {
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ INSTANCING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	InstancedSkinBufferHandler::InstancedSkinBufferHandler(uint16_t boneCount, uint16_t maxActorCount) : 
-		boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(glm::mat4)) }, 
+		boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(lab::mat4)) }, 
 		maxActorCount{ maxActorCount }, 
 		gpuData{ 
 			InnerBufferStruct{maxActorCount, boneBlockSize},
@@ -67,11 +67,11 @@ namespace EWE {
 	{
 
 	}
-	void InstancedSkinBufferHandler::WriteData(glm::mat4* modelMatrix, void* finalBoneMatrices) {
+	void InstancedSkinBufferHandler::WriteData(lab::mat4* modelMatrix, void* finalBoneMatrices) {
 
-		gpuData[frameIndex].model->WriteToBuffer(modelMatrix, sizeof(glm::mat4), modelMemOffset);
+		gpuData[frameIndex].model->WriteToBuffer(modelMatrix, sizeof(lab::mat4), modelMemOffset);
 		gpuData[frameIndex].bone->WriteToBuffer(finalBoneMatrices, boneBlockSize, boneMemOffset);
-		modelMemOffset += sizeof(glm::mat4);
+		modelMemOffset += sizeof(lab::mat4);
 		boneMemOffset += boneBlockSize;
 		currentInstanceCount++;
 
@@ -86,7 +86,7 @@ namespace EWE {
 
 	InstancedSkinBufferHandler::InnerBufferStruct::InnerBufferStruct(uint16_t maxActorCount, uint32_t boneBlockSize) {
 
-		model = Construct<EWEBuffer>({ sizeof(glm::mat4) * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
+		model = Construct<EWEBuffer>({ sizeof(lab::mat4) * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
 
 		bone = Construct<EWEBuffer>({ boneBlockSize * maxActorCount, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
 

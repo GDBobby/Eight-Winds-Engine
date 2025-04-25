@@ -25,7 +25,7 @@ namespace EWE {
 		menuManagerPtr->windowWasResized = true;
 		const float nextWidth = static_cast<float>(windowDim.width);
 		const float nextHeight = static_cast<float>(windowDim.height);
-		glm::vec2 resizeRatio{
+		lab::vec2 resizeRatio{
 			nextWidth / VK::Object->screenWidth,
 			nextHeight / VK::Object->screenHeight
 		};

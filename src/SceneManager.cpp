@@ -30,7 +30,7 @@ namespace EWE {
 		}
 		do { //having a simple while() may cause a race condition
 			EWE_VK(vkDeviceWaitIdle, VK::Object->vkDevice);
-		} while (ewEngine.GetLoadingScreenProgress());
+		} while (ewEngine.renderFramework.GetLoadingScreenProgress());
 
 		currentScenePtr->Entry();
 

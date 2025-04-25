@@ -1,43 +1,44 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include <LAB/Vector.h>
+#include <LAB/Matrix.h>
 
 namespace EWE {
 #define MAX_LIGHTS 10
 
 	struct GlobalUbo {
-		glm::mat4 projView;
-		//glm::mat4 inverseView{ 1.f };
-		glm::vec3 cameraPos{ 1.f }; //4 just for alignment
+		lab::mat4 projView;
+		//lab::mat4 inverseView{ 1.f };
+		lab::vec3 cameraPos{ 1.f }; //4 just for alignment
 
-		//alignas(16) glm::vec3 lightDirection = glm::normalize(glm::vec3{ 1.f, 3.f, -1.f });
-		//glm::vec4 ambientLightColor{ 1.f, 0.7f, 0.7f, .02f };  // w is intensity
+		//alignas(16) lab::vec3 lightDirection = glm::normalize(lab::vec3{ 1.f, 3.f, -1.f });
+		//lab::vec4 ambientLightColor{ 1.f, 0.7f, 0.7f, .02f };  // w is intensity
 	};
 	struct PointLightData {
-		glm::vec4 position{}; //ignores w
-		glm::vec4 color{}; //w is intensity
+		lab::vec4 position{}; //ignores w
+		lab::vec4 color{}; //w is intensity
 	};
 
 	struct LightBufferObject {
-		glm::vec4 ambientColor{};
-		glm::vec4 sunlightDirection{}; //w for sun power
-		glm::vec4 sunlightColor{};
+		lab::vec4 ambientColor{};
+		lab::vec4 sunlightDirection{}; //w for sun power
+		lab::vec4 sunlightColor{};
 		PointLightData pointLights[MAX_LIGHTS];
-		uint8_t numLights;
+		uint8_t numLights{ 0 };
 	};
 
 	/*
 	struct SpotLightData {
-		glm::vec4 position{};
-		glm::vec4 color{};
-		glm::vec4 direction; //W in the direction is the cutoff
+		lab::vec4 position{};
+		lab::vec4 color{};
+		lab::vec4 direction; //W in the direction is the cutoff
 		//float cutoff;
 	};
 
 	struct SpotlightBufferObject {
-		glm::vec4 ambientColor{};
-		glm::vec4 sunlightDirection{};
-		glm::vec4 sunlightColor{};
+		lab::vec4 ambientColor{};
+		lab::vec4 sunlightDirection{};
+		lab::vec4 sunlightColor{};
 		PointLightData pointLights[MAX_LIGHTS];
 		int pointNumLights{};
 		SpotLightData spotLights[MAX_LIGHTS];

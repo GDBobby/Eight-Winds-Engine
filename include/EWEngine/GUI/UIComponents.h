@@ -1,6 +1,5 @@
 #pragma once
 
-#include "EWEngine/GameObject2D.h"
 #include "EWEngine/Graphics/TextOverlay.h"
 #include "UICompFunctions.h"
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
@@ -24,14 +23,14 @@ namespace EWE {
 
 	struct ClickTextBox { //i.e. menu options
 		TextStruct textStruct{};
-		glm::ivec4 clickBox{ 0 };
-		Transform2D transform{};
+		lab::ivec4 clickBox{ 0 };
+		lab::Transform<float, 2> transform{};
 		bool isActive = false;
 
 		ClickTextBox(std::string string, float x, float y, unsigned char align, float scale);
 		ClickTextBox(){}
 		ClickTextBox(TextStruct textStruct);
-		void ResizeWindow(glm::vec2 rescalingRatio);
+		void ResizeWindow(lab::vec2 rescalingRatio);
 		bool Clicked(double xpos, double ypos);
 
 		void Render(Array2DPushConstantData& push);
@@ -39,8 +38,8 @@ namespace EWE {
 	};
 	struct TypeBox { //keybinds
 		TextStruct textStruct;
-		glm::ivec4 clickBox{ 0 };
-		Transform2D transform;
+		lab::ivec4 clickBox{ 0 };
+		lab::Transform<float, 2> transform;
 		bool isActive = false;
 		bool mouseDragging = false;
 		bool readyForInput = false;
@@ -65,26 +64,26 @@ namespace EWE {
 
 		bool Clicked(double xpos, double ypos) { return UIComp::CheckClickBox(clickBox, xpos, ypos); }
 
-		void ResizeWindow(glm::vec2 rescalingRatio);
+		void ResizeWindow(lab::vec2 rescalingRatio);
 
 		void Render(Array2DPushConstantData& push);
 	};
 
 	struct Slider {
-		std::pair<Transform2D, Transform2D> bracketButtons;
-		Transform2D bracket{};
-		Transform2D slider{};
+		std::pair<lab::Transform<float, 2>, lab::Transform<float, 2>> bracketButtons;
+		lab::Transform<float, 2> bracket{};
+		lab::Transform<float, 2> slider{};
 		float slidePosition{0.5f}; //can be translated to volume
-		glm::ivec4 click[3] = { glm::ivec4{0},glm::ivec4{0},glm::ivec4{0} }; //left, slide, right
+		lab::ivec4 click[3] = { lab::ivec4{0},lab::ivec4{0},lab::ivec4{0} }; //left, slide, right
 		float spaceBetween{};
 		bool VolumeTrueSensFalse = true;
 		uint8_t mySens = 100; //sens short for sensitivity
 		bool isActive = false;
 		Slider() {}
-		void SetTransform(glm::vec2 newTrans);
-		void Init(glm::vec2 initTrans, uint8_t currentSens);
+		void SetTransform(lab::vec2 newTrans);
+		void Init(lab::vec2 initTrans, uint8_t currentSens);
 
-		void Init(glm::vec2 initTrans, float currentVolume);
+		void Init(lab::vec2 initTrans, float currentVolume);
 		void SetSliderPosition(float sliderPos);
 
 		void MoveSlider(int movedAmount);
@@ -114,7 +113,7 @@ namespace EWE {
 		void SetSelection(int8_t selection);
 
 		bool Clicked(double xpos, double ypos);
-		void ResizeWindow(glm::vec2 rescalingRatio);
+		void ResizeWindow(lab::vec2 rescalingRatio);
 
 		void Render(Array2DPushConstantData& push);
 		void Move(float xDiff, float yDiff);
@@ -131,15 +130,15 @@ namespace EWE {
 		ClickTextBox dropper; //file, new, save, load, return to main, exit
 
 		std::vector<TextStruct> dropOptions;
-		std::vector<glm::ivec4> clickBoxes;
+		std::vector<lab::ivec4> clickBoxes;
 
-		Transform2D dropBackground;
+		lab::Transform<float, 2> dropBackground;
 
 		void PushOption(std::string pushString);
 
 		void Init();
 
-		void ResizeWindow(glm::vec2 rescalingRatio) {
+		void ResizeWindow(lab::vec2 rescalingRatio) {
 			Init(); 
 		}
 
@@ -177,10 +176,10 @@ namespace EWE {
 	*/
 
 	struct Button {
-		Transform2D transform;
-		glm::ivec4 clickBox;
+		lab::Transform<float, 2> transform;
+		lab::ivec4 clickBox;
 
-		Button(glm::vec2 translation);
+		Button(lab::vec2 translation);
 
 		void ResizeWindow() { UIComp::ConvertTransformToClickBox(transform, clickBox, VK::Object->screenWidth, VK::Object->screenHeight); }
 
@@ -201,15 +200,15 @@ namespace EWE {
 
 		Button button;
 		TextStruct label;
-		glm::vec2 labelOffset;
+		lab::vec2 labelOffset;
 		bool isChecked = false;
 		bool isActive = false;
 
-		Checkbox(std::string labelString, glm::vec2 translation, DefaultOffsets labelOffset);
+		Checkbox(std::string labelString, lab::vec2 translation, DefaultOffsets labelOffset);
 
-		Checkbox(std::string labelString, glm::vec2 translation, glm::vec2 labelOffset, TextAlign alignment);
+		Checkbox(std::string labelString, lab::vec2 translation, lab::vec2 labelOffset, TextAlign alignment);
 
-		void ResizeWindow(glm::vec2 rescalingRatio);
+		void ResizeWindow(lab::vec2 rescalingRatio);
 
 		bool Clicked(double xpos, double ypos);
 

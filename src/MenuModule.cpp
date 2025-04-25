@@ -5,7 +5,7 @@
 
 namespace EWE {
 
-	MenuModule::UIImageStruct::UIImageStruct(ImageID imgID, Transform2D& transform) : imgID{ imgID }, transform{ transform }, descriptor{ Image_Manager::CreateSimpleTexture(imgID, VK_SHADER_STAGE_FRAGMENT_BIT) } {}
+	MenuModule::UIImageStruct::UIImageStruct(ImageID imgID, lab::Transform<float, 2>& transform) : imgID{ imgID }, transform{ transform }, descriptor{ Image_Manager::CreateSimpleTexture(imgID, VK_SHADER_STAGE_FRAGMENT_BIT) } {}
 
 	EWEModel* MenuModule::model2D;
 
@@ -115,7 +115,7 @@ namespace EWE {
 		Dimension2::BindDefaultDesc();
 		Array2DPushConstantData push{};
 		if (checkBoxes.size() > 0) {
-			push.color = glm::vec3{ 1.f };
+			push.color = lab::vec3{ 1.f };
 			for (auto& object : checkBoxes) {
 				if (object.isChecked) {
 					push.textureID = MT_Checked;
@@ -131,7 +131,7 @@ namespace EWE {
 		}
 
 		if (sliders.size() > 0) {
-			push.color = glm::vec3(1.f);
+			push.color = lab::vec3(1.f);
 			push.textureID = MT_BracketButton;
 			for (auto& object : sliders) {
 				object.Render(push, 1);
@@ -148,7 +148,7 @@ namespace EWE {
 
 		if (controlBoxes.size() > 0) {
 			//printf("before draw objects control boxes \n");
-			push.color = glm::vec3(1.f);
+			push.color = lab::vec3(1.f);
 			push.textureID = MT_Button;
 			for (auto& object : controlBoxes) {
 				object.Render(push);
@@ -165,28 +165,28 @@ namespace EWE {
 		push.depth = 0.9f;
 		push.textureID = MT_NineUI;
 		if (comboBoxes.size() > 0) {
-			push.color = glm::vec3{ .5f, .35f, .25f };
+			push.color = lab::vec3{ .5f, .35f, .25f };
 			for (auto& object : comboBoxes) {
 				object.Render(push);
 			}
 		}
 
 		if (dropBoxes.size() > 0) {
-			push.color = glm::vec3{ .5f, .35f, .25f };
+			push.color = lab::vec3{ .5f, .35f, .25f };
 			for (auto& object : dropBoxes) {
 				object.Render(push);
 			}
 		}
 
 		if (clickText.size() > 0) {
-			push.color = glm::vec3{ .5f, .35f, .25f };
+			push.color = lab::vec3{ .5f, .35f, .25f };
 			for (auto& object : clickText) {
 				object.Render(push);
 			}
 		}
 
 		if (typeBoxes.size() > 0) {
-			push.color = glm::vec3{ .5f, .35f, .25f };
+			push.color = lab::vec3{ .5f, .35f, .25f };
 			for (auto& object : typeBoxes) {
 				object.Render(push);
 			}
@@ -200,7 +200,7 @@ namespace EWE {
 
 		if (menuBars.size() > 0) {
 			push.textureID = MT_NineUI;
-			push.color = glm::vec3{ .5f, .35f, .25f };
+			push.color = lab::vec3{ .5f, .35f, .25f };
 			for (auto& object : menuBars) {
 				object.Render(push, 0);
 			}
@@ -212,7 +212,7 @@ namespace EWE {
 
 	}
 
-	void MenuModule::ResizeWindow(glm::vec2 resizeRatio) {
+	void MenuModule::ResizeWindow(lab::vec2 resizeRatio) {
 		//i think its just clickboxes?
 		for (int i = 0; i < sliders.size(); i++) {
 			sliders[i].ResizeWindow(); //ok why is this given a pointer to window size
@@ -249,10 +249,10 @@ namespace EWE {
 		Single2DPushConstantData push;
 		if (images.size() > 0) {
 			//not considering for texture ordering
-			push.color = glm::vec3(1.f);
+			push.color = lab::vec3(1.f);
 			for (int i = 0; i < images.size(); i++) {
 				Dimension2::BindSingleDescriptor(&images[i].descriptor);
-				push.transform = images[i].transform.MatrixNoRotation();
+				push.transform = images[i].transform.ToMatrixNoRotation();
 				
 				Dimension2::PushAndDraw(push);
 			}

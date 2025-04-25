@@ -7,7 +7,6 @@
 #include "EWEngine/Data/ShaderBuilder.h"
 #include "EWEngine/Data/EngineDataTypes.h"
 
-#include <glm/glm.hpp>
 #include <map>
 
 

@@ -8,11 +8,8 @@
 #include <cassert>
 #include <string.h>
 
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <LAB/Vector.h>
+#include <LAB/Matrix.h>
 #include <array>
 
 namespace EWE {
@@ -102,10 +99,10 @@ namespace EWE {
 
 
 	struct MaterialBuffer {
-		glm::vec3 albedo;
+		lab::vec3 albedo;
 		float rough;
 		float metal;
-		glm::vec3 p_padding; //no do not use
+		lab::vec3 p_padding; //no do not use
 		//sub surface scattering
 		//depth
 		//transparency
@@ -116,20 +113,12 @@ namespace EWE {
 		//clear coat
 	};
 	struct MaterialInfo {
-		MaterialFlags materialFlags;
+		MaterialFlags materialFlags{ 0 };
 		ImageID imageID;
 		MaterialInfo() {}
 		MaterialInfo(MaterialFlags flags, ImageID imageID) : materialFlags{ flags }, imageID{ imageID } {}
 		bool operator==(MaterialInfo const& other) const {
 			return (materialFlags == other.materialFlags) && (imageID == other.imageID);
 		}
-	};
-
-
-	struct Matrix3ForGLSL {
-		std::array<glm::vec4, 3> columns{ glm::vec4{0.f}, glm::vec4{0.f}, glm::vec4{0.f, 0.f, 1.f, 0.f} };
-		Matrix3ForGLSL() {}
-		Matrix3ForGLSL(glm::mat3 const& inMat);
-		
 	};
 } //namespace EWE

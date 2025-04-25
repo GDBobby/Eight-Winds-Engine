@@ -1,7 +1,9 @@
 #pragma once
 
-#include "EWEngine/GameObject2D.h"
 #include "EWEngine/Graphics/TextOverlay.h"
+
+#include "LAB/Transform.h"
+
 namespace EWE {
 	namespace UIComp {
 		enum InputType {
@@ -34,18 +36,18 @@ namespace EWE {
 
 
 		//2d to screen conversions
-		void ConvertTransformToClickBox(Transform2D& transform, glm::ivec4& clickBox, float screenWidth, float screenHeight);
+		void ConvertTransformToClickBox(lab::Transform<float, 2>& transform, lab::ivec4& clickBox, float screenWidth, float screenHeight);
 
-		bool CheckClickBox(glm::ivec4& clickBox, double mouseX, double mouseY);
+		bool CheckClickBox(lab::ivec4& clickBox, double mouseX, double mouseY);
 
-		void TextToTransform(Transform2D& transform, TextStruct& textStruct, glm::ivec4& clickBox, float screenWidth, float screenHeight);
+		void TextToTransform(lab::Transform<float, 2>& transform, TextStruct& textStruct, lab::ivec4& clickBox, float screenWidth, float screenHeight);
 
-		void ConvertScreenTo2D(glm::ivec2 screen, glm::vec2& coord2D, float screenWidth, float screenHeight);
-		void PrintClickBox(glm::ivec4& clickBox);
+		void ConvertScreenTo2D(lab::ivec2 screen, lab::vec2& coord2D, float screenWidth, float screenHeight);
+		void PrintClickBox(lab::ivec4& clickBox);
 
-		void ConvertClickToTransform(glm::ivec4& clickBox, Transform2D& transform, float screenWidth, float screenHeight);
+		void ConvertClickToTransform(lab::ivec4& clickBox, lab::Transform<float, 2>& transform, float screenWidth, float screenHeight);
 
-		glm::ivec2 ConvertWorldCoordinatesToScreenCoordinates(glm::vec2 worldCoord, float screenWidth, float screenHeight);
+		lab::ivec2 ConvertWorldCoordinatesToScreenCoordinates(lab::vec2 worldCoord, float screenWidth, float screenHeight);
 
 	};
 }

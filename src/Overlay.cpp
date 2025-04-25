@@ -12,7 +12,7 @@ namespace EWE {
 		}
 	}
 	void OverlayBase::ResizeWindow(SettingsInfo::ScreenDimensions nextDimensions) {
-		glm::vec2 rescalingRatio{
+		lab::vec2 rescalingRatio{
 			static_cast<float>(nextDimensions.width) / VK::Object->screenWidth,
 			static_cast<float>(nextDimensions.height) / VK::Object->screenHeight
 		};

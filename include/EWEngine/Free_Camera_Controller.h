@@ -1,11 +1,11 @@
 #pragma once
 
-#include "EWE_GameObject.h"
-//#include "MainWindow.h"
-#include "GameObject2D.h"
+#include <GLFW/glfw3.h>
 //#include "EWEngine/Graphics/imGuiHandler.h"
 
 #include <iostream>
+
+#include <LAB/Transform.h>
 
 namespace EWE {
     class CameraController {
@@ -60,7 +60,7 @@ namespace EWE {
         bool textSent = false;
 
         float storedZoom = 0.f;
-        glm::vec3 forwardDirZoom;
+        lab::vec3 forwardDirZoom;
         
         struct KeyMappings {
             int moveLeft = GLFW_KEY_A;
@@ -80,12 +80,12 @@ namespace EWE {
         };
         
 
-        void Move(TransformComponent& transform);
-        void Move2DPlaneXZ(float dt, Transform2D& transform2d);
-        void Zoom(TransformComponent& transform);
-        void RotateCam(TransformComponent& transform);
+        void Move(lab::Transform<float, 3>& transform);
+        void Move2DPlaneXZ(float dt, lab::Transform<float, 2>& transform2d);
+        void Zoom(lab::Transform<float, 3>& transform);
+        void RotateCam(lab::Transform<float, 3>& transform);
 
-        //glm::vec2 MenuOperation();
+        //lab::vec2 MenuOperation();
         void DisableCursor(GLFWwindow* window);
 
         KeyMappings keys{};

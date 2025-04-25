@@ -15,12 +15,18 @@ namespace EWE {
 		: ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
 		soundEngine{ SoundEngine::GetSoundEngineInstance() },
-		windowPtr{ ewEngine.mainWindow.getGLFWwindow() },
-		camControl{ ewEngine.mainWindow.getGLFWwindow() },
-		imguiHandler{ ewEngine.mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT },
+		windowPtr{ ewEngine.renderFramework.mainWindow.getGLFWwindow() },
+		camControl{ ewEngine.renderFramework.mainWindow.getGLFWwindow() },
+		imguiHandler{ ewEngine.renderFramework.mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT },
 		fakeCameraForCullingDemo{ewEngine.camera}
 	{
 		ocean = Construct<Ocean::Ocean>({ Image_Manager::GetDescriptorImageInfo(skyboxImgID) });
+		runtimeCS.f_axis = CS::f_axis;
+		runtimeCS.r_axis = CS::r_axis;
+		runtimeCS.u_axis = CS::u_axis;
+		runtimeCS.f_sign = CS::f_sign;
+		runtimeCS.r_sign = CS::r_sign;
+		runtimeCS.u_sign = CS::u_sign;
 	}
 
 	PBRScene::~PBRScene() {
@@ -104,7 +110,7 @@ namespace EWE {
 	void PBRScene::InitGrassResources() {
 
 		gbo.windStrength = 1.f;
-		gbo.endDistance = glm::vec4(8.f, 13.f, 12.5f, 500.f); //LOD = 6 - sqrt(distance) / endDistance
+		gbo.endDistance = lab::vec4(8.f, 13.f, 12.5f, 500.f); //LOD = 6 - sqrt(distance) / endDistance
 		gbo.height = 1.f;
 		//gbo.lengthGroundPosV2 = 1.f;
 		gbo.spacing = 0.125f;
@@ -114,7 +120,7 @@ namespace EWE {
 
 		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			grassBuffer[i] = Construct<EWEBuffer>({ sizeof(GrassBufferObject), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
-			//ttmGrassBuffer[i] = Construct<EWEBuffer>({ sizeof(glm::vec3) * 1024 * 1024, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
+			//ttmGrassBuffer[i] = Construct<EWEBuffer>({ sizeof(lab::vec3) * 1024 * 1024, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
 
 
 			EWEDescriptorWriter descWriter(PipelineSystem::At(Pipe::GenGrass)->GetDSL(), DescriptorPool_Global);
@@ -131,7 +137,7 @@ namespace EWE {
 		sphereModel = Basic_Model::Sphere(4, 1.f);
 
 		controlledSphere.drawable = &sphereDrawable;
-		sphereTransform.translation = glm::vec3(0.f, -2.f, 9.f);
+		sphereTransform.translation = lab::vec3(0.f, -2.f, 9.f);
 		controlledSphere.ownerTransform = &sphereTransform;
 		controlledSphere.meshPtr = sphereModel;
 
@@ -172,11 +178,11 @@ namespace EWE {
 		uint64_t mappedTransformAddr[2] = { reinterpret_cast<uint64_t>(transformBuffers[0]->GetMappedMemory()), reinterpret_cast<uint64_t>(transformBuffers[1]->GetMappedMemory()) };
 #endif
 
-		TransformComponent transform{};
-		const glm::vec3 baseAlbedo{ 0.41f, 0.249f, 0.f };
+		lab::Transform3 transform{};
+		const lab::vec3 baseAlbedo{ 0.41f, 0.249f, 0.f };
 		std::vector<MaterialBuffer> matData(16);
 
-		glm::mat4 tempMat4;
+		lab::mat4 tempMat4;
 		for (uint8_t x = 0; x < 4; x++) {
 			for (uint8_t y = 0; y < 4; y++) {
 				matData[y + x * 4].albedo = baseAlbedo;
@@ -185,13 +191,13 @@ namespace EWE {
 				transform.translation.x = -7.f + 4.f * x;
 				transform.translation.z = -7.f + 4.f * y;
 
-				tempMat4 = transform.mat4();
+				tempMat4 = transform.GetMatrix();
 
-				memcpy(reinterpret_cast<void*>(mappedTransformAddr[0] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
-				memcpy(reinterpret_cast<void*>(mappedTransformAddr[1] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
+				memcpy(reinterpret_cast<void*>(mappedTransformAddr[0] + (sizeof(lab::mat4) * (y + x * 4))), &tempMat4, sizeof(lab::mat4));
+				memcpy(reinterpret_cast<void*>(mappedTransformAddr[1] + (sizeof(lab::mat4) * (y + x * 4))), &tempMat4, sizeof(lab::mat4));
 #if DEBUGGING_MATERIAL_NORMALS
-				memcpy(reinterpret_cast<void*>(mappedTransformAddr[2] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
-				memcpy(reinterpret_cast<void*>(mappedTransformAddr[3] + (sizeof(glm::mat4) * (y + x * 4))), &tempMat4, sizeof(glm::mat4));
+				memcpy(reinterpret_cast<void*>(mappedTransformAddr[2] + (sizeof(lab::mat4) * (y + x * 4))), &tempMat4, sizeof(lab::mat4));
+				memcpy(reinterpret_cast<void*>(mappedTransformAddr[3] + (sizeof(lab::mat4) * (y + x * 4))), &tempMat4, sizeof(lab::mat4));
 #endif
 			}
 		}
@@ -220,7 +226,7 @@ namespace EWE {
 		SyncHub::GetSyncHubInstance()->EndSingleTimeCommandTransfer(transferCommand);
 
 		updatedCMB = MAX_FRAMES_IN_FLIGHT;
-		controlledSphereMB.albedo = glm::vec3(1.f);
+		controlledSphereMB.albedo = lab::vec3(1.f);
 		controlledSphereMB.metal = 0.f;
 		controlledSphereMB.rough = 0.f;
 	}
@@ -231,14 +237,14 @@ namespace EWE {
 		InitTerrainResources();
 		InitGrassResources();
 	
-		lbo.ambientColor = glm::vec4(0.04f);
+		lbo.ambientColor = lab::vec4(0.04f);
 		lbo.numLights = 0;
-		lbo.sunlightColor = glm::vec4(1.f);
-		lbo.sunlightDirection = glm::normalize(glm::vec4(1.f));
+		lbo.sunlightColor = lab::vec4(1.f);
+		lbo.sunlightDirection = lab::Normalized(lab::vec4(1.f));
 
 		updatedLBO = MAX_FRAMES_IN_FLIGHT;
 
-		camTransform.translation = glm::vec3(-1.5f, -7.5f, 9.f);
+		camTransform.translation = lab::vec3(-1.5f, -7.5f, 9.f);
 
 
 
@@ -250,7 +256,7 @@ namespace EWE {
 		soundEngine->StopMusic();
 
 		menuManager.ChangeMenuState(menu_main, 0);
-		ewEngine.camera.SetPerspectiveProjection(glm::radians(70.0f), ewEngine.eweRenderer.GetAspectRatio(), 0.1f, 1000000.0f);
+		ewEngine.camera.SetPerspectiveProjection(lab::DegreesToRadians(70.0f), ewEngine.renderFramework.eweRenderer.GetAspectRatio(), 0.1f, 1000000.0f);
 
 		ewEngine.camera.UpdateViewData({ 40.f, 0.f, 40.0f }, { 0.f, 0.f, 0.f });
 
@@ -270,11 +276,11 @@ namespace EWE {
 
 			if (lboChanged) {
 				updatedLBO = MAX_FRAMES_IN_FLIGHT;
-				glm::vec3 sunDir;
+				lab::vec3 sunDir;
 				sunDir.x = lbo.sunlightDirection.x;
 				sunDir.y = lbo.sunlightDirection.y;
 				sunDir.z = lbo.sunlightDirection.z;
-				sunDir = glm::normalize(sunDir);
+				sunDir.Normalize();
 
 				lbo.sunlightDirection.x = sunDir.x;
 				lbo.sunlightDirection.y = sunDir.y;
@@ -290,14 +296,32 @@ namespace EWE {
 
 			ImGui::Text("Render gpu times - last[%.2f] - peak[%.2f] - avg[%.2f] - highest[%.2f]", ewEngine.elapsedGPUMS, ewEngine.peakRenderTime, ewEngine.averageRenderTime, ewEngine.highestRenderTime);
 
+			ImGui::SeparatorText("coordinate system");
+			if (ImGui::DragFloat("fov degrees", &fov_degrees, 1.f, 1.f, 180.f)) {
+				updated_cam_data = true; 
+			}
 
+			ImGui::Checkbox("forward sign", &runtimeCS.f_sign);
+			ImGui::Checkbox("right sign", &runtimeCS.r_sign);
+			ImGui::Checkbox("up sign", &runtimeCS.u_sign);
+			int f_axis_temp = runtimeCS.f_axis;
+			int r_axis_temp = runtimeCS.r_axis;
+			int u_axis_temp = runtimeCS.u_axis;
+			ImGui::SliderInt("forward axis", reinterpret_cast<int*>(&f_axis_temp), 0, 2, magic_enum::enum_name(runtimeCS.f_axis).data());
+			ImGui::SliderInt("right axis",   reinterpret_cast<int*>(&r_axis_temp), 0, 2, magic_enum::enum_name(runtimeCS.r_axis).data());
+			ImGui::SliderInt("up axis",      reinterpret_cast<int*>(&u_axis_temp), 0, 2, magic_enum::enum_name(runtimeCS.u_axis).data());
+			runtimeCS.f_axis = static_cast<lab::Direction::Axis>(f_axis_temp);
+			runtimeCS.r_axis = static_cast<lab::Direction::Axis>(r_axis_temp);
+			runtimeCS.u_axis = static_cast<lab::Direction::Axis>(u_axis_temp);
+
+			ImGui::SeparatorText("Camera data");
 			ImGui::Text("camera translation - %.2f:%.2f:%.2f\n", camTransform.translation.x, camTransform.translation.y, camTransform.translation.z);
 			ImGui::Text("camera rotation - %.2f:%.2f:%.2f\n", camTransform.rotation.x, camTransform.rotation.y, camTransform.rotation.z);
 
 			ImGui::Checkbox("fake camera for culling demo", &fakeCameraBool);
 			if (fakeCameraBool) {
 				ImGui::DragFloat3("translation##fc", reinterpret_cast<float*>(&sphereTransform.translation), 1.f, -100.f, 100.f);
-				ImGui::DragFloat3("rotation##fc", reinterpret_cast<float*>(&sphereTransform.rotation), 0.1f, -glm::pi<float>(), glm::pi<float>());
+				ImGui::DragFloat3("rotation##fc", reinterpret_cast<float*>(&sphereTransform.rotation), 0.1f, -lab::PI<float>, lab::PI<float>);
 			}
 			ImGui::Checkbox("conservative frustums", &conservativeFrustum);
 
@@ -365,7 +389,7 @@ namespace EWE {
 			ImGui::DragFloat("height##gr", &gbo.height, 0.01f, 0.f, 100.f);
 			//ImGui::DragFloat("length ground posv2", &gbo.lengthGroundPosV2, 0.01f, 0.f, 100.f);
 			ImGui::DragFloat("spacing", &gbo.spacing, 0.01f, 0.f, 100.f);
-			ImGui::DragFloat("wind dir", &gbo.windDir, 0.01f, 0.f, glm::two_pi<float>());
+			ImGui::DragFloat("wind dir", &gbo.windDir, 0.01f, 0.f, lab::GetPI(2.f));
 
 			if (ImGui::Checkbox("cull at grass height", &displayGrassLOD)) {
 				gbo.displayLOD = displayGrassLOD;
@@ -416,14 +440,29 @@ namespace EWE {
 
 			--updatedCMB;
 		}
+		if (updated_cam_data) {
+			if (cam_perspective == lab::Perspective::Vulkan) {
+				ewEngine.camera.projection = lab::PerspectiveMatrix<lab::Perspective::Vulkan>(lab::DegreesToRadians(fov_degrees), static_cast<float>(VK::Object->screenWidth) / static_cast<float>(VK::Object->screenHeight), 0.1f, 10000.f);
+			}
+			else if (cam_perspective == lab::Perspective::DirectX) {
+				ewEngine.camera.projection = lab::PerspectiveMatrix<lab::Perspective::Vulkan>(lab::DegreesToRadians(fov_degrees), static_cast<float>(VK::Object->screenWidth) / static_cast<float>(VK::Object->screenHeight), 0.1f, 10000.f);
+			}
+			else if (cam_perspective == lab::Perspective::OpenGL) {
+				ewEngine.camera.projection = lab::PerspectiveMatrix<lab::Perspective::OpenGL>(lab::DegreesToRadians(fov_degrees), static_cast<float>(VK::Object->screenWidth) / static_cast<float>(VK::Object->screenHeight), 0.1f, 10000.f);
+			}
+			updated_cam_data = false;
+		}
 
 		camControl.Move(camTransform);
 		camControl.RotateCam(camTransform);
 		camControl.Zoom(camTransform);
-		ewEngine.camera.SetViewYXZ(camTransform.translation, camTransform.rotation);
+		//ewEngine.camera.ViewRotation<CS>(camTransform.translation, camTransform.rotation);
+		ewEngine.camera.view = lab::Runtime::ViewRotation(runtimeCS, camTransform.translation, camTransform.rotation);
+		ewEngine.camera.ubo.projView = ewEngine.camera.projection * ewEngine.camera.view;
+
 		ewEngine.camera.BindUBO();
 		if (fakeCameraBool) {
-			fakeCameraForCullingDemo.SetViewYXZ(sphereTransform.translation, sphereTransform.rotation);
+			fakeCameraForCullingDemo.ViewDirection<CS>(sphereTransform.translation, sphereTransform.rotation);
 			if (conservativeFrustum) {
 				const auto tempFrustumCopy = fakeCameraForCullingDemo.GetConservativeFrustumPlanes(sphereTransform.translation, sphereTransform.rotation);
 				for (uint8_t i = 0; i < 6; i++) {
@@ -451,7 +490,7 @@ namespace EWE {
 				}
 			}
 		}
-		tbo.viewportDim = glm::vec2{ VK::Object->screenWidth, VK::Object->screenHeight };
+		tbo.viewportDim = lab::vec2{ VK::Object->screenWidth, VK::Object->screenHeight };
 		{
 			tessBuffer[VK::Object->frameIndex]->Map();
 			void* mappedMem = tessBuffer[VK::Object->frameIndex]->GetMappedMemory();
@@ -480,8 +519,8 @@ namespace EWE {
 			}
 
 			ewEngine.BeginRenderX();
-			ewEngine.camera.ViewTargetDirect();
-			ewEngine.timeTracker = glm::mod(ewEngine.timeTracker + dt, glm::two_pi<double>());
+			//ewEngine.camera.UpdateCamera<CS>();
+			ewEngine.timeTracker = lab::Mod(ewEngine.timeTracker + dt, lab::GetPI(2.0));
 			ewEngine.advancedRS.renderGameObjects(static_cast<float>(ewEngine.timeTracker));
 			//ewEngine.Draw3DObjects(dt);
 			ewEngine.skinnedRS.Render();

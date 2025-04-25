@@ -5,6 +5,8 @@
 #include "EWEngine/Graphics/Model/Basic_Model.h"
 #include "EWEngine/GUI/MenuEnums.h"
 
+#include <LAB/Transform.h>
+
 namespace EWE {
 	//holds an entire menu and handles all components
 	//interaction between moduels and engine is handled in UIHandler
@@ -12,10 +14,10 @@ namespace EWE {
 	public:
 		struct UIImageStruct {
 			ImageID imgID{IMAGE_INVALID};
-			Transform2D transform{};
+			lab::Transform<float, 2> transform{};
 			VkDescriptorSet descriptor{ VK_NULL_HANDLE };
 			UIImageStruct() {}
-			UIImageStruct(ImageID imgID, Transform2D& transform);
+			UIImageStruct(ImageID imgID, lab::Transform<float, 2>& transform);
 		};
 		static EWEModel* model2D;
 
@@ -126,12 +128,12 @@ namespace EWE {
 		int8_t selectedDropBox = -1;
 
 		bool hasBackground = false;
-		glm::vec3 backgroundColor = { .1f, .1f, .1f };
-		Transform2D backgroundTransform{};
+		lab::vec3 backgroundColor = { .1f, .1f, .1f };
+		lab::Transform<float, 2> backgroundTransform{};
 		virtual void ProcessClick(double xpos, double ypos) = 0;
 		std::pair<UIComponentTypes, int16_t> CheckClick(double xpos, double ypos);
 
-		void ResizeWindow(glm::vec2 rescalingRatio);
+		void ResizeWindow(lab::vec2 rescalingRatio);
 
 		virtual void DrawText();
 		virtual void DrawNewObjects();

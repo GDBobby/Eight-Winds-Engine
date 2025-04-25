@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <functional>
 
+#include <LAB/Vector/Hash.h>
+
 namespace EWE {
 
 	template <typename T, typename... Rest>
@@ -11,4 +13,5 @@ namespace EWE {
 		(HashCombine(seed, rest), ...);
 	};
 }
+
 

@@ -37,7 +37,7 @@ namespace EWE {
 		uiPointer = this;
 		windowPtr = window;
 
-		backgroundObject.transform2d.scale = glm::vec2{ 2.f };
+		backgroundObject.transform.scale = lab::vec2{ 2.f };
 		backgroundObject.color = { 0.01f, 0.01f, 0.01f };
 
 #if EWE_DEBUG
@@ -46,17 +46,8 @@ namespace EWE {
 	}
 
 #if BENCHMARKING
-	void UIHandler::Benchmarking(double time, double peakTime, double averageTime, double highTime, double avgLogic, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU) {
+	void UIHandler::Benchmarking(double time, double peakTime, double averageTime, double highTime, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU) {
 		textOverlay->AddDefaultText(time, peakTime, averageTime, highTime);
-		if (avgLogic > 0.0f) {
-			std::stringstream ss;
-			ss.str("");
-			ss << std::fixed << std::setprecision(4);
-			ss << "average Logic Time: " << avgLogic;
-			TextStruct passer{ ss.str(), 0.f, VK::Object->screenHeight - (100.f * textOverlay->scale), TA_left, 1.f };
-			textOverlay->AddText(passer);
-			//addText(TextStruct{ ss.str(), 0.f, frameBufferHeight - (100.f * scale), TA_left, 1.f });
-		}
 		if (benchmarkingGPU) {
 			std::stringstream ss;
 			ss.str("");

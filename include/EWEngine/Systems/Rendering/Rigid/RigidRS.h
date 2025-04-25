@@ -5,6 +5,7 @@
 #include "EWEngine/Data/EngineDataTypes.h"
 
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
+#include <LAB/Transform.h>
 
 #include <array>
 
@@ -12,7 +13,7 @@
 
 namespace EWE {
     struct MaterialObjectInfo {
-        TransformComponent* ownerTransform; //if nullptr and not playerOwned, error
+        lab::Transform<float, 3>* ownerTransform; //if nullptr and not playerOwned, error
         EWEModel* meshPtr;
         bool* drawable;
         //Actor_Type actorType = Actor_None;
@@ -27,7 +28,7 @@ namespace EWE {
             printf("Default construction of material info??? \n");
 #endif
         }
-        MaterialObjectInfo(TransformComponent* tComp, EWEModel* meshP, bool* drawable) : 
+        MaterialObjectInfo(lab::Transform<float, 3>* tComp, EWEModel* meshP, bool* drawable) :
             ownerTransform{ tComp },
             meshPtr{ meshP }, 
             drawable{ drawable }
@@ -85,12 +86,12 @@ namespace EWE {
         */
         //const std::map<MaterialFlags, std::map<TextureID, std::vector<MaterialObjectInfo>>>& cleanAndGetMaterialMap();
         void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo, EWEBuffer* materialBuffer);
-        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable, EWEBuffer* materialBuffer);
+        void AddMaterialObject(MaterialInfo materialInfo, lab::Transform<float, 3>* ownerTransform, EWEModel* modelPtr, bool* drawable, EWEBuffer* materialBuffer);
         void AddMaterialObject(MaterialInfo materialInfo, MaterialObjectInfo& renderInfo, std::array<EWEBuffer*, 2> materialBuffer);
-        void AddMaterialObject(MaterialInfo materialInfo, TransformComponent* ownerTransform, EWEModel* modelPtr, bool* drawable, std::array<EWEBuffer*, 2> materialBuffer);
+        void AddMaterialObject(MaterialInfo materialInfo, lab::Transform<float, 3> ownerTransform, EWEModel* modelPtr, bool* drawable, std::array<EWEBuffer*, 2> materialBuffer);
         void AddInstancedMaterialObject(MaterialInfo materialInfo, EWEModel* modelPtr, uint32_t entityCount, bool computedTransforms);
 
-        void RemoveByTransform(TransformComponent* ownerTransform);
+        void RemoveByTransform(lab::Transform<float, 3>* ownerTransform);
         void RemoveInstancedMaterialObject(EWEModel* modelPtr);
 
         void Render();

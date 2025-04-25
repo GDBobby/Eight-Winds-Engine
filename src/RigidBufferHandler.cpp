@@ -15,8 +15,8 @@ namespace EWE {
 		maxEntityCount = 100000; //need to call device limits and get the maximum size of a storage buffer there. not sure i would want to max that out tho
 		currentEntityCount = entityCount;
 
-		transformBuffer[0] = Construct<EWEBuffer>({ maxEntityCount * sizeof(glm::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, memoryFlags });
-		transformBuffer[1] = Construct<EWEBuffer>({ maxEntityCount * sizeof(glm::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, memoryFlags });
+		transformBuffer[0] = Construct<EWEBuffer>({ maxEntityCount * sizeof(lab::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, memoryFlags });
+		transformBuffer[1] = Construct<EWEBuffer>({ maxEntityCount * sizeof(lab::mat4), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, memoryFlags });
 		materialBuffer[0] = Construct<EWEBuffer>({ maxEntityCount * sizeof(MaterialBuffer), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, memoryFlags });
 		materialBuffer[1] = Construct<EWEBuffer>({ maxEntityCount * sizeof(MaterialBuffer), 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, memoryFlags });
 
@@ -95,15 +95,15 @@ namespace EWE {
 
 		return *this;
 	}
-	void RigidInstancedBufferHandler::WritePartialTransformData(glm::mat4* transform, std::size_t offset) {
-		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4), offset);
+	void RigidInstancedBufferHandler::WritePartialTransformData(lab::mat4* transform, std::size_t offset) {
+		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(lab::mat4), offset);
 	}
-	void RigidInstancedBufferHandler::WritePartialTransformData(glm::mat4* transform) {
-		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4), currentMemOffset);
-		currentMemOffset += sizeof(glm::mat4);
+	void RigidInstancedBufferHandler::WritePartialTransformData(lab::mat4* transform) {
+		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(lab::mat4), currentMemOffset);
+		currentMemOffset += sizeof(lab::mat4);
 	}
-	void RigidInstancedBufferHandler::WriteFullTransformData(glm::mat4* transform) {
-		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(glm::mat4) * currentEntityCount, 0);
+	void RigidInstancedBufferHandler::WriteFullTransformData(lab::mat4* transform) {
+		transformBuffer[VK::Object->frameIndex]->WriteToBuffer(transform, sizeof(lab::mat4) * currentEntityCount, 0);
 	}
 
 	void RigidInstancedBufferHandler::WritePartialMaterialData(MaterialBuffer* material, std::size_t offset) {

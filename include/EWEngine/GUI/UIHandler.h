@@ -4,6 +4,7 @@
 #include "EWEngine/Sound_Engine.h"
 //#include "GameUI.h"
 #include "Overlay.h"
+#include "EWEngine/Graphics/Model/Model.h"
 
 #define BENCHMARKING true
 
@@ -42,7 +43,7 @@ namespace EWE{
 		bool isActive = true;
 		bool escapePressed = false;
 
-		void Benchmarking(double time, double peakTime, double averageTime, double highTime, double avgLogic, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU);
+		void Benchmarking(double time, double peakTime, double averageTime, double highTime, bool benchmarkingGPU, float elapsedGPUMS, float averageGPU);
 		void DrawOverlayText(bool displayingRenderInfo);
 
 		void BeginTextRender() {
@@ -55,7 +56,11 @@ namespace EWE{
 		uint32_t* activeTargets = 0;
 		uint32_t* maxTargets = 0;
 
-		GameObject2D backgroundObject{};
+		struct UIObject {
+			lab::Transform2 transform{};
+			lab::vec3 color{ 1.f };
+		};
+		UIObject backgroundObject{};
 
 		TextOverlay* GetTextOverlay() {
 			//throw std::exception("only copy this once, to MenuManager");

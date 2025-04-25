@@ -2,14 +2,11 @@
 
 #include "EWEngine/Graphics/DescriptorHandler.h"
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <limits>
-#include <glm/gtc/matrix_transform.hpp>
+#include <LAB/Camera.h>
 
 namespace EWE {
 	EWECamera::EWECamera() {
-		view[3][3] = 1.f;
+		view.At(3, 3) = 1.f;
 	}
 
 
@@ -18,137 +15,18 @@ namespace EWE {
 	}
 
 	void EWECamera::SetOrthographicProjection(float left, float right, float top, float bottom, float near, float far) {
-		//projection = glm::mat4{ 1.0f };
-		projection = glm::identity<glm::mat4>();
-		projection[0][0] = 2.f / (right - left);
-		projection[1][1] = 2.f / (top - bottom);
-		projection[2][2] = 1.f / (far - near);
-		projection[3][0] = -(right + left) / (right - left);
-		projection[3][1] = -(bottom + top) / (bottom - top);
-		projection[3][2] = -near / (far - near);
+		//projection = lab::mat4{ 1.0f };
+		projection = lab::OrthographicMatrix(bottom, top, left, right, near, far);
 	}
 
 	void EWECamera::SetPerspectiveProjection(float fovy, float aspect, float near, float far) {
 		//inverting aspect, to make it height / width instead of width / height
-		projection = glm::perspective(fovy, aspect, near, far);
-		conservativeProjection = glm::perspective(fovy * 1.1f, aspect * 1.1f, near * 1.1f, far * 1.1f);
+		projection = lab::ProjectionMatrix<lab::Perspective::Vulkan>(fovy, aspect, near, far);
+		//projection = lab::CreateProjectionMatrix(fovy * 1.1f, aspect * 1.1f, near * 1.1f, far * 1.1f);
+		//projection = glm::perspective(fovy, aspect, near, far);
+		conservativeProjection = lab::ProjectionMatrix<lab::Perspective::Vulkan>(fovy * 1.1f, aspect * 1.1f, near * 1.1f, far * 1.1f);
 	}
 
-	void EWECamera::SetViewDirection(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 cameraUp) {
-
-		const glm::vec3 right{ normalize(glm::cross(cameraUp, forward)) }; //up needs to be passed in normalized
-		const glm::vec3 up{ normalize(glm::cross(forward, right)) };
-
-		view[0][0] = right.x;
-		view[1][0] = right.y;
-		view[2][0] = right.z;
-
-		view[0][1] = -up.x;
-		view[1][1] = -up.y;
-		view[2][1] = -up.z;
-
-		view[0][2] = -forward.x;
-		view[1][2] = -forward.y;
-		view[2][2] = -forward.z;
-
-		view[3][0] = -glm::dot(right, position);
-		view[3][1] = glm::dot(up, position);
-		view[3][2] = glm::dot(forward, position);
-
-		ubo.projView = projection * view;
-		//ubo.projection = projection;
-		//ubo.view = view;
-		ubo.cameraPos.x = position.x;
-		ubo.cameraPos.y = position.y;
-		ubo.cameraPos.z = position.z;
-	}
-
-	void EWECamera::NewViewTarget(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp) {
-		glm::vec3 forward = glm::normalize(target - position);
-		SetViewDirection(position, forward, cameraUp);
-
-		//view = glm::lookAt(position, target, cameraUp);
-		//inverseview = glm::inverse(view);
-		return;
-		
-		//f is going to be constant in this top down, or i could change it on a rare zoom
-		glm::vec3 right = glm::normalize(glm::cross(cameraUp, forward));
-		glm::vec3 up = normalize(glm::cross(forward, right));
-	}
-
-	void EWECamera::ViewTargetDirect() {
-
-
-		if (dataHasBeenUpdated == 0) {
-			return;
-		}
-		dataHasBeenUpdated--;
-		//printf("view target direct, sizeof globalubo : %zu \n", sizeof(GlobalUbo));
-
-		const glm::vec3 f = glm::normalize(target - position);
-		const glm::vec3 s = glm::normalize(glm::cross(f, cameraUp));
-		const glm::vec3 u = glm::cross(s, f);
-
-		float* mem = reinterpret_cast<float*>(&view);
-			//reinterpret_cast<float*>(uniformBuffers->at(currentFrame)->getMappedMemory());
-		//constexpr size_t viewOffset = offsetof(GlobalUbo, view) / sizeof(float);
-		mem[0] = s.x;
-		mem[4] = s.y;
-		mem[8] = s.z;
-
-		mem[1] = u.x;
-		mem[5] = u.y;
-		mem[9] = u.z;
-
-		mem[2] = -f.x;
-		mem[6] = -f.y;
-		mem[10] = -f.z;
-
-		mem[12] = -dot(s, position);
-		mem[13] = -dot(u, position);
-		mem[14] = dot(f, position);
-
-		ubo.cameraPos = position;
-
-		ubo.projView = projection * view;
-		//ubo.projection = projection;
-		//ubo.view = view;
-		uniformBuffers->at(VK::Object->frameIndex)->WriteToBuffer(&ubo);
-
-
-		//printf("view target direct, currentFrmae : %d \n", currentFrame);
-		uniformBuffers->at(VK::Object->frameIndex)->Flush();
-	}
-
-	void EWECamera::SetViewYXZ(glm::vec3 const& position, glm::vec3 const& rotation) {
-		const float c3 = glm::cos(rotation.z);
-		const float s3 = glm::sin(rotation.z);
-		const float c2 = glm::cos(rotation.x);
-		const float s2 = glm::sin(rotation.x);
-		const float c1 = glm::cos(rotation.y);
-		const float s1 = glm::sin(rotation.y);
-		const glm::vec3 u{ (c1 * c3 + s1 * s2 * s3), (c2 * s3), (c1 * s2 * s3 - c3 * s1) };
-		const glm::vec3 v{ (c3 * s1 * s2 - c1 * s3), (c2 * c3), (c1 * c3 * s2 + s1 * s3) };
-		const glm::vec3 w{ (c2 * s1), (-s2), (c1 * c2) };
-		//view = glm::mat4{ 1.f };
-		view[0][0] = u.x;
-		view[1][0] = u.y;
-		view[2][0] = u.z;
-		view[0][1] = v.x;
-		view[1][1] = v.y;
-		view[2][1] = v.z;
-		view[0][2] = w.x;
-		view[1][2] = w.y;
-		view[2][2] = w.z;
-		view[3][0] = -glm::dot(u, position);
-		view[3][1] = -glm::dot(v, position);
-		view[3][2] = -glm::dot(w, position);
-
-		ubo.projView = projection * view;
-		//ubo.projection = projection;
-		//ubo.view = view;
-		ubo.cameraPos = position;
-	}
 	void EWECamera::BindBothUBOs() {
 		uniformBuffers->at(0)->WriteToBuffer(&ubo, sizeof(GlobalUbo));
 		uniformBuffers->at(0)->Flush();
@@ -164,7 +42,7 @@ namespace EWE {
 	void EWECamera::PrintCameraPos() {
 		printf("camera pos : %.3f:%.3f:%.3f\n", ubo.cameraPos.x, ubo.cameraPos.y, ubo.cameraPos.z);
 	}
-	void EWECamera::UpdateViewData(glm::vec3 const& position, glm::vec3 const& target, glm::vec3 const& cameraUp) {
+	void EWECamera::UpdateViewData(lab::vec3 const& position, lab::vec3 const& target, lab::vec3 const& cameraUp) {
 		//probably store a position, target, and camera up variable in this class, then hand out a pointer to those variables
 		//being lazy rn
 		this->position = position;
@@ -174,111 +52,111 @@ namespace EWE {
 	};
 
 
-	std::array<glm::vec4, 6> EWECamera::GetFrustumPlanes() {
+	std::array<lab::vec4, 6> EWECamera::GetFrustumPlanes() {
 
 		enum side { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, NEAR = 4, FAR = 5 };
-		std::array<glm::vec4, 6> planes;
-		planes[LEFT].x = ubo.projView[0].w + ubo.projView[0].x;
-		planes[LEFT].y = ubo.projView[1].w + ubo.projView[1].x;
-		planes[LEFT].z = ubo.projView[2].w + ubo.projView[2].x;
-		planes[LEFT].w = ubo.projView[3].w + ubo.projView[3].x;
+		std::array<lab::vec4, 6> planes;
+		planes[LEFT].x = ubo.projView.columns[0].w + ubo.projView.columns[0].x;
+		planes[LEFT].y = ubo.projView.columns[1].w + ubo.projView.columns[1].x;
+		planes[LEFT].z = ubo.projView.columns[2].w + ubo.projView.columns[2].x;
+		planes[LEFT].w = ubo.projView.columns[3].w + ubo.projView.columns[3].x;
 
-		planes[RIGHT].x = ubo.projView[0].w - ubo.projView[0].x;
-		planes[RIGHT].y = ubo.projView[1].w - ubo.projView[1].x;
-		planes[RIGHT].z = ubo.projView[2].w - ubo.projView[2].x;
-		planes[RIGHT].w = ubo.projView[3].w - ubo.projView[3].x;
+		planes[RIGHT].x = ubo.projView.columns[0].w - ubo.projView.columns[0].x;
+		planes[RIGHT].y = ubo.projView.columns[1].w - ubo.projView.columns[1].x;
+		planes[RIGHT].z = ubo.projView.columns[2].w - ubo.projView.columns[2].x;
+		planes[RIGHT].w = ubo.projView.columns[3].w - ubo.projView.columns[3].x;
 
-		planes[TOP].x = ubo.projView[0].w - ubo.projView[0].y;
-		planes[TOP].y = ubo.projView[1].w - ubo.projView[1].y;
-		planes[TOP].z = ubo.projView[2].w - ubo.projView[2].y;
-		planes[TOP].w = ubo.projView[3].w - ubo.projView[3].y;
+		planes[TOP].x = ubo.projView.columns[0].w - ubo.projView.columns[0].y;
+		planes[TOP].y = ubo.projView.columns[1].w - ubo.projView.columns[1].y;
+		planes[TOP].z = ubo.projView.columns[2].w - ubo.projView.columns[2].y;
+		planes[TOP].w = ubo.projView.columns[3].w - ubo.projView.columns[3].y;
 
-		planes[BOTTOM].x = ubo.projView[0].w + ubo.projView[0].y;
-		planes[BOTTOM].y = ubo.projView[1].w + ubo.projView[1].y;
-		planes[BOTTOM].z = ubo.projView[2].w + ubo.projView[2].y;
-		planes[BOTTOM].w = ubo.projView[3].w + ubo.projView[3].y;
+		planes[BOTTOM].x = ubo.projView.columns[0].w + ubo.projView.columns[0].y;
+		planes[BOTTOM].y = ubo.projView.columns[1].w + ubo.projView.columns[1].y;
+		planes[BOTTOM].z = ubo.projView.columns[2].w + ubo.projView.columns[2].y;
+		planes[BOTTOM].w = ubo.projView.columns[3].w + ubo.projView.columns[3].y;
 
-		planes[NEAR].x = ubo.projView[0].w + ubo.projView[0].z;
-		planes[NEAR].y = ubo.projView[1].w + ubo.projView[1].z;
-		planes[NEAR].z = ubo.projView[2].w + ubo.projView[2].z;
-		planes[NEAR].w = ubo.projView[3].w + ubo.projView[3].z;
+		planes[NEAR].x = ubo.projView.columns[0].w + ubo.projView.columns[0].z;
+		planes[NEAR].y = ubo.projView.columns[1].w + ubo.projView.columns[1].z;
+		planes[NEAR].z = ubo.projView.columns[2].w + ubo.projView.columns[2].z;
+		planes[NEAR].w = ubo.projView.columns[3].w + ubo.projView.columns[3].z;
 
-		planes[FAR].x = ubo.projView[0].w - ubo.projView[0].z;
-		planes[FAR].y = ubo.projView[1].w - ubo.projView[1].z;
-		planes[FAR].z = ubo.projView[2].w - ubo.projView[2].z;
-		planes[FAR].w = ubo.projView[3].w - ubo.projView[3].z;
+		planes[FAR].x = ubo.projView.columns[0].w - ubo.projView.columns[0].z;
+		planes[FAR].y = ubo.projView.columns[1].w - ubo.projView.columns[1].z;
+		planes[FAR].z = ubo.projView.columns[2].w - ubo.projView.columns[2].z;
+		planes[FAR].w = ubo.projView.columns[3].w - ubo.projView.columns[3].z;
 
 		return planes;
 	}
 		
-	std::array<glm::vec4, 6> EWECamera::GetConservativeFrustumPlanes(const glm::vec3 position, const glm::vec3 rotation) {
+	std::array<lab::vec4, 6> EWECamera::GetConservativeFrustumPlanes(const lab::vec3 position, const lab::vec3 rotation) {
 
-		const float c3 = glm::cos(rotation.z);
-		const float s3 = glm::sin(rotation.z);
-		const float c2 = glm::cos(rotation.x);
-		const float s2 = glm::sin(rotation.x);
-		const float c1 = glm::cos(rotation.y);
-		const float s1 = glm::sin(rotation.y);
-		const glm::vec3 forwardDir = glm::normalize(glm::vec3{ s1, -s2, c1 });
-		const glm::vec3 conversativePosition = position + forwardDir * 5.f;
-		const glm::vec3 u{ (c1 * c3 + s1 * s2 * s3), (c2 * s3), (c1 * s2 * s3 - c3 * s1)};
-		const glm::vec3 v{ (c3 * s1 * s2 - c1 * s3), (c2 * c3), (c1 * c3 * s2 + s1 * s3)};
-		const glm::vec3 w{ (c2 * s1), (-s2), (c1 * c2)};
-		//view = glm::mat4{ 1.f };
+		const float c3 = lab::Cos(rotation.z);
+		const float s3 = lab::Sin(rotation.z);
+		const float c2 = lab::Cos(rotation.x);
+		const float s2 = lab::Sin(rotation.x);
+		const float c1 = lab::Cos(rotation.y);
+		const float s1 = lab::Sin(rotation.y);
+		const lab::vec3 forwardDir = lab::Normalized(lab::vec3{ s1, -s2, c1 });
+		const lab::vec3 conversativePosition = position + forwardDir * 5.f;
+		const lab::vec3 u{ (c1 * c3 + s1 * s2 * s3), (c2 * s3), (c1 * s2 * s3 - c3 * s1)};
+		const lab::vec3 v{ (c3 * s1 * s2 - c1 * s3), (c2 * c3), (c1 * c3 * s2 + s1 * s3)};
+		const lab::vec3 w{ (c2 * s1), (-s2), (c1 * c2)};
+		//view = lab::mat4{ 1.f };
 
-		glm::mat4 conservativeView;
+		lab::mat4 conservativeView;
 
-		conservativeView[0][3] = 0.f;
-		conservativeView[1][3] = 0.f;
-		conservativeView[2][3] = 0.f;
+		conservativeView.columns[0][3] = 0.f;
+		conservativeView.columns[1][3] = 0.f;
+		conservativeView.columns[2][3] = 0.f;
 
-		conservativeView[0][0] = u.x;
-		conservativeView[1][0] = u.y;
-		conservativeView[2][0] = u.z;
-		conservativeView[0][1] = v.x;
-		conservativeView[1][1] = v.y;
-		conservativeView[2][1] = v.z;
-		conservativeView[0][2] = w.x;
-		conservativeView[1][2] = w.y;
-		conservativeView[2][2] = w.z;
-		conservativeView[3][0] = -glm::dot(u, conversativePosition);
-		conservativeView[3][1] = -glm::dot(v, conversativePosition);
-		conservativeView[3][2] = -glm::dot(w, conversativePosition);
-		conservativeView[3][3] = 1.f;
+		conservativeView.columns[0][0] = u.x;
+		conservativeView.columns[1][0] = u.y;
+		conservativeView.columns[2][0] = u.z;
+		conservativeView.columns[0][1] = v.x;
+		conservativeView.columns[1][1] = v.y;
+		conservativeView.columns[2][1] = v.z;
+		conservativeView.columns[0][2] = w.x;
+		conservativeView.columns[1][2] = w.y;
+		conservativeView.columns[2][2] = w.z;
+		conservativeView.columns[3][0] = -lab::Dot(u, conversativePosition);
+		conservativeView.columns[3][1] = -lab::Dot(v, conversativePosition);
+		conservativeView.columns[3][2] = -lab::Dot(w, conversativePosition);
+		conservativeView.columns[3][3] = 1.f;
 
-		const glm::mat4 fakeProjView = conservativeProjection * conservativeView;
+		const lab::mat4 fakeProjView = conservativeProjection * conservativeView;
 
 		enum side { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, NEAR = 4, FAR = 5 };
-		std::array<glm::vec4, 6> planes;
-		planes[LEFT].x = fakeProjView[0].w + fakeProjView[0].x;
-		planes[LEFT].y = fakeProjView[1].w + fakeProjView[1].x;
-		planes[LEFT].z = fakeProjView[2].w + fakeProjView[2].x;
-		planes[LEFT].w = fakeProjView[3].w + fakeProjView[3].x;
+		std::array<lab::vec4, 6> planes;
+		planes[LEFT].x = fakeProjView.columns[0].w + fakeProjView.columns[0].x;
+		planes[LEFT].y = fakeProjView.columns[1].w + fakeProjView.columns[1].x;
+		planes[LEFT].z = fakeProjView.columns[2].w + fakeProjView.columns[2].x;
+		planes[LEFT].w = fakeProjView.columns[3].w + fakeProjView.columns[3].x;
 
-		planes[RIGHT].x = fakeProjView[0].w - fakeProjView[0].x;
-		planes[RIGHT].y = fakeProjView[1].w - fakeProjView[1].x;
-		planes[RIGHT].z = fakeProjView[2].w - fakeProjView[2].x;
-		planes[RIGHT].w = fakeProjView[3].w - fakeProjView[3].x;
+		planes[RIGHT].x = fakeProjView.columns[0].w - fakeProjView.columns[0].x;
+		planes[RIGHT].y = fakeProjView.columns[1].w - fakeProjView.columns[1].x;
+		planes[RIGHT].z = fakeProjView.columns[2].w - fakeProjView.columns[2].x;
+		planes[RIGHT].w = fakeProjView.columns[3].w - fakeProjView.columns[3].x;
 
-		planes[TOP].x = fakeProjView[0].w - fakeProjView[0].y;
-		planes[TOP].y = fakeProjView[1].w - fakeProjView[1].y;
-		planes[TOP].z = fakeProjView[2].w - fakeProjView[2].y;
-		planes[TOP].w = fakeProjView[3].w - fakeProjView[3].y;
+		planes[TOP].x = fakeProjView.columns[0].w - fakeProjView.columns[0].y;
+		planes[TOP].y = fakeProjView.columns[1].w - fakeProjView.columns[1].y;
+		planes[TOP].z = fakeProjView.columns[2].w - fakeProjView.columns[2].y;
+		planes[TOP].w = fakeProjView.columns[3].w - fakeProjView.columns[3].y;
 
-		planes[BOTTOM].x = fakeProjView[0].w + fakeProjView[0].y;
-		planes[BOTTOM].y = fakeProjView[1].w + fakeProjView[1].y;
-		planes[BOTTOM].z = fakeProjView[2].w + fakeProjView[2].y;
-		planes[BOTTOM].w = fakeProjView[3].w + fakeProjView[3].y;
+		planes[BOTTOM].x = fakeProjView.columns[0].w + fakeProjView.columns[0].y;
+		planes[BOTTOM].y = fakeProjView.columns[1].w + fakeProjView.columns[1].y;
+		planes[BOTTOM].z = fakeProjView.columns[2].w + fakeProjView.columns[2].y;
+		planes[BOTTOM].w = fakeProjView.columns[3].w + fakeProjView.columns[3].y;
 
-		planes[NEAR].x = fakeProjView[0].w + fakeProjView[0].z;
-		planes[NEAR].y = fakeProjView[1].w + fakeProjView[1].z;
-		planes[NEAR].z = fakeProjView[2].w + fakeProjView[2].z;
-		planes[NEAR].w = fakeProjView[3].w + fakeProjView[3].z;
+		planes[NEAR].x = fakeProjView.columns[0].w + fakeProjView.columns[0].z;
+		planes[NEAR].y = fakeProjView.columns[1].w + fakeProjView.columns[1].z;
+		planes[NEAR].z = fakeProjView.columns[2].w + fakeProjView.columns[2].z;
+		planes[NEAR].w = fakeProjView.columns[3].w + fakeProjView.columns[3].z;
 
-		planes[FAR].x = fakeProjView[0].w - fakeProjView[0].z;
-		planes[FAR].y = fakeProjView[1].w - fakeProjView[1].z;
-		planes[FAR].z = fakeProjView[2].w - fakeProjView[2].z;
-		planes[FAR].w = fakeProjView[3].w - fakeProjView[3].z;
+		planes[FAR].x = fakeProjView.columns[0].w - fakeProjView.columns[0].z;
+		planes[FAR].y = fakeProjView.columns[1].w - fakeProjView.columns[1].z;
+		planes[FAR].z = fakeProjView.columns[2].w - fakeProjView.columns[2].z;
+		planes[FAR].w = fakeProjView.columns[3].w - fakeProjView.columns[3].z;
 
 		return planes;
 	}

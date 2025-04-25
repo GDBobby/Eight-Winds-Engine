@@ -1,14 +1,8 @@
-
 #pragma once
 
 #include "Device.hpp"
 #include "Pipeline.h"
 #include "Descriptors.h"
-
-#include <glm/glm.hpp>
-
-
-
 
 #include <iostream>
 
@@ -40,7 +34,7 @@ namespace EWE {
 
 	class TextOverlay {
 	private:
-		static constexpr uint32_t TEXTOVERLAY_MAX_CHAR_COUNT = 65536 / sizeof(glm::vec4);
+		static constexpr uint32_t TEXTOVERLAY_MAX_CHAR_COUNT = 65536 / sizeof(lab::vec4);
 		static TextOverlay* textOverlayPtr;
 
 		float frameBufferWidth;
@@ -62,7 +56,7 @@ namespace EWE {
 		VkShaderModule fragShaderModule;
 
 		// Pointer to mapped vertex buffer
-		glm::vec4* mapped = nullptr;
+		lab::vec4* mapped = nullptr;
 		EWEBuffer* vertexBuffer[2] = { nullptr, nullptr };
 
 		uint32_t numLetters;
