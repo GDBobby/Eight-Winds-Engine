@@ -11,18 +11,12 @@ struct PointLight{
 	vec4 color; //w is intensity
 };
 
-layout(set = 0, binding = 0) uniform GlobalUbo {
+layout(set = 0, binding = 0) uniform LeafBO {
 	mat4 projView;
 	vec4 cameraPos;
-} ubo;
-
-layout(set = 0, binding = 1) uniform LightBufferObject {
-	vec4 ambientColor;
-	vec4 sunlightDirection; //w for sun power
-	vec4 sunlightColor;
-	PointLight pointLights[10]; //max lights in frameinfo header
-	int numLights;
+	mat4 leafMatrices[1024];
 } lbo;
+
 
 const float PI = 3.14159265359;
 
@@ -51,7 +45,7 @@ vec3 FresnelSchlick (float cosTheta, vec3 F0) {
 layout (set = 0, binding = 2) uniform sampler2D albedoSampler;
 
 void main(){
-	vec3 viewDirection = normalize(ubo.cameraPos.xyz - fragPosWorld);
+	vec3 viewDirection = normalize(lbo.cameraPos.xyz - fragPosWorld);
 	
 	vec3 surfaceNormal = normalize(fragNormalWorld);
 	//albedo will always be defined
@@ -65,14 +59,15 @@ void main(){
 	//reflectance
 	vec3 Lo = vec3(0.0);
 
-	vec3 sunDir = normalize(-lbo.sunlightDirection.xyz);
+	//1 3 1 normalized
+	const vec3 sunDir = vec3(0.3015113446, 0.9045340337, 0.3015113446);
 	//float sunAttenuation = 1.0 / dot(sunDir, sunDir); //this should always be 1
 	float sunAttenuation = 1.0;
 	//new attenuation method
 	//float sunAttenuation = 1.0 / (1.0 + 0.09 + .032);
 	
 	//sunDir = normalize(sunDir);
-	vec3 sunRadiance = lbo.sunlightColor.rgb * sunAttenuation * lbo.sunlightColor.w; //1.0 is sunAttenuation
+	vec3 sunRadiance = vec3(0.5) * sunAttenuation;
 	
 	vec3 sunHalfAngle = normalize(viewDirection + sunDir);
 	float sunNDF = DistributionGGX(surfaceNormal, sunHalfAngle, roughness);
