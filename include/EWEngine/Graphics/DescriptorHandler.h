@@ -1,8 +1,8 @@
 #pragma once
 #define DRAWING_POINTS false
 
-#include "EWEngine/Graphics/Descriptors.h"
-#include "EWEngine/Graphics/Device_Buffer.h"
+#include "EWGraphics/Vulkan/Descriptors.h"
+#include "EWGraphics/Vulkan/Device_Buffer.h"
 #include "EWEngine/Graphics/LightBufferObject.h"
 
 #include <unordered_map>

@@ -6,7 +6,7 @@ namespace EWE {
 		: ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
 		soundEngine{ SoundEngine::GetSoundEngineInstance() },
-		cameraControl{ ewEngine.renderFramework.mainWindow.getGLFWwindow() }
+		cameraControl{ ewEngine.renderFramework.mainWindow.GetGLFWwindow() }
 	{
 		transform.rotation.x = 0.001f;
 		transform.rotation.y = 0.001f;

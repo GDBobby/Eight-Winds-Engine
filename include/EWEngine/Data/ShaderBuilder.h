@@ -1,7 +1,7 @@
 #pragma once
 //#include <glslang/SPIRV/GlslangToSpv.h>
 
-#include "EWEngine/Data/EngineDataTypes.h"
+#include "EWGraphics/Data/EngineDataTypes.h"
 
 #include <notvulkan/glslang/glslang/Public/ShaderLang.h>
 #include <notvulkan/glslang/glslang/Include/intermediate.h>
@@ -15,7 +15,7 @@
 #include <fstream>
 #include <ios>
 
-#include <EWEngine/Graphics/Preprocessor.h>
+#include <EWGraphics/Preprocessor.h>
 
 
 
@@ -36,8 +36,6 @@ namespace EWE {
 		//static void BatchCreateFragmentShader(std::vector<MaterialFlags> flagVector);
 		std::vector<uint32_t> GetFragmentShader(MaterialFlags flags);
 		std::vector<uint32_t> GetVertexShader(bool hasNormal, uint16_t boneCount, bool instanced, bool largeInstance = true);
-		std::vector<uint32_t> GetLoadingVertShader();
-		std::vector<uint32_t> GetLoadingFragShader();
 		std::vector<uint32_t> GetGeometryShader(MaterialFlags flags);
 	};
 } //namespace EWE

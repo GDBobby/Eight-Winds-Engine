@@ -1,6 +1,6 @@
 #include "EWEngine/Systems/Rendering/Rigid/RigidBufferHandler.h"
 
-#include "EWEngine/Graphics/Texture/Image_Manager.h"
+#include "EWGraphics/Texture/Image_Manager.h"
 
 namespace EWE {
 	RigidInstancedBufferHandler::RigidInstancedBufferHandler(uint32_t entityCount, bool computedTransforms, EWEDescriptorSetLayout* eDSL, ImageID imgID) : computedTransforms{ computedTransforms } {

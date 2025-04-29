@@ -1,7 +1,8 @@
 #pragma once
-#include "EWEngine/Graphics/Model/Model.h"
-#include "EWEngine/Graphics/Pipeline.h"
+#include "EWGraphics/Model/Model.h"
+#include "EWGraphics/Vulkan/Pipeline.h"
 #include "LAB/Transform.h"
+#include "EWGraphics/Data/EngineDataTypes.h"
 
 namespace EWE {
 	class StaticRenderSystem {
@@ -15,7 +16,7 @@ namespace EWE {
 			PipelineID pipeline;
 			uint16_t pipeLayoutIndex; //a lot of work to find this value, might as well just store it
 			std::vector<GPUStruct> objectData{};
-			std::vector<uint32_t> freedTransformIDs{};
+			std::vector<PipelineID> freedTransformIDs{};
 		};
 		std::vector<PipelineStruct> pipelineStructs{};
 		std::unique_ptr<EWEBuffer> transformBuffer;

@@ -1,7 +1,7 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 
-#include "EWEngine/Graphics/Model/Basic_Model.h"
-#include "EWEngine/Graphics/Texture/Image_Manager.h"
+#include "EWGraphics/Model/Basic_Model.h"
+#include "EWGraphics/Texture/Image_Manager.h"
 
 #define RENDER_DEBUG false
 
@@ -48,17 +48,17 @@ namespace EWE {
 		pipelineConfig.cache = cache;
 		pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		{
-			ShaderStringStruct stringStruct;
-			stringStruct.filepath[Shader::vert] = "texture2D_array.vert.spv";
-			stringStruct.filepath[Shader::frag] = "texture2D_array.frag.spv";
+			ShaderTrackingStruct stringStruct{};
+			stringStruct.shaderData[Shader::vert].filepath = "shaders/texture2D_array.vert.spv";
+			stringStruct.shaderData[Shader::frag].filepath = "shaders/texture2D_array.frag.spv";
 			pipe_array = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 		}
 		pipelineConfig.pipelineLayout = PL_single;
 		pipelineConfig.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		{
-			ShaderStringStruct stringStruct;
-			stringStruct.filepath[Shader::vert] = "texture2D_singular.vert.spv";
-			stringStruct.filepath[Shader::frag] = "texture2D_singular.frag.spv";
+			ShaderTrackingStruct stringStruct{};
+			stringStruct.shaderData[Shader::vert].filepath = "shaders/texture2D_singular.vert.spv";
+			stringStruct.shaderData[Shader::frag].filepath = "shaders/texture2D_singular.frag.spv";
 			pipe_single = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
 		}
 

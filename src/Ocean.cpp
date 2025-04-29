@@ -1,7 +1,7 @@
 #include "EWEngine/Systems/Ocean/Ocean.h"
-#include "EWEngine/Graphics/Texture/ImageFunctions.h"
+#include "EWGraphics/Texture/ImageFunctions.h"
 
-#include "EWEngine/Graphics/PipelineBarrier.h"
+#include "EWGraphics/Vulkan/PipelineBarrier.h"
 
 namespace EWE {
 	namespace Ocean {

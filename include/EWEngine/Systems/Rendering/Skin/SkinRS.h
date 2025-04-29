@@ -2,9 +2,9 @@
 
 #include "SkinBufferHandler.h"
 
-#include "EWEngine/Graphics/Model/Model.h"
-#include "EWEngine/Graphics/Pipeline.h"
-#include "EWEngine/Graphics/Texture/Material_Textures.h"
+#include "EWGraphics/Model/Model.h"
+#include "EWGraphics/Vulkan/Pipeline.h"
+#include "EWGraphics/Texture/Material_Textures.h"
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
 #include "EWEngine/Systems/Rendering/Skin/SupportingStructs.h"

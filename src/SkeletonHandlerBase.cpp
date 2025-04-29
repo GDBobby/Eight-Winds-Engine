@@ -1,9 +1,10 @@
 #include "EWEngine/SkeletonHandlerBase.h"
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
-#include "EWEngine/Graphics/Texture/Image_Manager.h"
-#include "EWEngine/Graphics/Texture/Material_Textures.h"
+#include "EWGraphics/Texture/Image_Manager.h"
+#include "EWGraphics/Texture/Material_Textures.h"
 
 #include <thread>
+#include <filesystem>
 
 
 #define TEST_NO_MESH false
@@ -16,18 +17,13 @@
 
 namespace EWE {
 
-    void SkeletonBase::ReadAnimData(std::string filePath, bool partial, bool endian) {
+    void SkeletonBase::ReadAnimData(std::string filePath, bool partial) {
         std::ifstream inFile(filePath, std::ifstream::binary);
         assert(inFile.is_open() && "failed to open anim file");
         //printf("before opening anim archive \n");
         if (partial) {
             ImportData::AnimData importData;
-            if (endian) {
-                importData.ReadFromFile(inFile);
-            }
-            else {
-                importData.ReadFromFileSwapEndian(inFile);
-            }
+            importData.ReadFromFile(inFile);
             inFile.close();
             assert(importData.versionTracker == EXPECTED_IMPORT_VERSION);
 
@@ -61,12 +57,7 @@ namespace EWE {
         }
         else {
             ImportData::FullAnimData importData;
-            if (endian) {
-                importData.ReadFromFile(inFile);
-            }
-            else {
-                importData.ReadFromFileSwapEndian(inFile);
-            }
+            importData.ReadFromFile(inFile);
             inFile.close();
             //printf("after loading anim archive \n");
             assert(importData.versionTracker == EXPECTED_IMPORT_VERSION && "failed tom match version");
@@ -130,9 +121,6 @@ namespace EWE {
 
         mySkeletonID = SkinRenderSystem::GetSkinID();
 
-        uint32_t endianTest = 1;
-        bool endian = (*((char*)&endianTest) == 1);
-
         std::string meshPath = importPath;
         meshPath += "_mesh.ewe";
         std::thread meshThread1;
@@ -141,7 +129,7 @@ namespace EWE {
 #if !TEST_NO_MESH
         if (meshThread1Exist) {
             //printf("starting up mesh thread 1 \n");
-            meshThread1 = std::thread(&ImportData::ReadData<boneVertex>, std::ref(importMesh), meshPath, endian);
+            meshThread1 = std::thread(&ImportData::ReadData<boneVertex>, std::ref(importMesh), meshPath);
         }
         else {
             //printf("skeleton mesh path doesn't exist : %s \n", meshPath.c_str());
@@ -153,7 +141,7 @@ namespace EWE {
         ImportData::TemplateMeshData<boneVertexNoTangent> importMeshNT;
         if (meshThread2Exist) {
             //printf("starting up mesh thread 2 \n");
-            meshThread2 = std::thread(&ImportData::ReadData<boneVertexNoTangent>, std::ref(importMeshNT), meshPath, endian);
+            meshThread2 = std::thread(&ImportData::ReadData<boneVertexNoTangent>, std::ref(importMeshNT), meshPath);
         }
         else {
             //printf("skeleton mesh NT path doesn't exist : %s \n", meshPath.c_str());
@@ -170,7 +158,7 @@ namespace EWE {
         }
 
         std::pair<std::vector<MaterialInfo>, std::vector<MaterialInfo>> textureMappingTracker;
-        ReadAnimData(meshPath, partial, endian);
+        ReadAnimData(meshPath, partial);
 
         LoadTextures(importPath + "_Names.ewe", textureMappingTracker, texturePath);
 

@@ -1,12 +1,14 @@
 #include "EWEngine/EightWindsEngine.h"
 
 //#include "keyboard_movement_controller.h" //this is for a free camera, which is currently not utilized
-#include "EWEngine/Graphics/Device_Buffer.h"
+#include "EWGraphics/Vulkan/Device_Buffer.h"
 #include "EWEngine/Graphics/Camera.h"
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
 #include "EWEngine/Systems/Rendering/Pipelines/Pipe_Skybox.h"
 
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
+
+#include "EWEngine/Systems/Rendering/Pipelines/PipeEnum.h"
 
 //#include <array>
 //#include <chrono>
@@ -18,12 +20,7 @@
 
 #include <chrono>
 
-#define ARENA_MAP true
-#define GRASS_MAP false
-
 #define ENGINE_VERSION "1.0.0.0"
-
-#define RENDER_DEBUG false
 
 
 namespace EWE {
@@ -40,13 +37,18 @@ namespace EWE {
 	EightWindsEngine::EightWindsEngine(std::string windowName) :
 		//first, any members not mentioned here with brackets will be initialized
 		//second, any memberss in this section will be initialized
-		renderFramework{windowName},
+		renderFramework{ SettingsJSON::settingsData.screenDimensions.width, SettingsJSON::settingsData.screenDimensions.height, windowName},
 		//imguiHandler{ mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT, eweRenderer.getSwapChainRenderPass() },
-		uiHandler{ SettingsJSON::settingsData.screenDimensions, renderFramework.mainWindow.getGLFWwindow(), renderFramework.eweRenderer.MakeTextOverlay() },
+		uiHandler{ 
+			SettingsJSON::settingsData.screenDimensions, 
+			renderFramework.mainWindow.GetGLFWwindow(), 
+			new TextOverlay(static_cast<float>(VK::Object->screenWidth), static_cast<float>(VK::Object->screenHeight), renderFramework.eweRenderer.getPipelineInfo())
+		},
 		advancedRS{ menuManager },
-		menuManager{ renderFramework.mainWindow.getGLFWwindow(), uiHandler.GetTextOverlay()},
+		menuManager{ renderFramework.mainWindow.GetGLFWwindow(), uiHandler.GetTextOverlay()},
 		skinnedRS{ }
 	{
+
 		printf("after finishing construction of engine\n");
 		EWEPipeline::PipelineConfigInfo::pipelineRenderingInfoStatic = renderFramework.eweRenderer.getPipelineInfo();
 

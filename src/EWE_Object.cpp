@@ -1,6 +1,6 @@
 #include "EWEngine/Graphics/EWE_Object.h"
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
-#include "EWEngine/Graphics/Texture/Material_Textures.h"
+#include "EWGraphics/Texture/Material_Textures.h"
 
 namespace EWE {
     void AddMaterialInfo(MaterialInfo matInfo, std::vector<MaterialInfo>& materialInfo) {

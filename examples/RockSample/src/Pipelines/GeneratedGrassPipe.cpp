@@ -2,8 +2,8 @@
 
 //#include "PipelineEnum.h"
 
-#include <EWEngine/Graphics/Model/Basic_Model.h>
-#include <EWEngine/Graphics/Texture/Image_Manager.h>
+#include <EWGraphics/Model/Basic_Model.h>
+#include <EWGraphics/Texture/Image_Manager.h>
 #include <EWEngine/Graphics/PushConstants.h>
 
 #include "PipeEnum.h"
@@ -70,13 +70,13 @@ namespace EWE {
 
 
 		//pipelineConfig.rasterizationInfo.polygonMode = VK_POLYGON_MODE_LINE;
-		ShaderStringStruct stringStruct{};
-		stringStruct.filepath[Shader::task] = "grass.task.spv";
-		stringStruct.filepath[Shader::mesh] = "grass.mesh.spv";
-		stringStruct.filepath[Shader::frag] = "grass.frag.spv";
+		ShaderTrackingStruct shaderStruct{};
+		shaderStruct.shaderData[Shader::task].filepath = "shaders/grass.task.spv";
+		shaderStruct.shaderData[Shader::mesh].filepath = "shaders/grass.mesh.spv";
+		shaderStruct.shaderData[Shader::frag].filepath = "shaders/grass.frag.spv";
 
 		pipelineConfig.pipelineLayout = pipeLayout;
 
-		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
+		pipe = Construct<EWEPipeline>({ shaderStruct, pipelineConfig });
 	}
 }

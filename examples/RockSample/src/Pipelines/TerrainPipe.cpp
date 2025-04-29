@@ -2,8 +2,8 @@
 
 //#include "PipelineEnum.h"
 
-#include <EWEngine/Graphics/Model/Basic_Model.h>
-#include <EWEngine/Graphics/Texture/Image_Manager.h>
+#include <EWGraphics/Model/Basic_Model.h>
+#include <EWGraphics/Texture/Image_Manager.h>
 #include <EWEngine/Graphics/PushConstants.h>
 
 #include "PipeEnum.h"
@@ -67,12 +67,12 @@ namespace EWE {
         pipelineConfig.tessCreateInfo.patchControlPoints = 4;
         pipelineConfig.tessCreateInfo.pNext = nullptr;
 
-		ShaderStringStruct stringStruct;
-		stringStruct.filepath[Shader::vert] = "terrain.vert.spv";
-		stringStruct.filepath[Shader::frag] = "terrain.frag.spv";
-		stringStruct.filepath[Shader::tessControl] = "terrain.tesc.spv";
-		stringStruct.filepath[Shader::tessEval] = "terrain.tese.spv";
+		ShaderTrackingStruct shaderStruct{};
+		shaderStruct.shaderData[Shader::vert].filepath = "shaders/terrain.vert.spv";
+		shaderStruct.shaderData[Shader::frag].filepath = "shaders/terrain.frag.spv";
+		shaderStruct.shaderData[Shader::tessControl].filepath = "shaders/terrain.tesc.spv";
+		shaderStruct.shaderData[Shader::tessEval].filepath = "shaders/terrain.tese.spv";
 
-		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
+		pipe = Construct<EWEPipeline>({ shaderStruct, pipelineConfig });
 	}
 }

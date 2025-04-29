@@ -1,6 +1,6 @@
 #include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
-#include "EWEngine/Graphics/Texture/Image_Manager.h"
-#include "EWEngine/Graphics/Texture/Material_Textures.h"
+#include "EWGraphics/Texture/Image_Manager.h"
+#include "EWGraphics/Texture/Material_Textures.h"
 
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 

@@ -91,15 +91,7 @@ namespace EWE {
 		assert(inFile.is_open() && "failed to open eye model");
 		ImportData::TemplateMeshData<Vertex> importMesh{};
 
-		uint32_t endianTest = 1;
-		bool endian = (*((char*)&endianTest) == static_cast<char>(1));
-
-		if (endian) {
-			importMesh.ReadFromFile(inFile);
-		}
-		else {
-			importMesh.ReadFromFileSwapEndian(inFile);
-		}
+		importMesh.ReadFromFile(inFile);
 		inFile.close();
 		//printf("file read successfully \n");
 

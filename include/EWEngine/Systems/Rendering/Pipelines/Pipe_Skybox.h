@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EWEngine/Systems/PipelineSystem.h"
+#include "EWGraphics/PipelineSystem.h"
 
 namespace EWE {
 	class Pipe_Skybox : PipelineSystem {

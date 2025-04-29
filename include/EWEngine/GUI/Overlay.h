@@ -2,6 +2,8 @@
 
 #include "EWEngine/Graphics/TextOverlay.h"
 
+#include "EWEngine/SettingsJson.h"
+
 #include <LAB/Transform.h>
 
 namespace EWE {

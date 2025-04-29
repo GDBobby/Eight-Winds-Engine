@@ -1,6 +1,8 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Pipe_Skybox.h"
 #include "EWEngine/Graphics/DescriptorHandler.h"
 
+#include "EWEngine/Systems/Rendering/Pipelines/PipeEnum.h"
+
 namespace EWE {
 	Pipe_Skybox::Pipe_Skybox()
 #if EWE_DEBUG
@@ -44,11 +46,11 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<SkyVertex>();
 		pipelineConfig.attributeDescriptions = SkyVertex::GetAttributeDescriptions();
 
-		ShaderStringStruct stringStruct{};
-		stringStruct.filepath[Shader::vert] = "skybox.vert.spv";
-		stringStruct.filepath[Shader::frag] = "skybox.frag.spv";
+		ShaderTrackingStruct shaderStruct{};
+		shaderStruct.shaderData[Shader::vert].filepath = "shaders/skybox.vert.spv";
+		shaderStruct.shaderData[Shader::frag].filepath = "shaders/skybox.frag.spv";
 
-		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
+		pipe = Construct<EWEPipeline>({ shaderStruct, pipelineConfig });
 #if DEBUG_NAMING
 		pipe->SetDebugName("skybox pipeline");
 		DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "skybox pipe layout");

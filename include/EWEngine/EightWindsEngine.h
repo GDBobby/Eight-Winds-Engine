@@ -1,22 +1,23 @@
 #pragma once
 
-#include "EWEngine/Graphics/RenderFramework.h"
+#include "EWGraphics/RenderFramework.h"
 
-#include "EWEngine/MainWindow.h"
-#include "EWEngine/Graphics/Device.hpp"
-#include "EWEngine/Graphics/Renderer.h"
-#include "EWEngine/Graphics/Descriptors.h"
+#include "EWGraphics/MainWindow.h"
+#include "EWGraphics/Vulkan/Device.hpp"
+#include "EWGraphics/Vulkan/Renderer.h"
+#include "EWGraphics/Vulkan/Descriptors.h"
 
 #include "EWEngine/Systems/Rendering/advanced_render_system.h"
 //#include "LevelBuilder/LevelBuilder.h"
 #include "EWEngine/GUI/UIHandler.h"
 //#include "EWEngine/graphicsimGuiHandler.h"
 #include "EWEngine/GUI/MenuManager.h"
-#include "EWEngine/Systems/PipelineSystem.h"
+#include "EWGraphics/PipelineSystem.h"
 
 #include "EWEngine/Graphics/LightBufferObject.h"
+#include "EWEngine/Systems/Rendering/Skin/SkinRS.h"
 
-#include "EWEngine/Graphics/Texture/Sampler.h"
+#include "EWGraphics/Texture/Sampler.h"
 
 #include <functional>
 #include <memory>

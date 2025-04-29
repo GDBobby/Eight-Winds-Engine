@@ -56,11 +56,11 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
-		ShaderStringStruct stringStruct{};
-		stringStruct.filepath[Shader::vert] = "texture_shader.vert.spv";
-		stringStruct.filepath[Shader::frag] = "perlin.frag.spv";
+		ShaderTrackingStruct shaderStruct{};
+		shaderStruct.shaderData[Shader::vert].filepath = "texture_shader.vert.spv";
+		shaderStruct.shaderData[Shader::frag].filepath = "perlin.frag.spv";
 
-		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
+		pipe = Construct<EWEPipeline>({ shaderStruct, pipelineConfig });
 #if DEBUG_NAMING
 		pipe->SetDebugName("perlin pipeline");
 		DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "perlin pipe layout");

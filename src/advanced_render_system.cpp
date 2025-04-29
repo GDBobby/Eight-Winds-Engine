@@ -1,8 +1,10 @@
 #include "EWEngine/Systems/Rendering/advanced_render_system.h"
 
-#include "EWEngine/Systems/PipelineSystem.h"
+#include "EWGraphics/PipelineSystem.h"
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
-#include "EWEngine/Graphics/Texture/Image_Manager.h"
+#include "EWGraphics/Texture/Image_Manager.h"
+#include "EWEngine/Graphics/DescriptorHandler.h"
+#include "EWEngine/Systems/Rendering/Pipelines/PipeEnum.h"
 
 #include <array>
 #include <iostream>

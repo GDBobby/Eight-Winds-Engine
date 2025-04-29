@@ -1,8 +1,8 @@
 
-#include "EWEngine/Graphics/Renderer.h"
+#include "EWGraphics/Vulkan/Renderer.h"
 #include "EWEngine/Graphics/TextOverlay.h"
 
-#include "EWEngine/Graphics/Texture/Sampler.h"
+#include "EWGraphics/Texture/Sampler.h"
 
 
 #define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
@@ -21,11 +21,10 @@ namespace EWE {
 	TextOverlay* TextOverlay::textOverlayPtr{ nullptr };
 
 
-	TextOverlay::TextOverlay(
-		float framebufferwidth,
-		float framebufferheight,
-		VkPipelineRenderingCreateInfo const& pipelineInfo
-	) : frameBufferWidth{ framebufferwidth }, frameBufferHeight{ framebufferheight }, scale{ frameBufferWidth / DEFAULT_WIDTH }
+	TextOverlay::TextOverlay(float framebufferwidth, float framebufferheight, VkPipelineRenderingCreateInfo* pipelineInfo) 
+		: frameBufferWidth{ framebufferwidth }, 
+		frameBufferHeight{ framebufferheight }, 
+		scale{ frameBufferWidth / DEFAULT_WIDTH }
 	{
 		assert(textOverlayPtr == nullptr && "trying to recreate textoverlay??");
 		textOverlayPtr = this;
@@ -34,7 +33,7 @@ namespace EWE {
 
 		PrepareResources();
 		//printf("after prepare resources \n");
-		PreparePipeline(pipelineInfo);
+		PreparePipeline(*pipelineInfo);
 		//printf("afterr prepare pipeline \n");
 	}
 
@@ -498,9 +497,9 @@ namespace EWE {
 
 
 		//printf("after vertex input state \n");
-		auto vertCode = Pipeline_Helper_Functions::ReadFile("textoverlay.vert.spv");
+		auto vertCode = Pipeline_Helper_Functions::ReadFile("shaders/textoverlay.vert.spv");
 		//printf("after vert code read file \n");
-		auto fragCode = Pipeline_Helper_Functions::ReadFile("textoverlay.frag.spv");
+		auto fragCode = Pipeline_Helper_Functions::ReadFile("shaders/textoverlay.frag.spv");
 		//printf("after frag code read file \n");
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

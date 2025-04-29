@@ -87,7 +87,7 @@ namespace EWE {
             pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
             pipelineInfo.layout = pipeLayout;
-            Pipeline_Helper_Functions::CreateShaderModule("InitialFrequencySpectrum.comp.spv", &shaderModule);
+            Pipeline_Helper_Functions::CreateShaderModule("shaders/InitialFrequencySpectrum.comp.spv", &shaderModule);
             VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
             computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -188,7 +188,7 @@ namespace EWE {
             pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
             pipelineInfo.layout = pipeLayout;
-            Pipeline_Helper_Functions::CreateShaderModule("TimeDependentSpectrum.comp.spv", &shaderModule);
+            Pipeline_Helper_Functions::CreateShaderModule("shaders/TimeDependentSpectrum.comp.spv", &shaderModule);
             VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
             computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -284,7 +284,7 @@ namespace EWE {
             pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
             pipelineInfo.layout = pipeLayout;
-            Pipeline_Helper_Functions::CreateShaderModule("OceanFFT.comp.spv", &shaderModule);
+            Pipeline_Helper_Functions::CreateShaderModule("shaders/OceanFFT.comp.spv", &shaderModule);
             VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
             computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -408,11 +408,11 @@ namespace EWE {
             pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<SimpleVertex>();
             pipelineConfig.attributeDescriptions = SimpleVertex::GetAttributeDescriptions();
 
-            ShaderStringStruct stringStruct{};
-            stringStruct.filepath[Shader::vert] = "ocean.vert.spv";
-            stringStruct.filepath[Shader::frag] = "ocean.frag.spv";
+            ShaderTrackingStruct shaderStruct{};
+            shaderStruct.shaderData[Shader::vert].filepath = "shaders/ocean.vert.spv";
+            shaderStruct.shaderData[Shader::frag].filepath = "shaders/ocean.frag.spv";
 
-            pipe = std::make_unique<EWEPipeline>(stringStruct, pipelineConfig);
+            pipe = std::make_unique<EWEPipeline>(shaderStruct, pipelineConfig);
 
 #if DEBUG_NAMING
             pipe->SetDebugName("ocean render pipeline");

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "EWEngine/Graphics/LightBufferObject.h"
-#include "EWEngine/Graphics/Device_Buffer.h"
+#include "EWGraphics/Vulkan/Device_Buffer.h"
 
 #include <LAB/Camera.h>
 

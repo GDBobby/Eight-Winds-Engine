@@ -2,8 +2,8 @@
 
 //#include "PipelineEnum.h"
 
-#include <EWEngine/Graphics/Model/Basic_Model.h>
-#include <EWEngine/Graphics/Texture/Image_Manager.h>
+#include <EWGraphics/Model/Basic_Model.h>
+#include <EWGraphics/Texture/Image_Manager.h>
 #include <EWEngine/Graphics/PushConstants.h>
 
 #include "PipeEnum.h"
@@ -59,9 +59,9 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
-		ShaderStringStruct stringStruct{};
-		stringStruct.filepath[Shader::vert] = "simple_terrain.vert.spv";
-		stringStruct.filepath[Shader::frag] = "simple_terrain.frag.spv";
-		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
+		ShaderTrackingStruct shaderStruct{};
+		shaderStruct.shaderData[Shader::vert].filepath = "shaders/simple_terrain.vert.spv";
+		shaderStruct.shaderData[Shader::frag].filepath = "shaders/simple_terrain.frag.spv";
+		pipe = Construct<EWEPipeline>({ shaderStruct, pipelineConfig });
 	}
 }

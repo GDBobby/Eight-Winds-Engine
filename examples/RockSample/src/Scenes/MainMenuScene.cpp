@@ -7,7 +7,7 @@ namespace EWE {
 		: ewEngine{ ewEngine }, 
 			menuManager{ ewEngine.menuManager }, 
 			soundEngine{ SoundEngine::GetSoundEngineInstance() },
-			windowPtr{ ewEngine.renderFramework.mainWindow.getGLFWwindow() },
+			windowPtr{ ewEngine.renderFramework.mainWindow.GetGLFWwindow() },
 			camControl{ windowPtr }
 	{}
 

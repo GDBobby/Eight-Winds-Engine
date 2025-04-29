@@ -1,8 +1,8 @@
 
 #include <EWEngine/imgui/imGuiHandler.h>
 
-#include <EWEngine/Graphics/Pipeline.h>
-#include <EWEngine/Systems/ThreadPool.h>
+#include <EWGraphics/Vulkan/Pipeline.h>
+#include <EWGraphics/Data/ThreadPool.h>
 
 void check_vk_result(VkResult err) {
 	if (err == 0) {

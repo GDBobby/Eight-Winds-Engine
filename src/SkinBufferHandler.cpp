@@ -1,5 +1,5 @@
 #include "EWEngine/Systems/Rendering/Skin/SkinBufferHandler.h"
-#include "EWEngine/Graphics/Texture/Image_Manager.h"
+#include "EWGraphics/Texture/Image_Manager.h"
 
 namespace EWE {
 	SkinBufferHandler::SkinBufferHandler(uint16_t boneCount, uint8_t maxActorCount) : boneBlockSize{ static_cast<uint32_t>(boneCount * sizeof(lab::mat4)) }, maxActorCount{ maxActorCount }, gpuData{ InnerBufferStruct{maxActorCount, boneBlockSize}, InnerBufferStruct{maxActorCount, boneBlockSize} } {

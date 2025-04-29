@@ -1,8 +1,8 @@
 #pragma once
 
 #include "EWEngine/Graphics/Camera.h"
-#include "EWEngine/Graphics/Pipeline.h"
-#include "EWEngine/Graphics/Device.hpp"
+#include "EWGraphics/Vulkan/Pipeline.h"
+#include "EWGraphics/Vulkan/Device.hpp"
 
 #include "EWEngine/GUI/UIHandler.h"
 

@@ -1,6 +1,8 @@
 #include "EWEngine/Systems/Rendering/Pipelines/Pipe_SimpleTextured.h"
 #include "EWEngine/Graphics/PushConstants.h"
 
+#include "EWEngine/Systems/Rendering/Pipelines/PipeEnum.h"
+
 namespace EWE {
 	Pipe_SimpleTextured::Pipe_SimpleTextured()
 #if EWE_DEBUG
@@ -54,11 +56,11 @@ namespace EWE {
 		pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 		pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
 
-		ShaderStringStruct stringStruct{};
-		stringStruct.filepath[Shader::vert] = "texture_shader.vert.spv";
-		stringStruct.filepath[Shader::frag] = "texture_shader.frag.spv";
+		ShaderTrackingStruct shaderStruct{};
+		shaderStruct.shaderData[Shader::vert].filepath = "texture_shader.vert.spv";
+		shaderStruct.shaderData[Shader::frag].filepath = "texture_shader.frag.spv";
 
-		pipe = Construct<EWEPipeline>({ stringStruct, pipelineConfig });
+		pipe = Construct<EWEPipeline>({ shaderStruct, pipelineConfig });
 #if DEBUG_NAMING
 		pipe->SetDebugName("simple textured pipeline");
 		DebugNaming::SetObjectName(pipeLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "simple textured pipe layout");

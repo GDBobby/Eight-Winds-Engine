@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EWEngine/Graphics/DescriptorHandler.h"
+#include "EWGraphics/Data/EngineDataTypes.h"
 
 namespace EWE {
 	class RigidInstancedBufferHandler {

@@ -6,7 +6,7 @@ class
 #pragma once
 
 #include "TerrainPipe.h"
-#include <EWEngine/Systems/PipelineSystem.h>
+#include <EWGraphics/PipelineSystem.h>
 
 namespace EWE {
 	class Simple_Terrain_Pipe : public PipelineSystem {

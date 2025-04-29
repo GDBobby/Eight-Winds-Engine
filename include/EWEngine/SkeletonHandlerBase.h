@@ -1,7 +1,7 @@
 #pragma once
 
 #include "EWEngine/Data/EWE_Import.h"
-#include "EWEngine/Data/EngineDataTypes.h"
+#include "EWGraphics/Data/EngineDataTypes.h"
 
 
 namespace EWE {
@@ -64,7 +64,7 @@ namespace EWE {
         uint16_t boneCount = 0;
         int32_t handBone = -1;
 
-        void ReadAnimData(std::string filePath, bool partial, bool endian);
+        void ReadAnimData(std::string filePath, bool partial);
         void LoadTextures(std::string filePath, std::pair<std::vector<MaterialInfo>, std::vector<MaterialInfo>>& textureTracker, std::string texturePath);
     };
 }

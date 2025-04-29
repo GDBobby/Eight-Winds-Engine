@@ -1,8 +1,9 @@
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
-#include "EWEngine/Graphics/Texture/Image_Manager.h"
+#include "EWGraphics/Texture/Image_Manager.h"
 
 #include "EWEngine/Graphics/PushConstants.h"
+#include "EWEngine/Data/ShaderBuilder.h"
 
 namespace EWE {
 
@@ -95,11 +96,51 @@ namespace EWE {
 #endif
 	}
 
-	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ vertShaderModu, fragShaderModu, configInfo } {}
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, ShaderTrackingStruct const& shaderStruct, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ shaderStruct, configInfo } {
+		printf("temporary print so i can figure out why this is here\n");
+	}
 
-	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, ShaderStringStruct const& stringStruct, MaterialFlags flags, EWEPipeline::PipelineConfigInfo& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ stringStruct, flags, configInfo } {}
+	ShaderTrackingStruct& ProcessShaderStructFlags(MaterialFlags flags, ShaderTrackingStruct& shaderStruct) {
+		assert(shaderStruct.shaderData[Shader::frag].filepath.size() == 0);
 
-	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, uint16_t boneCount, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ boneCount, flags, configInfo } {}
+		shaderStruct.shaderData[Shader::frag].filepath = std::string("shaders/") + "dynamic/" + std::to_string(flags) + "b.frag.spv";
+
+
+		VkShaderModule fragModule = EWEPipeline::CheckIfShaderExist(shaderStruct.shaderData[Shader::frag].filepath);
+		if (fragModule == VK_NULL_HANDLE) {
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetFragmentShader(flags), &shaderStruct.shaderData[Shader::frag].shader);
+		}
+		else {
+			shaderStruct.shaderData[Shader::frag].shader = fragModule;
+		}
+		return shaderStruct;
+	}
+	ShaderTrackingStruct ProcessShaderStructBoneFlags(uint16_t boneCount, MaterialFlags flags) {
+		ShaderTrackingStruct shaderStruct{};
+		shaderStruct.shaderData[Shader::vert].filepath = "shaders/dynamic/";
+		//this is always instanced???
+		bool hasNormal = (flags & Material::Flags::Texture::Normal) > 0;
+		if (hasNormal) {
+			shaderStruct.shaderData[Shader::vert].filepath += "n" + std::to_string(boneCount) + ".vert.spv";
+		}
+		else {
+			shaderStruct.shaderData[Shader::vert].filepath += std::to_string(boneCount) + ".vert.spv";
+		}
+		VkShaderModule vertModule = EWEPipeline::CheckIfShaderExist(shaderStruct.shaderData[Shader::vert].filepath);
+		if (vertModule == VK_NULL_HANDLE) {
+			Pipeline_Helper_Functions::CreateShaderModule(ShaderBlock::GetVertexShader(hasNormal, boneCount, true), &shaderStruct.shaderData[Shader::vert].shader);
+		}
+		else {
+			shaderStruct.shaderData[Shader::vert].shader = vertModule;
+		}
+		return ProcessShaderStructFlags(flags, shaderStruct);
+	}
+
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, ShaderTrackingStruct& shaderStruct, MaterialFlags flags, EWEPipeline::PipelineConfigInfo& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ ProcessShaderStructFlags(flags, shaderStruct), configInfo} 
+	{}
+
+	MaterialPipelines::MaterialPipelines(uint16_t pipeLayoutIndex, uint16_t boneCount, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo) : pipeLayoutIndex{ pipeLayoutIndex }, pipeline{ ProcessShaderStructBoneFlags(boneCount, flags), configInfo } 
+	{}
 
 	void GetPipeCache(bool hasBones, bool instanced, VkPipelineCache& outCache) {
 
@@ -460,21 +501,20 @@ namespace EWE {
 		const bool hasBumps = flags & Material::Flags::Texture::Bump;
 		const bool instanced = flags & Material::Flags::Other::Instanced;
 
-		ShaderStringStruct stringStruct{};
+		ShaderTrackingStruct shaderStruct{};
 
 		if (hasBones) {
 			if (hasNormal) {
 				//printf("boneVertex, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertex>();
 				pipelineConfig.attributeDescriptions = boneVertex::GetAttributeDescriptions();
-
-				stringStruct.filepath[Shader::vert] = "bone_Tangent.vert.spv";
+				shaderStruct.shaderData[Shader::vert].filepath = "shaders/bone_Tangent.vert.spv";
 			}
 			else {
 				//printf("boneVertexNT, flags:%d \n", newFlags);
 				pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<boneVertexNoTangent>();
 				pipelineConfig.attributeDescriptions = boneVertexNoTangent::GetAttributeDescriptions();
-				stringStruct.filepath[Shader::vert] = "bone_NT.vert.spv";
+				shaderStruct.shaderData[Shader::vert].filepath = "shaders/bone_NT.vert.spv";
 			}
 		}
 		else {
@@ -486,34 +526,34 @@ namespace EWE {
 				else if (hasNormal) {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-					stringStruct.filepath[Shader::vert] = "material_tangent_instance.vert.spv";
+					shaderStruct.shaderData[Shader::vert].filepath = "shaders/material_tangent_instance.vert.spv";
 				}
 				else {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 					pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
-					stringStruct.filepath[Shader::vert] = "material_nn_instance.vert.spv";
+					shaderStruct.shaderData[Shader::vert].filepath = "shaders/material_nn_instance.vert.spv";
 				}
 			}
 			else {
 				if (hasBumps) {
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-					stringStruct.filepath[Shader::vert] = "material_bump.vert.spv";
+					shaderStruct.shaderData[Shader::vert].filepath = "shaders/material_bump.vert.spv";
 				}
 				else if (hasNormal) {
 					//printf("AVertex, flags:%d \n", newFlags);
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<Vertex>();
 					pipelineConfig.attributeDescriptions = Vertex::GetAttributeDescriptions();
-					stringStruct.filepath[Shader::vert] = "material_Tangent.vert.spv";
+					shaderStruct.shaderData[Shader::vert].filepath = "shaders/material_Tangent.vert.spv";
 				}
 				else {
 					//printf("AVertexNT, flags:%d \n", newFlags);
 					pipelineConfig.bindingDescriptions = EWEModel::GetBindingDescriptions<VertexNT>();
 					pipelineConfig.attributeDescriptions = VertexNT::GetAttributeDescriptions();
-					stringStruct.filepath[Shader::vert] = "material_nn.vert.spv";
+					shaderStruct.shaderData[Shader::vert].filepath = "shaders/material_nn.vert.spv";
 				}
 			}
 		}
-		return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, stringStruct, flags, pipelineConfig})).first->second;
+		return materialPipelines.try_emplace(flags, Construct<MaterialPipelines>({ pipeLayoutIndex, shaderStruct, flags, pipelineConfig})).first->second;
 	}
 }

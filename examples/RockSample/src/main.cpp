@@ -1,5 +1,5 @@
 #include <EWEngine/EightWindsEngine.h>
-#include <EWEngine/Systems/ThreadPool.h>
+#include <EWGraphics/Data/ThreadPool.h>
 
 #include "EWESample.h"
 

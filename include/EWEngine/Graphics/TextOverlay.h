@@ -1,8 +1,11 @@
 #pragma once
 
-#include "Device.hpp"
-#include "Pipeline.h"
-#include "Descriptors.h"
+#include "EWGraphics/Vulkan/Device.hpp"
+#include "EWGraphics/Vulkan/Pipeline.h"
+#include "EWGraphics/Vulkan/Descriptors.h"
+#include "EWGraphics/Vulkan/Device_Buffer.h"
+
+#include <LAB/Vector.h>
 
 #include <iostream>
 
@@ -67,11 +70,7 @@ namespace EWE {
 
 		CommandBuffer cmdBuffers[MAX_FRAMES_IN_FLIGHT];
 
-		TextOverlay(
-			float framebufferwidth,
-			float framebufferheight,
-			VkPipelineRenderingCreateInfo const& pipelineInfo
-		);
+		TextOverlay(float framebufferwidth, float framebufferheight, VkPipelineRenderingCreateInfo* pipelineInfo);
 
 		~TextOverlay();
 		void PrepareResources();

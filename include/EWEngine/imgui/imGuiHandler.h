@@ -7,9 +7,9 @@
 #include "EWEngine/imgui/implot.h"
 #include "EWEngine/imgui/imnodes.h"
 
-#include "EWEngine/Data/EngineDataTypes.h"
-#include "EWEngine/Graphics/Device.hpp"
-#include "EWEngine/Graphics/Descriptors.h"
+#include "EWGraphics/Data/EngineDataTypes.h"
+#include "EWGraphics/Vulkan/Device.hpp"
+#include "EWGraphics/Vulkan/Descriptors.h"
 
 
 

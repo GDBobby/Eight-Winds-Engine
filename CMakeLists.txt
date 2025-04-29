@@ -42,14 +42,6 @@ if(POLICY CMP0077)
 	cmake_policy(SET CMP0077 NEW)
 endif()
 
-FetchContent_Declare(
-	stb
-	GIT_REPOSITORY https://github.com/nothings/stb
-	GIT_TAG f4a71b1
-	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/include/stb"
-)
-FetchContent_MakeAvailable(stb)
-
 
 FetchContent_Declare(
   glfw
@@ -108,6 +100,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(lab)
 
+
+
+FetchContent_Declare(
+	EWGraphics
+	GIT_REPOSITORY https://github.com/GDBobby/Eight-Winds-Framework
+	SOURCE_DIR "{CMAKE_CURRENT_SOURCE_DIR}/external/ewf"
+	GIT_TAG main
+)
+FetchContent_MakeAvailable(EWGraphics)
+
+message(STATUS "found EWGraphics [${EWGraphics_LIBRARY}] - [${EWGraphics_SOURCE_DIR}]")
+
 #glslang
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
 set(BUILD_EXTERNAL ON CACHE BOOL "")
@@ -133,17 +137,10 @@ if(USING_NVIDIA_AFTERMATH)
 	message(STATUS "including 64 bit Aftermath")
 		set(AFTERMATH_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/Aftermath/lib/x64/")
 		
-		set(AFTERMATH_LIBS
-			GFSDK_Aftermath_Lib.x64
-		)
+		set(AFTERMATH_LIBS GFSDK_Aftermath_Lib.x64)
 
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4) #32bit, x86
 		message(FATAL_ERROR "Don't expect x86 to work")
-		set(AFTERMATH_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/explicit_external/Aftermath/lib/x86")
-		
-		set(AFTERMATH_LIBS
-			GFSDK_Aftermath_Lib.x86
-		)
 	endif()
 endif()
 
@@ -184,9 +181,9 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/external/include
 
 	${LinearAlgebra_SOURCE_DIR}
+	${EWGraphics_SOURCE_DIR}
 )
 #set(EWENGINE_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "Build directory for EWEngine")
-
 
 message(STATUS "linking directories")
 
@@ -195,6 +192,8 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 	$<$<CONFIG:Debug>:${AFTERMATH_LIB_DIR}>
 	$<$<CONFIG:Debug>:${LinearAlgebra_SOURCE_DIR}/Debug>
 	$<$<CONFIG:Release>:${LinearAlgebra_SOURCE_DIR}/Release>
+	$<$<CONFIG:Debug>:${EWGraphics_SOURCE_DIR}/Debug>
+	$<$<CONFIG:Release>:${EWGraphics_SOURCE_DIR}/Release>
 )
 
 message(STATUS "linking libs")
@@ -205,6 +204,7 @@ target_link_libraries(${PROJECT_NAME}
 	${Vulkan_LIBRARY}
 	${GLSLANG_LIBS}
 	$<$<CONFIG:Debug>:${AFTERMATH_LIBS}>
+	EWGraphics 
 	LinearAlgebra LinearAlgebra-compile-options
 )
 

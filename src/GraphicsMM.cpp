@@ -1,5 +1,7 @@
 #include "EWEngine/GUI/GraphicsMM.h"
 
+#include "EWEngine/SettingsJson.h"
+
 namespace EWE {
 	GraphicsMM::GraphicsMM() {
 

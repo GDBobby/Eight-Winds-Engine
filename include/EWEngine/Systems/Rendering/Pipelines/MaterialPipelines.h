@@ -1,8 +1,8 @@
 #pragma once
 
-#include "EWEngine/Data/EWE_Utils.h"
-#include "EWEngine/Graphics/Model/Model.h"
-#include "EWEngine/Graphics/Pipeline.h"
+#include "EWGraphics/Data/EWE_Utils.h"
+#include "EWGraphics/Model/Model.h"
+#include "EWGraphics/Vulkan/Pipeline.h"
 
 #include <unordered_map>
 
@@ -40,8 +40,8 @@ namespace EWE{
 		//	EWEPipeline(VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, PipelineConfigInfo const& configInfo);
 		//	EWEPipeline(std::string const& vertFilePath, MaterialFlags flags, PipelineConfigInfo const& configInfo, bool hasBones);
 		//	EWEPipeline(uint16_t boneCount, MaterialFlags flags, PipelineConfigInfo const& configInfo);
-		MaterialPipelines(uint16_t pipeLayoutIndex, VkShaderModule vertShaderModu, VkShaderModule fragShaderModu, EWEPipeline::PipelineConfigInfo const& configInfo);
-		MaterialPipelines(uint16_t pipeLayoutIndex, ShaderStringStruct  const& vertFilePath, MaterialFlags flags, EWEPipeline::PipelineConfigInfo& configInfo);
+		MaterialPipelines(uint16_t pipeLayoutIndex, ShaderTrackingStruct const& shaderStruct, EWEPipeline::PipelineConfigInfo const& configInfo);
+		MaterialPipelines(uint16_t pipeLayoutIndex, ShaderTrackingStruct& shaderStruct, MaterialFlags flags, EWEPipeline::PipelineConfigInfo& configInfo);
 		MaterialPipelines(uint16_t pipeLayoutIndex, uint16_t boneCount, MaterialFlags flags, EWEPipeline::PipelineConfigInfo const& configInfo);
 
 		~MaterialPipelines();

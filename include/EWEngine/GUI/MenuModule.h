@@ -2,7 +2,7 @@
 
 #include "UIComponents.h"
 #include "UIComponentsHigher.h"
-#include "EWEngine/Graphics/Model/Basic_Model.h"
+#include "EWGraphics/Model/Basic_Model.h"
 #include "EWEngine/GUI/MenuEnums.h"
 
 #include <LAB/Transform.h>

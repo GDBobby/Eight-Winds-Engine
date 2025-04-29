@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <cassert>
+#include "EWEngine/resources/howlingWind.h"
 
 #define EFFECTS_PATH "sounds/effects/"
 #define MUSIC_PATH "sounds/music/"

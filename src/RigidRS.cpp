@@ -1,7 +1,7 @@
 #include "EWEngine/Systems/Rendering/Rigid/RigidRS.h"
 
 #include "EWEngine/Graphics/PushConstants.h"
-#include "EWEngine/Graphics/Texture/Image_Manager.h"
+#include "EWGraphics/Texture/Image_Manager.h"
 
 namespace EWE {
     std::unordered_map<ImageID, std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>> descriptorsByImageInfo{};

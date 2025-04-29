@@ -11,10 +11,10 @@
 
 
 #include <EWEngine/Systems/Rendering/Stationary/StatRS.h>
-#include <EWEngine/Graphics/Texture/Cube_Texture.h>
-#include <EWEngine/Systems/PipelineSystem.h>
+#include <EWGraphics/Texture/Cube_Texture.h>
+#include <EWGraphics/PipelineSystem.h>
 
-#include <EWEngine/Systems/ThreadPool.h>
+#include <EWGraphics/Data/ThreadPool.h>
 
 #include "LAB/Vector.h"
 
@@ -23,7 +23,7 @@
 namespace EWE {
 	EWESample::EWESample(EightWindsEngine& ewEngine, LoadingThreadTracker& loadingThreadTracker) :
 		ewEngine{ ewEngine },
-		windowPtr{ ewEngine.renderFramework.mainWindow.getGLFWwindow() },
+		windowPtr{ ewEngine.renderFramework.mainWindow.GetGLFWwindow() },
 		menuManager{ ewEngine.menuManager },
 		soundEngine{SoundEngine::GetSoundEngineInstance()}
  {

@@ -4,7 +4,7 @@
 #include "EWEngine/Sound_Engine.h"
 //#include "GameUI.h"
 #include "Overlay.h"
-#include "EWEngine/Graphics/Model/Model.h"
+#include "EWGraphics/Model/Model.h"
 
 #define BENCHMARKING true
 

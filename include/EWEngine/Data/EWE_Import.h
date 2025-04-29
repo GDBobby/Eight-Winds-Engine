@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EWEngine/Graphics/Model/Model.h"
-#include "EWEngine/Graphics/Model/Vertex.h"
+#include "EWGraphics/Model/Model.h"
+#include "EWGraphics/Model/Vertex.h"
 #include "EWEngine/Data/ReadEWEFromFile.h"
 
 #include <fstream>
@@ -22,7 +22,6 @@ namespace EWE {
             boneEData() {}
 
             void ReadFromFile(std::ifstream& inFile);
-            void ReadFromFileSwapEndian(std::ifstream& inFile);
 
         };
 
@@ -61,21 +60,17 @@ namespace EWE {
 #endif
                 meshes.resize(size);
                 for (auto& mesh : meshes) {
-                    mesh.readFromFile(inFile);
+
+                    uint64_t fileSize;
+                    Reading::UInt64FromFile(inFile, &fileSize);
+                    mesh.vertices.resize(fileSize);
+                    inFile.read(reinterpret_cast<char*>(&mesh.vertices[0]), fileSize * sizeof(V_Type));
+
+                    Reading::UInt64FromFile(inFile, &fileSize);
+                    mesh.indices.resize(fileSize);
+                    inFile.read(reinterpret_cast<char*>(&mesh.indices[0]), fileSize * sizeof(uint32_t));
                 }
 
-            }
-            void ReadFromFileSwapEndian(std::ifstream& inFile) {
-                std::getline(inFile, versionTracker);
-                assert(versionTracker == EXPECTED_IMPORT_VERSION && "incorrect import version");
-
-                uint64_t size;
-                Reading::UInt64FromFileSwapEndian(inFile, &size);
-                meshes.resize(size);
-                for (auto& mesh : meshes) {
-                    mesh.readFromFileSwapEndian(inFile);
-                    //mesh.swapEndian();
-                }
             }
         };
 
@@ -95,7 +90,6 @@ namespace EWE {
                 animations;
 
             void ReadFromFile(std::ifstream& inFile);
-            void ReadFromFileSwapEndian(std::ifstream& inFile);
 
         };
         struct FullAnimData {
@@ -109,7 +103,6 @@ namespace EWE {
 
 
             void ReadFromFile(std::ifstream& inFile);
-            void ReadFromFileSwapEndian(std::ifstream& inFile);
         };
         struct NameExportData {
             std::string versionTracker = "";
@@ -129,20 +122,16 @@ namespace EWE {
         NameExportData nameExport;
 
         template <typename T>
-        static void ReadData(TemplateMeshData<T>& data, std::string meshPath, bool endian) {
+        static void ReadData(TemplateMeshData<T>& data, std::string meshPath) {
             //printf("starting up mesh thread :%s \n", meshPath.c_str());
             std::ifstream inFile(meshPath, std::ifstream::binary);
             //inFile.open();
-            assert(inFile.is_open() && "failed to open file");
-            if (endian) {
+            assert(inFile.is_open() && "failed to open file");  
 #if EWE_DEBUG
-                printf("reading templatemeshdata : %s\n", meshPath.c_str());
+            printf("reading templatemeshdata : %s\n", meshPath.c_str());
 #endif
-                data.ReadFromFile(inFile);
-            }
-            else {
-                data.ReadFromFileSwapEndian(inFile);
-            }
+            data.ReadFromFile(inFile);
+
             inFile.close();
             //printf("file read successfully \n");
         }

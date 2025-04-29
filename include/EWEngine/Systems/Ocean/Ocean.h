@@ -1,6 +1,6 @@
 #pragma once
-#include "EWEngine/Graphics/Model/Model.h"
-#include "EWEngine/Graphics/Pipeline.h"
+#include "EWGraphics/Model/Model.h"
+#include "EWGraphics/Vulkan/Pipeline.h"
 #include "EWEngine/Systems/Ocean/OceanStructs.h"
 
 //this is largely self-contained, and builds its own systems.

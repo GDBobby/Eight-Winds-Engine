@@ -1,7 +1,7 @@
 #include "EWEngine/GUI/MenuModule.h"
 
 #include "EWEngine/Systems/Rendering/Pipelines/Dimension2.h"
-#include "EWEngine/Graphics/Texture/Image_Manager.h"
+#include "EWGraphics/Texture/Image_Manager.h"
 
 namespace EWE {
 

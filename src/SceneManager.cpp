@@ -1,5 +1,5 @@
 #include "EWEngine/Systems/SceneManager.h"
-#include "EWEngine/Systems/ThreadPool.h"
+#include "EWGraphics/Data/ThreadPool.h"
 
 
 namespace EWE {

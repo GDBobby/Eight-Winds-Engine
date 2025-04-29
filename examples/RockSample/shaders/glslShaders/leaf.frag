@@ -11,7 +11,7 @@ struct PointLight{
 	vec4 color; //w is intensity
 };
 
-layout(set = 0, binding = 0) uniform LeafBO {
+layout(set = 0, binding = 0) readonly buffer LeafBO {
 	mat4 projView;
 	vec4 cameraPos;
 	mat4 leafMatrices[1024];
@@ -42,7 +42,7 @@ vec3 FresnelSchlick (float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow (1.0 - cosTheta, 5.0);
 }
 
-layout (set = 0, binding = 2) uniform sampler2D albedoSampler;
+layout (set = 0, binding = 1) uniform sampler2D albedoSampler;
 
 void main(){
 	vec3 viewDirection = normalize(lbo.cameraPos.xyz - fragPosWorld);

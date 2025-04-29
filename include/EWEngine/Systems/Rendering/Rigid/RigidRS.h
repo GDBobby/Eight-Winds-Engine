@@ -1,8 +1,8 @@
 #pragma once
 
 #include "EWEngine/Systems/Rendering/Rigid/RigidBufferHandler.h"
-#include "EWEngine/Graphics/Model/Model.h"  
-#include "EWEngine/Data/EngineDataTypes.h"
+#include "EWGraphics/Model/Model.h"  
+#include "EWGraphics/Data/EngineDataTypes.h"
 
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 #include <LAB/Transform.h>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EWEngine/Data/EngineDataTypes.h"
-#include "EWEngine/Graphics/Model/Model.h"
+#include "EWGraphics/Data/EngineDataTypes.h"
+#include "EWGraphics/Model/Model.h"
 #include "EWEngine/Systems/Rendering/Pipelines/MaterialPipelines.h"
 
 namespace EWE {

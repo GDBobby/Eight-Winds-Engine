@@ -1,6 +1,7 @@
 #pragma once
 
-#include <EWEngine/Graphics/Pipeline.h>
+#include <EWGraphics/Vulkan/Pipeline.h>
+#include "EWEngine/Systems/Rendering/Pipelines/PipeEnum.h"
 
 namespace EWE {
 	namespace Pipe {

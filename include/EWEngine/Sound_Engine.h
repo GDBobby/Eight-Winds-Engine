@@ -1,8 +1,7 @@
 #pragma once
 
-#include "EWEngine/Graphics/Preprocessor.h"
+#include "EWGraphics/Preprocessor.h"
 #include "SettingsJson.h"
-#include "EWEngine/resources/howlingWind.h"
 
 
 #define MINIAUDIO_IMPLEMENTATION

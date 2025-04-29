@@ -1,11 +1,12 @@
 #include "PBRScene.h"
 
-#include <EWEngine/Graphics/Texture/Material_Textures.h>
+#include <EWGraphics/Texture/Material_Textures.h>
 
 #include <numeric>
 #include <algorithm>
 #include <random>
 
+#include "EWGraphics/Data/magic_enum.hpp"
 
 #include "../Pipelines/PipeEnum.h"
 
@@ -15,9 +16,9 @@ namespace EWE {
 		: ewEngine{ ewEngine },
 		menuManager{ ewEngine.menuManager },
 		soundEngine{ SoundEngine::GetSoundEngineInstance() },
-		windowPtr{ ewEngine.renderFramework.mainWindow.getGLFWwindow() },
-		camControl{ ewEngine.renderFramework.mainWindow.getGLFWwindow() },
-		imguiHandler{ ewEngine.renderFramework.mainWindow.getGLFWwindow(), MAX_FRAMES_IN_FLIGHT },
+		windowPtr{ ewEngine.renderFramework.mainWindow.GetGLFWwindow() },
+		camControl{ ewEngine.renderFramework.mainWindow.GetGLFWwindow() },
+		imguiHandler{ ewEngine.renderFramework.mainWindow.GetGLFWwindow(), MAX_FRAMES_IN_FLIGHT },
 		fakeCameraForCullingDemo{ewEngine.camera}
 	{
 		ocean = Construct<Ocean::Ocean>({ Image_Manager::GetDescriptorImageInfo(skyboxImgID) });
@@ -590,7 +591,7 @@ namespace EWE {
 #endif
 
 			imguiHandler.beginRender();
-			PipelineSystem::RenderPipelinesIMGUI();
+			//PipelineSystem::RenderPipelinesIMGUI();
 
 			RenderLBOControls();
 			RenderCameraData();
