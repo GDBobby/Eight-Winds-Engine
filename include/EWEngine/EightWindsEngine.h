@@ -30,7 +30,7 @@
 #define BENCHMARKING_GPU true
 
 namespace EWE {
-	using CS = lab::CoordinateSystem<lab::Direction::ZDir<true>, lab::Direction::XDir<true>, lab::Direction::YDir<true>>;
+	using CS = lab::CoordinateSystem<lab::Direction::ZDir<true>, lab::Direction::XDir<false>, lab::Direction::YDir<false>>;
 
 	class EightWindsEngine {
 	public:
