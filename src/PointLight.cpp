@@ -13,7 +13,7 @@ namespace EWE {
 	void PointLight::update(float frameTime, std::vector<PointLight>& pointLights) {
 
 
-		auto rotateLight = lab::Rotate(lab::mat4(1.f), frameTime, { 0.f, 1.f, 0.f });
+		auto rotateLight = lab::RotateAroundY(frameTime);
 
 		for (int i = 0; i < pointLights.size(); i++) {
 			//update light position

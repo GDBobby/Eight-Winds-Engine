@@ -1,9 +1,4 @@
 #pragma once
-class 
-{
-};
-
-#pragma once
 
 #include "TerrainPipe.h"
 #include <EWGraphics/PipelineSystem.h>

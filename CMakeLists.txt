@@ -102,15 +102,23 @@ FetchContent_MakeAvailable(lab)
 
 
 
-FetchContent_Declare(
-	EWGraphics
-	GIT_REPOSITORY https://github.com/GDBobby/Eight-Winds-Framework
-	SOURCE_DIR "{CMAKE_CURRENT_SOURCE_DIR}/external/ewf"
-	GIT_TAG main
-)
-FetchContent_MakeAvailable(EWGraphics)
+if (TARGET EWGraphics)
+  Message(STATUS "found ew_framework")
+else()
+  Message(STATUS "FAILED to find ewe_framework_path in .env.cmake, using FetchContent")
+	FetchContent_Declare(
+		EWGraphics
+		GIT_REPOSITORY https://github.com/GDBobby/Eight-Winds-Framework
+		SOURCE_DIR "{CMAKE_CURRENT_SOURCE_DIR}/external/ewf"
+		GIT_TAG main
+	)
+	FetchContent_MakeAvailable(EWGraphics)
 
-message(STATUS "found EWGraphics [${EWGraphics_LIBRARY}] - [${EWGraphics_SOURCE_DIR}]")
+	set(EWGraphics_LIB EWGraphics)
+
+endif()
+
+message(STATUS "found EWGraphics [${EWGraphics_SOURCE_DIR}]")
 
 #glslang
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
@@ -181,8 +189,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/external/include
 
 	${LinearAlgebra_SOURCE_DIR}
-	${EWGraphics_SOURCE_DIR}
 )
+
 #set(EWENGINE_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "Build directory for EWEngine")
 
 message(STATUS "linking directories")
@@ -196,7 +204,7 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 	$<$<CONFIG:Release>:${EWGraphics_SOURCE_DIR}/Release>
 )
 
-message(STATUS "linking libs")
+message(STATUS "linking libs - ${EWGraphics_LIB}")
 
 
 target_link_libraries(${PROJECT_NAME} 
@@ -204,13 +212,16 @@ target_link_libraries(${PROJECT_NAME}
 	${Vulkan_LIBRARY}
 	${GLSLANG_LIBS}
 	$<$<CONFIG:Debug>:${AFTERMATH_LIBS}>
-	EWGraphics 
+	EWGraphics
 	LinearAlgebra LinearAlgebra-compile-options
 )
+
 
 if(EWE_EXAMPLES)
 	message(STATUS "building examples\n\n")
 	add_subdirectory(examples)
+else()
+	message(STATUS "skipping example build\n\n")
 endif()
 
 if(EWE_PROJECTS)
@@ -230,4 +241,13 @@ set_target_properties(${PROJECT_NAME}
 )
 
 # Create source groups to maintain file structure in Visual Studio
+
+if (DEFINED EWE_FRAMEWORK_PATH)
+
+# file(GLOB_RECURSE EG_SOURCES ${EWGraphics_SOURCE_DIR}/src/*.cpp ${EWGraphics_SOURCE_DIR}/src/*.c)
+# file(GLOB_RECURSE EG_HEADERS ${EWGraphics_SOURCE_DIR}/include/*.h ${EWGraphics_SOURCE_DIR}/include/*.hpp)
+
+# source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${EG_SOURCES} ${EG_HEADERS})
+endif()
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${HEADER_FILES})

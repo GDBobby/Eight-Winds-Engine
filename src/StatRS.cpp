@@ -1,5 +1,7 @@
 #include "EWEngine/Systems/Rendering/Stationary/StatRS.h"
 
+#include <cmath>
+
 namespace EWE {
 	StaticRenderSystem* statMainObject{nullptr};
 

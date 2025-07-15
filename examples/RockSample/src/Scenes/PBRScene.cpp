@@ -21,20 +21,21 @@ namespace EWE {
 		imguiHandler{ ewEngine.renderFramework.mainWindow.GetGLFWwindow(), MAX_FRAMES_IN_FLIGHT },
 		fakeCameraForCullingDemo{ewEngine.camera}
 	{
-		ocean = Construct<Ocean::Ocean>({ Image_Manager::GetDescriptorImageInfo(skyboxImgID) });
 		runtimeCS.f_axis = CS::f_axis;
 		runtimeCS.r_axis = CS::r_axis;
 		runtimeCS.u_axis = CS::u_axis;
 		runtimeCS.f_sign = CS::f_sign;
 		runtimeCS.r_sign = CS::r_sign;
 		runtimeCS.u_sign = CS::u_sign;
+
+		ewEngine.renderFramework.eweRenderer.eweSwapChain->GetImageDescInfo();
 	}
 
 	PBRScene::~PBRScene() {
 #if DECONSTRUCTION_DEBUG
 		printf("deconstructing pbr scene \n");
 #endif
-		Deconstruct(ocean);
+		//Deconstruct(ocean);
 	}
 	void PBRScene::Exit() {
 		assert(sphereModel != nullptr);
@@ -49,11 +50,7 @@ namespace EWE {
 			Deconstruct(grassBuffer[0]);
 			Deconstruct(grassBuffer[1]);
 		}
-		//if (ttmGrassBuffer[0] != nullptr) {
-		//	Deconstruct(ttmGrassBuffer[0]);
-		//	Deconstruct(ttmGrassBuffer[1]);
-		//}
-
+		
 		if (terrainDesc[0][0] != VK_NULL_HANDLE) {
 			auto* dsl = PipelineSystem::At(Pipe::ENGINE_MAX_COUNT)->GetDSL();
 			for (uint8_t i = 0; i < RS_COUNT; i++) {
@@ -408,6 +405,7 @@ namespace EWE {
 		ImGui::End();
 	}
 
+/*
 	void PBRScene::RenderOceanControls() {
 		if (ImGui::Begin("ocean data")) {
 			ImGui::Checkbox("active##oc", &oceanEnabled);
@@ -418,6 +416,7 @@ namespace EWE {
 		}
 		ImGui::End();
 	}
+*/
 
 	bool PBRScene::Render(double dt) {
 		//printf("render main menu scene \n");
@@ -508,26 +507,31 @@ namespace EWE {
 			grassBuffer[VK::Object->frameIndex]->Flush();
 			grassBuffer[VK::Object->frameIndex]->Unmap();
 		}
+		/*
 		if (oceanRenderParamsUpdated > 0) {
 			ocean->graphicsGPUData.UpdateBuffers();
 			oceanRenderParamsUpdated--;
 		}
+			*/
 
 
 		if (ewEngine.BeginFrame()) {
+			/*
 			if (oceanActive) {
 				ocean->ReinitUpdate(dt);
 			}
+			*/
 
 			ewEngine.BeginRenderX();
 			//ewEngine.camera.UpdateCamera<CS>();
 			ewEngine.timeTracker = lab::Mod(ewEngine.timeTracker + dt, lab::GetPI(2.0));
-			ewEngine.advancedRS.renderGameObjects(static_cast<float>(ewEngine.timeTracker));
+			//ewEngine.advancedRS.renderGameObjects(static_cast<float>(ewEngine.timeTracker));
 			//ewEngine.Draw3DObjects(dt);
-			ewEngine.skinnedRS.Render();
+			//ewEngine.skinnedRS.Render();
 			if (materialsActive) {
-				RigidRenderingSystem::Render();
+				//RigidRenderingSystem::Render();
 			}
+			/*
 			if (terrainActive) {
 				PipelineSystem* pipe;
 				if (renderStrat == 0) {
@@ -559,7 +563,7 @@ namespace EWE {
 					//}
 				}
 			}
-
+			
 			if (VK::CmdDrawMeshTasksEXT != VK_NULL_HANDLE) {
 				if (grassActive) {
 					PipelineSystem* pipe = PipelineSystem::At(Pipe::GenGrass);
@@ -570,15 +574,16 @@ namespace EWE {
 					VK::CmdDrawMeshTasksEXT(VK::Object->GetFrameBuffer().cmdBuf, grassGroup.x, grassGroup.y, grassGroup.z);
 				}
 			}
-			if (oceanActive) {
+			*/
+			//if (oceanActive) {
 #if DEBUG_NAMING
 				//DebugNaming::BeginLabel("ocean render", 0.f, 0.f, 1.f);
 #endif
-				ocean->RenderOcean();
+				//ocean->RenderOcean();
 #if DEBUG_NAMING
 				//DebugNaming::EndLabel();
 #endif
-			}
+			//}
 
 			//ewEngine.Draw2DObjects();
 			//ewEngine.DrawText(dt);
@@ -589,30 +594,30 @@ namespace EWE {
 				//ewEngine.uiHandler.EndTextRender();
 			}
 #endif
-
+			
 			imguiHandler.beginRender();
 			//PipelineSystem::RenderPipelinesIMGUI();
 
 			RenderLBOControls();
 			RenderCameraData();
-			RenderControlledSphereControls();
-			RenderTerrainControls();
-			RenderGrassControls();
-			RenderOceanControls();
+			//RenderControlledSphereControls();
+			//RenderTerrainControls();
+			//RenderGrassControls();
+			//RenderOceanControls();
 			imguiHandler.endRender();
 
 			//rockSystem.Render();
 			//printf("after displaying render info \n");
 			ewEngine.EndRender();
-			if (oceanActive) {
-				ocean->TransferGraphicsToCompute();
-			}
+			//if (oceanActive) {
+			//	ocean->TransferGraphicsToCompute();
+			//}
 			ewEngine.EndFrame();
-			oceanActive = oceanEnabled;
+			//oceanActive = oceanEnabled;
 			//std::cout << "after ending render \n";
 			return false;
 		}
-		oceanActive = oceanEnabled;
+		//oceanActive = oceanEnabled;
 		return true;
 	}
 }

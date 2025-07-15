@@ -35,7 +35,7 @@ namespace EWE {
 		//float holder = translations[0][0].y;
 		lab::vec3 tempRot = translations[0][0];
 		tempRot.y = 0.f;
-		tempRot = lab::Rotate(lab::mat4(1.f), -rotation, lab::vec3(0.f, 1.f, 0.f)) * lab::vec4(tempRot.x, tempRot.y, tempRot.z, 1.f);
+		tempRot = lab::RotateAroundAxis(-rotation, lab::vec3(0.f, 1.f, 0.f)) * lab::vec4(tempRot.x, tempRot.y, tempRot.z, 1.f);
 		tempRot.y = translations[0][0].y;
 
 		//translations[0][0] = tempRot + *anchorPoints[0];
@@ -78,7 +78,7 @@ namespace EWE {
 				theCross = lab::Normalized(lab::Cross(endingPosition - startingPosition, lab::vec3(1.f, 0.f, 0.f))) * 0.25f;
 			}
 			for (int j = 1; j < translations[i].size(); j++) {
-				const lab::vec4 tempVec4 = lab::Rotate(lab::mat4(1.f), rotationDistribution(randomGen), connector) * lab::vec4(theCross.x, theCross.y, theCross.z, 1.f);
+				const lab::vec4 tempVec4 = lab::RotateAroundAxis(rotationDistribution(randomGen), connector) * lab::vec4(theCross.x, theCross.y, theCross.z, 1.f);
 				translations[i][j].x = tempVec4.x;
 				translations[i][j].y = tempVec4.y;
 				translations[i][j].z = tempVec4.z;
@@ -91,12 +91,6 @@ namespace EWE {
 	void LightningSystem::update(const lab::mat4& startingMatrix, float rotation, std::vector<lab::vec3*>& transPoints) {
 		//if (!active) { return; }
 		//lab::vec4 begRot = ;
-
-		if (transPoints.size() == 0) {
-			printf("0 lightning points??? \n");
-			throw std::runtime_error("0 lightning points??");
-		}
-
 		assert(transPoints.size() > 0);
 
 		/*
@@ -131,7 +125,7 @@ namespace EWE {
 			lab::vec3 theCross = lab::Normalized(lab::Cross(endingPosition - startingPosition, lab::vec3(0.f, 1.f, 0.f))) * 0.2f;
 			
 			for (int j = 1; j < translations[i].size(); j++) {
-				const lab::vec4 tempVec4 = lab::Rotate(lab::mat4(1.f), rotationDistribution(randomGen), connector) * lab::vec4(theCross.x, theCross.y, theCross.z, 1.f);
+				const lab::vec4 tempVec4 = lab::RotateAroundAxis(rotationDistribution(randomGen), connector) * lab::vec4(theCross.x, theCross.y, theCross.z, 1.f);
 				translations[i][j].x = tempVec4.x;
 				translations[i][j].y = tempVec4.y;
 				translations[i][j].z = tempVec4.z;

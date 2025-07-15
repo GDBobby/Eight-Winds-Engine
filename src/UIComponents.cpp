@@ -1,7 +1,5 @@
 #include "EWEngine/GUI/UIComponents.h"
 namespace EWE {
-
-	
 	//end uicomp
 
 	//  ~~~~~~~~~~~~~~~~~~~ CLICKBOX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

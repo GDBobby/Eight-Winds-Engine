@@ -7,8 +7,11 @@
 #include "EWEngine/Scene.h"
 #include "EWEngine/Free_Camera_Controller.h"
 #include <EWEngine/Systems/Rendering/Rigid/RigidRS.h>
-#include <EWEngine/imgui/imGuiHandler.h>
-#include <EWEngine/Systems/Ocean/Ocean.h>
+#include <EWGraphics/imgui/imGuiHandler.h>
+#include <EWGraphics/Vulkan/ComputePipeline.h>
+
+#include <EWEngine/Sound_Engine.h>
+
 
 #include <LAB/CameraCSRuntime.h>
 
@@ -83,22 +86,24 @@ namespace EWE {
 		void RenderControlledSphereControls();
 		void RenderTerrainControls();
 		void RenderGrassControls();
-		void RenderOceanControls();
+		//void RenderOceanControls();
 
 		int updatedLBO = MAX_FRAMES_IN_FLIGHT;
 		LightBufferObject lbo;
 
 
-		Ocean::Ocean* ocean{ nullptr };
-		bool oceanEnabled = true;
-		bool oceanActive = oceanEnabled;
-		int oceanRenderParamsUpdated = 0;
+		//Ocean::Ocean* ocean{ nullptr };
+		//bool oceanEnabled = true;
+		//bool oceanActive = oceanEnabled;
+		//int oceanRenderParamsUpdated = 0;
 
 		float fov_degrees = 70.f;
 		bool updated_cam_data = false;
 		lab::Perspective::API cam_perspective = lab::Perspective::Vulkan;
 
 		lab::Runtime::CoordinateSystem runtimeCS{};
+
+		
 	};
 }
 

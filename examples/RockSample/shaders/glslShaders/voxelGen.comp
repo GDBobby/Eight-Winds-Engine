@@ -1,0 +1,125 @@
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+
+#include "SimplexNoise.glsl"
+
+#define GROUP_SIZE_X 8
+#define GROUP_SIZE_Y 8
+#define GROUP_SIZE_Z 8
+
+struct OctreeNode {
+    uint childMask;   // 8-bit mask: which children exist (bits 0-7)
+    uint childBase;   // Index into the SSBO where the children start
+    uint data;        // Application-specific payload (color, material, etc.)
+    uint pad;         // Padding (to keep struct aligned to 16 bytes)
+};
+
+layout(std430, set = 0, binding = 0) buffer OctreeBuffer {
+    OctreeNode nodes[];
+};
+
+
+// Global allocator counter
+layout(std430, set = 0, binding = 1) buffer NodeCounter {
+    uint counter;
+};
+
+// Settings for the octree
+layout(std140, set = 0, binding = 2) uniform Params {
+    uint rootNodeIndex; //this needs to be initialized to 0xFFFFFFFFu on CPU 
+    int maxDepth;
+    uint worldSize;  // in voxels, e.g., 64 for a 64^3 grid
+    float step;
+    uint octave;
+    float lacunarity;
+    float hmf_H;
+    float hmf_offset;
+} params;
+
+// Allocate 8 children
+uint alloc8() {
+    return atomicAdd(counter, 8);
+}
+
+// Compute which child index to descend into
+uint getChildIndex(uvec3 voxelCoord, uint level) {
+    return ((voxelCoord.x >> level) & 1) |
+           (((voxelCoord.y >> level) & 1) << 1) |
+           (((voxelCoord.z >> level) & 1) << 2);
+}
+
+// Octree insert logic
+void insertVoxel(uvec3 voxelCoord, uint value) {
+    uint current = params.rootNodeIndex;
+
+    for (int level = params.maxDepth - 1; level >= 0; --level) {
+        uint idx = getChildIndex(voxelCoord, level);
+
+        OctreeNode node = nodes[current];
+        uint bit = 1 << idx;
+
+        switch(value){
+            case 0:{
+                node.data = 0xFFFFFF00;
+                break;
+            }
+            case 1:{
+                node.data = 0xFF000000;
+                break;
+            }
+            case 2:{
+                node.data = 0x00FF0000;
+                break;
+            }
+            case 3:{   
+                node.data = 0x0000FF00;
+                break;
+            }
+            case 4:{
+                node.data = 0xFFFFFF00;
+                break;
+            }
+        }
+
+        // Allocate children if needed
+        if ((node.childMask & bit) == 0) {
+
+            // First time: allocate 8 children
+            if (node.childBase == 0xFFFFFFFFu) {
+                node.childBase = alloc8();
+            }
+
+            node.childMask |= bit; // mark child active
+            nodes[current] = node;
+        }
+        current = node.childBase + idx;
+    }
+
+}
+
+layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y, local_size_z = GROUP_SIZE_Z) in;
+void main() {
+    //uvec3 coord = getVoxelCoord();
+    //debugPrintfEXT("num work groups - (%d)(%d)(%d)", gl_NumWorkGroups.x, gl_NumWorkGroups.y, gl_NumWorkGroups.z);
+    //debugPrintfEXT("work group id - (%d)(%d)(%d)", gl_WorkGroupID.x, gl_WorkGroupID.y, gl_WorkGroupID.z);
+    //debugPrintfEXT("invocation - (%d)(%d)(%d)", gl_LocalInvocationID.x, gl_LocalInvocationID.y, gl_LocalInvocationID.z);
+    uvec3 voxelCoord = uvec3(
+        gl_LocalInvocationID.x + gl_WorkGroupID.x * 8,
+        gl_LocalInvocationID.y + gl_WorkGroupID.y * 8,
+        gl_LocalInvocationID.z + gl_WorkGroupID.z * 8
+    );
+    vec3 point = vec3(
+        float(voxelCoord.x),
+        float(voxelCoord.y),
+        float(voxelCoord.z)
+    );
+
+    //float hybrid_multi_fractal_processing(vec3 point, const float step, const uint octave, const float lacunarity, const float hmf_H, const float hmf_offset) {
+    
+    float noiseVal = hybrid_multi_fractal_processing(point, params.step, params.octave, params.lacunarity, params.hmf_H, params.hmf_offset);
+    noiseVal = (noiseVal - 0.5) * 4.0;
+    if(hybrid_multi_fractal_processing(point, params.step, params.octave, params.lacunarity, params.hmf_H, params.hmf_offset) > 0.0){
+        insertVoxel(voxelCoord, uint(ceil(noiseVal))); // 1 = occupied voxel
+
+    }
+}
