@@ -671,8 +671,8 @@ static unsigned short stb__consolas_24_latin1_a[224]={ 211,211,211,211,211,211,2
 //    data: NULL or specified size
 //    height: STB_FONT_consolas_24_latin1_BITMAP_HEIGHT or STB_FONT_consolas_24_latin1_BITMAP_HEIGHT_POW2
 //    return value: spacing between lines
-static void stb_font_consolas_24_latin1(stb_fontchar font[STB_FONT_consolas_24_latin1_NUM_CHARS],
-                unsigned char data[STB_FONT_consolas_24_latin1_BITMAP_HEIGHT][STB_FONT_consolas_24_latin1_BITMAP_WIDTH],
+static void stb_font_consolas_24_latin1(stb_fontchar* font,
+                unsigned char** data,
                 int height)
 {
     int i,j;

@@ -2,12 +2,11 @@
 
 layout (location = 0) out vec2 outUV;
 
-layout(set = 0, binding = 0) uniform inData{
-	vec4 posUV[16384];
+layout(std430, set = 0, binding = 0) buffer inData {
+    vec4 posUV[];
 };
 
-
-void main(void) {
+void main() {
 	gl_Position = vec4(posUV[gl_VertexIndex + gl_InstanceIndex * 4].xy, 0.0, 1.0);
 	outUV = posUV[gl_VertexIndex + gl_InstanceIndex * 4].zw;
 }

@@ -28,7 +28,7 @@ namespace EWE {
 		runtimeCS.r_sign = CS::r_sign;
 		runtimeCS.u_sign = CS::u_sign;
 
-		ewEngine.renderFramework.eweRenderer.eweSwapChain->GetImageDescInfo();
+		//ewEngine.renderFramework.eweRenderer.eweSwapChain->GetImageDescInfo();
 	}
 
 	PBRScene::~PBRScene() {
@@ -563,6 +563,7 @@ namespace EWE {
 					//}
 				}
 			}
+			*/
 			
 			if (VK::CmdDrawMeshTasksEXT != VK_NULL_HANDLE) {
 				if (grassActive) {
@@ -574,7 +575,6 @@ namespace EWE {
 					VK::CmdDrawMeshTasksEXT(VK::Object->GetFrameBuffer().cmdBuf, grassGroup.x, grassGroup.y, grassGroup.z);
 				}
 			}
-			*/
 			//if (oceanActive) {
 #if DEBUG_NAMING
 				//DebugNaming::BeginLabel("ocean render", 0.f, 0.f, 1.f);
@@ -596,13 +596,18 @@ namespace EWE {
 #endif
 			
 			imguiHandler.beginRender();
-			//PipelineSystem::RenderPipelinesIMGUI();
+			PipelineSystem::RenderPipelinesIMGUI();
+
+			camTransform.rotation.x = 0.f;
+			camTransform.rotation.y = lab::GetPI(-1.5f);
+			camTransform.rotation.z = 0.f;
+
 
 			RenderLBOControls();
 			RenderCameraData();
 			//RenderControlledSphereControls();
 			//RenderTerrainControls();
-			//RenderGrassControls();
+			RenderGrassControls();
 			//RenderOceanControls();
 			imguiHandler.endRender();
 

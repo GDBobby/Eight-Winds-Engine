@@ -16,9 +16,7 @@
 
 namespace EWE {
 
-	stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
-
-	TextOverlay* TextOverlay::textOverlayPtr{ nullptr };
+	TextOverlay* textOverlayPtr{ nullptr };
 
 
 	TextOverlay::TextOverlay(float framebufferwidth, float framebufferheight, VkPipelineRenderingCreateInfo* pipelineInfo) 
@@ -33,117 +31,35 @@ namespace EWE {
 
 		PrepareResources();
 		//printf("after prepare resources \n");
+		PreparePipelineLayout();
 		PreparePipeline(*pipelineInfo);
+
+		LoadConsolas24();
 		//printf("afterr prepare pipeline \n");
 	}
 
-	TextOverlay::~TextOverlay() {
-		// Free up all Vulkan resources requested by the text overlay
-#if DECONSTRUCTION_DEBUG
-		printf("deconstrructing textoverlay \n");
-#endif
-		Deconstruct(vertexBuffer[0]);
-		Deconstruct(vertexBuffer[1]);
+	Font::~Font() {
 
 		Sampler::RemoveSampler(sampler);
 		EWE_VK(vkDestroyImage, VK::Object->vkDevice, image, nullptr);
 		EWE_VK(vkDestroyImageView, VK::Object->vkDevice, view, nullptr);
 		EWE_VK(vkFreeMemory, VK::Object->vkDevice, imageMemory, nullptr);
-		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, vertShaderModule, nullptr);
-		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, fragShaderModule, nullptr);
-		EWE_VK(vkDestroyDescriptorSetLayout, VK::Object->vkDevice, descriptorSetLayout, nullptr);
-		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipelineLayout, nullptr);
-		EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, pipelineCache, nullptr);
-		EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, pipeline, nullptr);
-
-#if DECONSTRUCTION_DEBUG
-		printf("end deconstruction textoverlay \n");
-#endif
-
 	}
 
-
-	uint16_t TextStruct::GetSelectionIndex(double xpos) {
-		const float charW = 1.5f * scale / VK::Object->screenWidth;
-		float width = GetWidth();
-		float currentPos = x;
-		stb_fontchar* charData = &stbFontData[(uint32_t)string.back() - STB_FONT_consolas_24_latin1_FIRST_CHAR];
-#if EWE_DEBUG
-		printf("xpos get selection index - %.1f \n", xpos);
-#endif
-		if (align == TA_left) {
-			/*
-			if (xpos >= (x + width - charData->advance * charW / 2.f)) {
-				printf("TA_left, greater than all - %.2f \n", charData->advance);
-				return string.length(); 
-			}
-			*/
-		}
-		else if (align == TA_center) {
-			currentPos -= width / 2.f;
-			//if (xpos > x + (width - charData->advance * charW) / 2.f) { return string.length(); }
-		}
-		else if (align == TA_right) {
-			currentPos -= width;
-			//if (xpos >= (x - charData->advance * charW / 2.f)) { return string.length(); }
-		}
-
-		//float lastPos = currentPos;
-		for (uint16_t i = 0; i < string.length(); i++) {
-			charData = &stbFontData[static_cast<uint32_t>(string[i]) - STB_FONT_consolas_24_latin1_FIRST_CHAR];
-			currentPos += (charData->advance * charW) * VK::Object->screenWidth / 8.f;
-#if EWE_DEBUG
-			printf("currentPos : %.2f \n", currentPos);
-#endif
-			if (xpos <= currentPos) { return i; }
-			currentPos += (charData->advance * charW) * VK::Object->screenWidth * 3.f / 8.f;
-		}
-		return static_cast<uint16_t>(string.length());
-	}
-	float TextStruct::GetWidth() {
-		//std::cout << "yo? : " << frameBufferWidth << std::endl;
-		const float charW = 1.5f * scale / VK::Object->screenWidth;
-		float textWidth = 0;
-		stb_fontchar* charData;
-		for (auto const& letter : string) {
-			charData = &stbFontData[static_cast<uint32_t>(letter) - STB_FONT_consolas_24_latin1_FIRST_CHAR];
-			textWidth += charData->advance * charW;
-		}
-		//printf("text struct get width : %.5f \n", textWidth);
-#if EWE_DEBUG
-		if (textWidth < 0.0f) {
-
-			printf("width less than 0, what  was the string? : %s:%.1f \n", string.c_str(), VK::Object->screenWidth);
-			assert(false);
-		}
-#endif
-		return textWidth;
-	}
-
-	void TextOverlay::PrepareResources() {
-
-		const uint32_t fontWidth = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
-		const uint32_t fontHeight = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
-
-		static uint8_t font24pixels[fontWidth][fontHeight];
-		stb_font_consolas_24_latin1(stbFontData, font24pixels, fontHeight);
-
-		vertexBuffer[0] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(lab::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
-		vertexBuffer[1] = Construct<EWEBuffer>({ TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(lab::vec4), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT });
-
-#if DEBUG_NAMING
-		vertexBuffer[0]->SetName("textoverlay vertex buffer 0");
-		vertexBuffer[1]->SetName("textoverlay vertex buffer 0");
-#endif
-
-		// Font texture
+	Font::Font(std::vector<CharacterData>& vertData, std::vector<float>& advanceData, std::size_t width, std::size_t height, uint8_t firstChar, void* imgdata) 
+		: vertData{ std::move(vertData) }, 
+		advanceData{ std::move(advanceData) }, 
+		width{ width }, 
+		height{ height }, 
+		firstChar{ firstChar } 
+	{
 		VkImageCreateInfo imageCreateInfo{};
 		imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageCreateInfo.pNext = nullptr;
 		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 		imageCreateInfo.format = VK_FORMAT_R8_UNORM;
-		imageCreateInfo.extent.width = fontWidth;
-		imageCreateInfo.extent.height = fontHeight;
+		imageCreateInfo.extent.width = width;
+		imageCreateInfo.extent.height = height;
 		imageCreateInfo.extent.depth = 1;
 		imageCreateInfo.mipLevels = 1;
 		imageCreateInfo.arrayLayers = 1;
@@ -153,9 +69,6 @@ namespace EWE {
 		imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		imageCreateInfo.flags = 0; //optional????
-
-		//not using this function because i need the allocInfo
-		//eweDevice.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 
 
 		EWE_VK(vkCreateImage, VK::Object->vkDevice, &imageCreateInfo, nullptr, &image);
@@ -177,11 +90,7 @@ namespace EWE {
 
 
 		// Staging
-#if USING_VMA
-		StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ allocInfo.allocationSize, &font24pixels[0][0] });
-#else
-		StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ allocInfo.allocationSize, &font24pixels[0][0] });
-#endif
+		StagingBuffer* stagingBuffer = Construct<StagingBuffer>({ allocInfo.allocationSize, imgdata });
 		// Copy to image
 
 		SyncHub* syncHub = SyncHub::GetSyncHubInstance();
@@ -212,8 +121,8 @@ namespace EWE {
 			bufferCopyRegion.imageSubresource.mipLevel = 0;
 			bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
 			bufferCopyRegion.imageSubresource.layerCount = 1;
-			bufferCopyRegion.imageExtent.width = fontWidth;
-			bufferCopyRegion.imageExtent.height = fontHeight;
+			bufferCopyRegion.imageExtent.width = width;
+			bufferCopyRegion.imageExtent.height = height;
 			bufferCopyRegion.imageExtent.depth = 1;
 
 			EWE_VK(vkCmdCopyBufferToImage,
@@ -270,7 +179,6 @@ namespace EWE {
 
 		}
 
-
 		VkImageViewCreateInfo imageViewInfo{};
 		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		imageViewInfo.pNext = nullptr;
@@ -300,38 +208,132 @@ namespace EWE {
 
 		sampler = Sampler::GetSampler(samplerInfo);
 
-		// Descriptor set layout
-		std::array<VkDescriptorSetLayoutBinding, 2> setLayoutBindings{};
-		setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		setLayoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		setLayoutBindings[0].binding = 0;
-		setLayoutBindings[0].descriptorCount = 1;
+		VkDescriptorImageInfo descImgInfo;
+		descImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		descImgInfo.imageView = view;
+		descImgInfo.sampler = sampler;
 
-		setLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		setLayoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		setLayoutBindings[1].binding = 1;
-		setLayoutBindings[1].descriptorCount = 1;
-		setLayoutBindings[1].pImmutableSamplers = nullptr;
 
-		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
-		descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		descriptorSetLayoutInfo.pNext = nullptr;
-		descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
-		descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
 
-		//std::cout << "vkcreatedescriptorsetlayout return pre " << std::endl;
+		for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			buffers[i] = Construct<EWEBuffer>({sizeof(Font::CharacterData::Vert) * 4, TextOverlay::TEXTOVERLAY_MAX_CHAR_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT});
 
-		EWE_VK(vkCreateDescriptorSetLayout, VK::Object->vkDevice, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout);
-		//std::cout << "vkcreatedescriptorsetlayout return : " << printInt << std::endl;
+			EWEDescriptorWriter writer{ textOverlayPtr->eDSL, DescriptorPool_Global };
+			writer.WriteBuffer(buffers[i]->DescriptorInfo());
+			writer.WriteImage(&descImgInfo);
+			descriptorSets[i] = writer.Build();
+		}
+	}
 
-		// Pipeline layout
-		//std::cout << "pipeline info1??" << std::endl;
+	TextOverlay::~TextOverlay() {
+		// Free up all Vulkan resources requested by the text overlay
+#if DECONSTRUCTION_DEBUG
+		printf("deconstrructing textoverlay \n");
+#endif
+		Deconstruct(vertexBuffer[0]);
+		Deconstruct(vertexBuffer[1]);
+		Deconstruct(eDSL);
+
+		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, vertShaderModule, nullptr);
+		EWE_VK(vkDestroyShaderModule, VK::Object->vkDevice, fragShaderModule, nullptr);
+		EWE_VK(vkDestroyPipelineLayout, VK::Object->vkDevice, pipelineLayout, nullptr);
+		EWE_VK(vkDestroyPipelineCache, VK::Object->vkDevice, pipelineCache, nullptr);
+		EWE_VK(vkDestroyPipeline, VK::Object->vkDevice, pipeline, nullptr);
+
+#if DECONSTRUCTION_DEBUG
+		printf("end deconstruction textoverlay \n");
+#endif
+
+	}
+
+
+	uint16_t TextStruct::GetSelectionIndex(double xpos) {
+		const float charW = 1.5f * scale / VK::Object->screenWidth;
+		const float width = GetWidth();
+		float currentPos = x;
+
+		const Font* font = &textOverlayPtr->fonts[textOverlayPtr->currentFont];
+#if EWE_DEBUG
+		printf("xpos get selection index - %.1f \n", xpos);
+#endif
+		switch (align) {
+			case TA_left:break;
+			case TA_center: currentPos -= width / 2.f; break;
+			case TA_right: currentPos -= width; break;
+		}
+
+		//float lastPos = currentPos;
+		for (uint16_t i = 0; i < string.length(); i++) {
+			currentPos += font->GetCharWidth(string[i], charW) * VK::Object->screenWidth / 8.f;
+#if EWE_DEBUG
+			printf("currentPos : %.2f \n", currentPos);
+#endif
+			if (xpos <= currentPos) { return i; }
+			currentPos += font->GetCharWidth(string[i], charW) * VK::Object->screenWidth * 3.f / 8.f;
+		}
+		return static_cast<uint16_t>(string.length());
+	}
+
+	float Font::GetCharWidth(const char c, const float charW) const {
+		return advanceData[static_cast<uint32_t>(c) - firstChar] * charW;
+	}
+	float Font::GetStringWidth(std::string const& str, const float charW) const {
+		float ret = 0.f;
+		for (auto const& letter : str) {
+			ret += advanceData[static_cast<uint32_t>(letter) - firstChar] * charW;
+		}
+		return ret;
+	}
+	Font::CharacterData::Vert const* Font::GetVertData(const char c) const {
+		return vertData[static_cast<uint32_t>(c) - firstChar].vertices;
+	}
+
+	float TextStruct::GetWidth() {
+		//std::cout << "yo? : " << frameBufferWidth << std::endl;
+		const float charW = 1.5f * scale / VK::Object->screenWidth;
+		//printf("text struct get width : %.5f \n", textWidth);
+#if EWE_DEBUG
+		const float textWidth = textOverlayPtr->fonts[textOverlayPtr->currentFont].GetStringWidth(string, charW);
+		if (textWidth < 0.0f) {
+
+			printf("width less than 0, what  was the string? : %s:%.1f \n", string.c_str(), VK::Object->screenWidth);
+			assert(false);
+		}
+		return textWidth;
+#else
+		return textOverlayPtr->fonts[textOverlayPtr->currentFont].GetStringWidth(string, charW);
+#endif
+	}
+
+	void TextOverlay::PreparePipelineLayout() {
+
+	}
+
+	void TextOverlay::LoadConsolas24() {
+
+		unsigned char** font24pixels = new unsigned char* [STB_FONT_consolas_24_latin1_BITMAP_WIDTH];
+		for (std::size_t i = 0; i < STB_FONT_consolas_24_latin1_BITMAP_WIDTH; ++i) {
+			font24pixels[i] = new unsigned char[STB_FONT_consolas_24_latin1_BITMAP_WIDTH];
+		}
+
+		std::vector<stb_fontchar> stbData{};
+		stb_font_consolas_24_latin1(stbData.data(), font24pixels, STB_FONT_consolas_24_latin1_BITMAP_WIDTH);
+
+		// Font texture
+	}
+
+	void TextOverlay::PrepareResources() {
+
+		eDSL = EWEDescriptorSetLayout::Builder()
+			.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+			.AddBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			.Build();
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.pNext = nullptr;
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+		pipelineLayoutInfo.pSetLayouts = eDSL->GetDescriptorSetLayout();
 
 		//std::cout << "pipelineinfo 3" << std::endl;
 
@@ -339,67 +341,7 @@ namespace EWE {
 #if DEBUG_NAMING
 		DebugNaming::SetObjectName(pipelineLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "textoverlay pipe layout");
 #endif
-		//std::cout << "pipeline info2??" << std::endl;
 
-		// Descriptor set
-		VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
-		descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		descriptorSetAllocInfo.pNext = nullptr;
-		descriptorSetAllocInfo.descriptorPool = EWEDescriptorPool::GetPool(DescriptorPool_Global);
-		descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
-		descriptorSetAllocInfo.descriptorSetCount = 1;
-
-		//std::cout << "check 2" << std::endl;
-
-		EWE_VK(vkAllocateDescriptorSets, VK::Object->vkDevice, &descriptorSetAllocInfo, &descriptorSet[0]);
-		EWE_VK(vkAllocateDescriptorSets, VK::Object->vkDevice, &descriptorSetAllocInfo, &descriptorSet[1]);
-
-		VkWriteDescriptorSet writeDescriptorSets[4];
-		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[0].pNext = nullptr;
-		writeDescriptorSets[0].dstSet = descriptorSet[0];
-		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[0].dstBinding = 0;
-		writeDescriptorSets[0].pBufferInfo = vertexBuffer[0]->DescriptorInfo();
-		writeDescriptorSets[0].descriptorCount = 1;
-		writeDescriptorSets[0].dstArrayElement = 0;
-
-		VkDescriptorImageInfo texDescriptorInfo{};
-		texDescriptorInfo.sampler = sampler;
-		texDescriptorInfo.imageView = view;
-		texDescriptorInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[1].pNext = nullptr;
-		writeDescriptorSets[1].dstSet = descriptorSet[0];
-		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeDescriptorSets[1].dstBinding = 1;
-		writeDescriptorSets[1].pImageInfo = &texDescriptorInfo;
-		writeDescriptorSets[1].descriptorCount = 1;
-		writeDescriptorSets[1].dstArrayElement = 0;
-
-		writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[2].pNext = nullptr;
-		writeDescriptorSets[2].dstSet = descriptorSet[1];
-		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[2].dstBinding = 0;
-		writeDescriptorSets[2].pBufferInfo = vertexBuffer[1]->DescriptorInfo();
-		writeDescriptorSets[2].descriptorCount = 1;
-		writeDescriptorSets[2].dstArrayElement = 0;
-
-		writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[3].pNext = nullptr;
-		writeDescriptorSets[3].dstSet = descriptorSet[1];
-		writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeDescriptorSets[3].dstBinding = 1;
-		writeDescriptorSets[3].pImageInfo = &texDescriptorInfo;
-		writeDescriptorSets[3].descriptorCount = 1;
-		writeDescriptorSets[3].dstArrayElement = 0;
-
-		//std::cout << "check4 " << std::endl;
-
-		EWE_VK(vkUpdateDescriptorSets, VK::Object->vkDevice, 4, writeDescriptorSets, 0, nullptr);
-
-		//std::cout << "check5" << std::endl;
 		// Pipeline cache
 		VkPipelineCacheCreateInfo pipelineCacheCreateInfo{};
 		pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
@@ -423,14 +365,12 @@ namespace EWE {
 		blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 		blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 		blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
-		//printf("after blend attachment state \n");
 
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{};
 		inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 		inputAssemblyState.flags = 0;
 		inputAssemblyState.primitiveRestartEnable = VK_FALSE;
-		//printf("after input assembly state \n");
 		VkPipelineRasterizationStateCreateInfo rasterizationState{};
 		rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
@@ -439,57 +379,55 @@ namespace EWE {
 		rasterizationState.flags = 0;
 		rasterizationState.depthClampEnable = VK_FALSE;
 		rasterizationState.lineWidth = 1.0f;
-		//printf("after rrasterization state \n");
 		VkPipelineColorBlendStateCreateInfo colorBlendState{};
 		colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 		colorBlendState.attachmentCount = 1;
 		colorBlendState.pAttachments = &blendAttachmentState;
-		//printf("after color blend state \n");
 		VkPipelineDepthStencilStateCreateInfo depthStencilState{};
 		depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depthStencilState.depthTestEnable = VK_TRUE;
 		depthStencilState.depthWriteEnable = VK_TRUE;
 		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
-		//printf("after depth stencil state \n");
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportState.viewportCount = 1;
 		viewportState.scissorCount = 1;
 		viewportState.flags = 0;
-		//printf("after viewport state \n");
 		VkPipelineMultisampleStateCreateInfo multisampleState{};
 		multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 		multisampleState.flags = 0;
-		//printf("after multisample state \n");
 		VkDynamicState dynamicStateEnables[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 		VkPipelineDynamicStateCreateInfo dynamicState{};
 		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		dynamicState.pDynamicStates = dynamicStateEnables;
 		dynamicState.dynamicStateCount = 2;
 		dynamicState.flags = 0;
-		//printf("after dynamic state enables \n");
+		/*
+		* 
+		* if using indices to character data instead of uploading the character data, use this pipeline vertex data
+		* 
 		VkVertexInputBindingDescription vertexInputBindings;
 		vertexInputBindings.binding = 0;
 		vertexInputBindings.stride = sizeof(lab::vec4);
 		vertexInputBindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		//printf("after vertex input binding \n");
+
 		VkVertexInputAttributeDescription vertexInputAttributes;
 		vertexInputAttributes.location = 0;
 		vertexInputAttributes.binding = 0;
-		vertexInputAttributes.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		vertexInputAttributes.format = VK_FORMAT_R16_UINT;
 		vertexInputAttributes.offset = 0;
-		//printf("after vertex input attributes \n");
+		*/
 
 		VkPipelineVertexInputStateCreateInfo vertexInputState{};
 		vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		/*
-		vertexInputState.vertexBindingDescriptionCount = 1;
-		vertexInputState.pVertexBindingDescriptions = &vertexInputBindings;
-		vertexInputState.vertexAttributeDescriptionCount = 1;
-		vertexInputState.pVertexAttributeDescriptions = &vertexInputAttributes;
-		*/
+		
+		vertexInputState.vertexBindingDescriptionCount = 0;
+		vertexInputState.pVertexBindingDescriptions = nullptr;// &vertexInputBindings;
+		vertexInputState.vertexAttributeDescriptionCount = 0;
+		vertexInputState.pVertexAttributeDescriptions = nullptr;// &vertexInputAttributes;
+		
 		vertexInputState.vertexBindingDescriptionCount = 0;
 		vertexInputState.pVertexBindingDescriptions = nullptr;
 		vertexInputState.vertexAttributeDescriptionCount = 0;
@@ -515,9 +453,6 @@ namespace EWE {
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(fragCode.data());
 		//printf("setting shader module create info to frag \n");
 		EWE_VK(vkCreateShaderModule, VK::Object->vkDevice, &createInfo, nullptr, &fragShaderModule);
-		//printf("after successfully creating another shader module \n");
-		//EWEPipeline::createShaderModule(vertCode, &vertShaderModule);
-		//EWEPipeline::createShaderModule(fragCode, &fragShaderModule);
 		VkPipelineShaderStageCreateInfo shaderStages[2];
 		shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -556,8 +491,6 @@ namespace EWE {
 		pipelineCreateInfo.pStages = shaderStages;
 		//printf("after pipeline create info \n");
 
-		//std::make_unique<EWEPipeline>(eweDevice, "texture_shader.vert.spv", "texture_shader.frag.spv", pipelineConfig);
-
 		EWE_VK(vkCreateGraphicsPipelines, VK::Object->vkDevice, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline);
 #if DEBUG_NAMING
 		DebugNaming::SetObjectName(pipeline, VK_OBJECT_TYPE_PIPELINE, "textoverlay pipeline");
@@ -567,6 +500,8 @@ namespace EWE {
 	}
 
 	void TextOverlay::AddDefaultText(double time, double peakTime, double averageTime, double highTime) {
+		int16_t previousFont = currentFont;
+		SetCurrentFont(0);
 		AddText(TextStruct{ EWEDevice::GetEWEDevice()->deviceName, 0, frameBufferHeight - (20.f * scale), TA_left, 1.f});
 		//printf("frameBuffer : %d : %d \n", frameBufferWidth, frameBufferHeight);
 		int lastFPS = static_cast<int>(1 / time);
@@ -577,17 +512,15 @@ namespace EWE {
 		AddText(TextStruct{ buffer_string, 0.f, frameBufferHeight - (60.f * scale), TA_left, 1.f });
 		buffer_string = std::format("peak: {:.2f} ms ~ average: {:.2f} ms ~ high: {:.2f} ms", peakTime * 1000, averageTime * 1000, highTime * 1000);
 		AddText(TextStruct{ buffer_string, 0.f, frameBufferHeight - (80.f * scale), TA_left, 1.f });
+		SetCurrentFont(previousFont);
 	}
 
-	float TextOverlay::GetWidth(std::string text, float textScale) {
-		const uint32_t firstChar = STB_FONT_consolas_24_latin1_FIRST_CHAR;
+	float TextOverlay::GetWidth(std::string const& text, float textScale) {
 		//std::cout << "yo? : " << frameBufferWidth << std::endl;
 		const float charW = 1.5f * scale * textScale / frameBufferWidth;
 		float textWidth = 0;
-		for (auto const& letter : text)
-		{
-			stb_fontchar* charData = &stbFontData[static_cast<uint32_t>(letter) - firstChar];
-			textWidth += charData->advance * charW;
+		for (auto const& letter : text) {
+			textWidth += fonts[currentFont].GetCharWidth(letter, charW);
 		}
 		return textWidth;
 	}
@@ -595,97 +528,86 @@ namespace EWE {
 		textOverlayPtr->AddText(textStruct);
 	}
 
-	void TextOverlay::AddText(TextStruct textStruct, const float scaleX) {
-		const uint32_t firstChar = STB_FONT_consolas_24_latin1_FIRST_CHAR;
+	void TextOverlay::AddText(TextStruct const& textStruct, const float scaleX) {
 
 		assert(mapped != nullptr);
-		//std::cout << "frameBufferHeight : " << frameBufferHeight << std::endl;
 		const float charW = 1.5f * scale * scaleX * textStruct.scale / frameBufferWidth;
 		const float charH = 1.5f * scale * textStruct.scale / frameBufferHeight;
 
-		textStruct.x = (textStruct.x / frameBufferWidth * 2.0f) - 1.0f;
-		textStruct.y = (textStruct.y / frameBufferHeight * 2.0f) - 1.0f;
-
-		// Calculate text width
-		float textWidth = 0.f;
-		for (auto const& letter : textStruct.string) {
-			stb_fontchar* charData = &stbFontData[static_cast<uint32_t>(letter) - firstChar];
-			textWidth += charData->advance * charW;
-		}
+		float xPos = (textStruct.x / frameBufferWidth * 2.0f) - 1.0f;
+		const float yPos = (textStruct.y / frameBufferHeight * 2.0f) - 1.0f;
 
 		switch (textStruct.align) {
 			case TA_right:
-				textStruct.x -= textWidth;
+				for (auto const& letter : textStruct.string) {
+					xPos -= fonts[currentFont].GetCharWidth(letter, charW);
+				}
 				break;
 			case TA_center:
-				textStruct.x -= textWidth / 2.0f;
+				for (auto const& letter : textStruct.string) {
+					xPos -= fonts[currentFont].GetCharWidth(letter, charW) / 2.f;
+				}
 				break;
 			case TA_left:
 				break;
 		}
 
+		mapped = reinterpret_cast<Font::CharacterData::Vert*>(fonts[currentFont].buffers[VK::Object->frameIndex]->GetMappedMemory());
 
-
-		// Generate a uv mapped quad per char in the new text
 		for (auto const& letter : textStruct.string) {
-			stb_fontchar* charData = &stbFontData[static_cast<uint32_t>(letter) - firstChar];
+			if (fonts[currentFont].drawnLetterCount >= TEXTOVERLAY_MAX_CHAR_COUNT) {
+				printf("trying to add more letters than allowed in textoverlay. consider expanding the TEXTOVERLAY_MAX_CHAR_COUNT constant - (drawn/max) (%d/%d) \n", TEXTOVERLAY_MAX_CHAR_COUNT);
+				fonts[currentFont].drawnLetterCount++;
+				break;
+			}
+			Font::CharacterData::Vert const* verts = fonts[currentFont].GetVertData(letter);
 
-			mapped->x = (textStruct.x + static_cast<float>(charData->x0) * charW);
-			mapped->y = (textStruct.y + static_cast<float>(charData->y0) * charH);
-			mapped->z = charData->s0;
-			mapped->w = charData->t0;
-			mapped++;
+			mapped[0].x = (xPos + verts[0].x * charW);
+			mapped[0].y = (yPos + verts[0].y * charH);
+			mapped[0].u = verts[0].u;
+			mapped[0].v = verts[0].v;
 
-			mapped->x = (textStruct.x + static_cast<float>(charData->x1) * charW);
-			mapped->y = (textStruct.y + static_cast<float>(charData->y0) * charH);
-			mapped->z = charData->s1;
-			mapped->w = charData->t0;
-			mapped++;
+			mapped[1].x = (xPos + verts[1].x * charW);
+			mapped[1].y = (yPos + verts[0].y * charH);
+			mapped[1].u = verts[1].u;
+			mapped[1].v = verts[0].v;
 
-			mapped->x = (textStruct.x + static_cast<float>(charData->x0) * charW);
-			mapped->y = (textStruct.y + static_cast<float>(charData->y1) * charH);
-			mapped->z = charData->s0;
-			mapped->w = charData->t1;
-			mapped++;
+			mapped[2].x = (xPos + verts[0].x * charW);
+			mapped[2].y = (yPos + verts[1].y * charH);
+			mapped[2].u = verts[0].u;
+			mapped[2].v = verts[1].v;
 
-			mapped->x = (textStruct.x + static_cast<float>(charData->x1) * charW);
-			mapped->y = (textStruct.y + static_cast<float>(charData->y1) * charH);
-			mapped->z = charData->s1;
-			mapped->w = charData->t1;
-			mapped++;
+			mapped[3].x = (xPos + verts[1].x * charW);
+			mapped[3].y = (yPos + verts[1].y * charH);
+			mapped[3].u = verts[1].u;
+			mapped[3].v = verts[1].v;
 
-			textStruct.x += charData->advance * charW;
+			mapped = reinterpret_cast<Font::CharacterData::Vert*>(reinterpret_cast<std::size_t>(mapped) + fonts[currentFont].buffers[0]->GetAlignment());
+
+			xPos += fonts[currentFont].GetCharWidth(letter, charW);
+
+			fonts[currentFont].drawnLetterCount++;
 
 			numLetters++;
 		}
-
-		//return textWidth;
 	}
 
 	void TextOverlay::Draw() {
 			EWERenderer::BindGraphicsPipeline(pipeline);
+			for (auto& font : fonts) {
+				if (font.drawnLetterCount > 0) {
+					EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &font.descriptorSets[VK::Object->frameIndex], 0, nullptr);
 
-			EWE_VK(vkCmdBindDescriptorSets, VK::Object->GetFrameBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet[VK::Object->frameIndex], 0, nullptr);
+					EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), 4, font.drawnLetterCount, 0, 0);
+					font.drawnLetterCount = 0; // reset drawn letter count after binding
+				}
 
-			//EWE_VK(vkCmdBindVertexBuffers, commandBuffer, 0, 1, &vertexBuffer, &offsets);
-			//EWE_VK(vkCmdBindVertexBuffers, commandBuffer, 1, 1, &vertexBuffer, &offsets);
-			EWE_VK(vkCmdDraw, VK::Object->GetFrameBuffer(), 4, numLetters, 0, 0);
-			//for (uint32_t j = 0; j < numLetters; j++) {
-			//	EWE_VK(vkCmdDraw, commandBuffer, 4, 1, j * 4, 0);
-			//}
-
-			/*
-			vkCmdEndRenderPass(cmdBuffers[bufferIndex]);
-
-			if (vkEndCommandBuffer(cmdBuffers[bufferIndex]) != VK_SUCCESS) {
-				throw std::runtime_error("failed to end command buffer!");
 			}
-			*/
 	}
 
 	void TextOverlay::BeginTextUpdate() {
 		vertexBuffer[VK::Object->frameIndex]->Map();
-		mapped = reinterpret_cast<lab::vec4*>(vertexBuffer[VK::Object->frameIndex]->GetMappedMemory());
+		mapped = reinterpret_cast<Font::CharacterData::Vert*>(vertexBuffer[VK::Object->frameIndex]->GetMappedMemory());
 		numLetters = 0;
 	}
 
@@ -694,5 +616,17 @@ namespace EWE {
 		vertexBuffer[VK::Object->frameIndex]->Unmap();
 		mapped = nullptr;
 		Draw();
+	}
+
+	bool TextOverlay::RemoveFont(uint16_t fontIndex) {
+		if (fontIndex < fonts.size()) {
+			fonts.erase(fonts.begin() + fontIndex);
+			return true;
+		}
+		return false;
+	}
+	std::string const& TextOverlay::GetCurrentFontName() {
+		if (currentFont >= 0 && currentFont < fonts.size()) { return fonts[currentFont].name; }
+		else { return "no font currently selected"; }
 	}
 }
